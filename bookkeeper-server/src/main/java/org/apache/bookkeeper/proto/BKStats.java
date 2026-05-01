@@ -22,14 +22,13 @@
 package org.apache.bookkeeper.proto;
 
 import java.beans.ConstructorProperties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Bookie Server Stats.
  */
+@CustomLog
 public class BKStats {
-    private static final Logger LOG = LoggerFactory.getLogger(BKStats.class);
     private static BKStats instance = new BKStats();
 
     public static BKStats getInstance() {
@@ -113,7 +112,7 @@ public class BKStats {
                 // We have seen this latency negative in some cases due to the
                 // behaviors of JVM. Ignoring the statistics updation for such
                 // cases.
-                LOG.warn("Latency time coming negative");
+                log.warn("Latency time coming negative");
                 return;
             }
             totalLatency += latency;

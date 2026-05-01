@@ -24,22 +24,20 @@ package org.apache.bookkeeper.client;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates asynchronous ledger delete operation.
  *
  */
+@CustomLog
 class LedgerDeleteOp {
-
-    static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
 
     final BookKeeper bk;
     final long ledgerId;
@@ -117,7 +115,7 @@ class LedgerDeleteOp {
 
         private boolean validate() {
             if (builderLedgerId == null || builderLedgerId < 0) {
-                LOG.error("invalid ledgerId {} < 0", builderLedgerId);
+                log.error().attr("ledgerId", builderLedgerId).log("invalid ledgerId < 0");
                 return false;
             }
             return true;

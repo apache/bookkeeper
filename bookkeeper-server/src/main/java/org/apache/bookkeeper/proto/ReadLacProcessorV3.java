@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -33,14 +34,12 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A read processor for v3 last add confirmed messages.
  */
+@CustomLog
 class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
 
     public ReadLacProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
@@ -60,7 +59,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             return readLacResponse.build();
         }
 
-        logger.debug("Received ReadLac request: {}", request);
+        log.debug().attr("request", request).log("Received ReadLac request");
         StatusCode status = StatusCode.EOK;
         ByteBuf lastEntry = null;
         ByteBuf lac = null;
@@ -71,13 +70,22 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
+            log.debug()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("No ledger found while performing readLac");
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
-            logger.error("Ledger {} in unknown state and cannot serve reacLac requests", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger in unknown state and cannot serve readLac requests");
         } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
-            logger.error("IOException while performing readLac from ledger: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("IOException while performing readLac from ledger");
         } finally {
             ReferenceCountUtil.release(lac);
         }
@@ -89,13 +97,22 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
+            log.debug()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("No ledger found while trying to read last entry");
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
-            logger.error("Ledger in an unknown state while trying to read last entry: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger in an unknown state while trying to read last entry");
         } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
-            logger.error("IOException while trying to read last entry: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("IOException while trying to read last entry");
         } finally {
             ReferenceCountUtil.release(lastEntry);
         }

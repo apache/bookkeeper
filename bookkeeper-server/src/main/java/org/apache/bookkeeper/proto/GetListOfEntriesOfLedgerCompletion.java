@@ -69,9 +69,7 @@ class GetListOfEntriesOfLedgerCompletion extends CompletionValue {
                     getListOfEntriesOfLedgerResponse.getAvailabilityOfEntriesOfLedger().asReadOnlyByteBuffer());
         }
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledgerId", ledgerId);
-        }
+        logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
         AvailabilityOfEntriesOfLedger availabilityOfEntriesOfLedger = null;

@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.DLSN;
@@ -39,7 +39,7 @@ import org.apache.distributedlog.util.Utils;
 /**
  * DistributedLog Output Stream.
  */
-@Slf4j
+@CustomLog
 class DLOutputStream extends OutputStream {
 
     private static final byte[] CONTROL_RECORD_CONTENT = "control".getBytes(UTF_8);
@@ -127,7 +127,7 @@ class DLOutputStream extends OutputStream {
         } catch (IOException ioe) {
             throw ioe;
         } catch (Exception e) {
-            log.error("Unexpected exception in DLOutputStream", e);
+            log.error().exception(e).log("Unexpected exception in DLOutputStream");
             throw new UnexpectedException("unexpected exception in DLOutputStream#flush()", e);
         }
     }

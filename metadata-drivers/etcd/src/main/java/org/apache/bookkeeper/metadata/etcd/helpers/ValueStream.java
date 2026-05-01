@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.metadata.etcd.EtcdWatchClient;
 import org.apache.bookkeeper.metadata.etcd.EtcdWatcher;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * A helper class to read the stream of values of a given key.
  */
-@Slf4j
+@CustomLog
 public class ValueStream<T> implements BiConsumer<WatchResponse, Throwable>, AutoCloseable {
 
     private final Client client;
@@ -117,10 +117,10 @@ public class ValueStream<T> implements BiConsumer<WatchResponse, Throwable>, Aut
         if (null != closeFuture) {
             return null;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Received watch response : revision = {}, {} events = {}",
-                response.getHeader().getRevision(), response.getEvents().size(), response.getEvents());
-        }
+        log.debug(e -> e.attr("revision", response.getHeader().getRevision())
+                .attr("eventCount", response.getEvents().size())
+                .attr("events", response.getEvents())
+                .log("Received watch response"));
 
         if (response.getHeader().getRevision() <= revision) {
             return null;
@@ -182,9 +182,7 @@ public class ValueStream<T> implements BiConsumer<WatchResponse, Throwable>, Aut
             try {
                 TimeUnit.MILLISECONDS.sleep(100);
             } catch (InterruptedException e) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Interrupted at waiting until the key is watched", e);
-                }
+                log.debug(ev -> ev.exception(e).log("Interrupted at waiting until the key is watched"));
             }
         }
         return wf;
@@ -263,12 +261,10 @@ public class ValueStream<T> implements BiConsumer<WatchResponse, Throwable>, Aut
     @Override
     public void accept(WatchResponse watchResponse, Throwable throwable) {
         if (null == throwable) {
-            if (log.isDebugEnabled()) {
-                log.debug("Received watch response : revision = {}, {} events = {}",
-                    watchResponse.getHeader().getRevision(),
-                    watchResponse.getEvents().size(),
-                    watchResponse.getEvents());
-            }
+            log.debug(e -> e.attr("revision", watchResponse.getHeader().getRevision())
+                    .attr("eventCount", watchResponse.getEvents().size())
+                    .attr("events", watchResponse.getEvents())
+                    .log("Received watch response"));
 
             synchronized (this) {
                 Versioned<T> localValue = processWatchResponse(watchResponse);
@@ -304,7 +300,7 @@ public class ValueStream<T> implements BiConsumer<WatchResponse, Throwable>, Aut
         try {
             FutureUtils.result(closeAsync());
         } catch (Exception e) {
-            log.warn("Encountered exceptions on closing key reader : {}", e.getMessage());
+            log.warn().exceptionMessage(e).log("Encountered exceptions on closing key reader");
         }
     }
 }

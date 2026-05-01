@@ -51,6 +51,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.Cleanup;
+import lombok.CustomLog;
 import lombok.Getter;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -69,8 +70,6 @@ import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Interleave ledger storage.
@@ -83,8 +82,8 @@ import org.slf4j.LoggerFactory;
     category = CATEGORY_SERVER,
     help = "Bookie related stats"
 )
+@CustomLog
 public class InterleavedLedgerStorage implements CompactableLedgerStorage, EntryLogListener {
-    private static final Logger LOG = LoggerFactory.getLogger(InterleavedLedgerStorage.class);
 
     DefaultEntryLogger entryLogger;
     @Getter
@@ -302,17 +301,17 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public void shutdown() throws InterruptedException {
         // shut down gc thread, which depends on zookeeper client
         // also compaction will write entries again to entry log file
-        LOG.info("Shutting down InterleavedLedgerStorage");
-        LOG.info("Shutting down GC thread");
+        log.info("Shutting down InterleavedLedgerStorage");
+        log.info("Shutting down GC thread");
         gcThread.shutdown();
-        LOG.info("Shutting down entry logger");
+        log.info("Shutting down entry logger");
         entryLogger.close();
         try {
             ledgerCache.close();
         } catch (IOException e) {
-            LOG.error("Error while closing the ledger cache", e);
+            log.error().exception(e).log("Error while closing the ledger cache");
         }
-        LOG.info("Complete shutting down Ledger Storage");
+        log.info("Complete shutting down Ledger Storage");
     }
 
     @Override
@@ -455,13 +454,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
             throw e;
         } catch (IOException ioe) {
-            LOG.error("Exception flushing Ledger cache", ioe);
+            log.error().exception(ioe).log("Exception flushing Ledger cache");
             flushFailed = true;
         }
 
         try {
             // if it is just a checkpoint flush, we just flush rotated entry log files
-            // in entry logger.
+            // in entry log.
             if (isCheckpointFlush) {
                 entryLogger.checkpoint();
             } else {
@@ -470,7 +469,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
             throw e;
         } catch (IOException ioe) {
-            LOG.error("Exception flushing Ledger", ioe);
+            log.error().exception(ioe).log("Exception flushing Ledger");
             flushFailed = true;
         }
         if (flushFailed) {
@@ -521,9 +520,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 ledgerCache.putEntryOffset(l.ledger, l.entry, l.location);
             } catch (NoLedgerException e) {
                 // Ledger was already deleted, we can skip it in the compaction
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Compaction failed for deleted ledger ledger: {} entry: {}", l.ledger, l.entry);
-                }
+                            log.debug()
+                                    .attr("ledgerId", l.ledger)
+                                    .attr("entryId", l.entry)
+                                    .log("Compaction failed for deleted ledger");
             }
         }
     }
@@ -599,7 +599,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public List<DetectedInconsistency> localConsistencyCheck(Optional<RateLimiter> rateLimiter) throws IOException {
         long checkStart = MathUtils.nowInNano();
-        LOG.info("Starting localConsistencyCheck");
+        log.info("Starting localConsistencyCheck");
         long checkedLedgers = 0;
         long checkedPages = 0;
         final MutableLong checkedEntries = new MutableLong(0);
@@ -627,22 +627,18 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                                 if (version != lep.getVersion()) {
                                     pageRetries.increment();
                                     if (lep.isDeleted()) {
-                                        if (LOG.isDebugEnabled()) {
-                                            LOG.debug("localConsistencyCheck: ledger {} deleted",
-                                                    ledger);
-                                        }
+                                        log.debug()
+                                                .attr("ledgerId", ledger)
+                                                .log("localConsistencyCheck: ledger deleted");
                                     } else {
-                                        if (LOG.isDebugEnabled()) {
-                                            LOG.debug("localConsistencyCheck: "
-                                                    + "concurrent modification, retrying");
-                                        }
+                                        log.debug("localConsistencyCheck: concurrent modification, retrying");
                                         retry.setValue(true);
                                         retryCounter.inc();
                                     }
                                     return false;
                                 } else {
                                     errors.add(new DetectedInconsistency(ledger, entry, e));
-                                    LOG.error("Got error: ", e);
+                                    log.error().exception(e).log("Got error");
                                 }
                                 success.setValue(false);
                             }
@@ -661,25 +657,27 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
                 }
             } catch (NoLedgerException | FileInfo.FileInfoDeletedException e) {
                 if (activeLedgers.containsKey(ledger)) {
-                    LOG.error("Cannot find ledger {}, should exist, exception is ", ledger, e);
+                    log.error()
+                            .exception(e)
+                            .attr("ledgerId", ledger)
+                            .log("Cannot find ledger that should exist");
                     errors.add(new DetectedInconsistency(ledger, -1, e));
-                } else if (LOG.isDebugEnabled()){
-                    LOG.debug("ledger {} deleted since snapshot taken", ledger);
+                } else {
+                    log.debug().attr("ledgerId", ledger).log("ledger deleted since snapshot taken");
                 }
             } catch (Exception e) {
                 throw new IOException("Got other exception in localConsistencyCheck", e);
             }
             checkedLedgers++;
         }
-        LOG.info(
-            "Finished localConsistencyCheck, took {}s to scan {} ledgers, {} pages, "
-                + "{} entries with {} retries, {} errors",
-            TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)),
-            checkedLedgers,
-            checkedPages,
-            checkedEntries.longValue(),
-            pageRetries.longValue(),
-            errors.size());
+        log.info()
+                .attr("value", () -> TimeUnit.NANOSECONDS.toSeconds(MathUtils.elapsedNanos(checkStart)))
+                .attr("checkedLedgers", checkedLedgers)
+                .attr("checkedPages", checkedPages)
+                .attr("longValue", () -> checkedEntries.longValue())
+                .attr("longValue", () -> pageRetries.longValue())
+                .attr("size", () -> errors.size())
+                .log("Finished localConsistencyCheck, took s to scan ledgers, pages, entries with retries, errors");
 
         return errors;
     }

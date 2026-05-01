@@ -20,12 +20,11 @@ package org.apache.bookkeeper.client;
 import io.netty.util.ReferenceCountUtil;
 import java.util.BitSet;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This represents a pending WriteLac operation. When it has got
@@ -36,8 +35,8 @@ import org.slf4j.LoggerFactory;
  * to be up to date with the writer. This is best effort to get latest LAC
  * from bookies, and doesn't affect the correctness of the protocol.
  */
+@CustomLog
 class PendingWriteLacOp implements WriteLacCallback {
-    private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -110,7 +109,10 @@ class PendingWriteLacOp implements WriteLacCallback {
                 return;
             }
         } else {
-            LOG.warn("WriteLac did not succeed: Ledger {} on {}", ledgerId, addr);
+            log.warn()
+                    .attr("ledgerId", ledgerId)
+                    .attr("bookieAddr", addr)
+                    .log("WriteLac did not succeed");
         }
 
         if (receivedResponseSet.isEmpty()){

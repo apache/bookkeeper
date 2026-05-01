@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieShell;
@@ -36,15 +37,12 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to update ledger command.
  */
+@CustomLog
 public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLedgerCommand.UpdateBookieInLedgerFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(UpdateBookieInLedgerCommand.class);
 
     private static final String NAME = "update-bookie-ledger-cmd";
     private static final String DESC = "Update bookie in ledgers metadata (this may take a long time).";
@@ -116,25 +114,27 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
             bookieAddress = flags.destBookie;
             destBookieAddress = BookieId.parse(bookieAddress);
         } catch (Exception e) {
-            LOG.error("Bookie address must in <address>:<port> format");
+            log.error("Bookie address must in <address>:<port> format");
             return false;
         }
 
         final int rate = flags.updatePerSec;
         if (rate <= 0) {
-            LOG.error("Invalid updatespersec {}, should be > 0", rate);
+            log.error().attr("rate", rate).log("Invalid updatespersec, should be > 0");
             return false;
         }
 
         final int maxOutstandingReads = flags.maxOutstandingReads;
         if (maxOutstandingReads <= 0) {
-            LOG.error("Invalid maxOutstandingReads {}, should be > 0", maxOutstandingReads);
+            log.error()
+                    .attr("maxOutstandingReads", maxOutstandingReads)
+                    .log("Invalid maxOutstandingReads, should be > 0");
             return false;
         }
 
         final int limit = flags.limit;
         if (limit <= 0 && limit != Integer.MIN_VALUE) {
-            LOG.error("Invalid limit {}, should be > 0", limit);
+            log.error().attr("limit", limit).log("Invalid limit, should be > 0");
             return false;
         }
 
@@ -153,7 +153,7 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
                 || admin.getReadOnlyBookies().contains(srcBookieAddress)) {
             bk.close();
             admin.close();
-            LOG.error("Source bookie {} can't be active", srcBookieAddress);
+            log.error().attr("srcBookieAddress", srcBookieAddress).log("Source bookie can't be active");
             return false;
         }
         final UpdateLedgerOp updateLedgerOp = new UpdateLedgerOp(bk, admin);
@@ -167,7 +167,10 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
                     return; // disabled
                 }
                 if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printProgress) {
-                    LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
+                    log.info()
+                            .attr("issued", issued)
+                            .attr("updated", updated)
+                            .log("Number of ledgers");
                     lastReport = MathUtils.nowInNano();
                 }
             }
@@ -177,7 +180,7 @@ public class UpdateBookieInLedgerCommand extends BookieCommand<UpdateBookieInLed
             updateLedgerOp.updateBookieIdInLedgers(srcBookieAddress, destBookieAddress, rate, maxOutstandingReads,
                     limit, progressable);
         } catch (IOException e) {
-            LOG.error("Failed to update ledger metadata", e);
+            log.error().exception(e).log("Failed to update ledger metadata");
             return false;
         }
 

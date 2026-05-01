@@ -47,7 +47,7 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.util.ReferenceCountUtil;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Txn;
 import org.apache.bookkeeper.api.kv.impl.op.OpFactoryImpl;
@@ -73,7 +73,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 /**
  * A {@link PTable} implementation using simple grpc calls.
  */
-@Slf4j
+@CustomLog
 public class PByteBufSimpleTableImpl
     extends AbstractStub<PByteBufSimpleTableImpl>
     implements PTable<ByteBuf, ByteBuf> {
@@ -309,7 +309,7 @@ public class PByteBufSimpleTableImpl
             try {
                 resource.close();
             } catch (Exception e) {
-                log.warn("Fail to close resource {}", resource, e);
+                log.warn().attr("resource", resource).exception(e).log("Fail to close resource");
             }
         }
     }

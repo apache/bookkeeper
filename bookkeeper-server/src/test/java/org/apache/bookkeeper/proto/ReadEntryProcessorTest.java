@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -78,6 +79,7 @@ public class ReadEntryProcessorTest {
         when(requestProcessor.getWaitTimeoutOnBackpressureMillis()).thenReturn(-1L);
         when(requestProcessor.getRequestStats()).thenReturn(new RequestStats(NullStatsLogger.INSTANCE));
         when(channel.voidPromise()).thenReturn(mock(ChannelPromise.class));
+        when(channel.newPromise()).thenReturn(mock(ChannelPromise.class, RETURNS_SELF));
         when(channel.writeAndFlush(any())).thenReturn(mock(ChannelPromise.class));
 
         EventLoop eventLoop = mock(EventLoop.class);

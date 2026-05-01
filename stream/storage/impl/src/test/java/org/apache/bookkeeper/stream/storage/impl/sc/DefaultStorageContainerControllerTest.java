@@ -33,7 +33,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
@@ -46,7 +46,7 @@ import org.junit.Test;
 /**
  * Unit test {@link DefaultStorageContainerController}.
  */
-@Slf4j
+@CustomLog
 public class DefaultStorageContainerControllerTest {
 
     private static final int NUM_STORAGE_CONTAINERS = 32;
@@ -130,7 +130,8 @@ public class DefaultStorageContainerControllerTest {
         int numContainersPerServer = NUM_STORAGE_CONTAINERS / numServers;
         int serverIdx = 0;
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
-            log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
+            log.info().attr("server", entry.getKey()).attr("assignment", entry.getValue())
+                .log("Check assignment for server");
 
             BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);
@@ -173,7 +174,8 @@ public class DefaultStorageContainerControllerTest {
         int numAssignedServers = 0;
         int serverIdx = 0;
         for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
-            log.info("Check assignment for server {} = {}", entry.getKey(), entry.getValue());
+            log.info().attr("server", entry.getKey()).attr("assignment", entry.getValue())
+                .log("Check assignment for server");
 
             BookieId address = BookieId.parse(entry.getKey());
             assignedServers.add(address);

@@ -47,7 +47,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
@@ -56,7 +56,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 /**
  * An async watch implementation.
  */
-@Slf4j
+@CustomLog
 public class EtcdWatchClient implements AutoCloseable {
 
     private final EtcdConnectionManager connMgr;
@@ -170,7 +170,7 @@ public class EtcdWatchClient implements AutoCloseable {
         try {
             FutureUtils.result(closeAsync());
         } catch (Exception e) {
-            log.warn("Encountered exceptions on closing watch client", e);
+            log.warn().exception(e).log("Encountered exceptions on closing watch client");
         }
         this.scheduler.forceShutdown(10, TimeUnit.SECONDS);
     }

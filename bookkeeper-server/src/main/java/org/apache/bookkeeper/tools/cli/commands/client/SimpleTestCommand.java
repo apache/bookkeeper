@@ -28,6 +28,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.api.BookKeeper;
@@ -40,17 +41,15 @@ import org.apache.bookkeeper.tools.cli.commands.client.SimpleTestCommand.Flags;
 import org.apache.bookkeeper.tools.cli.helpers.ClientCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A client command that simply tests if a cluster is healthy.
  */
+@CustomLog
 public class SimpleTestCommand extends ClientCommand<Flags> {
 
     private static final String NAME = "simpletest";
     private static final String DESC = "Simple test to create a ledger and write entries to it, then read it.";
-    private static final Logger LOG = LoggerFactory.getLogger(SimpleTestCommand.class);
 
     /**
      * Flags for simple test command.
@@ -110,18 +109,19 @@ public class SimpleTestCommand extends ClientCommand<Flags> {
                 .withPassword(new byte[0])
                 .execute())) {
             ledgerId = wh.getId();
-            LOG.info("Ledger ID: {}", ledgerId);
+            log.info().attr("ledgerId", ledgerId).log("Ledger ID");
             long lastReport = System.nanoTime();
             for (int i = 0; i < flags.numEntries; i++) {
                 wh.append(data);
                 if (TimeUnit.SECONDS.convert(System.nanoTime() - lastReport,
                         TimeUnit.NANOSECONDS) > 1) {
-                    LOG.info("{} entries written", i);
+                    log.info().logf("%d entries written", i);
                     lastReport = System.nanoTime();
                 }
             }
             lastEntryId = wh.getLastAddPushed();
-            LOG.info("{} entries written to ledger {}. Last entry Id {}", flags.numEntries, ledgerId, lastEntryId);
+            log.info().logf("%d entries written to ledger %d (lastEntryId %d)",
+                    flags.numEntries, ledgerId, lastEntryId);
             if (lastEntryId != flags.numEntries - 1) {
                 throw new IllegalStateException("Last entry id doesn't match the expected value");
             }

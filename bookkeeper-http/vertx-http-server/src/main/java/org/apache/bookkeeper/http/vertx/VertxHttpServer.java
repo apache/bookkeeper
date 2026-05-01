@@ -32,19 +32,17 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.http.HttpRouter;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServiceProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Vertx.io implementation of Http Server.
  */
+@CustomLog
 public class VertxHttpServer implements HttpServer {
-
-    static final Logger LOG = LoggerFactory.getLogger(VertxHttpServer.class);
 
     private final Vertx vertx;
     private boolean isRunning;
@@ -106,25 +104,28 @@ public class VertxHttpServer implements HttpServer {
                     trustStoreOptions.setPassword(httpServerConfiguration.getTrustStorePassword());
                     httpServerOptions.setTrustOptions(trustStoreOptions);
                 }
-                LOG.info("Starting Vertx HTTP server on port {}", port);
+                log.info().attr("port", port).log("Starting Vertx HTTP server");
                 vertx.createHttpServer(httpServerOptions).requestHandler(router).listen(port, host, future::complete);
             }
         });
         try {
             AsyncResult<io.vertx.core.http.HttpServer> asyncResult = future.get();
             if (asyncResult.succeeded()) {
-                LOG.info("Vertx Http server started successfully");
+                log.info("Vertx Http server started successfully");
                 listeningPort = asyncResult.result().actualPort();
                 isRunning = true;
                 return true;
             } else {
-                LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, asyncResult.cause());
+                log.error().exception(asyncResult.cause()).attr("port", port)
+                        .log("Failed to start org.apache.bookkeeper.http server");
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, ie);
+            log.error().exception(ie).attr("port", port)
+                    .log("Failed to start org.apache.bookkeeper.http server");
         } catch (ExecutionException e) {
-            LOG.error("Failed to start org.apache.bookkeeper.http server on port {}", port, e);
+            log.error().exception(e).attr("port", port)
+                    .log("Failed to start org.apache.bookkeeper.http server");
         }
         return false;
     }
@@ -135,18 +136,18 @@ public class VertxHttpServer implements HttpServer {
         try {
             httpServiceProvider.close();
         } catch (IOException ioe) {
-            LOG.error("Error while close httpServiceProvider", ioe);
+            log.error().exception(ioe).log("Error while close httpServiceProvider");
         }
         vertx.close(asyncResult -> {
             isRunning = false;
             shutdownLatch.countDown();
-            LOG.info("HTTP server is shutdown");
+            log.info("HTTP server is shutdown");
         });
         try {
             shutdownLatch.await();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while shutting down org.apache.bookkeeper.http server");
+            log.error("Interrupted while shutting down org.apache.bookkeeper.http server");
         }
     }
 

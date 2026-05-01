@@ -28,7 +28,7 @@ import com.google.common.collect.Lists;
 import com.google.protobuf.ByteString;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.kv.KeyValue;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
@@ -52,7 +52,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link TableStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TableStoreImplTest extends MVCCAsyncStoreTestBase {
 
     private static final long SC_ID = 123L;

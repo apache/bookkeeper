@@ -30,13 +30,12 @@ import java.io.IOException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.ReentrantLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Write cache implementation.
@@ -50,6 +49,7 @@ import org.slf4j.LoggerFactory;
  * <p>There is the possibility to iterate through the stored entries in an ordered
  * way, by (ledgerId, entry).
  */
+@CustomLog
 public class WriteCache implements Closeable {
 
     /**
@@ -243,16 +243,16 @@ public class WriteCache implements Closeable {
                 sortedEntriesIdx += 4;
             });
 
-            if (log.isDebugEnabled()) {
-                log.debug("iteration took {} ms", MathUtils.elapsedNanos(startTime) / 1e6);
-            }
+            final long iterationStart = startTime;
+            log.debug().attr("durationMs", () -> MathUtils.elapsedNanos(iterationStart) / 1e6)
+                    .log("iteration took");
             startTime = MathUtils.nowInNano();
 
             // Sort entries by (ledgerId, entryId) maintaining the 4 items groups
             ArrayGroupSort.sort(sortedEntries, 0, sortedEntriesIdx);
-            if (log.isDebugEnabled()) {
-                log.debug("sorting {} ms", (MathUtils.elapsedNanos(startTime) / 1e6));
-            }
+            final long sortStart = startTime;
+            log.debug().attr("durationMs", () -> MathUtils.elapsedNanos(sortStart) / 1e6)
+                    .log("sorting");
             startTime = MathUtils.nowInNano();
 
             ByteBuf[] entrySegments = new ByteBuf[segmentsCount];
@@ -273,9 +273,9 @@ public class WriteCache implements Closeable {
                 consumer.accept(ledgerId, entryId, entry);
             }
 
-            if (log.isDebugEnabled()) {
-                log.debug("entry log adding {} ms", MathUtils.elapsedNanos(startTime) / 1e6);
-            }
+            final long entryLogStart = startTime;
+            log.debug().attr("durationMs", () -> MathUtils.elapsedNanos(entryLogStart) / 1e6)
+                    .log("entry log adding");
         } finally {
             sortedEntriesLock.unlock();
         }
@@ -307,5 +307,4 @@ public class WriteCache implements Closeable {
     private long[] sortedEntries;
     private int sortedEntriesIdx;
 
-    private static final Logger log = LoggerFactory.getLogger(WriteCache.class);
 }

@@ -28,7 +28,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.InputStreamReader;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -40,7 +40,7 @@ import org.junit.rules.TemporaryFolder;
 /**
  * Integration test for {@link DLFileSystem}.
  */
-@Slf4j
+@CustomLog
 public class TestDLFileSystem extends TestDLFSBase {
 
     @Rule

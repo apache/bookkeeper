@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -43,8 +44,6 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Performing auditor election using Apache ZooKeeper. Using ZooKeeper as a
@@ -59,9 +58,8 @@ import org.slf4j.LoggerFactory;
     name = AUDITOR_SCOPE,
     help = "Auditor related stats"
 )
+@CustomLog
 public class AuditorElector {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(AuditorElector.class);
 
     private final String bookieId;
     private final ServerConfiguration conf;
@@ -165,9 +163,9 @@ public class AuditorElector {
                 ledgerAuditorManager.close();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.warn("InterruptedException while closing ledger auditor manager", ie);
+                log.warn().exception(ie).log("InterruptedException while closing ledger auditor manager");
             } catch (Exception ke) {
-                LOG.error("Exception while closing ledger auditor manager", ke);
+                log.error().exception(ke).log("Exception while closing ledger auditor manager");
             }
         }
     };
@@ -192,11 +190,11 @@ public class AuditorElector {
                         auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
                         auditor.start();
                     } catch (InterruptedException e) {
-                        LOG.error("Interrupted while performing auditor election", e);
+                        log.error().exception(e).log("Interrupted while performing auditor election");
                         Thread.currentThread().interrupt();
                         submitShutdownTask();
                     } catch (Exception e) {
-                        LOG.error("Exception while performing auditor election", e);
+                        log.error().exception(e).log("Exception while performing auditor election");
                         submitShutdownTask();
                     }
                 }
@@ -204,9 +202,7 @@ public class AuditorElector {
         try {
             return executor.submit(r);
         } catch (RejectedExecutionException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Executor was already closed");
-            }
+            log.debug("Executor was already closed");
             return CompletableFuture.completedFuture(null);
         }
     }
@@ -214,7 +210,7 @@ public class AuditorElector {
     private void handleAuditorEvent(LedgerAuditorManager.AuditorEvent e) {
         switch (e) {
             case SessionLost:
-                LOG.error("Lost ZK connection, shutting down");
+                log.error("Lost ZK connection, shutting down");
                 submitShutdownTask();
                 break;
 
@@ -247,11 +243,11 @@ public class AuditorElector {
                 submitShutdownTask().get(10, TimeUnit.SECONDS);
                 executor.shutdown();
             } catch (ExecutionException e) {
-                LOG.warn("Failed to close auditor manager", e);
+                log.warn().exception(e).log("Failed to close auditor manager");
                 executor.shutdownNow();
                 shutdownTask.run();
             } catch (TimeoutException e) {
-                LOG.warn("Failed to close auditor manager in 10 seconds", e);
+                log.warn().exception(e).log("Failed to close auditor manager in 10 seconds");
                 executor.shutdownNow();
                 shutdownTask.run();
             }
@@ -265,7 +261,7 @@ public class AuditorElector {
             try {
                 bkc.close();
             } catch (BKException e) {
-                LOG.warn("Failed to close bookkeeper client", e);
+                log.warn().exception(e).log("Failed to close bookkeeper client");
             }
         }
     }

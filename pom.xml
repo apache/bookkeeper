@@ -180,8 +180,7 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.130.Final</netty.version>
-    <netty-iouring.version>0.0.26.Final</netty-iouring.version>
+    <netty.version>4.2.12.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
@@ -193,6 +192,7 @@
     <rocksdb.version>9.9.3</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
+    <slog.version>0.9.8</slog.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <spotless.version>2.43.0</spotless.version>
@@ -274,6 +274,11 @@
       </dependency>
 
       <!-- logging dependencies -->
+      <dependency>
+        <groupId>io.github.merlimat.slog</groupId>
+        <artifactId>slog</artifactId>
+        <version>${slog.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-bom</artifactId>
@@ -425,28 +430,6 @@
         <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-x86_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-aarch_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-classes-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
       </dependency>
 
       <!-- grpc dependencies -->
@@ -906,6 +889,10 @@
 
     <!-- compilation dependencies (available at all classpaths) -->
     <dependency>
+      <groupId>io.github.merlimat.slog</groupId>
+      <artifactId>slog</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
@@ -1234,6 +1221,9 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- zig -->
+            <exclude>**/.zig-cache/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

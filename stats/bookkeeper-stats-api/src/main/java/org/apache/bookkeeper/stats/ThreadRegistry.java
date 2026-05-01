@@ -18,8 +18,7 @@ package org.apache.bookkeeper.stats;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * For mapping thread ids to thread pools and threads within those pools
@@ -27,8 +26,8 @@ import org.slf4j.LoggerFactory;
  * metrics by retrieving the ThreadPoolThread object from this registry.
  * For flexibility, this registry is not based on TLS.
  */
+@CustomLog
 public class ThreadRegistry {
-    private static Logger logger = LoggerFactory.getLogger(ThreadRegistry.class);
     private static ConcurrentMap<Long, ThreadPoolThread> threadPoolMap = new ConcurrentHashMap<>();
     private static ConcurrentMap<String, Integer> threadPoolThreadMap = new ConcurrentHashMap<>();
 
@@ -59,7 +58,10 @@ public class ThreadRegistry {
     public static void forceClearRegistrationForTests(long threadId) {
         threadPoolMap.compute(threadId, (id, value) -> {
             if (value !=  null) {
-                logger.info("Forcibly clearing registry entry {} for thread id {}", value, id);
+                log.info()
+                        .attr("entry", value)
+                        .attr("threadId", id)
+                        .log("Forcibly clearing registry entry");
             }
            return null;
         });

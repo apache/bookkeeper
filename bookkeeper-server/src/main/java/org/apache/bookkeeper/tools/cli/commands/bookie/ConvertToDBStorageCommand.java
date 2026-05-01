@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -31,15 +32,12 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A command to convert bookie indexes from InterleavedStorage to DbLedgerStorage format.
  */
+@CustomLog
 public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageCommand.CTDBFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ConvertToDBStorageCommand.class);
     private static final String NAME = "converttodbstorage";
     private static final String DESC = "Convert bookie indexes from InterleavedStorage to DbLedgerStorage format";
     private static final String NOT_INIT = "default formatter";
@@ -75,7 +73,7 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
     }
 
     private boolean handle(ServerConfiguration conf) throws Exception {
-        LOG.info("=== Converting to DbLedgerStorage ===");
+        log.info("=== Converting to DbLedgerStorage ===");
         ServerConfiguration bkConf = new ServerConfiguration(conf);
 
         InterleavedLedgerStorage interleavedStorage = new InterleavedLedgerStorage();
@@ -86,31 +84,30 @@ public class ConvertToDBStorageCommand extends BookieCommand<ConvertToDBStorageC
 
         int convertedLedgers = 0;
         for (long ledgerId : interleavedStorage.getActiveLedgersInRange(0, Long.MAX_VALUE)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Converting ledger {}", ledgerIdFormatter.formatLedgerId(ledgerId));
-            }
+            log.debug().attr("ledgerId", () -> ledgerIdFormatter.formatLedgerId(ledgerId)).log("Converting ledger");
 
             LedgerCache.LedgerIndexMetadata fi = interleavedStorage.readLedgerIndexMetadata(ledgerId);
 
             LedgerCache.PageEntriesIterable pages = interleavedStorage.getIndexEntries(ledgerId);
 
             long numberOfEntries = dbStorage.addLedgerToIndex(ledgerId, fi.fenced, fi.masterKey, pages);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("   -- done. fenced={} entries={}", fi.fenced, numberOfEntries);
-            }
+            log.debug()
+                    .attr("fenced", fi.fenced)
+                    .attr("entries", numberOfEntries)
+                    .log("done converting ledger");
 
             // Remove index from old storage
             interleavedStorage.deleteLedger(ledgerId);
 
             if (++convertedLedgers % 1000 == 0) {
-                LOG.info("Converted {} ledgers", convertedLedgers);
+                log.info().attr("count", convertedLedgers).log("Converted ledgers");
             }
         }
 
         dbStorage.shutdown();
         interleavedStorage.shutdown();
 
-        LOG.info("---- Done Converting ----");
+        log.info("---- Done Converting ----");
         return true;
     }
 

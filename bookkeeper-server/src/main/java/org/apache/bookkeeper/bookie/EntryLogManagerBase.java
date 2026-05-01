@@ -30,13 +30,13 @@ import io.netty.util.concurrent.FastThreadLocal;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
-@Slf4j
+@CustomLog
 abstract class EntryLogManagerBase implements EntryLogManager {
     volatile List<BufferedLogChannel> rotatedLogChannels;
     final EntryLoggerAllocator entryLoggerAllocator;
@@ -126,9 +126,7 @@ abstract class EntryLogManagerBase implements EntryLogManager {
     void flushLogChannel(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
         if (logChannel != null) {
             logChannel.flushAndForceWrite(forceMetadata);
-            if (log.isDebugEnabled()) {
-                log.debug("Flush and sync current entry logger {}", logChannel.getLogId());
-            }
+            log.debug().attr("logId", () -> logChannel.getLogId()).log("Flush and sync current entry logger");
         }
     }
 
@@ -143,9 +141,12 @@ abstract class EntryLogManagerBase implements EntryLogManager {
 
     void createNewLog(long ledgerId, String reason) throws IOException {
         if (ledgerId != UNASSIGNED_LEDGERID) {
-            log.info("Creating a new entry log file for ledger '{}' {}", ledgerId, reason);
+            log.info()
+                    .attr("ledgerId", ledgerId)
+                    .attr("reason", reason)
+                    .log("Creating a new entry log file for ledger");
         } else {
-            log.info("Creating a new entry log file {}", reason);
+            log.info().attr("reason", reason).log("Creating a new entry log file");
         }
 
         BufferedLogChannel logChannel = getCurrentLogForLedger(ledgerId);
@@ -163,8 +164,10 @@ abstract class EntryLogManagerBase implements EntryLogManager {
             BufferedLogChannel newLogChannel = entryLoggerAllocator.createNewLog(selectDirForNextEntryLog());
             entryLoggerAllocator.setWritingLogId(newLogChannel.getLogId());
             setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
-            log.info("Flushing entry logger {} back to filesystem, pending for syncing entry loggers : {}.",
-                    logChannel.getLogId(), rotatedLogChannels);
+            log.info()
+                    .attr("logId", logChannel.getLogId())
+                    .attr("rotatedLogChannels", rotatedLogChannels)
+                .log("Flushing entry logger back to filesystem, pending for syncing entry loggers");
             for (EntryLogListener listener : listeners) {
                 listener.onRotateEntryLog();
             }

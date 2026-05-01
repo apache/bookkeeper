@@ -85,6 +85,10 @@ jobs:
         distribution: 'temurin'
         java-version: 17
 
+    - name: Setup native build
+      if: steps.check_changes.outputs.docs_only != 'true'
+      uses: ./.github/actions/setup-native-build
+
     - name: Validate pull request
       if: steps.check_changes.outputs.docs_only != 'true'
       run: |

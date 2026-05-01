@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -52,21 +52,18 @@ import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
  * An implementation of StateManager.
  */
-@Slf4j
+@CustomLog
 @StatsDoc(
     name = BOOKIE_SCOPE,
     category = CATEGORY_SERVER,
     help = "Bookie state manager related stats"
 )
 public class BookieStateManager implements StateManager {
-    private static final Logger LOG = LoggerFactory.getLogger(BookieStateManager.class);
     private final ServerConfiguration conf;
     private final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
     private final List<File> statusDirs;
@@ -283,7 +280,7 @@ public class BookieStateManager implements StateManager {
                     if (throwException) {
                         throw ioe;
                     } else {
-                        LOG.error("Couldn't register bookie with zookeeper, shutting down : ", ioe);
+                        log.error().exception(ioe).log("Couldn't register bookie with zookeeper, shutting down");
                         shutdownHandler.shutdown(ExitCode.ZK_REG_FAIL);
                     }
                 }
@@ -321,7 +318,7 @@ public class BookieStateManager implements StateManager {
     private void doRegisterBookie(boolean isReadOnly) throws IOException {
         if (isRegistrationManagerDisabled()) {
             // registration manager is null, means not register itself to metadata store.
-            LOG.info("null registration manager while do register");
+            log.info("null registration manager while do register");
             return;
         }
 
@@ -344,7 +341,7 @@ public class BookieStateManager implements StateManager {
             return;
         }
         if (!isManuallyModify && bookieStatus.isInReadOnlyMode() && bookieStatus.isManuallyModifiedToReadOnly()) {
-            LOG.info("Skip to transition Bookie to Writable mode automatically because it is manually set to read-only"
+            log.info("Skip to transition Bookie to Writable mode automatically because it is manually set to read-only"
                     + " mode, which can only be changed manually.");
             return;
         }
@@ -353,7 +350,7 @@ public class BookieStateManager implements StateManager {
             // do nothing if already in writable mode
             return;
         }
-        LOG.info("Transitioning Bookie to Writable mode and will serve read/write requests.");
+        log.info("Transitioning Bookie to Writable mode and will serve read/write requests.");
         if (conf.isPersistBookieStatusEnabled()) {
             bookieStatus.writeToDirectories(statusDirs);
         }
@@ -364,7 +361,7 @@ public class BookieStateManager implements StateManager {
         try {
             doRegisterBookie(false);
         } catch (IOException e) {
-            LOG.warn("Error in transitioning back to writable mode : ", e);
+            log.warn().exception(e).log("Error in transitioning back to writable mode");
             transitionToReadOnlyMode();
             return;
         }
@@ -374,7 +371,7 @@ public class BookieStateManager implements StateManager {
         } catch (BookieException e) {
             // if we failed when deleting the readonly flag in zookeeper, it is OK since client would
             // already see the bookie in writable list. so just log the exception
-            LOG.warn("Failed to delete bookie readonly state in zookeeper : ", e);
+            log.warn().exception(e).log("Failed to delete bookie readonly state in zookeeper");
             return;
         }
     }
@@ -392,15 +389,13 @@ public class BookieStateManager implements StateManager {
             return;
         }
         if (!conf.isReadOnlyModeEnabled()) {
-            LOG.warn("ReadOnly mode is not enabled. "
-                    + "Can be enabled by configuring "
-                    + "'readOnlyModeEnabled=true' in configuration."
+            log.warn("ReadOnly mode is not enabled."
+                    + " Can be enabled by configuring 'readOnlyModeEnabled=true' in configuration."
                     + " Shutting down bookie");
             shutdownHandler.shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }
-        LOG.info("Transitioning Bookie to ReadOnly mode,"
-                + " and will serve only read requests from clients!");
+        log.info("Transitioning Bookie to ReadOnly mode, and will serve only read requests from clients!");
         // persist the bookie status if we enable this
         if (conf.isPersistBookieStatusEnabled()) {
             this.bookieStatus.writeToDirectories(statusDirs);
@@ -412,8 +407,7 @@ public class BookieStateManager implements StateManager {
         try {
             rm.registerBookie(bookieIdSupplier.get(), true, bookieServiceInfoProvider.get());
         } catch (BookieException e) {
-            LOG.error("Error in transition to ReadOnly Mode."
-                    + " Shutting down", e);
+            log.error().exception(e).log("Error in transition to ReadOnly Mode. Shutting down");
             shutdownHandler.shutdown(ExitCode.BOOKIE_EXCEPTION);
             return;
         }

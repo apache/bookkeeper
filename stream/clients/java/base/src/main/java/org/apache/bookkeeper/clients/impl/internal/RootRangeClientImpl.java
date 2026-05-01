@@ -31,7 +31,7 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetStr
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.exceptions.ClientException;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannelManager;
@@ -58,7 +58,7 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 /**
  * A default implementation for {@link RootRangeClient}.
  */
-@Slf4j
+@CustomLog
 class RootRangeClientImpl implements RootRangeClient {
 
     private final ScheduledExecutorService executor;

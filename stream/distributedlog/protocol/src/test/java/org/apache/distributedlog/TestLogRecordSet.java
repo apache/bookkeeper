@@ -29,7 +29,7 @@ import io.netty.buffer.ByteBuf;
 import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.LogRecordSet.Reader;
 import org.apache.distributedlog.LogRecordSet.Writer;
@@ -40,7 +40,7 @@ import org.junit.Test;
 /**
  * Test Case for {@link LogRecordSet}.
  */
-@Slf4j
+@CustomLog
 public class TestLogRecordSet {
 
     @Test(timeout = 60000)

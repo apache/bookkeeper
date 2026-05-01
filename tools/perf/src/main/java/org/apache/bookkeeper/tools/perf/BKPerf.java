@@ -14,7 +14,7 @@
 
 package org.apache.bookkeeper.tools.perf;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.Cli;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -22,7 +22,7 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * <b>bkperf</b> evaluates the performance of <i>Apache BookKeeper</i> cluster.
  */
-@Slf4j
+@CustomLog
 public class BKPerf {
 
     public static final String NAME = "bkperf";

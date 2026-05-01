@@ -21,15 +21,14 @@ package org.apache.bookkeeper.common.component;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Allows for AutoClosable resources to be added to the component
  * lifecycle without having to implement ServerLifecycleComponent directly.
  */
+@CustomLog
 public class AutoCloseableLifecycleComponent implements LifecycleComponent {
-    private static final Logger LOG = LoggerFactory.getLogger(AutoCloseableLifecycleComponent.class);
 
     protected final Lifecycle lifecycle = new Lifecycle();
     private final Set<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
@@ -100,7 +99,10 @@ public class AutoCloseableLifecycleComponent implements LifecycleComponent {
         try {
             closeable.close();
         } catch (Exception e) {
-            LOG.warn("failed to close {}", componentName, e);
+            log.warn()
+                    .exception(e)
+                    .attr("component", componentName)
+                    .log("Failed to close component");
         }
         listeners.forEach(LifecycleListener::afterClose);
     }

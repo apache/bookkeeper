@@ -25,10 +25,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 
-@Slf4j
+@CustomLog
 class FileInfoBackingCache {
     static final int DEAD_REF = -0xdead;
 
@@ -104,8 +104,11 @@ class FileInfoBackingCache {
                 fileInfos.remove(ledgerId, fileInfo);
             }
         } catch (IOException ioe) {
-            log.error("Error evicting file info({}) for ledger {} from backing cache",
-                      fileInfo, ledgerId, ioe);
+            log.error()
+                    .exception(ioe)
+                    .attr("fileInfo", fileInfo)
+                    .attr("ledgerId", ledgerId)
+                .log("Error evicting file info from backing cache");
         } finally {
             lock.writeLock().unlock();
         }

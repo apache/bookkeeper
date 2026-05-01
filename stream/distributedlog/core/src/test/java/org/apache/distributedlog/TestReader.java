@@ -29,21 +29,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * A Reader wraps reading next logic for testing.
  */
+@CustomLog
 public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestReader.class);
 
     final String readerName;
     final DistributedLogManager dlm;
@@ -124,7 +120,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
                         ((BKAsyncLogReader) reader).simulateErrors();
                     }
                     nextDLSN = dlsn;
-                    LOG.info("Positioned reader {} at {}", readerName, dlsn);
+                    log.info().attr("readerName", readerName).attr("dlsn", dlsn).log("Positioned reader");
                     if (null != TestReader.this.reader) {
                         Utils.close(TestReader.this.reader);
                     }
@@ -133,8 +129,8 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
                     readyLatch.countDown();
                 } catch (IOException exc) {
                     int nextMs = nextDelayMs();
-                    LOG.info("Encountered exception {} on opening reader {} at {}, retrying in {} ms",
-                        exc, readerName, dlsn, nextMs);
+                    log.info().attr("readerName", readerName).attr("dlsn", dlsn).attr("nextMs", nextMs)
+                            .exception(exc).log("Encountered exception on opening reader, retrying");
                     positionReader(dlsn);
                 }
             }
@@ -151,14 +147,14 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
     public void onSuccess(LogRecordWithDLSN value) {
         try {
             assertTrue(value.getDlsn().compareTo(nextDLSN) >= 0);
-            LOG.info("Received record {} from log {} for reader {}",
-                value.getDlsn(), dlm.getStreamName(), readerName);
+            log.info().attr("dlsn", value.getDlsn()).attr("stream", dlm.getStreamName())
+                    .attr("readerName", readerName).log("Received record");
             assertFalse(value.isControl());
             assertEquals(0, value.getDlsn().getSlotId());
             DLMTestUtil.verifyLargeLogRecord(value);
         } catch (Exception exc) {
-            LOG.error("Exception encountered when verifying received log record {} for reader {} :",
-                value.getDlsn(), readerName, exc);
+            log.error().attr("dlsn", value.getDlsn()).attr("readerName", readerName).exception(exc)
+                    .log("Exception encountered when verifying received log record");
             errorsFound.set(true);
             completionLatch.countDown();
             return;
@@ -166,12 +162,12 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
         readCount.incrementAndGet();
         countLatch.countDown();
         if (countLatch.getCount() <= 0) {
-            LOG.info("Reader {} is completed", readerName);
+            log.info().attr("readerName", readerName).log("Reader is completed");
             closeReader();
             completionLatch.countDown();
         } else {
-            LOG.info("Reader {} : read count becomes {}, latch = {}",
-                readerName, readCount.get(), countLatch.getCount());
+            log.info().attr("readerName", readerName).attr("readCount", readCount.get())
+                    .attr("latch", countLatch.getCount()).log("Reader read count");
             nextDLSN = value.getDlsn().getNextDLSN();
             readNext();
         }
@@ -179,7 +175,8 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
 
     @Override
     public void onFailure(Throwable cause) {
-        LOG.error("{} encountered exception on reading next record : ", readerName, cause);
+        log.error().attr("readerName", readerName).exception(cause)
+                .log("Reader encountered exception on reading next record");
         closeReader();
         nextDelayMs();
         positionReader(nextDLSN);
@@ -188,7 +185,7 @@ public class TestReader implements FutureEventListener<LogRecordWithDLSN> {
     private void closeReader() {
         if (null != reader) {
             reader.asyncClose().whenComplete((value, cause) -> {
-                LOG.warn("Exception on closing reader {} : ", readerName, cause);
+                log.warn().attr("readerName", readerName).exception(cause).log("Exception on closing reader");
             });
         }
     }

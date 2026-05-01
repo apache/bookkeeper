@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
@@ -40,7 +40,7 @@ import org.rocksdb.RocksDBException;
 /**
  * A task that periodically checkpoints rocksdb instance.
  */
-@Slf4j
+@CustomLog
 public class RocksdbCheckpointTask {
 
 
@@ -93,8 +93,8 @@ public class RocksdbCheckpointTask {
         String checkpointId = UUID.randomUUID().toString();
 
         File tempDir = new File(checkpointDir, checkpointId);
-        log.info("Create a local checkpoint of state store {} at {}",
-            dbName, tempDir);
+        log.info().attr("dbName", dbName).attr("directory", tempDir)
+            .log("Create a local checkpoint of state store");
         try {
             try {
                 checkpoint.createCheckpoint(tempDir.getAbsolutePath());
@@ -134,7 +134,8 @@ public class RocksdbCheckpointTask {
 
             return checkpointId;
         } catch (IOException ioe) {
-            log.error("Failed to checkpoint db {} to dir {}", new Object[] { dbName, tempDir, ioe });
+            log.error().attr("dbName", dbName).attr("directory", tempDir).exception(ioe)
+                .log("Failed to checkpoint db");
             throw new StateStoreException(
                 "Failed to checkpoint db " + dbName + " to dir " + tempDir,
                 ioe);
@@ -145,7 +146,8 @@ public class RocksdbCheckpointTask {
                         Paths.get(tempDir.getAbsolutePath()),
                         RecursiveDeleteOption.ALLOW_INSECURE);
                 } catch (IOException ioe) {
-                    log.warn("Failed to remove temporary checkpoint dir {}", tempDir, ioe);
+                    log.warn().attr("directory", tempDir).exception(ioe)
+                        .log("Failed to remove temporary checkpoint dir");
                 }
             }
         }
@@ -213,8 +215,8 @@ public class RocksdbCheckpointTask {
             String remoteCheckpointPath = RocksUtils.getDestCheckpointPath(dbPrefix, checkpoint);
             checkpointStore.deleteRecursively(
                 remoteCheckpointPath);
-            log.info("Delete remote checkpoint {} from checkpoint store at {}",
-                checkpoint, remoteCheckpointPath);
+            log.info().attr("checkpoint", checkpoint).attr("path", remoteCheckpointPath)
+                .log("Delete remote checkpoint from checkpoint store");
         }
 
         // delete unused ssts

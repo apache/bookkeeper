@@ -21,7 +21,7 @@ package org.apache.bookkeeper.clients.admin;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.clients.StorageClientImpl;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 /**
  * A storage admin client.
  */
-@Slf4j
+@CustomLog
 public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implements StorageAdminClient {
 
     // clients
@@ -127,13 +127,9 @@ public class StorageAdminClientImpl extends AbstractAutoAsyncCloseable implement
         try {
             closeAsync().get();
         } catch (InterruptedException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Interrupted on closing stream admin client", e);
-            }
+            log.debug().exception(e).log("Interrupted on closing stream admin client");
         } catch (ExecutionException e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Failed to cloe stream admin client", e);
-            }
+            log.debug().exception(e).log("Failed to cloe stream admin client");
         }
     }
 }

@@ -20,8 +20,8 @@ package org.apache.bookkeeper.statelib.impl.mvcc;
 
 import io.netty.buffer.ByteBuf;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.PutOp;
@@ -39,7 +39,7 @@ import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoPutOpImpl;
 import org.apache.bookkeeper.statelib.impl.mvcc.op.proto.ProtoTxnOpImpl;
 import org.apache.bookkeeper.stream.proto.kv.store.Command;
 
-@Slf4j
+@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byte[]>> {
 
@@ -102,10 +102,10 @@ class MVCCCommandProcessor implements CommandProcessor<MVCCStoreImpl<byte[], byt
                             boolean ignoreSmallerRevision,
                             MVCCStoreImpl<byte[], byte[]> localStore) {
         try (TxnResult<byte[], byte[]> result = localStore.processTxn(revision, op)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Result after applying transaction {} : {} - success = {}",
-                    revision, result.code(), result.isSuccess());
-            }
+            log.debug().attr("revision", revision)
+                .attr("code", result.code())
+                .attr("success", result.isSuccess())
+                .log("Result after applying transaction");
             if (Code.OK == result.code()
                 || (ignoreSmallerRevision && Code.SMALLER_REVISION == result.code())) {
                 return;

@@ -44,7 +44,7 @@ import java.util.concurrent.TimeUnit;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.TrustManagerFactory;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -53,7 +53,7 @@ import org.apache.commons.io.FileUtils;
 /**
  * A factory to manage TLS contexts.
  */
-@Slf4j
+@CustomLog
 public class TLSContextFactory implements SecurityHandlerFactory {
 
     public static final Provider BC_PROVIDER = getProvider();
@@ -76,9 +76,8 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             Provider provider = Security.getProvider(BC) != null
                 ? Security.getProvider(BC)
                 : Security.getProvider(BC_FIPS);
-            if (log.isDebugEnabled()) {
-                log.debug("Already instantiated Bouncy Castle provider {}", provider.getName());
-            }
+                log.debug().attr("provider", () -> provider.getName())
+                        .log("Already instantiated Bouncy Castle provider");
             return provider;
         }
 
@@ -86,7 +85,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         try {
             return getBCProviderFromClassPath();
         } catch (Exception e) {
-            log.warn("Not able to get Bouncy Castle provider for both FIPS and Non-FIPS from class path:", e);
+            log.warn()
+                    .exception(e)
+                    .log("Not able to get Bouncy Castle provider for both FIPS and Non-FIPS from class path");
             throw new RuntimeException(e);
         }
     }
@@ -100,10 +101,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         try {
             clazz = Class.forName(BC_FIPS_PROVIDER_CLASS);
         } catch (ClassNotFoundException cnf) {
-            if (log.isDebugEnabled()) {
-                log.debug("Not able to get Bouncy Castle provider: {}, try to get FIPS provider {}",
-                    BC_NON_FIPS_PROVIDER_CLASS, BC_FIPS_PROVIDER_CLASS);
-            }
+                log.debug().attr("nonFipsProvider", BC_NON_FIPS_PROVIDER_CLASS)
+                    .attr("fipsProvider", BC_FIPS_PROVIDER_CLASS)
+                    .log("Not able to get Bouncy Castle provider, try to get FIPS provider");
             // attempt to use the NON_FIPS provider.
             clazz = Class.forName(BC_NON_FIPS_PROVIDER_CLASS);
 
@@ -112,9 +112,9 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         @SuppressWarnings("unchecked")
         Provider provider = (Provider) clazz.getDeclaredConstructor().newInstance();
         Security.addProvider(provider);
-        if (log.isDebugEnabled()) {
-            log.debug("Found and Instantiated Bouncy Castle provider in classpath {}", provider.getName());
-        }
+        log.debug()
+                .attr("provider", () -> provider.getName())
+                .log("Found and Instantiated Bouncy Castle provider in classpath");
         return provider;
     }
 
@@ -233,7 +233,7 @@ public class TLSContextFactory implements SecurityHandlerFactory {
             }
 
             Throwable causeUnavailable = OpenSsl.unavailabilityCause();
-            log.warn("OpenSSL Unavailable: ", causeUnavailable);
+            log.warn().exception(causeUnavailable).log("OpenSSL Unavailable");
 
             log.info("Security provider - JDK");
             return SslProvider.JDK;
@@ -361,16 +361,17 @@ public class TLSContextFactory implements SecurityHandlerFactory {
                     || tlsKeyStorePasswordFilePath.checkAndRefresh() || tlsTrustStoreFilePath.checkAndRefresh()
                     || tlsTrustStorePasswordFilePath.checkAndRefresh()) {
                 try {
-                    log.info("Updating tls certs certFile={}, keyStoreFile={}, trustStoreFile={}",
-                            tlsCertificateFilePath.getFileName(), tlsKeyStoreFilePath.getFileName(),
-                            tlsTrustStoreFilePath.getFileName());
+                    log.info().attr("certFile", tlsCertificateFilePath.getFileName())
+                            .attr("keyStoreFile", tlsKeyStoreFilePath.getFileName())
+                            .attr("trustStoreFile", tlsTrustStoreFilePath.getFileName())
+                            .log("Updating tls certs");
                     if (isServerCtx) {
                         updateServerContext();
                     } else {
                         updateClientContext();
                     }
                 } catch (Exception e) {
-                    log.info("Failed to refresh tls certs", e);
+                    log.info().exception(e).log("Failed to refresh tls certs");
                 }
             }
         }
@@ -530,24 +531,29 @@ public class TLSContextFactory implements SecurityHandlerFactory {
         if (protocols != null && protocols.length != 0) {
             sslHandler.engine().setEnabledProtocols(protocols);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Enabled cipher protocols: {} ", Arrays.toString(sslHandler.engine().getEnabledProtocols()));
-        }
+        log.debug(e -> e
+                .attr("protocols", Arrays.toString(sslHandler.engine().getEnabledProtocols()))
+                .log("Enabled cipher protocols"));
 
         if (ciphers != null && ciphers.length != 0) {
             sslHandler.engine().setEnabledCipherSuites(ciphers);
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Enabled cipher suites: {} ", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()));
-        }
+        log.debug(e -> e
+                .attr("cipherSuites", Arrays.toString(sslHandler.engine().getEnabledCipherSuites()))
+                .log("Enabled cipher suites"));
 
-        if (type == NodeType.Client && ((ClientConfiguration) config).getHostnameVerificationEnabled()) {
+        if (type == NodeType.Client) {
+            // Netty 4.2 enables HTTPS endpoint identification by default on the client side. Honor the
+            // BookKeeper configuration by explicitly setting the algorithm (or clearing it when disabled).
             SSLParameters sslParameters = sslHandler.engine().getSSLParameters();
-            sslParameters.setEndpointIdentificationAlgorithm("HTTPS");
+            boolean hostnameVerificationEnabled =
+                    ((ClientConfiguration) config).getHostnameVerificationEnabled();
+            sslParameters.setEndpointIdentificationAlgorithm(hostnameVerificationEnabled ? "HTTPS" : null);
             sslHandler.engine().setSSLParameters(sslParameters);
-            if (log.isDebugEnabled()) {
-                log.debug("Enabled endpointIdentificationAlgorithm: HTTPS");
-            }
+            log.debug()
+                    .attr("endpointIdentificationAlgorithm",
+                            hostnameVerificationEnabled ? "HTTPS" : "disabled")
+                    .log("endpointIdentificationAlgorithm");
         }
 
         return sslHandler;

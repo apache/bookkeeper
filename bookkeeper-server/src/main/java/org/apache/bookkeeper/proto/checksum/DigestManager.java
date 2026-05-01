@@ -26,6 +26,7 @@ import io.netty.util.ReferenceCounted;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.proto.BookieProtoEncoding;
@@ -33,8 +34,6 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.ByteBufVisitor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class takes an entry, attaches a digest to it and packages it with relevant
@@ -43,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * for the packet. Currently 3 types of digests are supported: MAC (based on SHA-1) and CRC32 and CRC32C.
  */
 
+@CustomLog
 public abstract class DigestManager {
-    private static final Logger logger = LoggerFactory.getLogger(DigestManager.class);
 
     public static final int METADATA_LENGTH = 32;
     public static final int LAC_METADATA_LENGTH = 16;
@@ -228,10 +227,10 @@ public abstract class DigestManager {
             throws BKDigestMatchException {
 
         if ((METADATA_LENGTH + macCodeLength) > dataReceived.readableBytes()) {
-            logger.error("Data received is smaller than the minimum for this digest type. "
-                    + " Either the packet it corrupt, or the wrong digest is configured. "
-                    + " Digest type: {}, Packet Length: {}",
-                    this.getClass().getName(), dataReceived.readableBytes());
+            log.error().attr("digestType", this.getClass().getName())
+                    .attr("packetLength", dataReceived.readableBytes())
+                    .log("Data received is smaller than the minimum for this digest type."
+                    + " Either the packet is corrupt, or the wrong digest is configured");
             throw new BKDigestMatchException();
         }
         int digest = update(0, dataReceived, 0, METADATA_LENGTH);
@@ -242,7 +241,10 @@ public abstract class DigestManager {
         if (isInt32Digest()) {
             int receivedDigest = dataReceived.getInt(METADATA_LENGTH);
             if (receivedDigest != digest) {
-                logger.error("Digest mismatch for ledger-id: " + ledgerId + ", entry-id: " + entryId);
+                log.error()
+                        .attr("ledgerId", ledgerId)
+                        .attr("entryId", entryId)
+                        .log("Digest mismatch");
                 throw new BKDigestMatchException();
             }
         } else {
@@ -251,7 +253,10 @@ public abstract class DigestManager {
             populateValueAndReset(digest, digestBuf);
 
             if (!ByteBufUtil.equals(digestBuf, 0, dataReceived, METADATA_LENGTH, macCodeLength)) {
-                logger.error("Mac mismatch for ledger-id: " + ledgerId + ", entry-id: " + entryId);
+                log.error()
+                        .attr("ledgerId", ledgerId)
+                        .attr("entryId", entryId)
+                        .log("Mac mismatch");
                 throw new BKDigestMatchException();
             }
         }
@@ -260,14 +265,18 @@ public abstract class DigestManager {
         long actualEntryId = dataReceived.readLong();
 
         if (actualLedgerId != ledgerId) {
-            logger.error("Ledger-id mismatch in authenticated message, expected: " + ledgerId + " , actual: "
-                         + actualLedgerId);
+            log.error()
+                    .attr("expectedLedgerId", ledgerId)
+                    .attr("actualLedgerId", actualLedgerId)
+                    .log("Ledger-id mismatch in authenticated message");
             throw new BKDigestMatchException();
         }
 
         if (!skipEntryIdCheck && actualEntryId != entryId) {
-            logger.error("Entry-id mismatch in authenticated message, expected: " + entryId + " , actual: "
-                         + actualEntryId);
+            log.error()
+                    .attr("expectedEntryId", entryId)
+                    .attr("actualEntryId", actualEntryId)
+                    .log("Entry-id mismatch in authenticated message");
             throw new BKDigestMatchException();
         }
 
@@ -275,10 +284,10 @@ public abstract class DigestManager {
 
     public long verifyDigestAndReturnLac(ByteBuf dataReceived) throws BKDigestMatchException{
         if ((LAC_METADATA_LENGTH + macCodeLength) > dataReceived.readableBytes()) {
-            logger.error("Data received is smaller than the minimum for this digest type."
-                    + " Either the packet it corrupt, or the wrong digest is configured. "
-                    + " Digest type: {}, Packet Length: {}",
-                    this.getClass().getName(), dataReceived.readableBytes());
+            log.error().attr("digestType", this.getClass().getName())
+                    .attr("packetLength", dataReceived.readableBytes())
+                    .log("Data received is smaller than the minimum for this digest type."
+                    + " Either the packet is corrupt, or the wrong digest is configured");
             throw new BKDigestMatchException();
         }
 
@@ -287,7 +296,7 @@ public abstract class DigestManager {
         if (isInt32Digest()) {
             int receivedDigest = dataReceived.getInt(LAC_METADATA_LENGTH);
             if (receivedDigest != digest) {
-                logger.error("Digest mismatch for ledger-id LAC: " + ledgerId);
+                log.error().attr("ledgerId", ledgerId).log("Digest mismatch for LAC");
                 throw new BKDigestMatchException();
             }
         } else {
@@ -296,7 +305,7 @@ public abstract class DigestManager {
             populateValueAndReset(digest, digestBuf);
 
             if (!ByteBufUtil.equals(digestBuf, 0, dataReceived, LAC_METADATA_LENGTH, macCodeLength)) {
-                logger.error("Mac mismatch for ledger-id LAC: " + ledgerId);
+                log.error().attr("ledgerId", ledgerId).log("Mac mismatch for LAC");
                 throw new BKDigestMatchException();
             }
         }
@@ -304,8 +313,10 @@ public abstract class DigestManager {
         long actualLedgerId = dataReceived.readLong();
         long lac = dataReceived.readLong();
         if (actualLedgerId != ledgerId) {
-            logger.error("Ledger-id mismatch in authenticated message, expected: " + ledgerId + " , actual: "
-                         + actualLedgerId);
+            log.error()
+                    .attr("expectedLedgerId", ledgerId)
+                    .attr("actualLedgerId", actualLedgerId)
+                    .log("Ledger-id mismatch in authenticated message");
             throw new BKDigestMatchException();
         }
         return lac;

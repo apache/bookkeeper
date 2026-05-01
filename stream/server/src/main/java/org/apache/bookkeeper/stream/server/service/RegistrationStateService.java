@@ -20,7 +20,7 @@ package org.apache.bookkeeper.stream.server.service;
 
 import java.io.IOException;
 import java.util.Collections;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieStateManager;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
  *
  * <p>It registers the server to registration service and handle the state transition.
  */
-@Slf4j
+@CustomLog
 public class RegistrationStateService
     extends AbstractLifecycleComponent<BookieConfiguration> {
 
@@ -85,8 +85,10 @@ public class RegistrationStateService
                     BookieServiceInfo.NO_INFO);
                 stateManager.initState();
                 stateManager.registerBookie(true).get();
-                log.info("Successfully register myself under registration path {}/{}",
-                    regServiceProvider.getRegistrationPath(), NetUtils.endpointToString(myEndpoint));
+                log.info()
+                    .attr("registrationPath", regServiceProvider.getRegistrationPath())
+                    .attr("endpoint", NetUtils.endpointToString(myEndpoint))
+                    .log("Successfully register myself under registration path");
             } catch (Exception e) {
                 throw new RuntimeException("Failed to initialize a registration state service", e);
             }

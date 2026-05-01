@@ -28,7 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.admin.StorageAdminClient;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
@@ -57,7 +57,7 @@ import org.apache.distributedlog.LocalDLMEmulator;
 /**
  * A Cluster that runs a few storage nodes.
  */
-@Slf4j
+@CustomLog
 public class StreamCluster
     extends AbstractLifecycleComponent<StorageConfiguration> {
 
@@ -120,7 +120,9 @@ public class StreamCluster
             LocalDLMEmulator.runZookeeperOnAnyPort(spec.zkPort(), zkDir);
         zks = zkServerAndPort.getLeft();
         zkPort = zkServerAndPort.getRight();
-        log.info("Started zookeeper at port {}.", zkPort);
+        log.info()
+            .attr("zkPort", zkPort)
+            .log("Started zookeeper.");
         metadataServiceUri = ServiceURI.create(
             "zk://127.0.0.1:" + zkPort + "/ledgers");
     }
@@ -182,19 +184,24 @@ public class StreamCluster
                 StorageConfiguration storageConf = new StorageConfiguration(serverConf);
                 storageConf.setRangeStoreDirNames(new String[]{rangesStoreDir.getPath()});
 
-                log.info("Attempting to start storage server at (bookie port = {}, grpc port = {})"
-                        + " : bkDir = {}, rangesStoreDir = {}",
-                    bookiePort, grpcPort, bkDir, rangesStoreDir);
+                log.info()
+                    .attr("bookiePort", bookiePort)
+                    .attr("grpcPort", grpcPort)
+                    .attr("bkDir", bkDir)
+                    .attr("rangesStoreDir", rangesStoreDir)
+                    .log("Attempting to start storage server");
                 server = StorageServer.buildStorageServer(
                     serverConf,
                     grpcPort);
                 server.start();
-                log.info("Started storage server at (bookie port = {}, grpc port = {})",
-                    bookiePort, grpcPort);
+                log.info()
+                    .attr("bookiePort", bookiePort)
+                    .attr("grpcPort", grpcPort)
+                    .log("Started storage server");
                 this.rpcEndpoints.add(StorageServer.createLocalEndpoint(grpcPort, false));
                 return server;
             } catch (Throwable e) {
-                log.error("Failed to start storage server", e);
+                log.error().exception(e).log("Failed to start storage server");
                 if (null != server) {
                     server.stop();
                 }
@@ -212,7 +219,9 @@ public class StreamCluster
     }
 
     private void startServers() throws Exception {
-        log.info("Starting {} storage servers.", spec.numServers());
+        log.info()
+            .attr("numServers", spec.numServers())
+            .log("Starting storage servers.");
         ExecutorService executor = Executors.newCachedThreadPool();
         List<Future<LifecycleComponent>> startFutures = Lists.newArrayList();
         for (int i = 0; i < spec.numServers(); i++) {
@@ -222,7 +231,9 @@ public class StreamCluster
         for (Future<LifecycleComponent> future : startFutures) {
             servers.add(future.get());
         }
-        log.info("Started {} storage servers.", spec.numServers());
+        log.info()
+            .attr("numServers", spec.numServers())
+            .log("Started storage servers.");
         executor.shutdown();
     }
 
@@ -237,7 +248,9 @@ public class StreamCluster
             .serviceUri(serviceUri)
             .usePlaintext(true)
             .build();
-        log.info("Service uri are : {}", serviceUri);
+        log.info()
+            .attr("serviceUri", serviceUri)
+            .log("Service uri are");
         String namespaceName = "default";
         try (StorageAdminClient admin = StorageClientBuilder.newBuilder()
             .withSettings(settings)
@@ -247,11 +260,18 @@ public class StreamCluster
             while (!created) {
                 try {
                     NamespaceProperties nsProps = result(admin.getNamespace(namespaceName));
-                    log.info("Namespace '{}':\n{}", namespaceName, nsProps);
+                    log.info()
+                        .attr("namespace", namespaceName)
+                        .attr("properties", nsProps)
+                        .log("Namespace properties");
                     created = true;
                 } catch (NamespaceNotFoundException nnfe) {
-                    log.info("Namespace '{}' is not found.", namespaceName);
-                    log.info("Creating namespace '{}' ...", namespaceName);
+                    log.info()
+                        .attr("namespace", namespaceName)
+                        .log("Namespace is not found.");
+                    log.info()
+                        .attr("namespace", namespaceName)
+                        .log("Creating namespace ...");
                     try {
                         NamespaceProperties nsProps = result(
                             admin.createNamespace(
@@ -259,8 +279,12 @@ public class StreamCluster
                                 NamespaceConfiguration.newBuilder()
                                     .setDefaultStreamConf(DEFAULT_STREAM_CONF)
                                     .build()));
-                        log.info("Successfully created namespace '{}':", namespaceName);
-                        log.info("{}", nsProps);
+                        log.info()
+                            .attr("namespace", namespaceName)
+                            .log("Successfully created namespace");
+                        log.info()
+                            .attr("properties", nsProps)
+                            .log("Namespace properties");
                     } catch (ClientException ce) {
                         // encountered exception, try to fetch the namespace again
                     }

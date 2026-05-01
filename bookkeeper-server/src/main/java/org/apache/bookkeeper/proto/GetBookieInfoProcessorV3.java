@@ -22,20 +22,19 @@ package org.apache.bookkeeper.proto;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A processor class for v3 bookie metadata packets.
  */
+@CustomLog
 public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private static final Logger LOG = LoggerFactory.getLogger(GetBookieInfoProcessorV3.class);
 
     public GetBookieInfoProcessorV3(Request request, BookieRequestHandler requestHandler,
                                      BookieRequestProcessor requestProcessor) {
@@ -56,9 +55,7 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
             return getBookieInfoResponse.build();
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Received new getBookieInfo request: {}", request);
-        }
+        log.debug().attr("request", request).log("Received new getBookieInfo request");
         StatusCode status = StatusCode.EOK;
         long freeDiskSpace = 0L, totalDiskSpace = 0L;
         try {
@@ -70,14 +67,15 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
                 totalDiskSpace = requestProcessor.getBookie().getTotalDiskSpace();
                 getBookieInfoResponse.setTotalDiskCapacity(totalDiskSpace);
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("FreeDiskSpace info is " + freeDiskSpace + " totalDiskSpace is: " + totalDiskSpace);
-            }
+            log.debug()
+                    .attr("freeDiskSpace", freeDiskSpace)
+                    .attr("totalDiskSpace", totalDiskSpace)
+                    .log("FreeDiskSpace info");
             requestProcessor.getRequestStats().getGetBookieInfoStats()
                     .registerSuccessfulEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         } catch (IOException e) {
             status = StatusCode.EIO;
-            LOG.error("IOException while getting  freespace/totalspace", e);
+            log.error().exception(e).log("IOException while getting freespace/totalspace");
             requestProcessor.getRequestStats().getGetBookieInfoStats()
                     .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
         }

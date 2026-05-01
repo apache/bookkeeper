@@ -23,6 +23,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URI;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.distributedlog.ZooKeeperClientBuilder;
@@ -31,18 +32,12 @@ import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Metadata of a given DL instance.
  */
+@CustomLog
 public class DLMetadata {
-
-    static final Logger LOG = LoggerFactory.getLogger(DLMetadata.class);
 
     static final String LINE_SPLITTER = "\n";
     static final String BK_DL_TYPE = "BKDL";
@@ -89,9 +84,7 @@ public class DLMetadata {
         sb.append(metadataFormatVersion).append(LINE_SPLITTER);
         sb.append(dlType).append(LINE_SPLITTER);
         sb.append(dlConfig.serialize());
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Serialized dl metadata {}.", sb);
-        }
+        log.debug().attr("metadata", sb).log("Serialized dl metadata.");
         return sb.toString().getBytes(UTF_8);
     }
 
@@ -192,9 +185,7 @@ public class DLMetadata {
      */
     public static DLMetadata deserialize(URI uri, byte[] data) throws IOException {
         String metadata = new String(data, UTF_8);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Parsing dl metadata {}.", metadata);
-        }
+        log.debug().attr("metadata", metadata).log("Parsing dl metadata.");
         BufferedReader br = new BufferedReader(new StringReader(metadata));
         String versionLine = br.readLine();
         if (null == versionLine) {

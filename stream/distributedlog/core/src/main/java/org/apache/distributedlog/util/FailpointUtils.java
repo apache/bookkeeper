@@ -19,14 +19,13 @@ package org.apache.distributedlog.util;
 
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Utils to Failpoint.
  */
+@CustomLog
 public class FailpointUtils {
-    private static final Logger logger = LoggerFactory.getLogger(FailpointUtils.class);
 
     /**
      *  enum for FailPointName.
@@ -66,7 +65,7 @@ public class FailpointUtils {
             try {
                 return checkFailPoint();
             } catch (IOException ex) {
-                logger.error("failpoint action raised unexpected exception");
+                log.error("failpoint action raised unexpected exception");
                 return true;
             }
         }

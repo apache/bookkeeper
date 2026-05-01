@@ -30,6 +30,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.MalformedURLException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
@@ -57,17 +58,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Class to start/stop the AutoRecovery daemons Auditor and ReplicationWorker.
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
+@CustomLog
 public class AutoRecoveryMain {
-    private static final Logger LOG = LoggerFactory
-            .getLogger(AutoRecoveryMain.class);
 
     private final ServerConfiguration conf;
     final BookKeeper bkc;
@@ -94,7 +92,7 @@ public class AutoRecoveryMain {
         this.bkc = Auditor.createBookKeeperClient(conf, statsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE));
         MetadataClientDriver metadataClientDriver = bkc.getMetadataClientDriver();
         metadataClientDriver.setSessionStateListener(() -> {
-            LOG.error("Client connection to the Metadata server has expired, so shutting down AutoRecoveryMain!");
+            log.error("Client connection to the Metadata server has expired, so shutting down AutoRecoveryMain!");
             // do not run "shutdown" in the main ZooKeeper client thread
             // as it performs some blocking operations
             CompletableFuture.runAsync(() -> {
@@ -144,11 +142,11 @@ public class AutoRecoveryMain {
     }
 
     private void shutdown(int exitCode) {
-        LOG.info("Shutting down auto recovery: {}", exitCode);
+        log.info().attr("exitCode", exitCode).log("Shutting down auto recovery");
         if (shuttingDown) {
             return;
         }
-        LOG.info("Shutting down AutoRecovery");
+        log.info("Shutting down AutoRecovery");
         shuttingDown = true;
         running = false;
         this.exitCode = exitCode;
@@ -157,16 +155,16 @@ public class AutoRecoveryMain {
             auditorElector.shutdown();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted shutting down auditor elector", e);
+            log.warn().exception(e).log("Interrupted shutting down auditor elector");
         }
         replicationWorker.shutdown();
         try {
             bkc.close();
         } catch (BKException e) {
-            LOG.warn("Failed to close bookkeeper client for auto recovery", e);
+            log.warn().exception(e).log("Failed to close bookkeeper client for auto recovery");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted closing bookkeeper client for auto recovery", e);
+            log.warn().exception(e).log("Interrupted closing bookkeeper client for auto recovery");
         }
     }
 
@@ -216,8 +214,10 @@ public class AutoRecoveryMain {
             // set a default uncaught exception handler to shutdown the AutoRecovery
             // when it notices the AutoRecovery is not running any more.
             setUncaughtExceptionHandler((thread, cause) -> {
-                LOG.info("AutoRecoveryDeathWatcher exited loop due to uncaught exception from thread {}",
-                    thread.getName(), cause);
+                log.info()
+                        .attr("thread", thread.getName())
+                        .exception(cause)
+                        .log("AutoRecoveryDeathWatcher exited loop due to uncaught exception");
                 shutdown();
             });
         }
@@ -232,7 +232,7 @@ public class AutoRecoveryMain {
                 }
                 // If any one service not running, then shutdown peer.
                 if (!autoRecoveryMain.auditorElector.isRunning() || !autoRecoveryMain.replicationWorker.isRunning()) {
-                    LOG.info(
+                    log.info(
                             "AutoRecoveryDeathWatcher noticed the AutoRecovery is not running any more,"
                             + "exiting the watch loop!");
                     /*
@@ -270,13 +270,19 @@ public class AutoRecoveryMain {
         try {
             conf.loadConf(new File(confFile).toURI().toURL());
         } catch (MalformedURLException e) {
-            LOG.error("Could not open configuration file: " + confFile, e);
+            log.error()
+                    .attr("confFile", confFile)
+                    .exception(e)
+                    .log("Could not open configuration file");
             throw new IllegalArgumentException();
         } catch (ConfigurationException e) {
-            LOG.error("Malformed configuration file: " + confFile, e);
+            log.error()
+                    .attr("confFile", confFile)
+                    .exception(e)
+                    .log("Malformed configuration file");
             throw new IllegalArgumentException();
         }
-        LOG.info("Using configuration file " + confFile);
+        log.info().attr("confFile", confFile).log("Using configuration file");
     }
 
     /*
@@ -325,7 +331,7 @@ public class AutoRecoveryMain {
         try {
             conf = parseArgs(args);
         } catch (IllegalArgumentException iae) {
-            LOG.error("Error parsing command line arguments : ", iae);
+            log.error().exception(iae).log("Error parsing command line arguments");
             if (iae.getMessage() != null) {
                 System.err.println(iae.getMessage());
             }
@@ -338,7 +344,7 @@ public class AutoRecoveryMain {
         try {
             server = buildAutoRecoveryServer(new BookieConfiguration(conf));
         } catch (Exception e) {
-            LOG.error("Failed to build AutoRecovery Server", e);
+            log.error().exception(e).log("Failed to build AutoRecovery Server");
             System.err.println(e.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
@@ -349,10 +355,10 @@ public class AutoRecoveryMain {
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
             // the server is interrupted
-            LOG.info("AutoRecovery server is interrupted. Exiting ...");
+            log.info("AutoRecovery server is interrupted. Exiting ...");
             System.err.println(ie.getMessage());
         } catch (ExecutionException ee) {
-            LOG.error("Error in bookie shutdown", ee.getCause());
+            log.error().exception(ee.getCause()).log("Error in bookie shutdown");
             System.err.println(ee.getMessage());
             return ExitCode.SERVER_EXCEPTION;
         }
@@ -368,13 +374,13 @@ public class AutoRecoveryMain {
         StatsLogger rootStatsLogger = statsProviderService.getStatsProvider().getStatsLogger("");
 
         serverBuilder.addComponent(statsProviderService);
-        LOG.info("Load lifecycle component : {}", StatsProviderService.class.getName());
+        log.info().attr("component", StatsProviderService.class.getName()).log("Load lifecycle component");
 
         // 2. build AutoRecovery server
         AutoRecoveryService autoRecoveryService = new AutoRecoveryService(conf, rootStatsLogger);
 
         serverBuilder.addComponent(autoRecoveryService);
-        LOG.info("Load lifecycle component : {}", AutoRecoveryService.class.getName());
+        log.info().attr("component", AutoRecoveryService.class.getName()).log("Load lifecycle component");
 
         // 4. build http service
         if (conf.getServerConf().isHttpServerEnabled()) {
@@ -385,7 +391,7 @@ public class AutoRecoveryMain {
             HttpService httpService = new HttpService(provider, conf, rootStatsLogger);
 
             serverBuilder.addComponent(httpService);
-            LOG.info("Load lifecycle component : {}", HttpService.class.getName());
+            log.info().attr("component", HttpService.class.getName()).log("Load lifecycle component");
         }
 
         return serverBuilder.build();

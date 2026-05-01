@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
@@ -46,19 +47,12 @@ import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
-
 
 /**
  * TestDLCK.
  */
+@CustomLog
 public class TestDLCK extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestDLCK.class);
 
     protected static DistributedLogConfiguration conf =
             new DistributedLogConfiguration().setLockTimeout(10)
@@ -139,7 +133,7 @@ public class TestDLCK extends TestDistributedLogBase {
                 false);
 
         Map<Long, LogSegmentMetadata> segments = getLogSegments(dlm);
-        LOG.info("segments after drynrun {}", segments);
+        log.info().attr("segments", segments).log("segments after dryrun");
         verifyLogSegment(segments, new DLSN(1L, 18L, 0L), 1L, 10, 10L);
         verifyLogSegment(segments, new DLSN(2L, 16L, 0L), 2L, 9, 19L);
         verifyLogSegment(segments, new DLSN(3L, 18L, 0L), 3L, 10, 30L);
@@ -155,7 +149,7 @@ public class TestDLCK extends TestDistributedLogBase {
                 false);
 
         segments = getLogSegments(dlm);
-        LOG.info("segments after repair {}", segments);
+        log.info().attr("segments", segments).log("segments after repair");
         verifyLogSegment(segments, new DLSN(1L, 18L, 0L), 1L, 10, 10L);
         verifyLogSegment(segments, new DLSN(2L, 18L, 0L), 2L, 10, 20L);
         verifyLogSegment(segments, new DLSN(3L, 18L, 0L), 3L, 10, 30L);

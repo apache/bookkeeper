@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -42,16 +43,14 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A placement policy use region information in the network topology for placing ensembles.
  *
  * @see EnsemblePlacementPolicy
  */
+@CustomLog
 public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlacementPolicy {
-    static final Logger LOG = LoggerFactory.getLogger(RegionAwareEnsemblePlacementPolicy.class);
 
     public static final String REPP_REGIONS_TO_WRITE = "reppRegionsToWrite";
     public static final String REPP_MINIMUM_REGIONS_FOR_DURABILITY = "reppMinimumRegionsForDurability";
@@ -171,9 +170,9 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 regionSet.add(addr);
             }
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
-            }
+
+            log.debug().attr("bookieAddr", addr).log("Cluster changed. New bookie joined the cluster.");
+
         }
 
         for (Map.Entry<String, TopologyAwareEnsemblePlacementPolicy> regionEntry : perRegionPlacement.entrySet()) {
@@ -229,7 +228,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         }
                     }
                 } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
-                    LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
+                    log.error()
+                            .exception(e)
+                            .attr("bookieAddress", bookieAddress)
+                            .log("Failed to update bookie rack info");
                 }
             });
         } finally {
@@ -356,7 +358,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             if (numRegionsAvailable < 1) {
                 // We cant disallow all regions; if we did, raise an alert to draw attention
                 if (perRegionPlacement.keySet().size() >= 1) {
-                    LOG.error("No regions available, invalid configuration");
+                    log.error("No regions available, invalid configuration");
                 }
                 List<BookieNode> bns = selectRandom(ensembleSize, excludeNodes, TruePredicate.INSTANCE,
                     EnsembleForReplacementWithNoConstraints.INSTANCE);
@@ -427,7 +429,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                     TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(region);
                     if (!regionsReachedMaxAllocation.contains(region)) {
                         if (numRemainingRegions <= 0) {
-                            LOG.error("Inconsistent State: This should never happen");
+                            log.error("Inconsistent State: This should never happen");
                             throw new BKException.BKNotEnoughBookiesException();
                         }
                         // try to place the bookies as balance as possible across all the regions
@@ -456,13 +458,19 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                 success = true;
                                 regionsToAllocate--;
                                 lastRegionIndex = startRegionIndex;
-                                LOG.info("Region {} allocating bookies with ensemble size {} "
-                                        + "and write quorum size {} : {}",
-                                        region, newEnsembleSize, newWriteQuorumSize, allocated);
+                                log.info()
+                                        .attr("region", region)
+                                        .attr("ensembleSize", newEnsembleSize)
+                                        .attr("writeQuorumSize", newWriteQuorumSize)
+                                        .attr("allocated", allocated)
+                                        .log("Region allocating bookies");
                                 break;
                             } catch (BKException.BKNotEnoughBookiesException exc) {
-                                LOG.warn("Could not allocate {} bookies in region {}, try allocating {} bookies",
-                                        newEnsembleSize, region, (newEnsembleSize - 1));
+                                log.warn()
+                                        .attr("ensembleSize", newEnsembleSize)
+                                        .attr("region", region)
+                                        .attr("suggestedEnsembleSize", (newEnsembleSize - 1))
+                                        .log("Could not allocate bookies in region, try allocating bookies");
                                 addToEnsembleSize--;
                             }
                         }
@@ -476,8 +484,12 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
                     if (regionsReachedMaxAllocation.contains(region)) {
                         if (currentAllocation.getLeft() > 0) {
-                            LOG.info("Allocating {} bookies in region {} : ensemble {} exclude {}",
-                                    currentAllocation.getLeft(), region, comprehensiveExclusionBookiesSet, ensemble);
+                            log.info()
+                                    .attr("bookieCount", currentAllocation.getLeft())
+                                    .attr("region", region)
+                                    .attr("comprehensiveExclusionBookiesSet", comprehensiveExclusionBookiesSet)
+                                    .attr("ensemble", ensemble)
+                                    .log("Allocating bookies");
                             policyWithinRegion.newEnsemble(
                                     currentAllocation.getLeft(),
                                     currentAllocation.getRight(),
@@ -485,8 +497,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                                     comprehensiveExclusionBookiesSet,
                                     ensemble,
                                     ensemble);
-                            LOG.info("Allocated {} bookies in region {} : {}",
-                                    currentAllocation.getLeft(), region, ensemble);
+                            log.info()
+                                    .attr("bookiesCount", currentAllocation.getLeft())
+                                    .attr("region", region)
+                                    .attr("ensemble", ensemble)
+                                    .log("Allocated bookies");
                         }
                     }
                 }
@@ -498,17 +513,21 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             List<BookieId> bookieList = ensemble.toList();
             if (ensembleSize != bookieList.size()) {
-                LOG.error("Not enough {} bookies are available to form an ensemble : {}.",
-                          ensembleSize, bookieList);
+                log.error()
+                        .attr("ensembleSize", ensembleSize)
+                        .attr("bookieList", bookieList)
+                        .log("Not enough bookies are available to form an ensemble");
                 throw new BKException.BKNotEnoughBookiesException();
             }
 
             if (enableValidation && !ensemble.validate()) {
-                LOG.error("Not enough {} bookies are available to form a valid ensemble : {}.",
-                    ensembleSize, bookieList);
+                log.error()
+                        .attr("ensembleSize", ensembleSize)
+                        .attr("bookieList", bookieList)
+                        .log("Not enough bookies are available to form a valid ensemble");
                 throw new BKException.BKNotEnoughBookiesException();
             }
-            LOG.info("Bookies allocated successfully {}", ensemble);
+            log.info().attr("ensemble", ensemble).log("Bookies allocated successfully");
             List<BookieId> ensembleList = ensemble.toList();
             return PlacementResult.of(ensembleList,
                     isEnsembleAdheringToPlacementPolicy(ensembleList, writeQuorumSize, ackQuorumSize));
@@ -555,7 +574,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 excludeNodes.add(bn);
 
                 if (!ensemble.apply(bn, ensemble)) {
-                    LOG.warn("Anomalous ensemble detected");
+                    log.warn("Anomalous ensemble detected");
                     if (null != statsLogger) {
                         statsLogger.getCounter(REGION_AWARE_ANOMALOUS_ENSEMBLE).inc();
                     }
@@ -565,16 +584,21 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 ensemble.addNode(bn);
             }
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Try to choose a new bookie to replace {}, excluding {}.", bookieToReplace,
-                    excludeNodes);
-            }
+
+            log.debug()
+            .attr("bookieToReplace", bookieToReplace)
+            .attr("excludeNodes", excludeNodes)
+            .log("Trying to choose a new bookie to replace existing one");
+
             // pick a candidate from same rack to replace
             BookieNode candidate = replaceFromRack(bookieNodeToReplace, excludeNodes,
                 ensemble, ensemble, enforceDurability);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Bookie {} is chosen to replace bookie {}.", candidate, bookieNodeToReplace);
-            }
+
+            log.debug()
+            .attr("candidate", candidate)
+            .attr("bookieNodeToReplace", bookieNodeToReplace)
+            .log("Bookie chosen to replace existing bookie");
+
             BookieId candidateAddr = candidate.getAddr();
             List<BookieId> newEnsemble = new ArrayList<BookieId>(currentEnsemble);
             if (currentEnsemble.isEmpty()) {
@@ -623,9 +647,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         EnsembleForReplacementWithNoConstraints.INSTANCE,
                         true);
                 } catch (BKException.BKNotEnoughBookiesException e) {
-                    LOG.warn("Failed to choose a bookie from {} : "
-                            + "excluded {}, fallback to choose bookie randomly from the cluster.",
-                        bookieNodeToReplace.getNetworkLocation(), excludeBookies);
+                    log.warn()
+                            .attr("getNetworkLocation", bookieNodeToReplace.getNetworkLocation())
+                            .attr("excludeBookies", excludeBookies)
+                            .log("Failed to choose a bookie, fallback to choose bookie randomly from the cluster");
                 }
             }
         }

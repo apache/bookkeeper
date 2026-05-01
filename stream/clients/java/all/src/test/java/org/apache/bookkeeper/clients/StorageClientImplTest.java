@@ -31,7 +31,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.exceptions.ApiException;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Table;
@@ -51,7 +51,7 @@ import org.mockito.junit.MockitoJUnitRunner;
  * Unit test {@link StorageClientImpl}.
  */
 @RunWith(MockitoJUnitRunner.class)
-@Slf4j
+@CustomLog
 public class StorageClientImplTest extends GrpcClientTestBase {
 
     private static final String NAMESPACE = "test-namespace";

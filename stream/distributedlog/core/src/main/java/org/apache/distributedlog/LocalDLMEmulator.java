@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
@@ -38,16 +39,13 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Utility class for setting up bookkeeper ensembles
  * and bringing individual bookies up and down.
  */
+@CustomLog
 public class LocalDLMEmulator {
-    private static final Logger LOG = LoggerFactory.getLogger(LocalDLMEmulator.class);
 
     public static final String DLOG_NAMESPACE = "/messaging/distributedlog";
 
@@ -141,9 +139,12 @@ public class LocalDLMEmulator {
             public void run() {
                 try {
                     try {
-                        LOG.info("Starting {} bookies : allowLoopback = {}", numBookies, serverConf.getAllowLoopback());
+                        log.info()
+                                .attr("numBookies", numBookies)
+                                .attr("allowLoopback", serverConf.getAllowLoopback())
+                                .log("Starting bookies");
                         lb.start();
-                        LOG.info("{} bookies are started.", numBookies);
+                        log.info().attr("numBookies", numBookies).log("bookies are started.");
                         while (true) {
                             Thread.sleep(1000);
                         }
@@ -154,7 +155,7 @@ public class LocalDLMEmulator {
                     Thread.currentThread().interrupt();
                     // go away quietly
                 } catch (Exception e) {
-                    LOG.error("Error starting local bk", e);
+                    log.error().exception(e).log("Error starting local bk");
                 }
             }
         };
@@ -167,8 +168,10 @@ public class LocalDLMEmulator {
         }
         int bookiesUp = checkBookiesUp(numBookies, zkTimeoutSec);
         if (numBookies != bookiesUp) {
-            LOG.info("Only {} bookies are up, expected {} bookies to be there.",
-                bookiesUp, numBookies);
+            log.info()
+                .attr("bookiesUp", bookiesUp)
+                .attr("numBookies", numBookies)
+                .log("Only bookies are up, expected bookies to be there.");
         }
         assert (numBookies == bookiesUp);
         // Provision "/messaging/distributedlog" namespace
@@ -210,13 +213,13 @@ public class LocalDLMEmulator {
                         false);
                     children.remove("readonly");
                     mostRecentSize = children.size();
-                    if ((mostRecentSize > count) || LOG.isDebugEnabled()) {
-                        LOG.info("Found " + mostRecentSize + " bookies up, "
-                            + "waiting for " + count);
-                        if ((mostRecentSize > count) || LOG.isTraceEnabled()) {
-                            for (String child : children) {
-                                LOG.info(" server: " + child);
-                            }
+                    if (mostRecentSize > count) {
+                        log.info()
+                                .attr("bookiesUp", mostRecentSize)
+                                .attr("waitingFor", count)
+                                .log("Found bookies up");
+                        for (String child : children) {
+                            log.info().attr("server", child).log("server");
                         }
                     }
                     if (mostRecentSize == count) {
@@ -299,7 +302,7 @@ public class LocalDLMEmulator {
 
         while (!success) {
             try {
-                LOG.info("zk trying to bind to port " + zkPort);
+                log.info("zk trying to bind to port " + zkPort);
                 zks = LocalBookKeeper.runZookeeper(1000, zkPort, zkDir);
                 success = true;
             } catch (BindException be) {

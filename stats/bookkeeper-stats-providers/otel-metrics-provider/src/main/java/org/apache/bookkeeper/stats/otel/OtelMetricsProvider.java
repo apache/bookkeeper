@@ -43,13 +43,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration2.Configuration;
 // CHECKSTYLE.ON: IllegalImport
 
-@Slf4j
+@CustomLog
 public class OtelMetricsProvider implements StatsProvider {
 
     private static final String METER_NAME = "org.apache.bookkeeper";
@@ -136,7 +136,7 @@ public class OtelMetricsProvider implements StatsProvider {
                 field.setAccessible(true);
                 tmpDirectMemoryUsage = (AtomicLong) field.get(null);
             } catch (Throwable t) {
-                log.warn("Failed to access netty DIRECT_MEMORY_COUNTER field {}", t.getMessage());
+                log.warn().exceptionMessage(t).log("Failed to access netty DIRECT_MEMORY_COUNTER field");
             }
             directMemoryUsage = tmpDirectMemoryUsage;
             getDirectMemoryUsage = () -> directMemoryUsage != null ? directMemoryUsage.get() : Double.NaN;

@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.StampedLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -81,8 +82,6 @@ import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.mutable.MutableLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Single directory implementation of LedgerStorage that uses RocksDB to keep the indexes for entries stored in
@@ -90,6 +89,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>This is meant only to be used from {@link DbLedgerStorage}.
  */
+@CustomLog
 public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage {
     private final EntryLogger entryLogger;
 
@@ -166,13 +166,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         String indexBaseDir = ledgerBaseDir;
         if (CollectionUtils.isEmpty(indexDirsManager.getAllLedgerDirs())
                 || ledgerBaseDir.equals(indexDirsManager.getAllLedgerDirs().get(0).getPath())) {
-            log.info("indexDir is equals ledgerBaseDir, creating single directory db ledger storage on {}",
-                    indexBaseDir);
+            log.info().attr("indexBaseDir", indexBaseDir)
+                    .log("indexDir is equals ledgerBaseDir, creating single directory db ledger storage");
         } else {
             // if indexDir is specified, set new value
             indexBaseDir = indexDirsManager.getAllLedgerDirs().get(0).getPath();
-            log.info("indexDir is specified a separate dir, creating single directory db ledger storage on {}",
-                    indexBaseDir);
+            log.info().attr("indexBaseDir", indexBaseDir)
+                    .log("indexDir is specified a separate dir, creating single directory db ledger storage");
         }
         this.indexBaseDir = indexBaseDir;
 
@@ -316,8 +316,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public void entryLocationCompact() {
         if (entryLocationIndex.isCompacting()) {
             // RocksDB already running compact.
-            log.info("Compacting directory {}, skipping this entryLocationCompaction this time.",
-                    entryLocationIndex.getEntryLocationDBPath());
+            log.info().attr("directory", entryLocationIndex.getEntryLocationDBPath())
+                    .log("Compacting directory, skipping this entryLocationCompaction this time");
             return;
         }
         cleanupExecutor.execute(() -> {
@@ -327,7 +327,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 log.info("Trigger entry location index RocksDB compact.");
                 entryLocationIndex.compact();
             } catch (Throwable t) {
-                log.warn("Failed to trigger entry location index RocksDB compact", t);
+                log.warn().exception(t).log("Failed to trigger entry location index RocksDB compact");
             }
         });
     }
@@ -362,7 +362,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             executor.shutdown();
 
         } catch (IOException e) {
-            log.error("Error closing db storage", e);
+            log.error().exception(e).log("Error closing db storage");
         }
     }
 
@@ -370,9 +370,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public boolean ledgerExists(long ledgerId) throws IOException {
         try {
             LedgerData ledgerData = ledgerIndex.get(ledgerId);
-            if (log.isDebugEnabled()) {
-                log.debug("Ledger exists. ledger: {} : {}", ledgerId, ledgerData.getExists());
-            }
+            log.debug()
+                    .attr("ledgerId", ledgerId)
+                    .attr("exists", () -> ledgerData.getExists())
+                    .log("Ledger exists");
             return ledgerData.getExists();
         } catch (Bookie.NoLedgerException nle) {
             // ledger does not exist
@@ -427,9 +428,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public boolean isFenced(long ledgerId) throws IOException, BookieException {
         boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
 
-        if (log.isDebugEnabled()) {
-            log.debug("ledger: {}, isFenced: {}.", ledgerId, isFenced);
-        }
+        log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("isFenced", isFenced)
+                .log("isFenced check");
 
         // Only a negative result while in limbo equates to unknown
         if (!isFenced) {
@@ -441,9 +443,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public boolean setFenced(long ledgerId) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("Set fenced. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("Set fenced");
         boolean changed = ledgerIndex.setFenced(ledgerId);
         if (changed) {
             // notify all the watchers if a ledger is fenced
@@ -457,17 +457,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("Set master key. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("Set master key");
         ledgerIndex.setMasterKey(ledgerId, masterKey);
     }
 
     @Override
     public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
-        if (log.isDebugEnabled()) {
-            log.debug("Read master key. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("Read master key");
         return ledgerIndex.get(ledgerId).getMasterKey().toByteArray();
     }
 
@@ -479,9 +475,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long entryId = entry.getLong(entry.readerIndex() + 8);
         long lac = entry.getLong(entry.readerIndex() + 16);
 
-        if (log.isDebugEnabled()) {
-            log.debug("Add entry. {}@{}, lac = {}", ledgerId, entryId, lac);
-        }
+        log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .attr("lac", lac)
+                .log("Add entry");
 
         // First we try to do an optimistic locking to get access to the current write cache.
         // This is based on the fact that the write cache is only being rotated (swapped) every 1 minute. During the
@@ -535,7 +533,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         try {
                             flush();
                         } catch (IOException e) {
-                            log.error("Error during flush", e);
+                            log.error().exception(e).log("Error during flush");
                         } finally {
                             flushExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                         }
@@ -582,9 +580,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
 
     private ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException, BookieException {
-        if (log.isDebugEnabled()) {
-            log.debug("Get Entry: {}@{}", ledgerId, entryId);
-        }
+        log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .log("Get Entry");
 
         if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             return getLastEntry(ledgerId);
@@ -702,9 +701,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 }
             }
         } catch (Exception e) {
-            if (log.isDebugEnabled()) {
-                log.debug("Exception during read ahead for ledger: {}: e", originalLedgerId, e);
-            }
+            log.debug()
+                    .attr("ledgerId", originalLedgerId)
+                    .exception(e)
+                    .log("Exception during read ahead for ledger");
         } finally {
             dbLedgerStorageStats.getReadAheadBatchCountStats().registerSuccessfulValue(count);
             dbLedgerStorageStats.getReadAheadBatchSizeStats().registerSuccessfulValue(size);
@@ -732,15 +732,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             // First try to read from the write cache of recent entries
             ByteBuf entry = writeCache.getLastEntry(ledgerId);
             if (entry != null) {
-                if (log.isDebugEnabled()) {
-                    long foundLedgerId = entry.readLong(); // ledgerId
-                    long entryId = entry.readLong();
-                    entry.resetReaderIndex();
-                    if (log.isDebugEnabled()) {
-                        log.debug("Found last entry for ledger {} in write cache: {}@{}", ledgerId, foundLedgerId,
-                                entryId);
-                    }
-                }
+                final ByteBuf found = entry;
+                log.debug(e -> e.attr("ledgerId", ledgerId)
+                        .attr("foundLedgerId", found.getLong(0))
+                        .attr("entryId", found.getLong(8))
+                        .log("Found last entry for ledger in write cache"));
 
                 dbLedgerStorageStats.getWriteCacheHitCounter().inc();
                 return entry;
@@ -749,14 +745,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             // If there's a flush going on, the entry might be in the flush buffer
             entry = writeCacheBeingFlushed.getLastEntry(ledgerId);
             if (entry != null) {
-                if (log.isDebugEnabled()) {
-                    entry.readLong(); // ledgerId
-                    long entryId = entry.readLong();
-                    entry.resetReaderIndex();
-                    if (log.isDebugEnabled()) {
-                        log.debug("Found last entry for ledger {} in write cache being flushed: {}", ledgerId, entryId);
-                    }
-                }
+                final ByteBuf found = entry;
+                log.debug()
+                        .attr("ledgerId", ledgerId)
+                        .attr("entryId", () -> found.getLong(8))
+                        .log("Found last entry for ledger in write cache being flushed");
 
                 dbLedgerStorageStats.getWriteCacheHitCounter().inc();
                 return entry;
@@ -770,9 +763,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         // Search the last entry in storage
         long locationIndexStartNano = MathUtils.nowInNano();
         long lastEntryId = entryLocationIndex.getLastEntryInLedger(ledgerId);
-        if (log.isDebugEnabled()) {
-            log.debug("Found last entry for ledger {} in db: {}", ledgerId, lastEntryId);
-        }
+        log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("lastEntryId", lastEntryId)
+                .log("Found last entry for ledger in db");
 
         long entryLocation = entryLocationIndex.getLocation(ledgerId, lastEntryId);
         dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
@@ -822,10 +816,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             swapWriteCache();
 
             long sizeToFlush = writeCacheBeingFlushed.size();
-            if (log.isDebugEnabled()) {
-                log.debug("Flushing entries. count: {} -- size {} Mb", writeCacheBeingFlushed.count(),
-                        sizeToFlush / 1024.0 / 1024);
-            }
+            log.debug(e -> e.attr("count", writeCacheBeingFlushed.count())
+                    .attr("sizeMb", sizeToFlush / 1024.0 / 1024)
+                    .log("Flushing entries"));
 
             // Write all the pending entries into the entry logger and collect the offset
             // position for each entry
@@ -844,10 +837,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 batch.flush();
 
                 recordSuccessfulEvent(dbLedgerStorageStats.getFlushLocationIndexStats(), batchFlushStartTime);
-                if (log.isDebugEnabled()) {
-                    log.debug("DB batch flushed time : {} s",
-                            MathUtils.elapsedNanos(batchFlushStartTime) / (double) TimeUnit.SECONDS.toNanos(1));
-                }
+                log.debug().attr("durationSeconds",
+                        () -> MathUtils.elapsedNanos(batchFlushStartTime) / (double) TimeUnit.SECONDS.toNanos(1))
+                        .log("DB batch flushed");
             }
 
             long ledgerIndexStartTime = MathUtils.nowInNano();
@@ -862,9 +854,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             double flushTimeSeconds = MathUtils.elapsedNanos(startTime) / (double) TimeUnit.SECONDS.toNanos(1);
             double flushThroughput = sizeToFlush / 1024.0 / 1024.0 / flushTimeSeconds;
 
-            if (log.isDebugEnabled()) {
-                log.debug("Flushing done time {} s -- Written {} MB/s", flushTimeSeconds, flushThroughput);
-            }
+            log.debug()
+                    .attr("durationSeconds", flushTimeSeconds)
+                    .attr("throughputMBs", flushThroughput)
+                    .log("Flushing done");
 
             recordSuccessfulEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             dbLedgerStorageStats.getFlushSizeStats().registerSuccessfulValue(sizeToFlush);
@@ -878,14 +871,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                     // There can only be one single cleanup task running because the cleanupExecutor
                     // is single-threaded
                     try {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Removing deleted ledgers from db indexes");
-                        }
+                        log.debug("Removing deleted ledgers from db indexes");
 
                         entryLocationIndex.removeOffsetFromDeletedLedgers();
                         ledgerIndex.removeDeletedLedgers();
                     } catch (Throwable t) {
-                        log.warn("Failed to cleanup db indexes", t);
+                        log.warn().exception(t).log("Failed to cleanup db indexes");
                     }
                 });
 
@@ -928,9 +919,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("Deleting ledger {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("Deleting ledger");
 
         // Delete entries from this ledger that are still in the write cache
         long stamp = writeCacheRotationLock.readLock();
@@ -1036,26 +1025,18 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public ByteBuf getExplicitLac(long ledgerId) throws IOException, BookieException {
         throwIfLimbo(ledgerId);
-        if (log.isDebugEnabled()) {
-            log.debug("getExplicitLac ledger {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("getExplicitLac");
         TransientLedgerInfo ledgerInfo = getOrAddLedgerInfo(ledgerId);
         if (ledgerInfo.getExplicitLac() != null) {
-            if (log.isDebugEnabled()) {
-                log.debug("getExplicitLac ledger {} returned from TransientLedgerInfo", ledgerId);
-            }
+            log.debug().attr("ledgerId", ledgerId).log("getExplicitLac returned from TransientLedgerInfo");
             return ledgerInfo.getExplicitLac();
         }
         LedgerData ledgerData = ledgerIndex.get(ledgerId);
         if (!ledgerData.hasExplicitLac()) {
-            if (log.isDebugEnabled()) {
-                log.debug("getExplicitLac ledger {} missing from LedgerData", ledgerId);
-            }
+            log.debug().attr("ledgerId", ledgerId).log("getExplicitLac missing from LedgerData");
             return null;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("getExplicitLac ledger {} returned from LedgerData", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("getExplicitLac returned from LedgerData");
         ByteString persistedLac = ledgerData.getExplicitLac();
         ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
         return ledgerInfo.getExplicitLac();
@@ -1146,8 +1127,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         void process(long entryId, long entryLogId, long position);
     }
 
-    private static final Logger log = LoggerFactory.getLogger(SingleDirectoryDbLedgerStorage.class);
-
     @Override
     public OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException {
         throw new UnsupportedOperationException(
@@ -1231,33 +1210,25 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void setLimboState(long ledgerId) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("setLimboState. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("setLimboState");
         ledgerIndex.setLimbo(ledgerId);
     }
 
     @Override
     public boolean hasLimboState(long ledgerId) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("hasLimboState. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("hasLimboState");
         return ledgerIndex.get(ledgerId).getLimbo();
     }
 
     @Override
     public void clearLimboState(long ledgerId) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("clearLimboState. ledger: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("clearLimboState");
         ledgerIndex.clearLimbo(ledgerId);
     }
 
     private void throwIfLimbo(long ledgerId) throws IOException, BookieException {
         if (hasLimboState(ledgerId)) {
-            if (log.isDebugEnabled()) {
-                log.debug("Accessing ledger({}) in limbo state, throwing exception", ledgerId);
-            }
+            log.debug().attr("ledgerId", ledgerId).log("Accessing ledger in limbo state, throwing exception");
             throw BookieException.create(BookieException.Code.DataUnknownException);
         }
     }
@@ -1294,8 +1265,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             if (ledgerIndex.setStorageStateFlags(curFlags, newFlags)) {
                 return;
             } else {
-                log.info("Conflict updating storage state flags {} -> {}, retrying",
-                        curFlags, newFlags);
+                log.info()
+                        .attr("curFlags", curFlags)
+                        .attr("newFlags", newFlags)
+                        .log("Conflict updating storage state flags, retrying");
             }
         }
     }
@@ -1310,8 +1283,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             if (ledgerIndex.setStorageStateFlags(curFlags, newFlags)) {
                 return;
             } else {
-                log.info("Conflict updating storage state flags {} -> {}, retrying",
-                        curFlags, newFlags);
+                log.info()
+                        .attr("curFlags", curFlags)
+                        .attr("newFlags", newFlags)
+                        .log("Conflict updating storage state flags, retrying");
             }
         }
     }

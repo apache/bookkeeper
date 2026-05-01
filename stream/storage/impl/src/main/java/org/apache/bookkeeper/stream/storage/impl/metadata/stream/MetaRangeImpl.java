@@ -36,7 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.annotation.concurrent.GuardedBy;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.Op;
 import org.apache.bookkeeper.api.kv.op.TxnOp;
@@ -60,7 +60,7 @@ import org.apache.bookkeeper.stream.storage.exceptions.DataRangeNotFoundExceptio
 /**
  * The default implementation of {@link MetaRange}.
  */
-@Slf4j
+@CustomLog
 public class MetaRangeImpl implements MetaRange {
 
     private static final byte METADATA_SEP = (byte) 0x1;
@@ -324,15 +324,11 @@ public class MetaRangeImpl implements MetaRange {
             .Then(successOps.toArray(new Op[successOps.size()]))
             .build();
 
-        if (log.isTraceEnabled()) {
-            log.trace("Execute create stream metadata range txn {}", streamProps);
-        }
+        log.trace().attr("streamProps", streamProps).log("Execute create stream metadata range txn");
         store.txn(txn)
             .thenApplyAsync(txnResult -> {
                 try {
-                    if (log.isTraceEnabled()) {
-                        log.trace("Create stream metadata range txn result = {}", txnResult.isSuccess());
-                    }
+                    log.trace().attr("success", txnResult.isSuccess()).log("Create stream metadata range txn result");
                     if (txnResult.isSuccess()) {
                         List<Result<byte[], byte[]>> results = txnResult.results();
                         MetaRangeImpl.this.revision = results.get(results.size() - 1).revision();

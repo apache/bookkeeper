@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
@@ -67,7 +67,7 @@ import org.rocksdb.Checkpoint;
 /**
  * Unit test of {@link RocksCheckpointer}.
  */
-@Slf4j
+@CustomLog
 public class RocksCheckpointerTest {
 
     @Rule

@@ -22,20 +22,16 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.conf.ComponentConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A mix of {@link AbstractComponent} and {@link LifecycleComponent}.
  */
-@Slf4j
+@CustomLog
 public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfiguration>
     extends AbstractComponent<ConfT> implements LifecycleComponent {
-
-    private static final Logger LOG = LoggerFactory.getLogger(AbstractLifecycleComponent.class);
 
     protected final Lifecycle lifecycle = new Lifecycle();
     private final Set<LifecycleListener> listeners = new CopyOnWriteArraySet<>();
@@ -82,9 +78,12 @@ public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfigur
         try {
             doStart();
         } catch (Throwable exc) {
-            LOG.error("Failed to start Component: {}", getName(), exc);
+            log.error()
+                    .exception(exc)
+                    .attr("component", getName())
+                    .log("Failed to start component");
             if (uncaughtExceptionHandler != null) {
-                LOG.error("Calling uncaughtExceptionHandler");
+                log.error("Calling uncaughtExceptionHandler");
                 uncaughtExceptionHandler.uncaughtException(Thread.currentThread(), exc);
             } else {
                 throw exc;
@@ -122,7 +121,10 @@ public abstract class AbstractLifecycleComponent<ConfT extends ComponentConfigur
         try {
             doClose();
         } catch (IOException e) {
-            log.warn("failed to close {}", componentName, e);
+            log.warn()
+                    .exception(e)
+                    .attr("component", componentName)
+                    .log("Failed to close component");
         }
         listeners.forEach(LifecycleListener::afterClose);
     }
