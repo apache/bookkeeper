@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
@@ -50,11 +51,9 @@ import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 public class AuditorReplicasCheckTask extends AuditorTask {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditorReplicasCheckTask.class);
 
     private static final int MAX_CONCURRENT_REPLICAS_CHECK_LEDGER_REQUESTS = 100;
     private static final int REPLICAS_CHECK_TIMEOUT_IN_SECS = 120;
@@ -83,18 +82,18 @@ public class AuditorReplicasCheckTask extends AuditorTask {
     @Override
     protected void runTask() {
         if (hasBookieCheckTask()) {
-            LOG.info("Audit bookie task already scheduled; skipping periodic replicas check task");
+            log.info("Audit bookie task already scheduled; skipping periodic replicas check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
 
         try {
             if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                LOG.info("Ledger replication disabled, skipping replicasCheck task.");
+                log.info("Ledger replication disabled, skipping replicasCheck task.");
                 return;
             }
             Stopwatch stopwatch = Stopwatch.createStarted();
-            LOG.info("Starting ReplicasCheck");
+            log.info("Starting ReplicasCheck");
             replicasCheck();
             long replicasCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
             int numLedgersFoundHavingNoReplicaOfAnEntryValue =
@@ -103,13 +102,15 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     numLedgersFoundHavingLessThanAQReplicasOfAnEntry.get();
             int numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue =
                     numLedgersFoundHavingLessThanWQReplicasOfAnEntry.get();
-            LOG.info(
-                    "Completed ReplicasCheck in {} milliSeconds numLedgersFoundHavingNoReplicaOfAnEntry {}"
-                            + " numLedgersFoundHavingLessThanAQReplicasOfAnEntry {}"
-                            + " numLedgersFoundHavingLessThanWQReplicasOfAnEntry {}.",
-                    replicasCheckDuration, numLedgersFoundHavingNoReplicaOfAnEntryValue,
-                    numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue,
-                    numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
+            log.info()
+                    .attr("durationMs", replicasCheckDuration)
+                    .attr("numLedgersFoundHavingNoReplicaOfAnEntry",
+                            numLedgersFoundHavingNoReplicaOfAnEntryValue)
+                    .attr("numLedgersFoundHavingLessThanAQReplicasOfAnEntry",
+                            numLedgersFoundHavingLessThanAQReplicasOfAnEntryValue)
+                    .attr("numLedgersFoundHavingLessThanWQReplicasOfAnEntry",
+                            numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue)
+                    .log("Completed ReplicasCheck");
             auditorStats.getNumLedgersHavingNoReplicaOfAnEntryGuageValue()
                     .set(numLedgersFoundHavingNoReplicaOfAnEntryValue);
             auditorStats.getNumLedgersHavingLessThanAQReplicasOfAnEntryGuageValue()
@@ -119,7 +120,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             auditorStats.getReplicasCheckTime().registerSuccessfulEvent(
                     replicasCheckDuration, TimeUnit.MILLISECONDS);
         } catch (ReplicationException.BKAuditException e) {
-            LOG.error("BKAuditException running periodic replicas check.", e);
+            log.error().exception(e).log("BKAuditException running periodic replicas check");
             int numLedgersFoundHavingNoReplicaOfAnEntryValue =
                     numLedgersFoundHavingNoReplicaOfAnEntry.get();
             if (numLedgersFoundHavingNoReplicaOfAnEntryValue > 0) {
@@ -154,7 +155,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                         .set(numLedgersFoundHavingLessThanWQReplicasOfAnEntryValue);
             }
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Underreplication manager unavailable running periodic check", ue);
+            log.error().exception(ue).log("Underreplication manager unavailable running periodic check");
         }
     }
 
@@ -179,7 +180,7 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     break;
                 }
             } catch (IOException ioe) {
-                LOG.error("Got IOException while iterating LedgerRangeIterator", ioe);
+                log.error().exception(ioe).log("Got IOException while iterating LedgerRangeIterator");
                 throw new ReplicationException.BKAuditException(
                         "Got IOException while iterating LedgerRangeIterator", ioe);
             }
@@ -206,21 +207,23 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     }
                 }
             };
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Number of ledgers in the current LedgerRange : {}",
-                        numOfLedgersInRange);
-            }
+            log.debug()
+                    .attr("numOfLedgersInRange", numOfLedgersInRange)
+                    .log("Number of ledgers in the current LedgerRange");
             for (Long ledgerInRange : ledgersInRange) {
                 try {
                     if (!maxConcurrentSemaphore.tryAcquire(REPLICAS_CHECK_TIMEOUT_IN_SECS, TimeUnit.SECONDS)) {
-                        LOG.error("Timedout ({} secs) while waiting for acquiring semaphore",
-                                REPLICAS_CHECK_TIMEOUT_IN_SECS);
+                        log.error()
+                                .attr("timeoutSecs", REPLICAS_CHECK_TIMEOUT_IN_SECS)
+                                .log("Timed out while waiting for acquiring semaphore");
                         throw new ReplicationException.BKAuditException(
                                 "Timedout while waiting for acquiring semaphore");
                     }
                 } catch (InterruptedException ie) {
                     Thread.currentThread().interrupt();
-                    LOG.error("Got InterruptedException while acquiring semaphore for replicascheck", ie);
+                    log.error()
+                            .exception(ie)
+                            .log("Got InterruptedException while acquiring semaphore for replicascheck");
                     throw new ReplicationException.BKAuditException(
                             "Got InterruptedException while acquiring semaphore for replicascheck", ie);
                 }
@@ -244,16 +247,16 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                  * expected.
                  */
                 if (!replicasCheckLatch.await(REPLICAS_CHECK_TIMEOUT_IN_SECS, TimeUnit.SECONDS)) {
-                    LOG.error(
-                            "For LedgerRange with num of ledgers : {} it didn't complete replicascheck"
-                                    + " in {} secs, so giving up",
-                            numOfLedgersInRange, REPLICAS_CHECK_TIMEOUT_IN_SECS);
+                    log.error()
+                            .attr("numOfLedgersInRange", numOfLedgersInRange)
+                            .attr("timeoutSecs", REPLICAS_CHECK_TIMEOUT_IN_SECS)
+                            .log("LedgerRange didn't complete replicascheck in time, so giving up");
                     throw new ReplicationException.BKAuditException(
                             "Got InterruptedException while doing replicascheck");
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.error("Got InterruptedException while doing replicascheck", ie);
+                log.error().exception(ie).log("Got InterruptedException while doing replicascheck");
                 throw new ReplicationException.BKAuditException(
                         "Got InterruptedException while doing replicascheck", ie);
             }
@@ -268,10 +271,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
         try {
             ledgerUnderreplicationManager.setReplicasCheckCTime(System.currentTimeMillis());
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Got exception while trying to set ReplicasCheckCTime", ue);
+            log.error().exception(ue).log("Got exception while trying to set ReplicasCheckCTime");
         }
     }
 
@@ -375,14 +378,16 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             if (exception != null) {
                 if (BKException
                         .getExceptionCode(exception) == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Ignoring replicas check of already deleted ledger {}",
-                                ledgerInRange);
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerInRange)
+                            .log("Ignoring replicas check of already deleted ledger");
                     mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                     return;
                 } else {
-                    LOG.warn("Unable to read the ledger: {} information", ledgerInRange, exception);
+                    log.warn()
+                            .attr("ledgerId", ledgerInRange)
+                            .exception(exception)
+                            .log("Unable to read the ledger information");
                     mcbForThisLedgerRange.processResult(BKException.getExceptionCode(exception), null, null);
                     return;
                 }
@@ -390,21 +395,18 @@ public class AuditorReplicasCheckTask extends AuditorTask {
 
             LedgerMetadata metadata = metadataVer.getValue();
             if (!metadata.isClosed()) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Ledger: {} is not yet closed, "
-                                    + "so skipping the replicas check analysis for now",
-                            ledgerInRange);
-                }
+                log.debug()
+                        .attr("ledgerId", ledgerInRange)
+                        .log("Ledger is not yet closed, so skipping the replicas check analysis for now");
                 mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                 return;
             }
 
             final long lastEntryId = metadata.getLastEntryId();
             if (lastEntryId == -1) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Ledger: {} is closed but it doesn't has any entries, "
-                            + "so skipping the replicas check", ledgerInRange);
-                }
+                log.debug()
+                        .attr("ledgerId", ledgerInRange)
+                        .log("Ledger is closed but has no entries, so skipping the replicas check");
                 mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
                 return;
             }
@@ -452,12 +454,11 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                          * getListOfEntriesOfLedger call for this bookie. So
                          * instead callback with success result.
                          */
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug(
-                                    "For ledger: {}, in Segment: {}, no entry is expected to contain in"
-                                            + " this bookie: {}. So skipping getListOfEntriesOfLedger call",
-                                    ledgerInRange, segmentEnsemble, bookieInEnsemble);
-                        }
+                        log.debug()
+                                .attr("ledgerId", ledgerInRange)
+                                .attr("segment", segmentEnsemble)
+                                .attr("bookie", bookieInEnsemble)
+                                .log("No entry expected in this bookie, skipping getListOfEntriesOfLedger call");
                         mcbForThisLedger.processResult(BKException.Code.OK, null, null);
                         continue;
                     }
@@ -556,18 +557,21 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             if (listOfEntriesException != null) {
                 if (BKException
                         .getExceptionCode(listOfEntriesException) == BKException.Code.NoSuchLedgerExistsException) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Got NoSuchLedgerExistsException for ledger: {} from bookie: {}",
-                                ledgerInRange, bookieInEnsemble);
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerInRange)
+                            .attr("bookie", bookieInEnsemble)
+                            .log("Got NoSuchLedgerExistsException");
                     /*
                      * in the case of NoSuchLedgerExistsException, it should be
                      * considered as empty AvailabilityOfEntriesOfLedger.
                      */
                     availabilityOfEntriesOfLedger = AvailabilityOfEntriesOfLedger.EMPTY_AVAILABILITYOFENTRIESOFLEDGER;
                 } else {
-                    LOG.warn("Unable to GetListOfEntriesOfLedger for ledger: {} from: {}", ledgerInRange,
-                            bookieInEnsemble, listOfEntriesException);
+                    log.warn()
+                            .attr("ledgerId", ledgerInRange)
+                            .attr("bookie", bookieInEnsemble)
+                            .exception(listOfEntriesException)
+                            .log("Unable to GetListOfEntriesOfLedger");
                     MissingEntriesInfoOfLedger unavailableBookiesInfoOfThisLedger = ledgersWithUnavailableBookies
                             .get(ledgerInRange);
                     if (unavailableBookiesInfoOfThisLedger == null) {
@@ -685,7 +689,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     errMessage.append(", ");
                 }
             }
-            LOG.error(errMessage.toString());
+            log.error()
+                    .attr("ledgerId", ledgerWithMissingEntries)
+                    .attr("details", errMessage.toString())
+                    .log("Ledger has missing entries");
             Set<Multiset.Entry<Long>> missingEntriesSet = missingEntries.entrySet();
             int maxNumOfMissingReplicas = 0;
             long entryWithMaxNumOfMissingReplicas = -1L;
@@ -698,18 +705,26 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             int leastNumOfReplicasOfAnEntry = writeQuorumSize - maxNumOfMissingReplicas;
             if (leastNumOfReplicasOfAnEntry == 0) {
                 numLedgersFoundHavingNoReplicaOfAnEntry.incrementAndGet();
-                LOG.error("Ledger : {} entryId : {} is missing all replicas", ledgerWithMissingEntries,
-                        entryWithMaxNumOfMissingReplicas);
+                log.error()
+                        .attr("ledgerId", ledgerWithMissingEntries)
+                        .attr("entryId", entryWithMaxNumOfMissingReplicas)
+                        .log("Ledger entry is missing all replicas");
             } else if (leastNumOfReplicasOfAnEntry < ackQuorumSize) {
                 numLedgersFoundHavingLessThanAQReplicasOfAnEntry.incrementAndGet();
-                LOG.error("Ledger : {} entryId : {} is having: {} replicas, less than ackQuorum num of replicas : {}",
-                        ledgerWithMissingEntries, entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry,
-                        ackQuorumSize);
+                log.error()
+                        .attr("ledgerId", ledgerWithMissingEntries)
+                        .attr("entryId", entryWithMaxNumOfMissingReplicas)
+                        .attr("replicas", leastNumOfReplicasOfAnEntry)
+                        .attr("ackQuorumSize", ackQuorumSize)
+                        .log("Ledger entry has fewer replicas than ackQuorum");
             } else if (leastNumOfReplicasOfAnEntry < writeQuorumSize) {
                 numLedgersFoundHavingLessThanWQReplicasOfAnEntry.incrementAndGet();
-                LOG.error("Ledger : {} entryId : {} is having: {} replicas, less than writeQuorum num of replicas : {}",
-                        ledgerWithMissingEntries, entryWithMaxNumOfMissingReplicas, leastNumOfReplicasOfAnEntry,
-                        writeQuorumSize);
+                log.error()
+                        .attr("ledgerId", ledgerWithMissingEntries)
+                        .attr("entryId", entryWithMaxNumOfMissingReplicas)
+                        .attr("replicas", leastNumOfReplicasOfAnEntry)
+                        .attr("writeQuorumSize", writeQuorumSize)
+                        .log("Ledger entry has fewer replicas than writeQuorum");
             }
         }
     }
@@ -735,7 +750,10 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                     errMessage.append(", ");
                 }
             }
-            LOG.error(errMessage.toString());
+            log.error()
+                    .attr("ledgerId", ledgerWithUnavailableBookies)
+                    .attr("details", errMessage.toString())
+                    .log("Ledger has unavailable bookies");
         }
     }
 
@@ -748,18 +766,20 @@ public class AuditorReplicasCheckTask extends AuditorTask {
              * this ledger is marked underreplicated, so ignore it for
              * replicasCheck.
              */
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger: {} is marked underrreplicated, ignore this ledger for replicasCheck",
-                        ledgerInRange);
-            }
+            log.debug()
+                    .attr("ledgerId", ledgerInRange)
+                    .log("Ledger is marked underreplicated, ignore this ledger for replicasCheck");
             mcbForThisLedgerRange.processResult(BKException.Code.OK, null, null);
             return true;
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
             return true;
         } catch (ReplicationException.UnavailableException une) {
-            LOG.error("Got exception while trying to check if ledger: {} is underreplicated", ledgerInRange, une);
+            log.error()
+                    .attr("ledgerId", ledgerInRange)
+                    .exception(une)
+                    .log("Got exception while trying to check if ledger is underreplicated");
             mcbForThisLedgerRange.processResult(BKException.getExceptionCode(une), null, null);
             return true;
         }

@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.LongStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
@@ -45,7 +45,7 @@ import org.apache.commons.lang3.tuple.Pair;
  *
  * <p>The algorithm here is based on the count-based stream balancer in distributedlog-proxy-server.
  */
-@Slf4j
+@CustomLog
 public class DefaultStorageContainerController implements StorageContainerController {
 
     static final class ServerAssignmentDataComparator
@@ -90,8 +90,10 @@ public class DefaultStorageContainerController implements StorageContainerContro
                     e2 -> e2.getValue().getContainersList().stream().collect(Collectors.toSet())
                 ));
         } catch (UncheckedExecutionException uee) {
-            log.warn("Invalid cluster assignment data is found : {} - {}. Recompute assignment from empty state",
-                currentState, uee.getCause().getMessage());
+            log.warn()
+                .attr("currentState", currentState)
+                .attr("cause", uee.getCause().getMessage())
+                .log("Invalid cluster assignment data is found. Recompute assignment from empty state");
             currentServerAssignments = Maps.newHashMap();
         }
         Set<BookieId> currentServersAssigned = currentServerAssignments.keySet();
@@ -112,9 +114,12 @@ public class DefaultStorageContainerController implements StorageContainerContro
             return currentState;
         }
 
-        log.info("Storage container controller detects cluster changed:\n"
-                + "\t {} servers added: {}\n\t {} servers removed: {}",
-            serversAdded.size(), serversAdded, serversRemoved.size(), serversRemoved);
+        log.info()
+            .attr("numAdded", serversAdded.size())
+            .attr("serversAdded", serversAdded)
+            .attr("numRemoved", serversRemoved.size())
+            .attr("serversRemoved", serversRemoved)
+            .log("Storage container controller detects cluster changed");
 
         // 4. compute the containers that owned by servers removed. these containers are needed to be reassigned.
         Set<Long> containersToReassign = currentServerAssignments.entrySet().stream()
@@ -129,14 +134,10 @@ public class DefaultStorageContainerController implements StorageContainerContro
             BookieId host = entry.getKey();
 
             if (!currentCluster.contains(host)) {
-                if (log.isTraceEnabled()) {
-                    log.trace("Host {} is not in current cluster anymore", host);
-                }
+                log.trace().attr("host", host).log("Host is not in current cluster anymore");
                 continue;
             } else {
-                if (log.isTraceEnabled()) {
-                    log.trace("Adding host {} to assignment queue", host);
-                }
+                log.trace().attr("host", host).log("Adding host to assignment queue");
                 assignmentQueue.add(Pair.of(host, Lists.newLinkedList(entry.getValue())));
             }
         }

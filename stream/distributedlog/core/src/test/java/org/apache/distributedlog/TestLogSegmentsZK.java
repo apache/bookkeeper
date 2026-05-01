@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import io.github.merlimat.slog.Logger;
 import java.io.IOException;
 import java.net.URI;
 import java.util.List;
@@ -37,15 +38,13 @@ import org.apache.zookeeper.data.Stat;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for LogSegmentsZK.
  */
 public class TestLogSegmentsZK extends TestDistributedLogBase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestLogSegmentsZK.class);
+    static Logger LOG = Logger.get(TestLogSegmentsZK.class);
 
     private static MaxLogSegmentSequenceNo getMaxLogSegmentSequenceNo(ZooKeeperClient zkc, URI uri, String streamName,
                                                               DistributedLogConfiguration conf) throws Exception {

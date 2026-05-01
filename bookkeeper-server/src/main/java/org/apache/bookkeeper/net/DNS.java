@@ -31,16 +31,14 @@ import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * A class that provides direct and reverse lookup functionalities, allowing
  * the querying of specific network interfaces or nameservers.
  */
+@CustomLog
 public class DNS {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DNS.class);
 
     /**
      * The cached hostname -initially null.
@@ -176,7 +174,10 @@ public class DNS {
                 netIf = getSubinterface(strInterface);
             }
         } catch (SocketException e) {
-            LOG.warn("I/O error finding interface {}: {}", strInterface, e.getMessage());
+            log.warn()
+                    .attr("interface", strInterface)
+                    .exceptionMessage(e)
+                    .log("I/O error finding interface");
             return new String[]{cachedHostAddress};
         }
         if (netIf == null) {
@@ -241,7 +242,7 @@ public class DNS {
             }
         }
         if (hosts.isEmpty()) {
-            LOG.warn("Unable to determine hostname for interface " + strInterface);
+            log.warn().attr("interface", strInterface).log("Unable to determine hostname for interface");
             return new String[]{cachedHostname};
         } else {
             return hosts.toArray(new String[hosts.size()]);
@@ -260,8 +261,7 @@ public class DNS {
         try {
             localhost = InetAddress.getLocalHost().getCanonicalHostName();
         } catch (UnknownHostException e) {
-            LOG.warn("Unable to determine local hostname "
-                    + "-falling back to \"" + LOCALHOST + "\"", e);
+            log.warn().exception(e).log("Unable to determine local hostname - falling back to localhost");
             localhost = LOCALHOST;
         }
         return localhost;
@@ -284,15 +284,16 @@ public class DNS {
         try {
             address = InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            LOG.warn("Unable to determine address of the host"
-                    + "-falling back to \"" + LOCALHOST + "\" address", e);
+            log.warn().exception(e).log("Unable to determine address of the host - falling back to localhost address");
             try {
                 address = InetAddress.getByName(LOCALHOST).getHostAddress();
             } catch (UnknownHostException noLocalHostAddressException) {
                 //at this point, deep trouble
-                LOG.error("Unable to determine local loopback address "
-                        + "of \"" + LOCALHOST + "\" "
-                        + "-this system's network configuration is unsupported", e);
+                log.error()
+                        .exception(e)
+                        .log("Unable to determine local loopback address"
+                                + " - this system's network configuration"
+                                + " is unsupported");
                 address = null;
             }
         }

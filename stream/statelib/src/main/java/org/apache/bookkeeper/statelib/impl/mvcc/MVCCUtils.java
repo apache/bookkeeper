@@ -29,8 +29,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.kv.op.CompareOp;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.CompareTarget;
@@ -61,7 +61,7 @@ import org.apache.bookkeeper.stream.proto.kv.store.NopRequest;
 /**
  * Utils for mvcc stores.
  */
-@Slf4j
+@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MVCCUtils {
 
@@ -306,7 +306,7 @@ public final class MVCCUtils {
         try {
             return Command.parseFrom(recordBuf.nioBuffer());
         } catch (InvalidProtocolBufferException e) {
-            log.error("Found a corrupted record on replaying log stream", e);
+            log.error().exception(e).log("Found a corrupted record on replaying log stream");
             throw new StateStoreRuntimeException("Found a corrupted record on replaying log stream", e);
         }
     }

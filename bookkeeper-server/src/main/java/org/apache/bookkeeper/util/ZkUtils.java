@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.zookeeper.AsyncCallback;
@@ -37,14 +38,12 @@ import org.apache.zookeeper.KeeperException.Code;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provided utilities for zookeeper access, etc.
  */
+@CustomLog
 public class ZkUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(ZkUtils.class);
 
     /**
      * Asynchronously create zookeeper path recursively and optimistically.
@@ -287,8 +286,8 @@ public class ZkUtils {
             @Override
             public void processResult(int rc, String path, Object ctx) {
                 if (rc != Code.OK.intValue()) {
-                    LOG.error("ZK error syncing nodes when getting children: ", KeeperException
-                            .create(KeeperException.Code.get(rc), path));
+                    log.error().exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                            .log("ZK error syncing nodes when getting children");
                     cb.operationComplete(rc, null);
                     return;
                 }
@@ -296,8 +295,8 @@ public class ZkUtils {
                     @Override
                     public void processResult(int rc, String path, Object ctx, List<String> nodes) {
                         if (rc != Code.OK.intValue()) {
-                            LOG.error("Error polling ZK for the available nodes: ", KeeperException
-                                    .create(KeeperException.Code.get(rc), path));
+                            log.error().exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                                    .log("Error polling ZK for the available nodes");
                             cb.operationComplete(rc, null);
                             return;
                         }

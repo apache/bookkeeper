@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
@@ -39,7 +39,7 @@ import org.rocksdb.RocksDB;
 /**
  * Rocksdb Checkpointer that manages checkpoints.
  */
-@Slf4j
+@CustomLog
 public class RocksCheckpointer implements AutoCloseable {
 
     public static CheckpointMetadata restore(String dbName,
@@ -74,8 +74,10 @@ public class RocksCheckpointer implements AutoCloseable {
                     Paths.get(checkpointsDir.getAbsolutePath(), checkpoint),
                     RecursiveDeleteOption.ALLOW_INSECURE);
             } catch (IOException ioe) {
-                log.warn("Failed to remove unused checkpoint {} from {}",
-                    checkpoint, checkpointsDir, ioe);
+                log.warn().attr("checkpoint", checkpoint)
+                    .attr("directory", checkpointsDir)
+                    .exception(ioe)
+                    .log("Failed to remove unused checkpoint");
             }
         }
     }
@@ -99,7 +101,7 @@ public class RocksCheckpointer implements AutoCloseable {
         try {
             files = store.listFiles(remoteCheckpointsPath);
         } catch (IOException e) {
-            log.warn("No remote checkpoints available. Starting with nullCheckpoint", e);
+            log.warn().exception(e).log("No remote checkpoints available. Starting with nullCheckpoint");
             return result;
         }
 
@@ -111,9 +113,11 @@ public class RocksCheckpointer implements AutoCloseable {
             try (InputStream is = store.openInputStream(metadataPath)) {
                 result.add(new CheckpointInfo(checkpointId, is));
             } catch (FileNotFoundException fnfe) {
-                log.error("Metadata is corrupt for the checkpoint {}. Skipping it.", checkpointId);
+                log.error()
+                        .attr("checkpointId", checkpointId)
+                        .log("Metadata is corrupt for the checkpoint. Skipping it.");
             } catch (IOException e) {
-                log.error("IO exception {}, Skipping it", checkpointId, e);
+                log.error().attr("checkpointId", checkpointId).exception(e).log("IO exception, Skipping it");
             }
         }
         Collections.sort(result, Collections.reverseOrder());

@@ -40,6 +40,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -51,8 +52,6 @@ import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * When a bookie starts for the first time it generates  a cookie, and stores
@@ -66,8 +65,8 @@ import org.slf4j.LoggerFactory;
  * but the bookie would be up, so the client would think that everything is ok
  * with the cluster. It's better to fail early and obviously.
  */
+@CustomLog
 public class Cookie {
-    private static final Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 5;
     private final int layoutVersion;
@@ -153,7 +152,7 @@ public class Cookie {
         String errMsg;
         if (c.layoutVersion < 3 && c.layoutVersion != layoutVersion) {
             errMsg = "Cookie is of too old version " + c.layoutVersion;
-            LOG.error(errMsg);
+            log.error(errMsg);
             throw new BookieException.InvalidCookieException(errMsg);
         } else if (!(c.layoutVersion >= 3 && c.bookieId.equals(bookieId)
             && c.journalDirs.equals(journalDirs) && verifyLedgerDirs(c, checkIfSuperSet)

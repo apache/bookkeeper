@@ -25,8 +25,8 @@ import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.ExecutionException;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.api.kv.op.CompareOp;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
@@ -53,7 +53,7 @@ import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 /**
  * Utils for accessing table stores.
  */
-@Slf4j
+@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class TableStoreUtils {
 

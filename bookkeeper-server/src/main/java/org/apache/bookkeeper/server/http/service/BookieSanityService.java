@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -31,8 +32,6 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that exposes the bookie sanity state.
@@ -49,9 +48,9 @@ import org.slf4j.LoggerFactory;
  * </code>
  * </pre>
  */
+@CustomLog
 public class BookieSanityService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(BookieSanityService.class);
     private final ServerConfiguration config;
     private Semaphore lock = new Semaphore(1);
     private static final int TIMEOUT_MS = 5000;
@@ -91,8 +90,8 @@ public class BookieSanityService implements HttpEndpointService {
                 try {
                     lock.tryAcquire(MAX_CONCURRENT_REQUESTS, TIMEOUT_MS, TimeUnit.MILLISECONDS);
                 } catch (InterruptedException e) {
-                    LOG.error("Timing out due to max {} of sanity request are running concurrently",
-                            MAX_CONCURRENT_REQUESTS);
+                    log.error().attr("maxConcurrentRequests", MAX_CONCURRENT_REQUESTS)
+                            .log("Timing out due to max number of sanity request are running concurrently");
                     response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
                     response.setBody("Timing out due to max number of sanity request are running concurrently");
                     return response;

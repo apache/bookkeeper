@@ -26,7 +26,7 @@ import com.google.common.base.Strings;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.MetadataDrivers;
@@ -51,7 +51,7 @@ import org.apache.zookeeper.KeeperException.Code;
 /**
  * Command to init a cluster.
  */
-@Slf4j
+@CustomLog
 public class InitClusterCommand extends BKCommand<Flags> {
 
     private static final String NAME = OP_INIT;
@@ -162,14 +162,15 @@ public class InitClusterCommand extends BKCommand<Flags> {
             String ledgersUri = rootUri + ledgersPath;
             String dlogUri = rootUri + dlogPath;
 
-            log.info("Initializing cluster {} : \n"
-                + "\tledgers : path = {}, uri = {}\n"
-                + "\tdlog: path = {}, uri = {}\n"
-                + "\tstream storage: path = {}, num_storage_containers = {}",
-                clusterName,
-                ledgersPath, ledgersUri,
-                dlogPath, dlogUri,
-                StorageConstants.ZK_METADATA_ROOT_PATH, cmdFlags.numStorageContainers);
+            log.info()
+                    .attr("clusterName", clusterName)
+                    .attr("ledgersPath", ledgersPath)
+                    .attr("ledgersUri", ledgersUri)
+                    .attr("dlogPath", dlogPath)
+                    .attr("dlogUri", dlogUri)
+                    .attr("streamStoragePath", StorageConstants.ZK_METADATA_ROOT_PATH)
+                    .attr("numStorageContainers", cmdFlags.numStorageContainers)
+                    .log("Initializing cluster");
 
             // create the cluster root path
             initializeCluster(client, clusterName);
@@ -185,7 +186,7 @@ public class InitClusterCommand extends BKCommand<Flags> {
                 metadataServiceHosts,
                 ledgersUri,
                 cmdFlags.numStorageContainers);
-            log.info("Successfully initialized cluster {}", clusterName);
+            log.info().attr("clusterName", clusterName).log("Successfully initialized cluster");
             return true;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -215,7 +216,9 @@ public class InitClusterCommand extends BKCommand<Flags> {
             rm -> {
                 try {
                     if (rm.initNewCluster()) {
-                        log.info("Successfully initialized ledgers metadata at {}", ledgersUri);
+                        log.info()
+                                .attr("ledgersUri", ledgersUri)
+                                .log("Successfully initialized ledgers metadata");
                     }
                 } catch (Exception e) {
                     throw new UncheckedExecutionException("Failed to init ledgers metadata at " + ledgersUri, e);
@@ -250,9 +253,10 @@ public class InitClusterCommand extends BKCommand<Flags> {
                                            int numStorageContainers) {
         ZkClusterInitializer initializer = new ZkClusterInitializer(metadataServiceHosts);
         if (initializer.initializeCluster(URI.create(ledgersUri), numStorageContainers)) {
-            log.info("Successfully initialized stream storage metadata at {}:{}",
-                metadataServiceHosts,
-                StorageConstants.ZK_METADATA_ROOT_PATH);
+            log.info()
+                    .attr("metadataServiceHosts", metadataServiceHosts)
+                    .attr("path", StorageConstants.ZK_METADATA_ROOT_PATH)
+                    .log("Successfully initialized stream storage metadata");
         }
     }
 

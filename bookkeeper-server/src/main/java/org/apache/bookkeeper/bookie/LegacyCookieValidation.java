@@ -28,20 +28,19 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Legacy implementation of CookieValidation.
  */
+@CustomLog
 public class LegacyCookieValidation implements CookieValidation {
-    private static final Logger log = LoggerFactory.getLogger(LegacyCookieValidation.class);
 
     private final ServerConfiguration conf;
     private final RegistrationManager registrationManager;
@@ -113,10 +112,10 @@ public class LegacyCookieValidation implements CookieValidation {
                 } else {
                     // 5.3 Cookie-less directories and
                     //     we can't do anything with them
-                    log.error("There are directories without a cookie,"
-                            + " and this is neither a new environment,"
-                            + " nor is storage expansion enabled. "
-                            + "Empty directories are {}", missedCookieDirs);
+                    log.error()
+                            .attr("emptyDirs", missedCookieDirs)
+                            .log("There are directories without a cookie, and this is neither a new "
+                                    + "environment, nor is storage expansion enabled");
                     throw new BookieException.InvalidCookieException();
                 }
             } else {
@@ -127,7 +126,7 @@ public class LegacyCookieValidation implements CookieValidation {
                 }
             }
         } catch (IOException ioe) {
-            log.error("Error accessing cookie on disks", ioe);
+            log.error().exception(ioe).log("Error accessing cookie on disks");
             throw new BookieException.InvalidCookieException(ioe);
         }
     }
@@ -223,7 +222,7 @@ public class LegacyCookieValidation implements CookieValidation {
             }
         }
         if (!nonEmptyDirs.isEmpty()) {
-            log.error("Not all the new directories are empty. New directories that are not empty are: " + nonEmptyDirs);
+            log.error().attr("nonEmptyDirs", nonEmptyDirs).log("Not all the new directories are empty");
             throw new BookieException.InvalidCookieException();
         }
     }
@@ -235,7 +234,7 @@ public class LegacyCookieValidation implements CookieValidation {
                                        List<File> dirs)
             throws BookieException, IOException {
         // backfill all the directories that miss cookies (for storage expansion)
-        log.info("Stamping new cookies on all dirs {}", dirs);
+        log.info().attr("dirs", dirs).log("Stamping new cookies on all dirs");
         for (File dir : dirs) {
             masterCookie.writeToDirectory(dir);
         }
@@ -272,10 +271,11 @@ public class LegacyCookieValidation implements CookieValidation {
             }
         }
         if (dirsMissingData.size() > 0 || nonEmptyDirs.size() > 0) {
-            log.error("Either not all local directories have cookies or directories being added "
-                    + " newly are not empty. "
-                    + "Directories missing cookie file are: " + dirsMissingData
-                    + " New directories that are not empty are: " + nonEmptyDirs);
+            log.error()
+                    .attr("dirsMissingCookie", dirsMissingData)
+                    .attr("nonEmptyDirs", nonEmptyDirs)
+                    .log("Either not all local directories have cookies or directories "
+                            + "being added newly are not empty");
             throw new BookieException.InvalidCookieException();
         }
     }

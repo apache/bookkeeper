@@ -22,15 +22,12 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.LongAdder;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.ZooKeeperClient;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Watcher Manager to manage watchers.
@@ -40,9 +37,8 @@ import org.slf4j.LoggerFactory;
  * <li> `num_child_watches`: number of paths that are watched for children changes by this watcher manager.
  * </ul>
  */
+@CustomLog
 public class ZKWatcherManager implements Watcher {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZKWatcherManager.class);
 
     public static Builder newBuilder() {
         return new Builder();
@@ -142,8 +138,10 @@ public class ZKWatcherManager implements Watcher {
                     allWatchesGauge.increment();
                 }
             } else {
-                logger.warn("Watcher set for path {} has been changed while registering child watcher {}.",
-                        path, watcher);
+                log.warn()
+                        .attr("path", path)
+                        .attr("watcher", watcher)
+                        .log("Watcher set for path has been changed while registering child watcher.");
             }
         }
         return this;
@@ -152,15 +150,20 @@ public class ZKWatcherManager implements Watcher {
     public void unregisterChildWatcher(String path, Watcher watcher, boolean removeFromServer) {
         Set<Watcher> watchers = childWatches.get(path);
         if (null == watchers) {
-            logger.warn("No watchers found on path {} while unregistering child watcher {}.",
-                    path, watcher);
+            log.warn()
+                .attr("path", path)
+                .attr("watcher", watcher)
+                .log("No watchers found on path while unregistering child watcher.");
             return;
         }
         synchronized (watchers) {
             if (watchers.remove(watcher)) {
                 allWatchesGauge.decrement();
             } else {
-                logger.warn("Remove a non-registered child watcher {} from path {}", watcher, path);
+                log.warn()
+                        .attr("watcher", watcher)
+                        .attr("path", path)
+                        .log("Remove a non-registered child watcher from path");
             }
             if (watchers.isEmpty()) {
                 childWatches.remove(path, watchers);
@@ -202,7 +205,7 @@ public class ZKWatcherManager implements Watcher {
     private void handleChildWatchEvent(WatchedEvent event) {
         String path = event.getPath();
         if (null == path) {
-            logger.warn("Received zookeeper watch event with null path : {}", event);
+            log.warn().attr("event", event).log("Received zookeeper watch event with null path");
             return;
         }
         Set<Watcher> watchers = childWatches.get(path);

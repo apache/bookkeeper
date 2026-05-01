@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.LedgerMetadataUtils;
 import org.apache.bookkeeper.client.api.DigestType;
@@ -46,14 +47,12 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Serialization and deserialization for LedgerMetadata.
  */
+@CustomLog
 public class LedgerMetadataSerDe {
-    private static final Logger log = LoggerFactory.getLogger(LedgerMetadataSerDe.class);
 
     /**
      * Text based manual serialization.
@@ -140,15 +139,13 @@ public class LedgerMetadataSerDe {
         default:
             throw new IllegalArgumentException("Invalid format version " + formatVersion);
         }
-        if (log.isDebugEnabled()) {
-            String serializedStr;
-            if (formatVersion > METADATA_FORMAT_VERSION_2) {
-                serializedStr = Base64.getEncoder().encodeToString(serialized);
-            } else {
-                serializedStr = new String(serialized, UTF_8);
-            }
-            log.debug("Serialized with format {}: {}", formatVersion, serializedStr);
-        }
+        final byte[] finalSerialized = serialized;
+        log.debug(e -> e
+                .attr("formatVersion", formatVersion)
+                .attr("serialized", formatVersion > METADATA_FORMAT_VERSION_2
+                        ? Base64.getEncoder().encodeToString(finalSerialized)
+                        : new String(finalSerialized, UTF_8))
+                .log("Serialized metadata"));
         return serialized;
     }
 
@@ -339,18 +336,16 @@ public class LedgerMetadataSerDe {
     public LedgerMetadata parseConfig(byte[] bytes,
                                       long ledgerId,
                                       Optional<Long> metadataStoreCtime) throws IOException {
-        if (log.isDebugEnabled()) {
-            log.debug("Deserializing {}", Base64.getEncoder().encodeToString(bytes));
-        }
+        log.debug(e -> e
+                .attr("serialized", Base64.getEncoder().encodeToString(bytes))
+                .log("Deserializing metadata"));
         try (ByteArrayInputStream is = new ByteArrayInputStream(bytes)) {
             int metadataFormatVersion = readHeader(is);
-            if (log.isDebugEnabled()) {
-                String contentStr = "";
-                if (metadataFormatVersion <= METADATA_FORMAT_VERSION_2) {
-                    contentStr = ", content: " + new String(bytes, UTF_8);
-                }
-                log.debug("Format version {} detected{}", metadataFormatVersion, contentStr);
-            }
+            log.debug(e -> e
+                    .attr("formatVersion", metadataFormatVersion)
+                    .attr("content", metadataFormatVersion <= METADATA_FORMAT_VERSION_2
+                            ? new String(bytes, UTF_8) : "")
+                    .log("Format version detected"));
 
             switch (metadataFormatVersion) {
             case METADATA_FORMAT_VERSION_3:

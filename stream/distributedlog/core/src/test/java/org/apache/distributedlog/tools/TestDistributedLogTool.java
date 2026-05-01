@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.BKNoSuchLedgerExistsOnMetadataServerException;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.distributedlog.DLMTestUtil;
@@ -47,16 +48,12 @@ import org.apache.distributedlog.tools.DistributedLogTool.TruncateStreamCommand;
 import org.apache.zookeeper.KeeperException;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Test Case for {@link DistributedLogTool}s.
  */
+@CustomLog
 public class TestDistributedLogTool extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogTool.class);
 
     private static final String defaultLedgerPath = LocalDLMEmulator.getBkLedgerPath();
     private static final String defaultPath = "/test/namespace";

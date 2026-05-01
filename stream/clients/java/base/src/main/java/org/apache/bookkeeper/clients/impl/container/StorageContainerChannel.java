@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.concurrent.GuardedBy;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.exceptions.StorageContainerException;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannelManager;
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.stream.proto.storage.StorageContainerEndpoint;
 /**
  * A client place holder for managing information of storage containers.
  */
-@Slf4j
+@CustomLog
 public class StorageContainerChannel {
 
     private final long scId;
@@ -139,8 +139,11 @@ public class StorageContainerChannel {
     }
 
     private void handleFetchStorageContainerInfoFailure(Throwable cause) {
-        log.info("Failed to fetch info of storage container ({}) - '{}'. Retry in {} ms ...",
-            new Object[]{scId, cause.getMessage(), ClientConstants.DEFAULT_BACKOFF_START_MS});
+        log.info()
+            .attr("scId", scId)
+            .exceptionMessage(cause)
+            .attr("retryMs", ClientConstants.DEFAULT_BACKOFF_START_MS)
+            .log("Failed to fetch info of storage container. Retrying ...");
         executor.schedule(() -> {
             fetchStorageContainerInfo();
         }, ClientConstants.DEFAULT_BACKOFF_START_MS, TimeUnit.MILLISECONDS);
@@ -182,8 +185,11 @@ public class StorageContainerChannel {
         // get the channel from channel manager (if it doesn't exist create one)
         StorageServerChannel serverChannel = channelManager.getOrCreateChannel(endpoint.getRwEndpoint());
         if (null == serverChannel) {
-            log.info("No channel found/created for range server {}. The channel manager must be shutting down."
-                + " Stop the process of fetching storage container ({}).", endpoint.getRwEndpoint(), scId);
+            log.info()
+                .attr("rwEndpoint", endpoint.getRwEndpoint())
+                .attr("scId", scId)
+                .log("No channel found/created for range server. The channel manager must be shutting down."
+                    + " Stop the process of fetching storage container.");
             synchronized (this) {
                 rsChannelFuture.completeExceptionally(
                     new ObjectClosedException("StorageServerChannelManager is closed"));

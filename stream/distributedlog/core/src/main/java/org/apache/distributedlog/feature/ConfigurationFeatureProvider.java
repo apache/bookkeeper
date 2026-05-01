@@ -18,21 +18,18 @@
 package org.apache.distributedlog.feature;
 
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.feature.CacheableFeatureProvider;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Feature Provider that load features from configuration.
  */
+@CustomLog
 class ConfigurationFeatureProvider extends CacheableFeatureProvider {
-
-    private static final Logger logger = LoggerFactory.getLogger(ConfigurationFeatureProvider.class);
 
     static SettableFeature makeFeature(ConcurrentBaseConfiguration featuresConf,
                                        ConcurrentMap<String, SettableFeature> features,
@@ -46,7 +43,10 @@ class ConfigurationFeatureProvider extends CacheableFeatureProvider {
             if (null != oldFeature) {
                 feature = oldFeature;
             } else {
-                logger.info("Load feature {}={}", featureName, availability);
+                log.info()
+                        .attr("feature", featureName)
+                        .attr("availability", availability)
+                        .log("Load feature");
             }
         }
         return feature;

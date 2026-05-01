@@ -23,6 +23,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -36,16 +37,13 @@ import org.apache.distributedlog.impl.metadata.BKDLConfig;
 import org.apache.distributedlog.util.Utils;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * access to ZKMetadata.
  */
+@CustomLog
 @SuppressWarnings("deprecation")
 public class ZKMetadataAccessor implements org.apache.distributedlog.api.MetadataAccessor {
-    static final Logger LOG = LoggerFactory.getLogger(ZKMetadataAccessor.class);
     protected final String name;
     protected CompletableFuture<Void> closePromise;
     protected final URI uri;
@@ -100,12 +98,14 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 BKDLConfig bkdlConfig = BKDLConfig.resolveDLConfig(this.writerZKC, uri);
                 zkServersForReader = bkdlConfig.getDlZkServersForReader();
             } catch (IOException e) {
-                LOG.warn("Error on resolving dl metadata bindings for {} : ", uri, e);
+                log.warn().attr("uri", uri).exception(e).log("Error on resolving dl metadata bindings");
                 zkServersForReader = zkServersForWriter;
             }
             if (zkServersForReader.equals(zkServersForWriter)) {
-                LOG.info("Used same zookeeper servers '{}' for both writers and readers for {}.",
-                         zkServersForWriter, name);
+                log.info()
+                        .attr("zkServers", zkServersForWriter)
+                        .attr("name", name)
+                        .log("Used same zookeeper servers for both writers and readers.");
                 this.readerZKCBuilder = this.writerZKCBuilder;
                 this.ownReaderZKC = false;
             } else {
@@ -154,9 +154,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
         checkClosedOrInError("createOrUpdateMetadata");
 
         String zkPath = getZKPath();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Setting application specific metadata on {}", zkPath);
-        }
+        log.debug().attr("zkPath", zkPath).log("Setting application specific metadata");
         try {
             Stat currentStat = writerZKC.get().exists(zkPath, false);
             if (currentStat == null) {
@@ -198,9 +196,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
     public byte[] getMetadata() throws IOException {
         checkClosedOrInError("createOrUpdateMetadata");
         String zkPath = getZKPath();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Getting application specific metadata from {}", zkPath);
-        }
+        log.debug().attr("zkPath", zkPath).log("Getting application specific metadata");
         try {
             Stat currentStat = readerZKC.get().exists(zkPath, false);
             if (currentStat == null) {
@@ -239,7 +235,7 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
                 readerZKC.close();
             }
         } catch (Exception e) {
-            LOG.warn("Exception while closing distributed log manager", e);
+            log.warn().exception(e).log("Exception while closing distributed log manager");
         }
         FutureUtils.complete(closeFuture, null);
         return closeFuture;

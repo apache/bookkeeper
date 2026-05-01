@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.commons.lang3.StringUtils;
@@ -65,12 +66,11 @@ import org.rocksdb.RocksObject;
 import org.rocksdb.Slice;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * RocksDB based implementation of the KeyValueStorage.
  */
+@CustomLog
 public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     static KeyValueStorageFactory factory = (defaultBasePath, subPath, dbConfigType, conf) ->
@@ -135,7 +135,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         } else {
             dbFilePath = conf.getDefaultRocksDBConf();
         }
-        log.info("Searching for a RocksDB configuration file in {}", dbFilePath);
+        log.info().attr("path", dbFilePath).log("Searching for a RocksDB configuration file");
         if (StringUtils.isNotBlank(dbFilePath) && Paths.get(dbFilePath).toFile().exists()) {
             log.info("Found a RocksDB configuration file and using it to initialize the RocksDB");
             db = initializeRocksDBWithConfFile(basePath, subPath, dbConfigType, conf, readOnly, dbFilePath);
@@ -169,7 +169,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             if (!logPath.isEmpty()) {
                 Path logPathSetting = FileSystems.getDefault().getPath(logPath, subPath);
                 Files.createDirectories(logPathSetting);
-                log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
+                log.info()
+                        .attr("subPath", subPath)
+                        .attr("logPath", logPathSetting)
+                        .log("RocksDB log path");
                 dbOptions.setDbLogDir(logPathSetting.toString());
             }
             this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
@@ -253,7 +256,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         if (!logPath.isEmpty()) {
             Path logPathSetting = FileSystems.getDefault().getPath(logPath, subPath);
             Files.createDirectories(logPathSetting);
-            log.info("RocksDB<{}> log path: {}", subPath, logPathSetting);
+            log.info()
+                    .attr("subPath", subPath)
+                    .attr("logPath", logPathSetting)
+                    .log("RocksDB log path");
             options.setDbLogDir(logPathSetting.toString());
         }
         this.dbPath = FileSystems.getDefault().getPath(basePath, subPath).toFile().toString();
@@ -274,7 +280,7 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                 options.setInfoLogLevel(InfoLogLevel.ERROR_LEVEL);
                 break;
             default:
-                log.warn("Unrecognized RockDB log level: {}", logLevel);
+                log.warn().attr("logLevel", logLevel).log("Unrecognized RockDB log level");
         }
 
             // Keep log files for 1month
@@ -406,16 +412,22 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             final long start = System.currentTimeMillis();
             final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
             final long oriRocksDBSize = getRocksDBSize();
-            log.info("Starting RocksDB {} compact, current RocksDB hold {} files and {} Bytes.",
-                    db.getName(), oriRocksDBFileCount, oriRocksDBSize);
+            log.info()
+                    .attr("dbName", db.getName())
+                    .attr("fileCount", oriRocksDBFileCount)
+                    .attr("sizeBytes", oriRocksDBSize).log("Starting RocksDB compact");
 
             db.compactRange();
 
             final long end = System.currentTimeMillis();
             final int rocksDBFileCount = db.getLiveFilesMetaData().size();
             final long rocksDBSize = getRocksDBSize();
-            log.info("RocksDB {} compact finished {} ms, space reduced {} Bytes, current hold {} files and {} Bytes.",
-                    db.getName(), end - start, oriRocksDBSize - rocksDBSize, rocksDBFileCount, rocksDBSize);
+            log.info()
+                    .attr("dbName", db.getName())
+                    .attr("durationMs", end - start)
+                    .attr("spaceReducedBytes", oriRocksDBSize - rocksDBSize)
+                    .attr("fileCount", rocksDBFileCount).attr("sizeBytes", rocksDBSize)
+                    .log("RocksDB compact finished");
         } catch (RocksDBException e) {
             throw new IOException("Error in RocksDB compact", e);
         }
@@ -665,5 +677,4 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
         return options;
     }
 
-    private static final Logger log = LoggerFactory.getLogger(KeyValueStorageRocksDB.class);
 }

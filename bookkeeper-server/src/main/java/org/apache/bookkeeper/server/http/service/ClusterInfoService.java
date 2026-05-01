@@ -20,10 +20,10 @@ package org.apache.bookkeeper.server.http.service;
 
 import java.util.Iterator;
 import lombok.AllArgsConstructor;
+import lombok.CustomLog;
 import lombok.Data;
 import lombok.NonNull;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.http.HttpServer;
@@ -54,7 +54,7 @@ import org.apache.bookkeeper.net.BookieId;
  * </pre>
  */
 @AllArgsConstructor
-@Slf4j
+@CustomLog
 public class ClusterInfoService implements HttpEndpointService {
 
     @NonNull
@@ -117,7 +117,7 @@ public class ClusterInfoService implements HttpEndpointService {
             info.setAuditorElected(currentAuditor != null);
             info.setAuditorId(currentAuditor == null ? "" : currentAuditor.getId());
         } catch (Exception e) {
-            log.error("Could not get Auditor info", e);
+            log.error().exception(e).log("Could not get Auditor info");
             info.setAuditorElected(false);
             info.setAuditorId("");
         }

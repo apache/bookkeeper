@@ -44,6 +44,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookKeeperServerStats;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
@@ -92,8 +93,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * BookKeeper client.
@@ -106,9 +105,8 @@ import org.slf4j.LoggerFactory;
  * <p>The exceptions resulting from synchronous calls and error code resulting from
  * asynchronous calls can be found in the class {@link BKException}.
  */
+@CustomLog
 public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BookKeeper.class);
 
 
     final EventLoopGroup eventLoopGroup;
@@ -348,7 +346,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
     private static ZooKeeper validateZooKeeper(ZooKeeper zk) throws NullPointerException, IOException {
         checkNotNull(zk, "No zookeeper instance provided");
         if (!zk.getState().isConnected()) {
-            LOG.error("Unconnected zookeeper handle passed to bookkeeper");
+            log.error("Unconnected zookeeper handle passed to bookkeeper");
             throw new IOException(KeeperException.create(KeeperException.Code.CONNECTIONLOSS));
         }
         return zk;
@@ -458,10 +456,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 rootStatsLogger,
                 Optional.ofNullable(zkc));
         } catch (ConfigurationException ce) {
-            LOG.error("Failed to initialize metadata client driver using invalid metadata service uri", ce);
+            log.error()
+                    .exception(ce)
+                    .log("Failed to initialize metadata client driver using invalid metadata service uri");
             throw new IOException("Failed to initialize metadata client driver", ce);
         } catch (MetadataException me) {
-            LOG.error("Encountered metadata exceptions on initializing metadata client driver", me);
+            log.error().exception(me).log("Encountered metadata exceptions on initializing metadata client driver");
             throw new IOException("Failed to initialize metadata client driver", me);
         }
 
@@ -518,7 +518,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                 scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
 
         if (conf.getDiskWeightBasedPlacementEnabled()) {
-            LOG.info("Weighted ledger placement enabled");
+            log.info("Weighted ledger placement enabled");
             ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
                     .setNameFormat("BKClientMetaDataPollScheduler-%d");
             this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
@@ -526,7 +526,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.bookieWatcher.initialBlockingBookieRead();
             this.bookieInfoReader.start();
         } else {
-            LOG.info("Weighted ledger placement is not enabled");
+            log.info("Weighted ledger placement is not enabled");
             this.bookieInfoScheduler = null;
             this.bookieInfoReader = new BookieInfoReader(this, conf, null);
             this.bookieWatcher.initialBlockingBookieRead();
@@ -627,12 +627,12 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             isEnabled = metadataDriver.isHealthCheckEnabled().get();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error("Cannot verify if healthcheck is enabled", e);
+            log.error().exception(e).log("Cannot verify if healthcheck is enabled");
         } catch (ExecutionException e) {
-            LOG.error("Cannot verify if healthcheck is enabled", e.getCause());
+            log.error().attr("getCause", e.getCause()).log("Cannot verify if healthcheck is enabled");
         }
         if (!isEnabled) {
-            LOG.info("Health checks is currently disabled!");
+            log.info("Health checks is currently disabled!");
             bookieWatcher.releaseAllQuarantinedBookies();
             return;
         }
@@ -967,7 +967,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
-            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            log.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
         return lh;
@@ -1024,7 +1024,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
-            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            log.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
         return lh;
@@ -1117,14 +1117,20 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         LedgerHandle lh = SyncCallbackUtils.waitForResult(future);
         if (lh == null) {
-            LOG.error("Unexpected condition : no ledger handle returned for a success ledger creation");
+            log.error("Unexpected condition : no ledger handle returned for a success ledger creation");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         } else if (ledgerId != lh.getId()) {
-            LOG.error("Unexpected condition : Expected ledgerId: {} but got: {}", ledgerId, lh.getId());
+            log.error()
+                    .attr("expectedLedgerId", ledgerId)
+                    .attr("gotLedgerId", lh.getId())
+                    .log("Unexpected condition");
             throw BKException.create(BKException.Code.UnexpectedConditionException);
         }
 
-        LOG.info("Ensemble: {} for ledger: {}", lh.getLedgerMetadata().getEnsembleAt(0L), lh.getId());
+        log.info()
+                .attr("getEnsembleAt", lh.getLedgerMetadata().getEnsembleAt(0L))
+                .attr("ledgerId", lh.getId())
+                .log("Ensemble for ledger");
 
         return lh;
     }
@@ -1521,30 +1527,30 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             ledgerManager.close();
             ledgerIdGenerator.close();
         } catch (IOException ie) {
-            LOG.error("Failed to close ledger manager : ", ie);
+            log.error().exception(ie).log("Failed to close ledger manager");
         }
 
         // Close the scheduler
         scheduler.shutdown();
         if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-            LOG.warn("The scheduler did not shutdown cleanly");
+            log.warn("The scheduler did not shutdown cleanly");
         }
 
         // Close the watchTask scheduler
         highPriorityTaskExecutor.shutdown();
         if (!highPriorityTaskExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-            LOG.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly, interrupting");
+            log.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly, interrupting");
             highPriorityTaskExecutor.shutdownNow();
         }
 
         mainWorkerPool.shutdown();
         if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
-            LOG.warn("The mainWorkerPool did not shutdown cleanly");
+            log.warn("The mainWorkerPool did not shutdown cleanly");
         }
         if (this.bookieInfoScheduler != null) {
             this.bookieInfoScheduler.shutdown();
             if (!bookieInfoScheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-                LOG.warn("The bookieInfoScheduler did not shutdown cleanly");
+                log.warn("The bookieInfoScheduler did not shutdown cleanly");
             }
         }
 

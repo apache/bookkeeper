@@ -21,14 +21,14 @@ import static org.junit.Assert.assertEquals;
 import com.google.common.hash.Hashing;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.hash.Murmur3;
 import org.junit.Test;
 
 /**
  * Unit test {@link HashRouter}s.
  */
-@Slf4j
+@CustomLog
 public class HashRouterTest {
 
     @Test
@@ -52,7 +52,10 @@ public class HashRouterTest {
         long[] hash128 = Murmur3.hash128(
             key, key.readerIndex(), key.readableBytes(), AbstractHashRouter.HASH_SEED);
         long[] bytesHash128 = Murmur3.hash128(keyBytes, 0, keyBytes.length, AbstractHashRouter.HASH_SEED);
-        log.info("hash128: {}, bytes hash128: {}", hash128, bytesHash128);
+        log.info()
+            .attr("hash128", hash128)
+            .attr("bytesHash128", bytesHash128)
+            .log("hash128");
         long guavaHash128 = Hashing.murmur3_128((int) AbstractHashRouter.HASH_SEED)
             .newHasher()
             .putString("foo", UTF_8)
@@ -63,7 +66,9 @@ public class HashRouterTest {
 
         ByteBufHashRouter router = ByteBufHashRouter.of();
         long routingHash = router.getRoutingKey(key);
-        log.info("Routing hash = {}", routingHash);
+        log.info()
+            .attr("routingHash", routingHash)
+            .log("Routing hash");
         assertEquals(hash128[0], routingHash);
         BytesHashRouter bytesRouter = BytesHashRouter.of();
         long bytesRoutingHash = bytesRouter.getRoutingKey(keyBytes);

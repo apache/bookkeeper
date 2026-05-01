@@ -40,6 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAccessor;
@@ -68,18 +69,12 @@ import org.apache.distributedlog.util.DLUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * DL Auditor will audit DL namespace, e.g. find leaked ledger, report disk usage by streams.
  */
+@CustomLog
 public class DLAuditor {
-
-    private static final Logger logger = LoggerFactory.getLogger(DLAuditor.class);
 
     private final DistributedLogConfiguration conf;
 
@@ -142,7 +137,7 @@ public class DLAuditor {
         ExecutorService executorService = Executors.newCachedThreadPool();
         try {
             BKDLConfig bkdlConfig = resolveBKDLConfig(zkc, uris);
-            logger.info("Resolved bookkeeper config : {}", bkdlConfig);
+            log.info().attr("bkdlConfig", bkdlConfig).log("Resolved bookkeeper config");
 
             BookKeeperClient bkc = BookKeeperClientBuilder.newBuilder()
                     .name("DLAuditor-BK")
@@ -182,7 +177,7 @@ public class DLAuditor {
                 synchronized (ledgers) {
                     ledgers.add(lid);
                     if (0 == ledgers.size() % 1000) {
-                        logger.info("Collected {} ledgers", ledgers.size());
+                        log.info().attr("numLedgers", ledgers.size()).log("Collected ledgers");
                     }
                 }
                 executorService.submit(new Runnable() {
@@ -208,7 +203,7 @@ public class DLAuditor {
                 BKException.Code.ZKException);
         try {
             doneFuture.get();
-            logger.info("Collected total {} ledgers", ledgers.size());
+            log.info().attr("numLedgers", ledgers.size()).log("Collected total ledgers");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on collecting ledgers : ", e);
@@ -252,16 +247,19 @@ public class DLAuditor {
                         @Override
                         public void run() {
                             try {
-                                logger.info("Collecting ledgers from {} : {}", uri, aps);
+                                log.info().attr("uri", uri).attr("aps", aps).log("Collecting ledgers");
                                 collectLedgersFromAllocator(uri, namespace, aps, ledgers);
                                 synchronized (ledgers) {
-                                    logger.info("Collected {} ledgers from allocators for {} : {} ",
-                                        ledgers.size(), uri, ledgers);
+                                    log.info()
+                                            .attr("numLedgers", ledgers.size())
+                                            .attr("uri", uri)
+                                            .attr("ledgers", ledgers)
+                                            .log("Collected ledgers from allocators");
                                 }
                                 collectLedgersFromDL(uri, namespace, ledgers);
                             } catch (IOException e) {
                                 numFailures.incrementAndGet();
-                                logger.info("Error to collect ledgers from DL : ", e);
+                                log.info().exception(e).log("Error to collect ledgers from DL");
                             }
                             doneLatch.countDown();
                         }
@@ -274,7 +272,7 @@ public class DLAuditor {
                     }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    logger.warn("Interrupted on collecting ledgers from DL : ", e);
+                    log.warn().exception(e).log("Interrupted on collecting ledgers from DL");
                     throw new DLInterruptedException("Interrupted on collecting ledgers from DL : ", e);
                 }
             } finally {
@@ -309,8 +307,7 @@ public class DLAuditor {
             }
         }
 
-
-        logger.info("Collecting ledgers from allocators for {} : {}", uri, poolQueue);
+        log.info().attr("uri", uri).attr("poolQueue", poolQueue).log("Collecting ledgers from allocators");
 
         executeAction(poolQueue, 10, new Action<String>() {
             @Override
@@ -340,27 +337,34 @@ public class DLAuditor {
                                 ledgers.add(ledgerId);
                             }
                         } catch (NumberFormatException nfe) {
-                            logger.warn("Invalid ledger found in allocator path {} : ", allocatorPath, nfe);
+                            log.warn()
+                                    .attr("allocatorPath", allocatorPath)
+                                    .exception(nfe)
+                                    .log("Invalid ledger found in allocator path");
                         }
                     }
                 }
             }
         });
 
-        logger.info("Collected ledgers from allocators for {}.", uri);
+        log.info().attr("uri", uri).log("Collected ledgers from allocators");
     }
 
     private void collectLedgersFromDL(final URI uri,
                                       final Namespace namespace,
                                       final Set<Long> ledgers) throws IOException {
-        logger.info("Enumerating {} to collect streams.", uri);
+        log.info().attr("uri", uri).log("Enumerating to collect streams.");
         Iterator<String> streams = namespace.getLogs();
         final LinkedBlockingQueue<String> streamQueue = new LinkedBlockingQueue<String>();
         while (streams.hasNext()) {
             streamQueue.add(streams.next());
         }
 
-        logger.info("Collected {} streams from uri {} : {}", streamQueue.size(), uri, streams);
+        log.info()
+                .attr("numStreams", streamQueue.size())
+                .attr("uri", uri)
+                .attr("streams", streams)
+                .log("Collected streams from uri");
 
         executeAction(streamQueue, 10, new Action<String>() {
             @Override
@@ -397,7 +401,7 @@ public class DLAuditor {
      * @throws IOException
      */
     public Map<String, Long> calculateStreamSpaceUsage(final URI uri) throws IOException {
-        logger.info("Collecting stream space usage for {}.", uri);
+        log.info().attr("uri", uri).log("Collecting stream space usage");
         Namespace namespace = NamespaceBuilder.newBuilder()
                 .conf(conf)
                 .uri(uri)
@@ -428,7 +432,10 @@ public class DLAuditor {
                 streamSpaceUsageMap.put(stream,
                         calculateStreamSpaceUsage(namespace, stream));
                 if (numStreamsCollected.incrementAndGet() % 1000 == 0) {
-                    logger.info("Calculated {} streams from uri {}.", numStreamsCollected.get(), uri);
+                    log.info()
+                            .attr("numStreamsCollected", numStreamsCollected.get())
+                            .attr("uri", uri)
+                            .log("Calculated streams from uri.");
                 }
             }
         });
@@ -450,10 +457,16 @@ public class DLAuditor {
                     totalBytes += lh.getLength();
                     lh.close();
                 } catch (BKException e) {
-                    logger.error("Failed to open ledger {} : ", segment.getLogSegmentId(), e);
+                    log.error()
+                            .attr("logSegmentId", segment.getLogSegmentId())
+                            .exception(e)
+                            .log("Failed to open ledger");
                     throw new IOException("Failed to open ledger " + segment.getLogSegmentId(), e);
                 } catch (InterruptedException e) {
-                    logger.warn("Interrupted on opening ledger {} : ", segment.getLogSegmentId(), e);
+                    log.warn()
+                            .attr("logSegmentId", segment.getLogSegmentId())
+                            .exception(e)
+                            .log("Interrupted on opening ledger");
                     Thread.currentThread().interrupt();
                     throw new DLInterruptedException("Interrupted on opening ledger " + segment.getLogSegmentId(), e);
                 }
@@ -481,7 +494,7 @@ public class DLAuditor {
         ExecutorService executorService = Executors.newCachedThreadPool();
         try {
             BKDLConfig bkdlConfig = resolveBKDLConfig(zkc, uris);
-            logger.info("Resolved bookkeeper config : {}", bkdlConfig);
+            log.info().attr("bkdlConfig", bkdlConfig).log("Resolved bookkeeper config");
 
             BookKeeperClient bkc = BookKeeperClientBuilder.newBuilder()
                     .name("DLAuditor-BK")
@@ -559,8 +572,11 @@ public class DLAuditor {
         lm.asyncProcessLedgers(collector, finalCb, null, BKException.Code.OK, BKException.Code.ZKException);
         try {
             doneFuture.get();
-            logger.info("calculated {} ledgers\n\ttotal bytes = {}\n\ttotal entries = {}",
-                numLedgers.get(), totalBytes.get(), totalEntries.get());
+            log.info()
+                .attr("numLedgers", numLedgers.get())
+                .attr("totalBytes", totalBytes.get())
+                .attr("totalEntries", totalEntries.get())
+                .log("Calculated ledgers");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on calculating ledger space : ", e);
@@ -604,7 +620,10 @@ public class DLAuditor {
                             try {
                                 action.execute(item);
                             } catch (IOException ioe) {
-                                logger.error("Failed to execute action on item '{}'", item, ioe);
+                                log.error()
+                                        .attr("item", item)
+                                        .exception(ioe)
+                                        .log("Failed to execute action on item ''");
                                 numFailures.incrementAndGet();
                                 failureLatch.countDown();
                                 break;
@@ -625,7 +644,7 @@ public class DLAuditor {
                 doneLatch.await();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                logger.warn("Interrupted on executing action", ie);
+                log.warn().exception(ie).log("Interrupted on executing action");
                 throw new DLInterruptedException("Interrupted on executing action", ie);
             }
         } finally {

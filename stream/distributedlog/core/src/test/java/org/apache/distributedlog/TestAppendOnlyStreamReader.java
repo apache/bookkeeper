@@ -23,20 +23,18 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.util.Arrays;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Test Case for {@link AppendOnlyStreamReader}.
  */
+@CustomLog
 public class TestAppendOnlyStreamReader extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestAppendOnlyStreamReader.class);
 
     @Rule
     public TestName testNames = new TestName();

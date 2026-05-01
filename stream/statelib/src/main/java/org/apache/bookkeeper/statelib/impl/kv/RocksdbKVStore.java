@@ -52,8 +52,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.common.kv.KVImpl;
@@ -92,7 +92,7 @@ import org.rocksdb.WriteOptions;
  * @param <K> key type
  * @param <V> value type
  */
-@Slf4j
+@CustomLog
 public class RocksdbKVStore<K, V> implements KVStore<K, V> {
 
     private static final byte[] METADATA_CF = ".meta".getBytes(UTF_8);
@@ -189,18 +189,19 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                     .forEach(cp -> cp.remove(localStorePath)); // delete everything else
                 break;
             } catch (TimeoutException e) {
-                log.error("Timeout waiting for checkpoint restore: {}", cpi, e);
+                log.error().attr("checkpoint", cpi).exception(e).log("Timeout waiting for checkpoint restore");
                 throw new StateStoreException("Failed to restore checkpoint: " + cpi.getId(), e);
             } catch (StateStoreException e) {
                 // Got an exception. Log and try the next checkpoint
-                log.error("Failed to restore checkpoint: {}", cpi, e);
+                log.error().attr("checkpoint", cpi).exception(e).log("Failed to restore checkpoint");
             }
         }
     }
 
     @Override
     public synchronized void checkpoint() {
-        log.info("Checkpoint local state store {} at revision {}", name, getLastRevision());
+        log.info().attr("name", name).attr("revision", getLastRevision())
+            .log("Checkpoint local state store");
         byte[] checkpointAtRevisionBytes = new byte[Long.BYTES];
         System.arraycopy(lastRevisionBytes, 0, checkpointAtRevisionBytes, 0, checkpointAtRevisionBytes.length);
         checkpointScheduler.submit(() -> {
@@ -208,8 +209,10 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 // TODO: move create checkpoint to the checkpoint method
                 checkpointer.checkpointAtTxid(checkpointAtRevisionBytes);
             } catch (StateStoreException e) {
-                log.error("Failed to checkpoint state store {} at revision {}",
-                    name, Bytes.toLong(checkpointAtRevisionBytes, 0), e);
+                log.error().attr("name", name)
+                    .attr("revision", Bytes.toLong(checkpointAtRevisionBytes, 0))
+                    .exception(e)
+                    .log("Failed to checkpoint state store");
             }
         });
     }
@@ -413,10 +416,12 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                         cfHandles);
             return Pair.of(db, cfHandles);
         } catch (IOException ioe) {
-            log.error("Failed to create parent directory {} for opening rocksdb", dir.getParentFile().toPath(), ioe);
+            log.error().attr("directory", dir.getParentFile().toPath()).exception(ioe)
+                .log("Failed to create parent directory for opening rocksdb");
             throw new StateStoreException(ioe);
         } catch (RocksDBException dbe) {
-            log.error("Failed to open rocksdb at dir {}", dir.getAbsolutePath(), dbe);
+            log.error().attr("directory", dir.getAbsolutePath()).exception(dbe)
+                .log("Failed to open rocksdb");
             throw new StateStoreException(dbe);
         }
     }
@@ -465,7 +470,7 @@ public class RocksdbKVStore<K, V> implements KVStore<K, V> {
                 try {
                     MoreFiles.deleteRecursively(dbDir.toPath(), RecursiveDeleteOption.ALLOW_INSECURE);
                 } catch (IOException e) {
-                    log.error("Failed to cleanup localStoreDir", e);
+                    log.error().exception(e).log("Failed to cleanup localStoreDir");
                 }
             }
         }

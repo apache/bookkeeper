@@ -21,20 +21,18 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistrationManager;
 
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to print instance id of the cluster.
  */
+@CustomLog
 public class InstanceIdCommand extends BookieCommand<CliFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(InstanceIdCommand.class);
 
     private static final String NAME = "instanceid";
     private static final String DESC = "Print the instanceid of the cluster";
@@ -53,8 +51,10 @@ public class InstanceIdCommand extends BookieCommand<CliFlags> {
                 } catch (BookieException e) {
                     throw new UncheckedExecutionException(e);
                 }
-                LOG.info("Metadata Service Uri: {} InstanceId: {}",
-                         conf.getMetadataServiceUriUnchecked(), readInstanceId);
+                log.info()
+                        .attr("metadataServiceUriUnchecked", conf.getMetadataServiceUriUnchecked())
+                        .attr("readInstanceId", readInstanceId)
+                        .log("Metadata Service Uri: InstanceId");
                 return null;
             });
         } catch (Exception e) {

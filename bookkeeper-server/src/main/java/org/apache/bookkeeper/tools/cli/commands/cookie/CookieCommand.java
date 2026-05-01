@@ -28,7 +28,6 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Paths;
 import java.util.concurrent.ExecutionException;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -46,7 +45,6 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * This is a mixin for cookie related commands to extends.
  */
-@Slf4j
 abstract class CookieCommand<CookieFlagsT extends CliFlags>
     extends BKCommand<CookieFlagsT> {
 
@@ -113,7 +111,6 @@ abstract class CookieCommand<CookieFlagsT extends CliFlags>
             throw nfe;
         }
     }
-
 
     protected abstract void apply(RegistrationManager rm, CookieFlagsT cmdFlags)
         throws Exception;

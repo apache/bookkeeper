@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.stream.cli.commands;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.clients.StorageClientBuilder;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
@@ -30,7 +30,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * An admin command interface provides a run method to execute admin commands.
  */
-@Slf4j
+@CustomLog
 public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends AbstractStreamCommand<ClientFlagsT> {
 
     protected ClientCommand(CliSpec<ClientFlagsT> spec) {
@@ -54,8 +54,10 @@ public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends Abstr
             run(client, cmdFlags);
             return true;
         } catch (Exception e) {
-            log.error("Failed to process commands under namespace '{}'",
-                globalFlags.namespace, e);
+            log.error()
+                    .attr("namespace", globalFlags.namespace)
+                    .exception(e)
+                    .log("Failed to process commands under namespace");
             spec.console().println("Failed to process stream admin command");
             e.printStackTrace(spec.console());
             return false;

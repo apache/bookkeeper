@@ -43,6 +43,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.stats.JournalStats;
 import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
@@ -61,15 +62,12 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provide journal related management.
  */
+@CustomLog
 public class Journal implements CheckpointSource {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Journal.class);
 
     private static final RecyclableArrayList.Recycler<QueueEntry> entryListRecycler =
         new RecyclableArrayList.Recycler<QueueEntry>();
@@ -197,10 +195,7 @@ public class Journal implements CheckpointSource {
             // which is safe since records before lastMark have been
             // persisted to disk (both index & entry logger)
             lastMark.getCurMark().writeLogMark(bb);
-
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("RollLog to persist last marked log : {}", lastMark.getCurMark());
-            }
+            log.debug().attr("curMark", () -> lastMark.getCurMark()).log("RollLog to persist last marked log");
 
             List<File> writableLedgerDirs = ledgerDirsManager
                     .getWritableLedgerDirsForNewLog();
@@ -214,12 +209,15 @@ public class Journal implements CheckpointSource {
                     fos.close();
                     fos = null;
                 } catch (IOException e) {
-                    LOG.error("Problems writing to " + file, e);
+                    log.error()
+                            .attr("file", file)
+                            .exception(e)
+                            .log("Problems writing to file");
                 } finally {
                     // if stream already closed in try block successfully,
                     // stream might have nullified, in such case below
                     // call will simply returns
-                    IOUtils.close(LOG, fos);
+                    IOUtils.close(log, fos);
                 }
             }
         }
@@ -249,8 +247,11 @@ public class Journal implements CheckpointSource {
                         curMark.setLogMark(mark.getLogFileId(), mark.getLogFileOffset());
                     }
                 } catch (IOException e) {
-                    LOG.error("Problems reading from " + file + " (this is okay if it is the first time starting this "
-                            + "bookie");
+                    log.error()
+                            .exception(e)
+                            .attr("file", file)
+                            .log("Problems reading from file "
+                                    + "(this is okay if it is the first time starting this bookie)");
                 }
             }
         }
@@ -327,9 +328,10 @@ public class Journal implements CheckpointSource {
         @Override
         public void run() {
             long startTime = System.nanoTime();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Acknowledge Ledger: {}, Entry: {}", ledgerId, entryId);
-            }
+            log.debug()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .log("Acknowledge");
             journalAddEntryStats.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueTime), TimeUnit.NANOSECONDS);
             cb.writeComplete(0, ledgerId, entryId, null, ctx);
             callbackTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -411,7 +413,7 @@ public class Journal implements CheckpointSource {
                     // Call close only once
                     shouldClose = false;
                 } catch (IOException ioe) {
-                    LOG.error("I/O exception while closing file", ioe);
+                    log.error().exception(ioe).log("I/O exception while closing file");
                 }
             }
         }
@@ -481,14 +483,17 @@ public class Journal implements CheckpointSource {
         }
         @Override
         public void run() {
-            LOG.info("ForceWrite Thread started");
+            log.info("ForceWrite Thread started");
             ThreadRegistry.register(super.getName());
 
             if (conf.isBusyWaitEnabled()) {
                 try {
                     CpuAffinity.acquireCore();
                 } catch (Exception e) {
-                    LOG.warn("Unable to acquire CPU core for Journal ForceWrite thread: {}", e.getMessage(), e);
+                    log.warn()
+                            .exception(e)
+                            .exceptionMessage(e)
+                            .log("Unable to acquire CPU core for Journal ForceWrite thread");
                 }
             }
 
@@ -523,11 +528,11 @@ public class Journal implements CheckpointSource {
                                     BookieRequestHandler::flushPendingResponse);
                     writeHandlers.clear();
                 } catch (IOException ioe) {
-                    LOG.error("I/O exception in ForceWrite thread", ioe);
+                    log.error().exception(ioe).log("I/O exception in ForceWrite thread");
                     running = false;
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.info("ForceWrite thread interrupted");
+                    log.info("ForceWrite thread interrupted");
                     running = false;
                 }
             }
@@ -700,14 +705,14 @@ public class Journal implements CheckpointSource {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
         }
         lastLogMark.readLog();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Last Log Mark : {}", lastLogMark.getCurMark());
-        }
+        log.debug().attr("lastMark", () -> lastLogMark.getCurMark()).log("Last Log Mark");
 
         try {
             this.fileChannelProvider = FileChannelProvider.newProvider(conf.getJournalChannelProvider());
         } catch (IOException e) {
-            LOG.error("Failed to initiate file channel provider: {}", conf.getJournalChannelProvider());
+            log.error()
+                    .attr("journalChannelProvider", conf.getJournalChannelProvider())
+                    .log("Failed to initiate file channel provider");
             throw new RuntimeException(e);
         }
 
@@ -789,9 +794,9 @@ public class Journal implements CheckpointSource {
                     if (id < mark.getCurMark().getLogFileId()) {
                         File journalFile = new File(journalDirectory, Long.toHexString(id) + ".txn");
                         if (!journalFile.delete()) {
-                            LOG.warn("Could not delete old journal file {}", journalFile);
+                            log.warn().attr("journalFile", journalFile).log("Could not delete old journal file");
                         }
-                        LOG.info("garbage collected journal " + journalFile.getName());
+                        log.info().attr("journalFile", journalFile.getName()).log("garbage collected journal");
                     }
                 }
             }
@@ -852,7 +857,7 @@ public class Journal implements CheckpointSource {
                         }
                         isPaddingRecord = true;
                     } else {
-                        LOG.error("Invalid record found with negative length: {}", len);
+                        log.error().attr("len", len).log("Invalid record found with negative length");
                         throw new IOException("Invalid record found with negative length " + len);
                     }
                 }
@@ -874,7 +879,7 @@ public class Journal implements CheckpointSource {
             return recLog.fc.position();
         } catch (IOException e) {
             if (skipInvalidRecord) {
-                LOG.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
+                log.warn("Failed to parse journal file, and skipInvalidRecord is true, skip this journal file reply");
             } else {
                 throw e;
             }
@@ -954,14 +959,17 @@ public class Journal implements CheckpointSource {
      * @see org.apache.bookkeeper.bookie.SyncThread
      */
     public void run() {
-        LOG.info("Starting journal on {}", journalDirectory);
+        log.info().attr("journalDirectory", journalDirectory).log("Starting journal");
         ThreadRegistry.register(journalThreadName);
 
         if (conf.isBusyWaitEnabled()) {
             try {
                 CpuAffinity.acquireCore();
             } catch (Exception e) {
-                LOG.warn("Unable to acquire CPU core for Journal thread: {}", e.getMessage(), e);
+                log.warn()
+                        .exception(e)
+                        .exceptionMessage(e)
+                        .log("Unable to acquire CPU core for Journal thread");
             }
         }
 
@@ -1115,12 +1123,12 @@ public class Journal implements CheckpointSource {
                                 journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
                         // Trace the lifetime of entries through persistence
-                        if (LOG.isDebugEnabled()) {
-                            for (QueueEntry e : toFlush) {
-                                if (e != null && LOG.isDebugEnabled()) {
-                                    LOG.debug("Written and queuing for flush Ledger: {}  Entry: {}",
-                                              e.ledgerId, e.entryId);
-                                }
+                        for (QueueEntry e : toFlush) {
+                            if (e != null) {
+                                log.debug()
+                                        .attr("ledgerId", e.ledgerId)
+                                        .attr("entryId", e.entryId)
+                                        .log("Written and queuing for flush");
                             }
                         }
 
@@ -1161,7 +1169,7 @@ public class Journal implements CheckpointSource {
                 }
 
                 if (!running) {
-                    LOG.info("Journal Manager is asked to shut down, quit.");
+                    log.info("Journal Manager is asked to shut down, quit.");
                     break;
                 }
 
@@ -1213,22 +1221,22 @@ public class Journal implements CheckpointSource {
                 }
             }
         } catch (IOException ioe) {
-            LOG.error("I/O exception in Journal thread!", ioe);
+            log.error().exception(ioe).log("I/O exception in Journal thread!");
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.info("Journal exits when shutting down");
+            log.info("Journal exits when shutting down");
         } finally {
             // There could be packets queued for forceWrite on this logFile
             // That is fine as this exception is going to anyway take down
             // the bookie. If we execute this as a part of graceful shutdown,
             // close will flush the file system cache making any previous
             // cached writes durable so this is fine as well.
-            IOUtils.close(LOG, bc);
+            IOUtils.close(log, bc);
             if (journalAliveListener != null) {
                 journalAliveListener.onJournalExit();
             }
         }
-        LOG.info("Journal exited loop!");
+        log.info("Journal exited loop!");
     }
 
     public BufferedChannelBuilder getBufferedChannelBuilder() {
@@ -1243,7 +1251,7 @@ public class Journal implements CheckpointSource {
             if (!running) {
                 return;
             }
-            LOG.info("Shutting down Journal");
+            log.info("Shutting down Journal");
             if (fileChannelProvider != null) {
                 fileChannelProvider.close();
             }
@@ -1253,10 +1261,10 @@ public class Journal implements CheckpointSource {
             running = false;
             this.interruptThread();
             this.joinThread();
-            LOG.info("Finished Shutting down Journal thread");
+            log.info("Finished Shutting down Journal thread");
         } catch (IOException | InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted during shutting down journal : ", ie);
+            log.warn().exception(ie).log("Interrupted during shutting down journal");
         }
     }
 

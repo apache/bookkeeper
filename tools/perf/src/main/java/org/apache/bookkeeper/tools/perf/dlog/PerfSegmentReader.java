@@ -25,8 +25,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.tuple.Pair;
@@ -42,7 +42,7 @@ import org.apache.distributedlog.namespace.NamespaceDriver.Role;
 /**
  * A perf writer to evaluate write performance.
  */
-@Slf4j
+@CustomLog
 public class PerfSegmentReader extends PerfReaderBase {
 
     @Data
@@ -64,7 +64,7 @@ public class PerfSegmentReader extends PerfReaderBase {
             String logName = String.format(flags.logName, i);
             managers.add(namespace.openLog(logName));
         }
-        log.info("Successfully open {} logs", managers.size());
+        log.info().attr("numLogs", managers.size()).log("Successfully opened logs");
 
         // Get all the log segments
         final List<Pair<DistributedLogManager, LogSegmentMetadata>> segments = managers.stream()
@@ -99,11 +99,11 @@ public class PerfSegmentReader extends PerfReaderBase {
                     try {
                         read(splitsThisThread);
                     } catch (Exception e) {
-                        log.error("Encountered error at writing records", e);
+                        log.error().exception(e).log("Encountered error at writing records");
                     }
                 });
             }
-            log.info("Started {} write threads", flags.numThreads);
+            log.info().attr("numThreads", flags.numThreads).log("Started write threads");
             reportStats();
         } finally {
             executor.shutdown();
@@ -115,11 +115,13 @@ public class PerfSegmentReader extends PerfReaderBase {
     }
 
     void read(List<Split> splits) throws Exception {
-        log.info("Read thread started with : splits = {}",
-            splits.stream()
-                .map(l -> "(log = " + l.manager.getStreamName() + ", segment = "
-                    + l.segment.getLogSegmentSequenceNumber() + " ["  + l.startEntryId + ", " + l.endEntryId + "])")
-                .collect(Collectors.toList()));
+        log.info()
+                .attr("splits", splits.stream()
+                    .map(l -> "(log = " + l.manager.getStreamName() + ", segment = "
+                        + l.segment.getLogSegmentSequenceNumber()
+                        + " [" + l.startEntryId + ", " + l.endEntryId + "])")
+                    .collect(Collectors.toList()))
+                .log("Read thread started");
 
         splits.forEach(entry -> {
             try {

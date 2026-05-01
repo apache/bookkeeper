@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Txn;
 import org.apache.bookkeeper.api.kv.impl.op.OpFactoryImpl;
@@ -55,7 +55,7 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 /**
  * The default implementation of {@link PTable}.
  */
-@Slf4j
+@CustomLog
 public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
 
     static final IllegalStateException CAUSE =
@@ -228,12 +228,10 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
         // compare the ranges to see if it requires an update
         HashStreamRanges oldRanges = rangeRouter.getRanges();
         if (null != oldRanges && oldRanges.getMaxRangeId() >= newRanges.getMaxRangeId()) {
-            log.info("No new stream ranges found for stream {}.", streamName);
+            log.info().attr("streamName", streamName).log("No new stream ranges found for stream.");
             return FutureUtils.value(this);
         }
-        if (log.isInfoEnabled()) {
-            log.info("Updated the active ranges to {}", newRanges);
-        }
+        log.info().attr("newRanges", newRanges).log("Updated the active ranges");
         rangeRouter.setRanges(newRanges);
         // add new ranges
         Set<Long> activeRanges = Sets.newHashSetWithExpectedSize(newRanges.getRanges().size());
@@ -244,9 +242,7 @@ public class PByteBufTableImpl implements PTable<ByteBuf, ByteBuf> {
             }
             PTable<ByteBuf, ByteBuf> tableRange =
                 trFactory.openTableRange(props, range, executor, opFactory, resultFactory, kvFactory);
-            if (log.isInfoEnabled()) {
-                log.info("Create table range client for range {}", range.getRangeId());
-            }
+            log.info().attr("rangeId", range.getRangeId()).log("Create table range client for range");
             this.tableRanges.put(range.getRangeId(), tableRange);
         });
         // remove old ranges

@@ -22,6 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.util.HashMap;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -32,8 +33,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle force trigger GC requests.
@@ -46,9 +45,9 @@ import org.slf4j.LoggerFactory;
  *           "is_in_force_gc" : "false"
  *        }
  */
+@CustomLog
 public class TriggerGCService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(TriggerGCService.class);
 
     protected ServerConfiguration conf;
     protected BookieServer bookieServer;
@@ -82,9 +81,7 @@ public class TriggerGCService implements HttpEndpointService {
 
                 String output = "Triggered GC on BookieServer: " + bookieServer.getBookieId();
                 String jsonResponse = JsonUtil.toJson(output);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("output body:" + jsonResponse);
-                }
+                log.debug().attr("body", jsonResponse).log("output body");
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
@@ -92,9 +89,7 @@ public class TriggerGCService implements HttpEndpointService {
                 Boolean isInForceGC = bookieServer.getBookie().getLedgerStorage().isInForceGC();
                 Pair<String, String> output = Pair.of("is_in_force_gc", isInForceGC.toString());
                 String jsonResponse = JsonUtil.toJson(output);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("output body:" + jsonResponse);
-                }
+                log.debug().attr("body", jsonResponse).log("output body");
                 response.setBody(jsonResponse);
                 response.setCode(HttpServer.StatusCode.OK);
                 return response;
@@ -104,7 +99,11 @@ public class TriggerGCService implements HttpEndpointService {
                 return response;
             }
         } catch (Exception e) {
-            LOG.error("Failed to handle the request, method: {}, body: {} ", request.getMethod(), request.getBody(), e);
+            log.error()
+                    .attr("method", request.getMethod())
+                    .attr("body", request.getBody())
+                    .exception(e)
+                    .log("Failed to handle the request");
             response.setCode(HttpServer.StatusCode.BAD_REQUEST);
             response.setBody("Failed to handle the request, exception: " + e.getMessage());
             return response;

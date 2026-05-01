@@ -23,6 +23,7 @@ import static org.junit.Assert.fail;
 
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
@@ -44,15 +45,12 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * TestDistributedLogAdmin.
  */
+@CustomLog
 public class TestDistributedLogAdmin extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogAdmin.class);
 
     private ZooKeeperClient zooKeeperClient;
 
@@ -118,12 +116,12 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
             lastDLSN = record.getDlsn();
         }
 
-        LOG.info("Injecting bad log segment '3'");
+        log.info("Injecting bad log segment '3'");
 
         dlm = namespace.openLog(streamName);
         DLMTestUtil.injectLogSegmentWithGivenLogSegmentSeqNo(dlm, confLocal, 3L, 5 * 10 + 1, true, 10, false);
 
-        LOG.info("Injected bad log segment '3'");
+        log.info("Injected bad log segment '3'");
 
         // there isn't records should be read
         CompletableFuture<LogRecordWithDLSN> readFuture = reader.readNext();
@@ -136,7 +134,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
             // expected
         }
 
-        LOG.info("Dryrun fix inprogress segment that has lower sequence number");
+        log.info("Dryrun fix inprogress segment that has lower sequence number");
 
         // Dryrun
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
@@ -151,7 +149,7 @@ public class TestDistributedLogAdmin extends TestDistributedLogBase {
             // expected
         }
 
-        LOG.info("Actual run fix inprogress segment that has lower sequence number");
+        log.info("Actual run fix inprogress segment that has lower sequence number");
 
         // Actual run
         DistributedLogAdmin.fixInprogressSegmentWithLowerSequenceNumber(namespace,
