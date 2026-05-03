@@ -21,6 +21,7 @@ package org.apache.bookkeeper.proto;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -87,8 +88,8 @@ public class BatchedReadEntryProcessorTest {
         ByteBuf buffer3 = ByteBufAllocator.DEFAULT.buffer(4);
         ByteBuf buffer4 = ByteBufAllocator.DEFAULT.buffer(4);
 
-        when(bookie.readEntry(anyLong(), anyLong())).thenReturn(buffer0).thenReturn(buffer1).thenReturn(buffer2)
-                .thenReturn(buffer3).thenReturn(buffer4);
+        when(bookie.readEntry(anyLong(), anyLong(), anyBoolean()))
+                .thenReturn(buffer0).thenReturn(buffer1).thenReturn(buffer2).thenReturn(buffer3).thenReturn(buffer4);
     }
 
     @Test

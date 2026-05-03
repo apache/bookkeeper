@@ -72,6 +72,7 @@ import org.apache.bookkeeper.client.api.BKException.Code;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.client.api.ReadOptions;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
@@ -638,9 +639,26 @@ public class LedgerHandle implements WriteHandle {
      */
     public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
+        return readEntries(firstEntry, lastEntry, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries synchronously with options that apply to this request.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence (included)
+     * @param lastEntry
+     *          id of last entry of sequence (included)
+     * @param options
+     *          options for this read request
+     *
+     * @see #asyncReadEntries(long, long, ReadCallback, Object, ReadOptions)
+     */
+    public Enumeration<LedgerEntry> readEntries(long firstEntry, long lastEntry, ReadOptions options)
+            throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
+        asyncReadEntries(firstEntry, lastEntry, new SyncReadCallback(result), null, options);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -681,9 +699,29 @@ public class LedgerHandle implements WriteHandle {
      */
     public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry)
             throws InterruptedException, BKException {
+        return readUnconfirmedEntries(firstEntry, lastEntry, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries synchronously with options that apply to this request, allowing to read after the
+     * LastAddConfirmed range.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence (included)
+     * @param lastEntry
+     *          id of last entry of sequence (included)
+     * @param options
+     *          options for this read request
+     *
+     * @see #readEntries(long, long, ReadOptions)
+     * @see #asyncReadUnconfirmedEntries(long, long, ReadCallback, java.lang.Object, ReadOptions)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, java.lang.Object)
+     */
+    public Enumeration<LedgerEntry> readUnconfirmedEntries(long firstEntry, long lastEntry, ReadOptions options)
+            throws InterruptedException, BKException {
         CompletableFuture<Enumeration<LedgerEntry>> result = new CompletableFuture<>();
 
-        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(result), null);
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, new SyncReadCallback(result), null, options);
 
         return SyncCallbackUtils.waitForResult(result);
     }
@@ -722,6 +760,24 @@ public class LedgerHandle implements WriteHandle {
      *          control object
      */
     public void asyncReadEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
+        asyncReadEntries(firstEntry, lastEntry, cb, ctx, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously with options that apply to this request.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     * @param options
+     *          options for this read request
+     */
+    public void asyncReadEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx, ReadOptions options) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             log.error()
@@ -742,7 +798,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false, options);
     }
 
     /**
@@ -819,6 +875,30 @@ public class LedgerHandle implements WriteHandle {
      * @see #readUnconfirmedEntries(long, long)
      */
     public void asyncReadUnconfirmedEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx) {
+        asyncReadUnconfirmedEntries(firstEntry, lastEntry, cb, ctx, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously with options that apply to this request, allowing to read after the
+     * LastAddConfirmed range.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param cb
+     *          object implementing read callback interface
+     * @param ctx
+     *          control object
+     * @param options
+     *          options for this read request
+     *
+     * @see #asyncReadEntries(long, long, ReadCallback, Object, ReadOptions)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)
+     * @see #readUnconfirmedEntries(long, long, ReadOptions)
+     */
+    public void asyncReadUnconfirmedEntries(long firstEntry, long lastEntry, ReadCallback cb, Object ctx,
+                                            ReadOptions options) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             log.error()
@@ -829,7 +909,7 @@ public class LedgerHandle implements WriteHandle {
             return;
         }
 
-        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false);
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, false, options);
     }
 
     /**
@@ -886,6 +966,21 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry) {
+        return readAsync(firstEntry, lastEntry, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously with options that apply to this request.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param options
+     *          options for this read request
+     */
+    @Override
+    public CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry, ReadOptions options) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             log.error()
@@ -904,7 +999,7 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKReadException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry, false);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false, options);
     }
 
     /**
@@ -973,6 +1068,10 @@ public class LedgerHandle implements WriteHandle {
         }
         LedgerMetadata ledgerMetadata = getLedgerMetadata();
         return ledgerMetadata.getEnsembleSize() != ledgerMetadata.getWriteQuorumSize();
+    }
+
+    private static ReadOptions readOptionsOrDefault(ReadOptions options) {
+        return options == null ? ReadOptions.DEFAULT : options;
     }
 
     private CompletableFuture<LedgerEntries> batchReadEntriesInternalAsync(long startEntry, int maxCount, long maxSize,
@@ -1059,6 +1158,27 @@ public class LedgerHandle implements WriteHandle {
      */
     @Override
     public CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry) {
+        return readUnconfirmedAsync(firstEntry, lastEntry, ReadOptions.DEFAULT);
+    }
+
+    /**
+     * Read a sequence of entries asynchronously with options that apply to this request, allowing to read after the
+     * LastAddConfirmed range.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence
+     * @param options
+     *          options for this read request
+     *
+     * @see #asyncReadEntries(long, long, ReadCallback, Object, ReadOptions)
+     * @see #asyncReadLastConfirmed(ReadLastConfirmedCallback, Object)
+     * @see #readUnconfirmedEntries(long, long, ReadOptions)
+     */
+    @Override
+    public CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry,
+                                                                 ReadOptions options) {
         // Little sanity check
         if (firstEntry < 0 || firstEntry > lastEntry) {
             log.error()
@@ -1068,13 +1188,18 @@ public class LedgerHandle implements WriteHandle {
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
-        return readEntriesInternalAsync(firstEntry, lastEntry, false);
+        return readEntriesInternalAsync(firstEntry, lastEntry, false, options);
     }
 
     void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
                                   Object ctx, boolean isRecoveryRead) {
+        asyncReadEntriesInternal(firstEntry, lastEntry, cb, ctx, isRecoveryRead, ReadOptions.DEFAULT);
+    }
+
+    void asyncReadEntriesInternal(long firstEntry, long lastEntry, ReadCallback cb,
+                                  Object ctx, boolean isRecoveryRead, ReadOptions options) {
         if (!clientCtx.isClientClosed()) {
-            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead)
+            readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead, options)
                 .whenCompleteAsync(new FutureEventListener<LedgerEntries>() {
                     @Override
                     public void onSuccess(LedgerEntries entries) {
@@ -1174,8 +1299,15 @@ public class LedgerHandle implements WriteHandle {
     CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
                                                               long lastEntry,
                                                               boolean isRecoveryRead) {
+        return readEntriesInternalAsync(firstEntry, lastEntry, isRecoveryRead, ReadOptions.DEFAULT);
+    }
+
+    CompletableFuture<LedgerEntries> readEntriesInternalAsync(long firstEntry,
+                                                              long lastEntry,
+                                                              boolean isRecoveryRead,
+                                                              ReadOptions options) {
         PendingReadOp op = new PendingReadOp(this, clientCtx,
-                                             firstEntry, lastEntry, isRecoveryRead);
+                                             firstEntry, lastEntry, isRecoveryRead, readOptionsOrDefault(options));
         if (!clientCtx.isClientClosed()) {
             // Waiting on the first one.
             // This is not very helpful if there are multiple ensembles or if bookie goes into unresponsive

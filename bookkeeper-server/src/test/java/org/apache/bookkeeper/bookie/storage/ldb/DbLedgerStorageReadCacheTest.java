@@ -48,6 +48,78 @@ public class DbLedgerStorageReadCacheTest {
     private static final Logger LOGGER = LoggerFactory.getLogger(DbLedgerStorageReadCacheTest.class);
 
     @Test
+    public void readMissTriggersReadAheadByDefault() throws Exception {
+        TestDB testDB = new TestDB();
+        try {
+            setup(testDB, 16L, 8, -1);
+            addEntries(testDB.getStorage(), 0, 1, 0, 4);
+            testDB.getStorage().flush();
+
+            SingleDirectoryDbLedgerStorage sdb = testDB.getStorage().getLedgerStorageList().get(0);
+            DbLedgerStorageStats stats = sdb.getDbLedgerStorageStats();
+            long missesBefore = stats.getReadCacheMissCounter().get();
+            long hitsBefore = stats.getReadCacheHitCounter().get();
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 0), 0, 0);
+            assertEquals(missesBefore + 1, stats.getReadCacheMissCounter().get().longValue());
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 1), 0, 1);
+            assertEquals(missesBefore + 1, stats.getReadCacheMissCounter().get().longValue());
+            assertEquals(hitsBefore + 1, stats.getReadCacheHitCounter().get().longValue());
+        } finally {
+            teardown(testDB.getStorage(), testDB.getTmpDir());
+        }
+    }
+
+    @Test
+    public void noReadAheadReadMissDoesNotPrefillFollowingEntries() throws Exception {
+        TestDB testDB = new TestDB();
+        try {
+            setup(testDB, 16L, 8, -1);
+            addEntries(testDB.getStorage(), 0, 1, 0, 4);
+            testDB.getStorage().flush();
+
+            SingleDirectoryDbLedgerStorage sdb = testDB.getStorage().getLedgerStorageList().get(0);
+            DbLedgerStorageStats stats = sdb.getDbLedgerStorageStats();
+            long missesBefore = stats.getReadCacheMissCounter().get();
+            long hitsBefore = stats.getReadCacheHitCounter().get();
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 0, true), 0, 0);
+            assertEquals(missesBefore + 1, stats.getReadCacheMissCounter().get().longValue());
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 1), 0, 1);
+            assertEquals(missesBefore + 2, stats.getReadCacheMissCounter().get().longValue());
+            assertEquals(hitsBefore, stats.getReadCacheHitCounter().get().longValue());
+        } finally {
+            teardown(testDB.getStorage(), testDB.getTmpDir());
+        }
+    }
+
+    @Test
+    public void noReadAheadStillUsesCachedTargetEntry() throws Exception {
+        TestDB testDB = new TestDB();
+        try {
+            setup(testDB, 16L, 8, -1);
+            addEntries(testDB.getStorage(), 0, 1, 0, 4);
+            testDB.getStorage().flush();
+
+            SingleDirectoryDbLedgerStorage sdb = testDB.getStorage().getLedgerStorageList().get(0);
+            DbLedgerStorageStats stats = sdb.getDbLedgerStorageStats();
+            long missesBefore = stats.getReadCacheMissCounter().get();
+            long hitsBefore = stats.getReadCacheHitCounter().get();
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 0, true), 0, 0);
+            assertEquals(missesBefore + 1, stats.getReadCacheMissCounter().get().longValue());
+
+            assertAndReleaseEntry(testDB.getStorage().getEntry(0, 0, true), 0, 0);
+            assertEquals(missesBefore + 1, stats.getReadCacheMissCounter().get().longValue());
+            assertEquals(hitsBefore + 1, stats.getReadCacheHitCounter().get().longValue());
+        } finally {
+            teardown(testDB.getStorage(), testDB.getTmpDir());
+        }
+    }
+
+    @Test
     public void chargeReadAheadCacheRegressionTest() {
         TestDB testDB = new TestDB();
         try {
@@ -245,6 +317,15 @@ public class DbLedgerStorageReadCacheTest {
         }
         assertEquals(4 * 1024, buffer.toString().length());
         return buffer.toString();
+    }
+
+    private void assertAndReleaseEntry(ByteBuf entry, long ledgerId, long entryId) {
+        try {
+            assertEquals(ledgerId, entry.getLong(0));
+            assertEquals(entryId, entry.getLong(8));
+        } finally {
+            entry.release();
+        }
     }
 
     private CacheResult readAheadCacheBatchBytesSize() {

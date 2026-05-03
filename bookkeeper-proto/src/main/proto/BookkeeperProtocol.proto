@@ -115,6 +115,8 @@ message ReadRequest {
     optional int64 previousLAC = 4;
     // Used as a timeout (in milliseconds) for the long polling request
     optional int64 timeOut = 5;
+    // Bitmask of additional read flags from BookieProtocol.FLAG_*.
+    optional int32 readFlags = 6;
 }
 
 message AddRequest {

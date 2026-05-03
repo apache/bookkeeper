@@ -362,6 +362,11 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public ByteBuf getEntry(long ledgerId, long entryId, boolean noReadAhead) throws IOException, BookieException {
+        return getLedgerStorage(ledgerId).getEntry(ledgerId, entryId, noReadAhead);
+    }
+
+    @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException, BookieException {
         return getLedgerStorage(ledgerId).getLastAddConfirmed(ledgerId);
     }

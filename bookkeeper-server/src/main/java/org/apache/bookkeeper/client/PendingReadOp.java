@@ -27,6 +27,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
+import org.apache.bookkeeper.client.api.ReadOptions;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -47,14 +48,25 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
     protected boolean parallelRead = false;
     protected final LinkedList<SingleLedgerEntryRequest> seq;
+    private final ReadOptions readOptions;
 
     PendingReadOp(LedgerHandle lh,
                   ClientContext clientCtx,
                   long startEntryId,
                   long endEntryId,
                   boolean isRecoveryRead) {
+        this(lh, clientCtx, startEntryId, endEntryId, isRecoveryRead, ReadOptions.DEFAULT);
+    }
+
+    PendingReadOp(LedgerHandle lh,
+                  ClientContext clientCtx,
+                  long startEntryId,
+                  long endEntryId,
+                  boolean isRecoveryRead,
+                  ReadOptions readOptions) {
         super(lh, clientCtx, startEntryId, endEntryId, isRecoveryRead);
         this.seq = new LinkedList<>();
+        this.readOptions = readOptions;
         numPendingEntries = endEntryId - startEntryId + 1;
     }
 
@@ -178,13 +190,19 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
             lh.throttler.acquire();
         }
 
+        int flags = isRecoveryRead
+                ? BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING
+                : BookieProtocol.FLAG_NONE;
+        if (readOptions.isReadAheadDisabled()) {
+            flags |= BookieProtocol.FLAG_NO_READ_AHEAD;
+        }
+
         if (isRecoveryRead) {
-            int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
                     this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
         } else {
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
+                    this, new ReadContext(bookieIndex, to, entry), flags);
         }
     }
 

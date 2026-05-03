@@ -59,7 +59,8 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
         long frameSize = 24 + 8 + 4;
         for (int i = 0; i < maxCount; i++) {
             try {
-                ByteBuf entry = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId() + i);
+                ByteBuf entry = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId() + i,
+                        request.isNoReadAhead());
                 frameSize += entry.readableBytes() + 4;
                 if (data == null) {
                     data = ByteBufList.get(entry);
