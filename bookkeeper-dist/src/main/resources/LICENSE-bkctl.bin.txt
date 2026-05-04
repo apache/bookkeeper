@@ -309,7 +309,6 @@ Apache Software License, Version 2.
 - lib/io.opentelemetry-opentelemetry-sdk-trace-1.61.0.jar [55]
 - lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.56.0-alpha.jar [55]
 - lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-1.61.0.jar [55]
-- lib/com.google.cloud.opentelemetry-detector-resources-support-0.36.0.jar [54]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.17.1
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.17.1
