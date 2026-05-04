@@ -227,10 +227,10 @@
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.56.0</otel.version>
-    <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
-    <otel.semconv.version>1.37.0</otel.semconv.version>
-    <otel.contrib.version>1.52.0</otel.contrib.version>
+    <otel.version>1.61.0</otel.version>
+    <otel.instrumentation.version>2.27.0</otel.instrumentation.version>
+    <otel.semconv.version>1.41.0</otel.semconv.version>
+    <otel.contrib.version>1.56.0</otel.contrib.version>
     <okhttp3.version>5.3.1</okhttp3.version>
     <!-- use okio version that matches the okhttp3 version -->
     <okio.version>3.16.3</okio.version>
