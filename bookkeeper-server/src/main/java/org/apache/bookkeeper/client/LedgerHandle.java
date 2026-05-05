@@ -32,6 +32,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import io.github.merlimat.slog.Logger;
+import io.github.merlimat.slog.LoggerBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.security.GeneralSecurityException;
@@ -180,7 +181,20 @@ public class LedgerHandle implements WriteHandle {
                  BookKeeper.DigestType digestType, byte[] password,
                  EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        this.log = Logger.get(LedgerHandle.class).with().attr("ledgerId", ledgerId).build();
+        this(clientCtx, ledgerId, versionedMetadata, digestType, password, writeFlags, null);
+    }
+
+    LedgerHandle(ClientContext clientCtx,
+                 long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
+                 BookKeeper.DigestType digestType, byte[] password,
+                 EnumSet<WriteFlag> writeFlags,
+                 Logger parentLogger)
+            throws GeneralSecurityException, NumberFormatException {
+        LoggerBuilder builder = Logger.get(LedgerHandle.class).with();
+        if (parentLogger != null) {
+            builder = builder.ctx(parentLogger);
+        }
+        this.log = builder.attr("ledgerId", ledgerId).build();
         this.clientCtx = clientCtx;
 
         this.versionedMetadata = versionedMetadata;
