@@ -28,6 +28,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalListener;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
@@ -56,7 +57,6 @@ import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.LedgerDirUtil;
 
@@ -64,7 +64,7 @@ import org.apache.bookkeeper.util.LedgerDirUtil;
  * DirectEntryLogger.
  */
 public class DirectEntryLogger implements EntryLogger {
-    private final Slogger slog;
+    private final Logger log;
     private final File ledgerDir;
     private final EntryLogIds ids;
     private final ExecutorService writeExecutor;
@@ -99,7 +99,7 @@ public class DirectEntryLogger implements EntryLogger {
                              int readBufferSize,
                              int numReadThreads,
                              int maxFdCacheTimeSeconds,
-                             Slogger slogParent,
+                             Logger logParent,
                              StatsLogger stats) throws IOException {
         this.ledgerDir = ledgerDir;
         this.flushExecutor = flushExecutor;
@@ -112,7 +112,10 @@ public class DirectEntryLogger implements EntryLogger {
         this.maxSaneEntrySize = maxSaneEntrySize;
         this.readBufferSize = Buffer.nextAlignment(readBufferSize);
         this.ids = ids;
-        this.slog = slogParent.kv("directory", ledgerDir).ctx(DirectEntryLogger.class);
+        this.log = Logger.get(DirectEntryLogger.class).with()
+            .ctx(logParent)
+            .attr("directory", ledgerDir)
+            .build();
 
         this.stats = new DirectEntryLoggerStats(stats);
 
@@ -129,28 +132,30 @@ public class DirectEntryLogger implements EntryLogger {
         // then the perThreadBufferSize can be lower than the readBufferSize causing immediate eviction of readers
         // from the cache
         if (perThreadBufferSize < readBufferSize) {
-            slog.kv("reason", "perThreadBufferSize lower than readBufferSize (causes immediate reader cache eviction)")
-                .kv("totalReadBufferSize", totalReadBufferSize)
-                .kv("totalNumReadThreads", numReadThreads)
-                .kv("readBufferSize", readBufferSize)
-                .kv("perThreadBufferSize", perThreadBufferSize)
-                .error(Events.ENTRYLOGGER_MISCONFIGURED);
+            log.error()
+                .attr("reason",
+                    "perThreadBufferSize lower than readBufferSize (causes immediate reader cache eviction)")
+                .attr("totalReadBufferSize", totalReadBufferSize)
+                .attr("totalNumReadThreads", numReadThreads)
+                .attr("readBufferSize", readBufferSize)
+                .attr("perThreadBufferSize", perThreadBufferSize)
+                .log("Entry logger misconfigured");
         }
 
         long maxCachedReadersPerThread = perThreadBufferSize / readBufferSize;
         long maxCachedReaders = maxCachedReadersPerThread * numReadThreads;
 
-        this.slog
-            .kv("maxFileSize", maxFileSize)
-            .kv("maxSaneEntrySize", maxSaneEntrySize)
-            .kv("totalWriteBufferSize", totalWriteBufferSize)
-            .kv("singleWriteBufferSize", singleWriteBufferSize)
-            .kv("totalReadBufferSize", totalReadBufferSize)
-            .kv("readBufferSize", readBufferSize)
-            .kv("perThreadBufferSize", perThreadBufferSize)
-            .kv("maxCachedReadersPerThread", maxCachedReadersPerThread)
-            .kv("maxCachedReaders", maxCachedReaders)
-            .info(Events.ENTRYLOGGER_CREATED);
+        log.info()
+            .attr("maxFileSize", maxFileSize)
+            .attr("maxSaneEntrySize", maxSaneEntrySize)
+            .attr("totalWriteBufferSize", totalWriteBufferSize)
+            .attr("singleWriteBufferSize", singleWriteBufferSize)
+            .attr("totalReadBufferSize", totalReadBufferSize)
+            .attr("readBufferSize", readBufferSize)
+            .attr("perThreadBufferSize", perThreadBufferSize)
+            .attr("maxCachedReadersPerThread", maxCachedReadersPerThread)
+            .attr("maxCachedReaders", maxCachedReaders)
+            .log("Entry logger created");
 
         this.caches = ThreadLocal.withInitial(() -> {
             RemovalListener<Integer, LogReader> rl = (notification) -> {
@@ -158,7 +163,7 @@ public class DirectEntryLogger implements EntryLogger {
                     notification.getValue().close();
                     this.stats.getCloseReaderCounter().inc();
                 } catch (IOException ioe) {
-                    slog.kv("logID", notification.getKey()).error(Events.READER_CLOSE_ERROR);
+                    log.error().attr("logID", notification.getKey()).log("Failed to close entry log reader");
                 }
             };
             Cache<Integer, LogReader> cache = CacheBuilder.newBuilder()
@@ -190,7 +195,7 @@ public class DirectEntryLogger implements EntryLogger {
                 curWriter = new WriterWithMetadata(newDirectWriter(newId),
                                                    new EntryLogMetadata(newId),
                                                    allocator);
-                slog.kv("newLogId", newId).info(Events.LOG_ROLL);
+                log.info().attr("newLogId", newId).log("Rolling to new log file");
             }
 
             offset = curWriter.addEntry(ledgerId, buf);
@@ -378,7 +383,8 @@ public class DirectEntryLogger implements EntryLogger {
         checkArgument(entryLogId < Integer.MAX_VALUE, "Entry log id must be an int [%d]", entryLogId);
         File file = logFile(ledgerDir, (int) entryLogId);
         boolean result = file.delete();
-        slog.kv("file", file).kv("logId", entryLogId).kv("result", result).info(Events.LOG_DELETED);
+        log.info().attr("file", file).attr("logId", entryLogId).attr("result", result)
+            .log("Log file deleted");
         return result;
     }
 
@@ -402,8 +408,8 @@ public class DirectEntryLogger implements EntryLogger {
         try {
             return readEntryLogIndex(entryLogId);
         } catch (IOException e) {
-            slog.kv("entryLogId", entryLogId).kv("reason", e.getMessage())
-                .info(Events.READ_METADATA_FALLBACK);
+            log.info().attr("entryLogId", entryLogId).attr("reason", e.getMessage())
+                .log("Falling back to scanning log for metadata");
             return scanEntryLogMetadata(entryLogId, throttler);
         }
     }
@@ -450,7 +456,7 @@ public class DirectEntryLogger implements EntryLogger {
     private LogWriter newDirectWriter(int newId) throws IOException {
         unflushedLogs.add(newId);
         LogWriter writer = new DirectWriter(newId, logFilename(ledgerDir, newId), maxFileSize,
-                                            writeExecutor, writeBuffers, nativeIO, slog);
+                                            writeExecutor, writeBuffers, nativeIO, log);
         ByteBuf buf = allocator.buffer(Buffer.ALIGNMENT);
         try {
             Header.writeEmptyHeader(buf);
@@ -475,7 +481,7 @@ public class DirectEntryLogger implements EntryLogger {
         int dstLogId = ids.nextId();
         return DirectCompactionEntryLog.newLog((int) srcLogId, dstLogId, ledgerDir,
                                                maxFileSize, writeExecutor, writeBuffers,
-                                               nativeIO, allocator, slog);
+                                               nativeIO, allocator, log);
     }
 
     @Override
@@ -490,7 +496,7 @@ public class DirectEntryLogger implements EntryLogger {
                         try {
                             Files.deleteIfExists(f.toPath());
                         } catch (IOException ioe) {
-                            slog.kv("file", f).warn(Events.COMPACTION_DELETE_FAILURE);
+                            log.warn().attr("file", f).log("Failed to delete compaction artifact");
                         }
                     }
 
@@ -503,7 +509,7 @@ public class DirectEntryLogger implements EntryLogger {
                             readBufferSize, maxSaneEntrySize,
                             nativeIO, allocator,
                             stats.getReadBlockStats(),
-                            slog));
+                            log));
                     }
                 }
             }

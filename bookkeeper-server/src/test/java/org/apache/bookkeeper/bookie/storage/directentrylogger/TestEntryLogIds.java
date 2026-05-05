@@ -30,12 +30,12 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.Lists;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import java.io.File;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,7 +46,7 @@ import org.junit.jupiter.api.Test;
  * TestEntryLogIds.
  */
 public class TestEntryLogIds {
-    private static final Slogger slog = Slogger.CONSOLE;
+    private static final Logger LOG = Logger.get(TestEntryLogIds.class);
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
@@ -72,7 +72,7 @@ public class TestEntryLogIds {
             highestSoFar = logId2;
         }
 
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId3 = ids.nextId();
         assertThat(logId3, greaterThan(highestSoFar));
         touchLog(ledgerDir, logId3);
@@ -101,7 +101,7 @@ public class TestEntryLogIds {
         File ledgerDir = tmpDirs.createNew("entryLogIds", "ledgers");
 
         int highestSoFar = -1;
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId1 = ids.nextId();
         assertThat(logId1, greaterThan(highestSoFar));
         touchLog(ledgerDir, logId1);
@@ -122,7 +122,7 @@ public class TestEntryLogIds {
         }
 
         // reinitialize to pick up legacy
-        ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId4 = ids.nextId();
         assertThat(logId4, greaterThan(highestSoFar));
         touchLog(ledgerDir, logId4);
@@ -143,7 +143,7 @@ public class TestEntryLogIds {
 
         //case 1: use root ledgerDirsManager
         LedgerDirsManager ledgerDirsManager = newDirsManager(ledgerDir1, ledgerDir2);
-        EntryLogIds ids1 = new EntryLogIdsImpl(ledgerDirsManager, slog);
+        EntryLogIds ids1 = new EntryLogIdsImpl(ledgerDirsManager, LOG);
         for (int i = 0; i < 10; i++) {
             int logId = ids1.nextId();
             File log1 = new File(ledgerDir1 + "/current", logId + ".log");
@@ -151,7 +151,7 @@ public class TestEntryLogIds {
             assertEquals(logId, i);
         }
 
-        EntryLogIds ids2 = new EntryLogIdsImpl(ledgerDirsManager, slog);
+        EntryLogIds ids2 = new EntryLogIdsImpl(ledgerDirsManager, LOG);
         for (int i = 0; i < 10; i++) {
             int logId = ids2.nextId();
             assertEquals(logId, 10 + i);
@@ -160,7 +160,7 @@ public class TestEntryLogIds {
         // case 2: new LedgerDirsManager for per directory
         LedgerDirsManager ledgerDirsManager3 = newDirsManager(ledgerDir3);
         LedgerDirsManager ledgerDirsManager4 = newDirsManager(ledgerDir4);
-        EntryLogIds ids3 = new EntryLogIdsImpl(ledgerDirsManager3, slog);
+        EntryLogIds ids3 = new EntryLogIdsImpl(ledgerDirsManager3, LOG);
         for (int i = 0; i < 10; i++) {
             int logId = ids3.nextId();
             File log1 = new File(ledgerDir3 + "/current", logId + ".log");
@@ -168,7 +168,7 @@ public class TestEntryLogIds {
             assertEquals(logId, i);
         }
 
-        EntryLogIds ids4 = new EntryLogIdsImpl(ledgerDirsManager4, slog);
+        EntryLogIds ids4 = new EntryLogIdsImpl(ledgerDirsManager4, LOG);
         for (int i = 0; i < 10; i++) {
             int logId = ids4.nextId();
             assertEquals(logId, i);
@@ -203,7 +203,7 @@ public class TestEntryLogIds {
             highestSoFar = logId3;
         }
 
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir1, ledgerDir2, ledgerDir3), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir1, ledgerDir2, ledgerDir3), LOG);
         int logId4 = ids.nextId();
         assertThat(logId4, greaterThan(highestSoFar));
         touchLog(ledgerDir2, logId4);
@@ -221,10 +221,10 @@ public class TestEntryLogIds {
     @Test
     public void testWrapAround() throws Exception {
         File ledgerDir = tmpDirs.createNew("entryLogIds", "ledgers");
-        new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         touchLog(ledgerDir, Integer.MAX_VALUE - 1);
 
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId = ids.nextId();
         assertThat(logId, equalTo(0));
     }
@@ -236,11 +236,11 @@ public class TestEntryLogIds {
         // the directory concurrently, the transactional rename will prevent data
         // loss.
         File ledgerDir = tmpDirs.createNew("entryLogIds", "ledgers");
-        new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         touchLog(ledgerDir, 123);
         touchCompacting(ledgerDir, 129);
 
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId = ids.nextId();
         assertThat(logId, equalTo(124));
     }
@@ -248,11 +248,11 @@ public class TestEntryLogIds {
     @Test
     public void testCompactedLogsConsidered() throws Exception {
         File ledgerDir = tmpDirs.createNew("entryLogIds", "ledgers");
-        new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         touchLog(ledgerDir, 123);
         touchCompacted(ledgerDir, 129, 123);
 
-        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), slog);
+        EntryLogIds ids = new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG);
         int logId = ids.nextId();
         assertThat(logId, equalTo(130));
     }

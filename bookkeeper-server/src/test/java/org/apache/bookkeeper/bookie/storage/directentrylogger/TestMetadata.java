@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntry
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
@@ -31,7 +32,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.bookkeeper.bookie.EntryLogMetadata;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
@@ -60,7 +60,7 @@ public class TestMetadata {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(logId, logFilename(ledgerDir, logId),
                      1 << 24, writeExecutor,
-                     buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                     buffers, new NativeIOImpl(), Logger.get(TestMetadata.class))) {
             long offset = 4096L;
             writer.position(offset);
             EntryLogMetadata entryLogMetadata = new EntryLogMetadata(logId);
