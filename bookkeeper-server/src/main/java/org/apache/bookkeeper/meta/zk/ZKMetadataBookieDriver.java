@@ -22,7 +22,6 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.discover.ZKRegistrationManager;
@@ -36,7 +35,6 @@ import org.apache.zookeeper.ZooKeeper;
 /**
  * ZooKeeper based metadata bookie driver.
  */
-@Slf4j
 public class ZKMetadataBookieDriver
     extends ZKMetadataDriverBase
     implements MetadataBookieDriver {

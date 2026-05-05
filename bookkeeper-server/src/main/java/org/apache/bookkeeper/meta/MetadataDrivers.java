@@ -35,10 +35,10 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -54,7 +54,7 @@ import org.apache.commons.lang3.StringUtils;
  *
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-@Slf4j
+@CustomLog
 public final class MetadataDrivers {
 
     static final String ZK_CLIENT_DRIVER_CLASS = "org.apache.bookkeeper.meta.zk.ZKMetadataClientDriver";
@@ -128,7 +128,10 @@ public final class MetadataDrivers {
                     new MetadataClientDriverInfo(driver.getClass());
                 clientDrivers.put(driver.getScheme().toLowerCase(), driverInfo);
             } catch (Exception e) {
-                log.warn("Failed to load metadata client driver {}", driverClsName, e);
+                log.warn()
+                        .exception(e)
+                        .attr("driverClassName", driverClsName)
+                        .log("Failed to load metadata client driver");
             }
         }
     }
@@ -155,7 +158,10 @@ public final class MetadataDrivers {
                     new MetadataBookieDriverInfo(driver.getClass());
                 bookieDrivers.put(driver.getScheme().toLowerCase(), driverInfo);
             } catch (Exception e) {
-                log.warn("Failed to load metadata bookie driver {}", driverClsName, e);
+                log.warn()
+                        .exception(e)
+                        .attr("driverClassName", driverClsName)
+                        .log("Failed to load metadata bookie driver");
             }
         }
     }
@@ -183,13 +189,9 @@ public final class MetadataDrivers {
         MetadataClientDriverInfo newDriverInfo = new MetadataClientDriverInfo(driver);
         oldDriverInfo = clientDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
-            if (log.isDebugEnabled()) {
-                log.debug("Metadata client driver for {} is already there.", scheme);
-            }
+            log.debug().attr("scheme", scheme).log("Metadata client driver is already there");
             if (allowOverride) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Overriding client driver for {}", scheme);
-                }
+                log.debug().attr("scheme", scheme).log("Overriding client driver");
                 clientDrivers.put(scheme, newDriverInfo);
             }
         }
@@ -218,13 +220,9 @@ public final class MetadataDrivers {
         MetadataBookieDriverInfo newDriverInfo = new MetadataBookieDriverInfo(driver);
         oldDriverInfo = bookieDrivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
-            if (log.isDebugEnabled()) {
-                log.debug("Metadata bookie driver for {} is already there.", scheme);
-            }
+            log.debug().attr("scheme", scheme).log("Metadata bookie driver is already there");
             if (allowOverride) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Overriding bookie driver for {}", scheme);
-                }
+                log.debug().attr("scheme", scheme).log("Overriding bookie driver");
                 bookieDrivers.put(scheme, newDriverInfo);
             }
         }

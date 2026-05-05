@@ -38,8 +38,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -61,7 +61,7 @@ import org.apache.zookeeper.data.Stat;
  * ZooKeeper based {@link RegistrationClient}.
  */
 
-@Slf4j
+@CustomLog
 public class ZKRegistrationClient implements RegistrationClient {
 
     static final int ZK_CONNECT_BACKOFF_MS = 200;
@@ -113,7 +113,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             try {
                 scheduler.schedule(this, delayMs, TimeUnit.MILLISECONDS);
             } catch (RejectedExecutionException ree) {
-                log.warn("Failed to schedule watch bookies task", ree);
+                log.warn().exception(ree).log("Failed to schedule watch bookies task");
             }
         }
 
@@ -240,9 +240,10 @@ public class ZKRegistrationClient implements RegistrationClient {
         // because it can happen than this method is called inside the main
         // zookeeper client event loop thread
         Versioned<BookieServiceInfo> resultFromCache = bookieServiceInfoCache.get(bookieId);
-        if (log.isDebugEnabled()) {
-            log.debug("getBookieServiceInfo {} -> {}", bookieId, resultFromCache);
-        }
+        log.debug()
+                .attr("bookieId", bookieId)
+                .attr("result", resultFromCache)
+                .log("getBookieServiceInfo");
         if (resultFromCache != null) {
             return CompletableFuture.completedFuture(resultFromCache);
         } else {
@@ -268,11 +269,14 @@ public class ZKRegistrationClient implements RegistrationClient {
                     BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes);
                     Versioned<BookieServiceInfo> result = new Versioned<>(bookieServiceInfo,
                             new LongVersion(stat.getCversion()));
-                    log.info("Update BookieInfoCache (writable bookie) {} -> {}", bookieId, result.getValue());
+                    log.info()
+                            .attr("bookieId", bookieId)
+                            .attr("info", result.getValue())
+                            .log("Update BookieInfoCache (writable bookie)");
                     bookieServiceInfoCache.put(bookieId, result);
                     promise.complete(result);
                 } catch (IOException ex) {
-                    log.error("Cannot update BookieInfo for ", ex);
+                    log.error().exception(ex).log("Cannot update BookieInfo");
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path)
                             .initCause(ex));
                     return;
@@ -286,11 +290,14 @@ public class ZKRegistrationClient implements RegistrationClient {
                             BookieServiceInfo bookieServiceInfo = deserializeBookieServiceInfo(bookieId, bytes2);
                             Versioned<BookieServiceInfo> result =
                                     new Versioned<>(bookieServiceInfo, new LongVersion(stat2.getCversion()));
-                            log.info("Update BookieInfoCache (readonly bookie) {} -> {}", bookieId, result.getValue());
+                            log.info()
+                                    .attr("bookieId", bookieId)
+                                    .attr("info", result.getValue())
+                                    .log("Update BookieInfoCache (readonly bookie)");
                             bookieServiceInfoCache.put(bookieId, result);
                             promise.complete(result);
                         } catch (IOException ex) {
-                            log.error("Cannot update BookieInfo for ", ex);
+                            log.error().exception(ex).log("Cannot update BookieInfo");
                             promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc2), path2)
                                     .initCause(ex));
                             return;
@@ -471,7 +478,7 @@ public class ZKRegistrationClient implements RegistrationClient {
             try {
                 return BookieId.parse(path.substring(slash + 1));
             } catch (IllegalArgumentException e) {
-                log.warn("Cannot decode bookieId from {}", path, e);
+                log.warn().exception(e).attr("path", path).log("Cannot decode bookieId from path");
             }
         }
         return null;
@@ -481,9 +488,11 @@ public class ZKRegistrationClient implements RegistrationClient {
 
         @Override
         public void process(WatchedEvent we) {
-            if (log.isDebugEnabled()) {
-                log.debug("zk event {} for {} state {}", we.getType(), we.getPath(), we.getState());
-            }
+            log.debug()
+                    .attr("type", we.getType())
+                    .attr("path", we.getPath())
+                    .attr("state", we.getState())
+                    .log("zk event");
             if (we.getState() == KeeperState.Expired) {
                 log.info("zk session expired, invalidating cache");
                 bookieServiceInfoCache.clear();
@@ -495,17 +504,18 @@ public class ZKRegistrationClient implements RegistrationClient {
             }
             switch (we.getType()) {
                 case NodeDeleted:
-                    log.info("Invalidate cache for {}", bookieId);
+                    log.info().attr("bookieId", bookieId).log("Invalidate cache");
                     bookieServiceInfoCache.remove(bookieId);
                     break;
                 case NodeDataChanged:
-                    log.info("refresh cache for {}", bookieId);
+                    log.info().attr("bookieId", bookieId).log("refresh cache");
                     readBookieServiceInfoAsync(bookieId);
                     break;
                 default:
-                    if (log.isDebugEnabled()) {
-                        log.debug("ignore cache event {} for {}", we.getType(), bookieId);
-                    }
+                    log.debug()
+                            .attr("type", we.getType())
+                            .attr("bookieId", bookieId)
+                            .log("ignore cache event");
                     break;
             }
         }

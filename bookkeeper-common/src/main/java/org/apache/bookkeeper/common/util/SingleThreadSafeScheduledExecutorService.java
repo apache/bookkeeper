@@ -23,9 +23,9 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
-@Slf4j
+@CustomLog
 public class SingleThreadSafeScheduledExecutorService extends ScheduledThreadPoolExecutor
         implements ScheduledExecutorService {
 
@@ -45,7 +45,10 @@ public class SingleThreadSafeScheduledExecutorService extends ScheduledThreadPoo
             try {
                 task.run();
             } catch (Throwable t) {
-                log.warn("Unexpected throwable from task {}: {}", task.getClass(), t.getMessage(), t);
+                log.warn()
+                        .exception(t)
+                        .attr("taskClass", task.getClass())
+                        .log("Unexpected throwable from task");
             }
         }
     }

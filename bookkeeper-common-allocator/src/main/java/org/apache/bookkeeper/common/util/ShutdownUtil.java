@@ -20,12 +20,12 @@ package org.apache.bookkeeper.common.util;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Forked from <a href="https://github.com/apache/pulsar">Pulsar</a>.
  */
-@Slf4j
+@CustomLog
 public class ShutdownUtil {
     private static final Method log4j2ShutdownMethod;
 
@@ -37,7 +37,7 @@ public class ShutdownUtil {
                     .getMethod("shutdown");
         } catch (ClassNotFoundException | NoSuchMethodException e) {
             // ignore when Log4j2 isn't found, log at debug level
-            log.debug("Cannot find org.apache.logging.log4j.LogManager.shutdown method", e);
+            log.debug().exception(e).log("Cannot find org.apache.logging.log4j.LogManager.shutdown method");
         }
         log4j2ShutdownMethod = shutdownMethod;
     }
@@ -54,8 +54,10 @@ public class ShutdownUtil {
     public static void triggerImmediateForcefulShutdown(int status, boolean logging) {
         try {
             if (status != 0 && logging) {
-                log.warn("Triggering immediate shutdown of current process with status {}", status,
-                        new Exception("Stacktrace for immediate shutdown"));
+                log.warn()
+                        .exception(new Exception("Stacktrace for immediate shutdown"))
+                        .attr("status", status)
+                        .log("Triggering immediate shutdown of current process");
             }
             shutdownLogging();
         } finally {
@@ -70,7 +72,9 @@ public class ShutdownUtil {
                 // use reflection to call org.apache.logging.log4j.LogManager.shutdown()
                 log4j2ShutdownMethod.invoke(null);
             } catch (IllegalAccessException | InvocationTargetException e) {
-                log.error("Unable to call org.apache.logging.log4j.LogManager.shutdown using reflection.", e);
+                log.error()
+                        .exception(e)
+                        .log("Unable to call org.apache.logging.log4j.LogManager.shutdown using reflection");
             }
         }
     }

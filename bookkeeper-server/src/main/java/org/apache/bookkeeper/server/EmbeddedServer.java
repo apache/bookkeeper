@@ -45,7 +45,7 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
@@ -192,7 +192,7 @@ public class EmbeddedServer {
         return new Builder(conf);
     }
 
-    @Slf4j
+    @CustomLog
     public static class Builder {
 
         private BookieConfiguration conf;
@@ -296,7 +296,9 @@ public class EmbeddedServer {
                 StatsProviderService statsProviderService = new StatsProviderService(conf);
                 statsProvider = statsProviderService.getStatsProvider();
                 serverBuilder.addComponent(statsProviderService);
-                log.info("Load lifecycle component : {}", statsProviderService.getName());
+                log.info()
+                        .attr("component", statsProviderService.getName())
+                        .log("Load lifecycle component");
             }
 
             StatsLogger rootStatsLogger = statsProvider.getStatsLogger("");
@@ -357,7 +359,7 @@ public class EmbeddedServer {
             }
             if (uncleanShutdownDetection.lastShutdownWasUnclean()) {
                 log.info("Unclean shutdown detected. "
-                        + "The bookie did not register a graceful shutdown prior to this boot.");
+                        + "The bookie did not register a graceful shutdown prior to this boot");
             }
 
             // bookie takes ownership of storage, so shuts it down
@@ -375,7 +377,10 @@ public class EmbeddedServer {
                 ExecutorService rxExecutor = Executors.newFixedThreadPool(
                         2, new ThreadFactoryBuilder().setNameFormat("rx-schedule-%d")
                                 .setUncaughtExceptionHandler(
-                                        (t, ex) -> log.error("Uncaught exception on thread {}", t.getName(), ex))
+                                        (t, ex) -> log.error()
+                                                .exception(ex)
+                                                .attr("thread", t.getName())
+                                                .log("Uncaught exception on thread"))
                                 .build());
                 Scheduler rxScheduler = Schedulers.from(rxExecutor);
                 serverBuilder.addComponent(
@@ -432,7 +437,7 @@ public class EmbeddedServer {
                     new BookieService(conf, bookie, rootStatsLogger, allocatorWithOomHandler, uncleanShutdownDetection);
 
             serverBuilder.addComponent(bookieService);
-            log.info("Load lifecycle component : {}", bookieService.getName());
+            log.info().attr("component", bookieService.getName()).log("Load lifecycle component");
 
             if (conf.getServerConf().isLocalScrubEnabled()) {
                 serverBuilder.addComponent(
@@ -447,7 +452,7 @@ public class EmbeddedServer {
                 autoRecoveryService = new AutoRecoveryService(conf, rootStatsLogger.scope(REPLICATION_SCOPE));
 
                 serverBuilder.addComponent(autoRecoveryService);
-                log.info("Load lifecycle component : {}", autoRecoveryService.getName());
+                log.info().attr("component", autoRecoveryService.getName()).log("Load lifecycle component");
             }
 
             // 7. build data integrity check service
@@ -457,7 +462,7 @@ public class EmbeddedServer {
                 dataIntegrityService =
                         new DataIntegrityService(conf, rootStatsLogger.scope(REPLICATION_SCOPE), integCheck);
                 serverBuilder.addComponent(dataIntegrityService);
-                log.info("Load lifecycle component : {}", dataIntegrityService.getName());
+                log.info().attr("component", dataIntegrityService.getName()).log("Load lifecycle component");
             }
 
             // 8. build http service
@@ -471,7 +476,7 @@ public class EmbeddedServer {
                         .build();
                 httpService = new HttpService(provider, conf, rootStatsLogger);
                 serverBuilder.addComponent(httpService);
-                log.info("Load lifecycle component : {}", httpService.getName());
+                log.info().attr("component", httpService.getName()).log("Load lifecycle component");
             }
 
             // 9. build extra services
@@ -484,12 +489,14 @@ public class EmbeddedServer {
                             rootStatsLogger);
                     for (ServerLifecycleComponent component : components) {
                         serverBuilder.addComponent(component);
-                        log.info("Load lifecycle component : {}", component.getName());
+                        log.info().attr("component", component.getName()).log("Load lifecycle component");
                     }
                 } catch (Exception e) {
                     if (conf.getServerConf().getIgnoreExtraServerComponentsStartupFailures()) {
-                        log.info("Failed to load extra components '{}' - {}. Continuing without those components.",
-                                StringUtils.join(extraComponents), e.getMessage());
+                        log.info()
+                                .exception(e)
+                                .attr("extraComponents", StringUtils.join(extraComponents))
+                                .log("Failed to load extra components. Continuing without those components");
                     } else {
                         throw e;
                     }
