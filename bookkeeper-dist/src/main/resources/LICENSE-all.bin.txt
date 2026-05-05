@@ -279,8 +279,8 @@ Apache Software License, Version 2.
 - lib/org.eclipse.jetty.toolchain-jetty-servlet-api-4.0.9.jar [22]
 - lib/org.rocksdb-rocksdbjni-9.9.3.jar [23]
 - lib/com.beust-jcommander-1.82.jar [24]
-- lib/com.yahoo.datasketches-memory-0.8.3.jar [25]
-- lib/com.yahoo.datasketches-sketches-core-0.8.3.jar [25]
+- lib/org.apache.datasketches-datasketches-java-7.0.1.jar [25]
+- lib/org.apache.datasketches-datasketches-memory-4.1.0.jar [27]
 - lib/at.yawk.lz4-lz4-java-1.10.2.jar [26]
 - lib/com.google.api-api-common-2.53.0.jar [63]
 - lib/com.google.api.grpc-proto-google-common-protos-2.63.2.jar [28]
@@ -388,8 +388,9 @@ Apache Software License, Version 2.
 [22] Source available at https://github.com/jetty/jetty.project/tree/jetty-12.1.7
 [23] Source available at https://github.com/facebook/rocksdb/tree/v9.9.3
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.82
-[25] Source available at https://github.com/DataSketches/sketches-core/tree/sketches-0.8.3
+[25] Source available at https://github.com/apache/datasketches-java/tree/7.0.1
 [26] Source available at https://github.com/yawkat/lz4-java/tree/v1.10.2
+[27] Source available at https://github.com/apache/datasketches-memory/tree/4.1.0
 [28] Source available at https://github.com/googleapis/sdk-platform-java/tree/v2.63.2/java-common-protos
 [29] Source available at https://github.com/google/gson/tree/gson-parent-2.12.1
 [30] Source available at https://github.com/census-instrumentation/opencensus-java/tree/v0.31.1

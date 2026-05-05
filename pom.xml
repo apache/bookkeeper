@@ -181,7 +181,7 @@
     <mockito.version>4.11.0</mockito.version>
     <netty.version>4.2.13.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
-    <datasketches.version>0.8.3</datasketches.version>
+    <datasketches.version>7.0.1</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
     <protobuf.version>4.34.0</protobuf.version>
@@ -670,8 +670,8 @@
       </dependency>
       <!-- data-sketches -->
       <dependency>
-        <groupId>com.yahoo.datasketches</groupId>
-        <artifactId>sketches-core</artifactId>
+        <groupId>org.apache.datasketches</groupId>
+        <artifactId>datasketches-java</artifactId>
         <version>${datasketches.version}</version>
       </dependency>
       <!-- opentelemetry -->
