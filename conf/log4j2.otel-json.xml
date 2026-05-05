@@ -24,9 +24,6 @@
     object aligned with the OpenTelemetry log data model
     (https://opentelemetry.io/docs/specs/otel/logs/data-model/).
 
-    The structured attributes set via slog ".attr(...)" calls are written to
-    Log4j2's ContextData and surface here under the "attributes" field.
-
     Required runtime dependency (NOT included by default in BookKeeper):
         org.apache.logging.log4j:log4j-layout-template-json:${log4j.version}
 
@@ -36,18 +33,23 @@
     there (e.g. add resource attributes, drop fields, rename keys) without
     touching this file.
 
-    Notes on the OTel mapping:
-      * "severity_text"       = log4j level name ("INFO", "WARN", ...).
-      * "severity_number"     = OTel severity number derived from the level
-                                (TRACE=1, DEBUG=5, INFO=9, WARN=13, ERROR=17).
-      * "body"                = the log message string.
-      * "trace_id"/"span_id"  = MDC keys conventionally set by the OpenTelemetry
-                                log appender bridge; omitted when absent.
-      * "attributes"          = the full ContextData map (slog attrs + any
-                                other entries placed in Log4j2 ThreadContext
-                                or SLF4J MDC).
-      * "resource"            = static attributes about the producer; populate
-                                via OTEL_SERVICE_NAME / HOSTNAME env vars.
+    Top-level fields follow the OTel data-model field naming (PascalCase):
+      * "Timestamp"           = event time, ISO-8601 UTC.
+      * "SeverityText"        = log4j level name ("INFO", "WARN", ...).
+      * "Body"                = the log message string.
+      * "TraceId" / "SpanId" / "TraceFlags"
+                              = MDC keys conventionally set by the
+                                OpenTelemetry log appender bridge; omitted
+                                when absent.
+      * "Attributes"          = OTel-semantic-conventions attributes for the
+                                event:
+                                  - thread.name / thread.id
+                                  - code.namespace (= the logger name)
+                                  - exception.type / .message / .stacktrace
+                                Plus the full Log4j2 ContextData map (every
+                                slog ".attr(...)" entry and any SLF4J MDC
+                                key) merged in via the "mdc" resolver with
+                                flatten=true.
 -->
 <Configuration status="warn" monitorInterval="10">
     <Properties>
@@ -56,8 +58,6 @@
         <Property name="bookkeeper.log.root.level">INFO</Property>
         <Property name="bookkeeper.log.root.appender">CONSOLE</Property>
         <Property name="otel.template">file:${sys:bookkeeper.conf.dir:-conf}/otel-log-template.json</Property>
-        <Property name="otel.service.name">${env:OTEL_SERVICE_NAME:-bookkeeper}</Property>
-        <Property name="otel.host.name">${env:HOSTNAME:-unknown}</Property>
     </Properties>
     <Appenders>
         <Console name="CONSOLE" target="SYSTEM_OUT">

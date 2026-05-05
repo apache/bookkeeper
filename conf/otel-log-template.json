@@ -1,37 +1,63 @@
 {
-  "timestamp": {
+  "Timestamp": {
     "$resolver": "timestamp",
-    "pattern": {"format": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "timeZone": "UTC"}
+    "pattern": {
+      "format": "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+      "timeZone": "UTC"
+    }
   },
-  "observed_timestamp": {
-    "$resolver": "timestamp",
-    "pattern": {"format": "yyyy-MM-dd'T'HH:mm:ss.SSSXXX", "timeZone": "UTC"}
+  "SeverityText": {
+    "$resolver": "level",
+    "field": "name"
   },
-  "severity_text": {"$resolver": "level", "field": "name"},
-  "severity_number": {
-    "$resolver": "pattern",
-    "pattern": "%level{TRACE=1, DEBUG=5, INFO=9, WARN=13, ERROR=17, FATAL=21}"
+  "Body": {
+    "$resolver": "message",
+    "stringified": true
   },
-  "body": {"$resolver": "message", "stringified": true},
-  "trace_id": {"$resolver": "mdc", "key": "trace_id"},
-  "span_id": {"$resolver": "mdc", "key": "span_id"},
-  "trace_flags": {"$resolver": "mdc", "key": "trace_flags"},
-  "instrumentation_scope": {
-    "name": {"$resolver": "logger", "field": "name"}
+  "TraceId": {
+    "$resolver": "mdc",
+    "key": "trace_id"
   },
-  "resource": {
-    "service.name": "${otel.service.name}",
-    "host.name": "${otel.host.name}"
+  "SpanId": {
+    "$resolver": "mdc",
+    "key": "span_id"
   },
-  "attributes": {"$resolver": "mdc", "flatten": true},
-  "thread_name": {"$resolver": "thread", "field": "name"},
-  "exception": {
-    "type": {"$resolver": "exception", "field": "className"},
-    "message": {"$resolver": "exception", "field": "message"},
-    "stack_trace": {
+  "TraceFlags": {
+    "$resolver": "mdc",
+    "key": "trace_flags"
+  },
+  "Attributes": {
+    "thread.name": {
+      "$resolver": "thread",
+      "field": "name"
+    },
+    "thread.id": {
+      "$resolver": "thread",
+      "field": "id"
+    },
+    "code.namespace": {
+      "$resolver": "logger",
+      "field": "name"
+    },
+    "exception.type": {
+      "$resolver": "exception",
+      "field": "className"
+    },
+    "exception.message": {
+      "$resolver": "exception",
+      "field": "message"
+    },
+    "exception.stacktrace": {
       "$resolver": "exception",
       "field": "stackTrace",
-      "stackTrace": {"stringified": true}
+      "stackTrace": {
+        "stringified": true
+      }
+    },
+    "mdc": {
+      "$resolver": "mdc",
+      "flatten": true,
+      "stringified": true
     }
   }
 }

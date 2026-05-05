@@ -39,6 +39,8 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
+import io.github.merlimat.slog.Event;
+import io.github.merlimat.slog.Logger;
 import java.io.File;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -47,7 +49,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MockLedgerManager;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
@@ -64,7 +65,7 @@ import org.mockito.Spy;
  */
 @SuppressWarnings("deprecation")
 public class GarbageCollectorThreadTest {
-    private static final Slogger slog = Slogger.CONSOLE;
+    private static final Logger LOG = Logger.get(GarbageCollectorThreadTest.class);
 
     private final TmpDirs tmpDirs = new TmpDirs();
 
@@ -125,17 +126,17 @@ public class GarbageCollectorThreadTest {
             double usage = ((double) item / (double) items);
             int index = mockGCThread.calculateUsageIndex(numBuckets, usage);
             assertFalse("Boundary condition exceeded", index < 0 || index >= numBuckets);
-            slog.kv("usage", usage)
-                .kv("index", index)
-                .info("Mapped usage to index");
+            LOG.info().attr("usage", usage)
+                .attr("index", index)
+                .log("Mapped usage to index");
             usageBuckets[index]++;
         }
 
-        Slogger sl = slog.ctx();
+        Event ev = LOG.info();
         for (int i = 0; i < numBuckets; i++) {
-            sl = sl.kv(bucketNames[i], usageBuckets[i]);
+            ev = ev.attr(bucketNames[i], usageBuckets[i]);
         }
-        sl.info("Compaction: entry log usage buckets");
+        ev.log("Compaction: entry log usage buckets");
 
         int sum = 0;
         for (int i = 0; i < numBuckets; i++) {

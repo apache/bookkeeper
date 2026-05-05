@@ -27,6 +27,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -64,7 +65,6 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.slogger.slf4j.Slf4jSlogger;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -213,7 +213,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     conf,
                     DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS,
                     DEFAULT_DIRECT_IO_MAX_FD_CACHE_TIME_SECONDS);
-                Slf4jSlogger slog = new Slf4jSlogger(DbLedgerStorage.class);
+                Logger log = Logger.get(DbLedgerStorage.class);
                 entryLoggerWriteExecutor = Executors.newSingleThreadExecutor(
                     new DefaultThreadFactory("EntryLoggerWrite"));
                 entryLoggerFlushExecutor = Executors.newSingleThreadExecutor(
@@ -224,7 +224,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     numReadThreads = conf.getServerNumIOThreads();
                 }
 
-                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, slog),
+                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, log),
                     new NativeIOImpl(),
                     allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
                     conf.getEntryLogSizeLimit(),
@@ -234,7 +234,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     readBufferSize,
                     numReadThreads,
                     maxFdCacheTimeSeconds,
-                    slog, statsLogger);
+                    log, statsLogger);
             } else {
                 entrylogger = new DefaultEntryLogger(conf, ldm, null, statsLogger, allocator);
             }

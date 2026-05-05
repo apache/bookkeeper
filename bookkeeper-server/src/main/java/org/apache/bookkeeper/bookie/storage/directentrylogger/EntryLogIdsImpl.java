@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.directentrylogger;
 
+import io.github.merlimat.slog.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogIds;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.commons.lang3.tuple.Pair;
 /**
@@ -37,14 +37,14 @@ public class EntryLogIdsImpl implements EntryLogIds {
 
 
     private final LedgerDirsManager ledgerDirsManager;
-    private final Slogger slog;
+    private final Logger log;
     private int nextId;
     private int maxId;
 
     public EntryLogIdsImpl(LedgerDirsManager ledgerDirsManager,
-                           Slogger slog) throws IOException {
+                           Logger log) throws IOException {
         this.ledgerDirsManager = ledgerDirsManager;
-        this.slog = slog.ctx(EntryLogIdsImpl.class);
+        this.log = Logger.get(EntryLogIdsImpl.class).with().ctx(log).build();
         findLargestGap();
     }
 
@@ -74,10 +74,10 @@ public class EntryLogIdsImpl implements EntryLogIds {
         Pair<Integer, Integer> gap = LedgerDirUtil.findLargestGap(currentIds);
         nextId = gap.getLeft();
         maxId = gap.getRight();
-        slog.kv("dirs", ledgerDirsManager.getAllLedgerDirs())
-            .kv("nextId", nextId)
-            .kv("maxId", maxId)
-            .kv("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start))
-            .info(Events.ENTRYLOG_IDS_CANDIDATES_SELECTED);
+        log.info().attr("dirs", ledgerDirsManager.getAllLedgerDirs())
+            .attr("nextId", nextId)
+            .attr("maxId", maxId)
+            .attr("durationMs", TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start))
+            .log("Entry log ID candidates selected");
     }
 }
