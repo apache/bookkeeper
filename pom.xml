@@ -179,7 +179,7 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.2.12.Final</netty.version>
+    <netty.version>4.2.13.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
     <datasketches.version>0.8.3</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
