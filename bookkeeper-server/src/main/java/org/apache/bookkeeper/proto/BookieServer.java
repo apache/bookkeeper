@@ -29,6 +29,9 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
@@ -36,7 +39,6 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
-import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -83,13 +85,9 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         validateUser(conf);
-        String configAsString;
-        try {
-            configAsString = conf.asJson();
-            log.info(configAsString);
-        } catch (ParseJsonException pe) {
-            log.error().exception(pe).log("Got ParseJsonException while converting Config to JSONString");
-        }
+        log.info()
+                .attr("overrides", overriddenConfig(conf))
+                .log("Starting Bookie server");
 
         this.statsLogger = statsLogger;
         this.bookie = bookie;
@@ -219,6 +217,29 @@ public class BookieServer {
             log.error(errorMsg);
             throw new BookieException.BookieUnauthorizedAccessException(errorMsg);
         }
+    }
+
+    /**
+     * Returns the configuration entries that differ from the {@link ServerConfiguration}
+     * defaults — i.e. values explicitly set by the user (via config file or programmatically)
+     * whose value is not the same as the built-in default.
+     */
+    private static Map<String, Object> overriddenConfig(ServerConfiguration conf) {
+        ServerConfiguration defaults = new ServerConfiguration();
+        Map<String, Object> overrides = new TreeMap<>();
+        Iterator<String> keys = conf.getInMemoryConfiguration().getKeys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = conf.getProperty(key);
+            if (value == null) {
+                continue;
+            }
+            Object defaultValue = defaults.getProperty(key);
+            if (defaultValue == null || !value.toString().equals(defaultValue.toString())) {
+                overrides.put(key, value);
+            }
+        }
+        return overrides;
     }
 
 
