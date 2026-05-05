@@ -223,7 +223,7 @@ class PendingAddOp implements WriteCallback {
 
 
         log.debug()
-                .attr("ledgerId", lh.ledgerId)
+                .ctx(lh.log)
                 .attr("entryId", entryId)
                 .attr("bookieIndex", bookieIndex)
                 .log("Unsetting success");
@@ -283,7 +283,7 @@ class PendingAddOp implements WriteCallback {
             // ensemble has already changed, failure of this addr is immaterial
 
             log.debug()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("entryId", entryId)
                     .log("Write did not succeed. But we have already fixed it.");
 
@@ -343,7 +343,7 @@ class PendingAddOp implements WriteCallback {
             return;
         case BKException.Code.LedgerFencedException:
             log.warn()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("entryId", entryId)
                     .attr("bookieAddr", addr)
                     .log("Fencing exception on write");
@@ -351,7 +351,7 @@ class PendingAddOp implements WriteCallback {
             return;
         case BKException.Code.UnauthorizedAccessException:
             log.warn()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("entryId", entryId)
                     .attr("bookieAddr", addr)
                     .log("Unauthorized access exception on write");
@@ -363,7 +363,7 @@ class PendingAddOp implements WriteCallback {
                         || rc == BKException.Code.WriteOnReadOnlyBookieException) {
                     Map<Integer, BookieId> failedBookies = ackSet.getFailedBookies();
                     log.warn()
-                            .attr("ledgerId", ledgerId)
+                            .ctx(lh.log)
                             .attr("entryId", entryId)
                             .attr("failedBookies", failedBookies)
                             .log("Failed to write entry to bookies, handling failures");
@@ -371,7 +371,7 @@ class PendingAddOp implements WriteCallback {
                     lh.handleBookieFailure(failedBookies);
                 } else {
                     log.debug()
-                            .attr("ledgerId", ledgerId)
+                            .ctx(lh.log)
                             .attr("entryId", entryId)
                             .attr("bookieIndex", bookieIndex)
                             .attr("bookieAddr", addr)
@@ -381,7 +381,7 @@ class PendingAddOp implements WriteCallback {
                 }
             } else {
                 log.warn()
-                        .attr("ledgerId", ledgerId)
+                        .ctx(lh.log)
                         .attr("entryId", entryId)
                         .attr("bookieIndex", bookieIndex)
                         .attr("bookieAddr", addr)
@@ -399,7 +399,7 @@ class PendingAddOp implements WriteCallback {
                                                                         lh.getLedgerMetadata().getWriteQuorumSize(),
                                                                         lh.getLedgerMetadata().getAckQuorumSize()))) {
                 log.warn()
-                        .attr("ledgerId", ledgerId)
+                        .ctx(lh.log)
                         .attr("entryId", entryId)
                         .log("Write success for entry ID delayed, not acknowledged by bookies in enough fault domains");
                 // Increment to indicate write did not complete due to not enough fault domains
@@ -432,7 +432,7 @@ class PendingAddOp implements WriteCallback {
     synchronized void submitCallback(final int rc) {
 
         log.debug()
-                .attr("ledgerId", () -> lh.getId())
+                .ctx(lh.log)
                 .attr("entryId", entryId)
                 .attr("rc", rc)
                 .log("Submit callback");
@@ -442,7 +442,7 @@ class PendingAddOp implements WriteCallback {
         if (rc != BKException.Code.OK) {
             clientCtx.getClientStats().getAddOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             log.error()
-                    .attr("ledgerId", lh.getId())
+                    .ctx(lh.log)
                     .attr("entryId", entryId)
                     .log("Write of ledger entry to quorum failed");
         } else {

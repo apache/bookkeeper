@@ -216,7 +216,7 @@ Apache Software License, Version 2.
 - lib/commons-codec-commons-codec-1.18.0.jar [6]
 - lib/commons-io-commons-io-2.19.0.jar [8]
 - lib/commons-logging-commons-logging-1.3.5.jar [10]
-- lib/io.github.merlimat.slog-slog-0.9.8.jar [59]
+- lib/io.github.merlimat.slog-slog-0.9.9.jar [59]
 - lib/io.netty-netty-buffer-4.2.12.Final.jar [11]
 - lib/io.netty-netty-codec-base-4.2.12.Final.jar [11]
 - lib/io.netty-netty-common-4.2.12.Final.jar [11]
@@ -355,7 +355,7 @@ Apache Software License, Version 2.
 [56] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.13.1
 [57] Source available at https://github.com/apache/commons-beanutils/tree/rel/commons-beanutils-1.11.0
 [58] Source available at https://github.com/googleapis/sdk-platform-java/tree/v2.53.0/api-common-java
-[59] Source available at https://github.com/merlimat/slog/tree/v0.9.8
+[59] Source available at https://github.com/merlimat/slog/tree/v0.9.9
 ------------------------------------------------------------------------------------
 lib/io.netty-netty-codec-base-4.2.12.Final.jar bundles some 3rd party dependencies
 

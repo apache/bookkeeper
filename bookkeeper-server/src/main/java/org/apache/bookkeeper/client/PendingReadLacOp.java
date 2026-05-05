@@ -121,7 +121,7 @@ class PendingReadLacOp implements ReadLacCallback {
                 // Too bad, this bookie did not give us a valid answer, we
                 // still might be able to recover. So, continue
                 log.error()
-                        .attr("ledgerId", ledgerId)
+                        .ctx(lh.log)
                         .attr("bookieAddr", currentEnsemble.get(bookieIndex))
                         .log("Mac mismatch while reading LAC from bookie");
                 rc = BKException.Code.DigestMatchException;
@@ -149,7 +149,7 @@ class PendingReadLacOp implements ReadLacCallback {
             completed = true;
 
             log.debug()
-            .attr("ledgerId", ledgerId)
+            .ctx(lh.log)
             .attr("maxLac", maxLac)
             .log("Read LAC complete with enough validResponse");
 
@@ -159,7 +159,7 @@ class PendingReadLacOp implements ReadLacCallback {
 
         if (numResponsesPending == 0 && !completed) {
             log.error()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("coverageSet", coverageSet)
                     .log("While readLac did not hear success responses from all of ensemble");
             cb.getLacComplete(lastSeenError, maxLac);

@@ -24,6 +24,7 @@ package org.apache.bookkeeper.client;
 import static org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType;
 
 import io.github.merlimat.slog.Logger;
+import io.github.merlimat.slog.LoggerBuilder;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
@@ -75,6 +76,7 @@ class LedgerOpenOp {
 
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
+    final Logger parentLogger;
 
     /**
      * Constructor.
@@ -89,7 +91,17 @@ class LedgerOpenOp {
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
                         long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
-        this.log = Logger.get(LedgerOpenOp.class).with().attr("ledgerId", ledgerId).build();
+        this(bk, clientStats, ledgerId, digestType, passwd, cb, ctx, null);
+    }
+
+    public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                        long ledgerId, DigestType digestType, byte[] passwd,
+                        OpenCallback cb, Object ctx, Logger parentLogger) {
+        LoggerBuilder builder = Logger.get(LedgerOpenOp.class).with();
+        if (parentLogger != null) {
+            builder = builder.ctx(parentLogger);
+        }
+        this.log = builder.attr("ledgerId", ledgerId).build();
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.passwd = passwd;
@@ -98,6 +110,7 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.parentLogger = parentLogger;
     }
 
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
@@ -113,6 +126,7 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.parentLogger = null;
     }
 
     /**
@@ -215,7 +229,7 @@ class LedgerOpenOp {
             // Therefore, if a user needs to the feature that update metadata automatically, he will set
             // "keepUpdateMetadata" to "true",
             lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
-                                          passwd, watchImmediately);
+                                          passwd, watchImmediately, parentLogger);
         } catch (GeneralSecurityException e) {
             log.error().exception(e).attr("ledgerId", ledgerId).log("Security exception while opening ledger");
             openComplete(BKException.Code.DigestNotInitializedException, null);
@@ -335,7 +349,7 @@ class LedgerOpenOp {
 
             LedgerOpenOp op = new LedgerOpenOp(bk, bk.getClientCtx().getClientStats(),
                                                ledgerId, fromApiDigestType(digestType),
-                                               password, cb, null);
+                                               password, cb, null, parentLogger);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
