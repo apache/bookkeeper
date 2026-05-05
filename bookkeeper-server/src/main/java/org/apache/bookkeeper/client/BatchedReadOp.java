@@ -79,7 +79,7 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
             log.error()
-                    .attr("ledgerId", lh.getId())
+                    .ctx(lh.log)
                     .attr("startEntryId", startEntryId)
                     .attr("entryId", startEntryId + maxCount - 1)
                     .attr("sentToHosts", sentToHosts)
@@ -278,6 +278,7 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
                 return to;
             } catch (InterruptedException ie) {
                 log.error()
+                        .ctx(lh.log)
                         .attr("readOp", this)
                         .exception(ie)
                         .log("Interrupted reading entry");
@@ -293,6 +294,7 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
                 log.error()
+                        .ctx(lh.log)
                         .attr("bookieAddr", host)
                         .attr("ensemble", ensemble)
                         .log("Received error from a host which is not in the ensemble");

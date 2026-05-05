@@ -118,7 +118,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
         if (numPendingEntries < 0) {
             log.error()
-                    .attr("ledgerId", ledgerId)
+                    .ctx(lh.log)
                     .attr("startEntryId", startEntryId)
                     .attr("endEntryId", endEntryId)
                     .log("Read too many values");
@@ -153,7 +153,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 }
             }
             log.error()
-                    .attr("ledgerId", lh.getId())
+                    .ctx(lh.log)
                     .attr("startEntryId", startEntryId)
                     .attr("endEntryId", endEntryId)
                     .attr("sentToHosts", sentToHosts)
@@ -257,6 +257,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                     sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
                     log.error()
+                            .ctx(lh.log)
                             .exception(ie)
                             .attr("readOp", this)
                             .log("Interrupted reading entry");
@@ -375,6 +376,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 return to;
             } catch (InterruptedException ie) {
                 log.error()
+                        .ctx(lh.log)
                         .exception(ie)
                         .attr("readOp", this)
                         .log("Interrupted reading entry");
@@ -391,6 +393,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
             int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
                 log.error()
+                        .ctx(lh.log)
                         .attr("bookieAddr", host)
                         .attr("ensemble", ensemble)
                         .log("Received error from a host which is not in the ensemble");
