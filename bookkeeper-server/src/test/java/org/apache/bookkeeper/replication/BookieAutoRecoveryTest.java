@@ -157,7 +157,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(1, 5);
         LedgerHandle lh = listOfLedgerHandle.get(0);
         int ledgerReplicaIndex = 0;
-        BookieId replicaToKillAddr = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        BookieId replicaToKillAddr = pickReplicaNotAuditor(lh);
 
         final String urLedgerZNode = getUrLedgerZNode(lh);
         ledgerReplicaIndex = getReplicaIndexInLedger(lh, replicaToKillAddr);
@@ -211,7 +211,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         closeLedgers(listOfLedgerHandle);
         LedgerHandle lhandle = listOfLedgerHandle.get(0);
         int ledgerReplicaIndex = 0;
-        BookieId replicaToKillAddr = lhandle.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        BookieId replicaToKillAddr = pickReplicaNotAuditor(lhandle);
 
         CountDownLatch latch = new CountDownLatch(listOfLedgerHandle.size());
         for (LedgerHandle lh : listOfLedgerHandle) {
@@ -277,8 +277,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
         List<LedgerHandle> listOfLedgerHandle = createLedgersAndAddEntries(
                 numberOfLedgers, 5);
         closeLedgers(listOfLedgerHandle);
-        LedgerHandle handle = listOfLedgerHandle.get(0);
-        BookieId replicaToKillAddr = handle.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        BookieId replicaToKillAddr = pickReplicaNotAuditor(listOfLedgerHandle.get(0));
         LOG.info("Killing Bookie:" + replicaToKillAddr);
 
         // Each ledger, there will be two events : create urLedger and after
@@ -362,13 +361,7 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             assertNull("UrLedger already exists!",
                     watchUrLedgerNode(getUrLedgerZNode(lh), latch));
         }
-        BookieId replicaToKillAddr = listOfLedgerHandle.get(0)
-            .getLedgerMetadata().getAllEnsembles()
-            .get(0L).get(0);
-        killBookie(replicaToKillAddr);
-        replicaToKillAddr = listOfLedgerHandle.get(0)
-            .getLedgerMetadata().getAllEnsembles()
-            .get(0L).get(0);
+        BookieId replicaToKillAddr = pickReplicaNotAuditor(listOfLedgerHandle.get(0));
         killBookie(replicaToKillAddr);
         // waiting to publish urLedger znode by Auditor
         assertTrue("Ledgers should be marked as underreplicated",
@@ -405,13 +398,34 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
     public void testEmptyLedgerLosesQuorumEventually() throws Exception {
         LOG.info("Start testEmptyLedgerLosesQuorumEventually");
         LedgerHandle lh = bkc.createLedger(3, 2, 2, DigestType.CRC32, PASSWD);
+        List<BookieId> ensembleBookies = lh.getLedgerMetadata().getAllEnsembles().get(0L);
+
+        // Pin the Auditor onto ensemble[0] by stopping AutoRecovery on the bookies
+        // the test will kill (ensemble[1] and ensemble[2]). Otherwise the slow ZK
+        // leader-failover path blows past the 20s assertion timeouts in CI.
+        for (int i = 1; i <= 2; i++) {
+            BookieId killTarget = ensembleBookies.get(i);
+            for (ServerTester t : servers) {
+                if (t.getServer().getBookieId().equals(killTarget)) {
+                    t.stopAutoRecovery();
+                }
+            }
+        }
+        BookieId safeBookie = ensembleBookies.get(0);
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
+        while (!safeBookie.equals(getAuditorBookieId())) {
+            if (System.nanoTime() > deadline) {
+                throw new IllegalStateException("Auditor did not settle on ensemble[0]: " + safeBookie);
+            }
+            Thread.sleep(200);
+        }
+
         CountDownLatch latch = new CountDownLatch(1);
         String urZNode = getUrLedgerZNode(lh);
         watchUrLedgerNode(urZNode, latch);
 
-        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(2);
-        LOG.info("Killing last bookie, {}, in ensemble {}", replicaToKill,
-                 lh.getLedgerMetadata().getAllEnsembles().get(0L));
+        BookieId replicaToKill = ensembleBookies.get(2);
+        LOG.info("Killing last bookie, {}, in ensemble {}", replicaToKill, ensembleBookies);
         killBookie(replicaToKill);
         startNewBookie();
 
@@ -616,6 +630,29 @@ public class BookieAutoRecoveryTest extends BookKeeperClusterTestCase {
             }
         }
         return ledgerReplicaIndex;
+    }
+
+    private BookieId getAuditorBookieId() throws Exception {
+        Auditor auditor = getAuditor(10, TimeUnit.SECONDS);
+        for (ServerTester t : servers) {
+            if (t.getAuditor() == auditor) {
+                return t.getServer().getBookieId();
+            }
+        }
+        throw new IllegalStateException("Auditor not found in cluster");
+    }
+
+    // Killing the Auditor leader triggers a slow ZK leader-failover path that
+    // routinely exceeds these tests' latch timeouts in CI; pick a non-Auditor
+    // bookie from the ensemble instead.
+    private BookieId pickReplicaNotAuditor(LedgerHandle lh) throws Exception {
+        BookieId auditorId = getAuditorBookieId();
+        for (BookieId addr : lh.getLedgerMetadata().getAllEnsembles().get(0L)) {
+            if (!addr.equals(auditorId)) {
+                return addr;
+            }
+        }
+        throw new IllegalStateException("All ensemble bookies are the Auditor");
     }
 
     private void verifyLedgerEnsembleMetadataAfterReplication(
