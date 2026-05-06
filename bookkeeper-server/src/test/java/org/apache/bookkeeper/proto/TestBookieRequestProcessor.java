@@ -109,6 +109,15 @@ public class TestBookieRequestProcessor {
             .build();
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
+        assertFalse(RequestUtils.isNoReadAhead(read));
+
+        read = ReadRequest.newBuilder()
+            .setLedgerId(10).setEntryId(1)
+            .setFlag(ReadRequest.Flag.FENCE_LEDGER)
+            .setReadFlags(BookieProtocol.FLAG_NO_READ_AHEAD)
+            .build();
+        assertTrue(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
+        assertTrue(RequestUtils.isNoReadAhead(read));
 
         AddRequest add = AddRequest.newBuilder()
             .setLedgerId(10).setEntryId(1)
@@ -196,11 +205,13 @@ public class TestBookieRequestProcessor {
 
         readRequest = ReadRequest.newBuilder().setLedgerId(10).setEntryId(23).setPreviousLAC(2).setTimeOut(100)
                 .setMasterKey(ByteString.copyFrom("masterKey".getBytes())).setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK)
+                .setReadFlags(BookieProtocol.FLAG_NO_READ_AHEAD)
                 .build();
         request = Request.newBuilder().setHeader(header).setReadRequest(readRequest).build();
         toString = RequestUtils.toSafeString(request);
         assertFalse("ReadRequest's safeString should have filtered out masterKey", toString.contains("masterKey"));
         assertTrue("ReadRequest's safeString shouldn contain flag", toString.contains("flag"));
+        assertTrue("ReadRequest's safeString should contain readFlags", toString.contains("readFlags"));
         assertTrue("ReadRequest's safeString shouldn contain previousLAC", toString.contains("previousLAC"));
         assertTrue("ReadRequest's safeString shouldn contain timeOut", toString.contains("timeOut"));
 

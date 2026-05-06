@@ -46,6 +46,21 @@ public interface ReadHandle extends Handle {
     CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry);
 
     /**
+     * Read a sequence of entries asynchronously with options that apply to this request.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @param options
+     *          options for this read request
+     * @return an handle to the result of the operation
+     */
+    default CompletableFuture<LedgerEntries> readAsync(long firstEntry, long lastEntry, ReadOptions options) {
+        return readAsync(firstEntry, lastEntry);
+    }
+
+    /**
      * Read a sequence of entries asynchronously.
      *
      * @param startEntry
@@ -73,6 +88,23 @@ public interface ReadHandle extends Handle {
      */
     default LedgerEntries read(long firstEntry, long lastEntry) throws BKException, InterruptedException {
         return FutureUtils.<LedgerEntries, BKException>result(readAsync(firstEntry, lastEntry),
+                                                              BKException.HANDLER);
+    }
+
+    /**
+     * Read a sequence of entries synchronously with options that apply to this request.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @param options
+     *          options for this read request
+     * @return the result of the operation
+     */
+    default LedgerEntries read(long firstEntry, long lastEntry, ReadOptions options)
+            throws BKException, InterruptedException {
+        return FutureUtils.<LedgerEntries, BKException>result(readAsync(firstEntry, lastEntry, options),
                                                               BKException.HANDLER);
     }
 
@@ -117,6 +149,23 @@ public interface ReadHandle extends Handle {
     CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry);
 
     /**
+     * Read a sequence of entries asynchronously with options that apply to this request, allowing to read after the
+     * LastAddConfirmed range.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @param options
+     *          options for this read request
+     * @return an handle to the result of the operation
+     */
+    default CompletableFuture<LedgerEntries> readUnconfirmedAsync(long firstEntry, long lastEntry,
+                                                                  ReadOptions options) {
+        return readUnconfirmedAsync(firstEntry, lastEntry);
+    }
+
+    /**
      * Read a sequence of entries synchronously.
      *
      * @param firstEntry
@@ -130,6 +179,26 @@ public interface ReadHandle extends Handle {
     default LedgerEntries readUnconfirmed(long firstEntry, long lastEntry)
             throws BKException, InterruptedException {
         return FutureUtils.<LedgerEntries, BKException>result(readUnconfirmedAsync(firstEntry, lastEntry),
+                                                              BKException.HANDLER);
+    }
+
+    /**
+     * Read a sequence of entries synchronously with options that apply to this request, allowing to read after the
+     * LastAddConfirmed range.
+     *
+     * @param firstEntry
+     *          id of first entry of sequence
+     * @param lastEntry
+     *          id of last entry of sequence, inclusive
+     * @param options
+     *          options for this read request
+     * @return an handle to the result of the operation
+     *
+     * @see #readUnconfirmedAsync(long, long, ReadOptions)
+     */
+    default LedgerEntries readUnconfirmed(long firstEntry, long lastEntry, ReadOptions options)
+            throws BKException, InterruptedException {
+        return FutureUtils.<LedgerEntries, BKException>result(readUnconfirmedAsync(firstEntry, lastEntry, options),
                                                               BKException.HANDLER);
     }
 

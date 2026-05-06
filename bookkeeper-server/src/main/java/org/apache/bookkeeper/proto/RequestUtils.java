@@ -40,6 +40,12 @@ class RequestUtils {
         return hasFlag(readRequest, BookkeeperProtocol.ReadRequest.Flag.ENTRY_PIGGYBACK);
     }
 
+    public static boolean isNoReadAhead(BookkeeperProtocol.ReadRequest readRequest) {
+        return readRequest.hasReadFlags()
+                && (readRequest.getReadFlags() & BookieProtocol.FLAG_NO_READ_AHEAD)
+                == BookieProtocol.FLAG_NO_READ_AHEAD;
+    }
+
     static boolean hasFlag(BookkeeperProtocol.ReadRequest request, BookkeeperProtocol.ReadRequest.Flag flag) {
         return request.hasFlag() && request.getFlag() == flag;
     }
@@ -75,6 +81,9 @@ class RequestUtils {
             stringHelper.add("entryId", readRequest.getEntryId());
             if (readRequest.hasFlag()) {
                 stringHelper.add("flag", readRequest.getFlag());
+            }
+            if (readRequest.hasReadFlags()) {
+                stringHelper.add("readFlags", readRequest.getReadFlags());
             }
             if (readRequest.hasPreviousLAC()) {
                 stringHelper.add("previousLAC", readRequest.getPreviousLAC());

@@ -57,6 +57,12 @@ public interface Bookie {
     // TODO: Shouldn't this be async?
     ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException, BookieException;
+
+    default ByteBuf readEntry(long ledgerId, long entryId, boolean noReadAhead)
+            throws IOException, NoLedgerException, BookieException {
+        return readEntry(ledgerId, entryId);
+    }
+
     long readLastAddConfirmed(long ledgerId) throws IOException, BookieException;
     PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) throws IOException, NoLedgerException;
 
