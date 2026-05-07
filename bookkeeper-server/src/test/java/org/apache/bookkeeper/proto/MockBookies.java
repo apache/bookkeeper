@@ -32,7 +32,6 @@ import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
