@@ -39,7 +39,6 @@ import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.proto.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.NettyChannelUtil;
 

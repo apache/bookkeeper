@@ -31,11 +31,6 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.ReadRequest;
-import org.apache.bookkeeper.proto.ReadResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 @CustomLog

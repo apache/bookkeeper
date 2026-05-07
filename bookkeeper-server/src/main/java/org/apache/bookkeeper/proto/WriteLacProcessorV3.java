@@ -27,11 +27,6 @@ import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
-import org.apache.bookkeeper.proto.WriteLacRequest;
-import org.apache.bookkeeper.proto.WriteLacResponse;
 
 
 @CustomLog

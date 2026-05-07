@@ -25,11 +25,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.GetListOfEntriesOfLedgerRequest;
-import org.apache.bookkeeper.proto.GetListOfEntriesOfLedgerResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 
 /**

@@ -29,11 +29,6 @@ import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.ReadLacRequest;
-import org.apache.bookkeeper.proto.ReadLacResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
 
 /**
  * A read processor for v3 last add confirmed messages.

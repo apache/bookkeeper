@@ -26,10 +26,6 @@ import io.netty.channel.ChannelFutureListener;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BKPacketHeader;
-import org.apache.bookkeeper.proto.ProtocolVersion;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.StringUtils;
 

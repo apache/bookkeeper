@@ -30,11 +30,6 @@ import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.AddRequest;
-import org.apache.bookkeeper.proto.AddResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 @CustomLog

@@ -31,9 +31,6 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.common.util.Watcher;
-import org.apache.bookkeeper.proto.ReadResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.StatusCode;
 
 /**
  * Processor handling long poll read entry request.

@@ -36,14 +36,7 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.AddRequest;
 import org.apache.bookkeeper.proto.AddRequest.Flag;
-import org.apache.bookkeeper.proto.BKPacketHeader;
-import org.apache.bookkeeper.proto.OperationType;
-import org.apache.bookkeeper.proto.ProtocolVersion;
-import org.apache.bookkeeper.proto.ReadRequest;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.WriteLacRequest;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
 

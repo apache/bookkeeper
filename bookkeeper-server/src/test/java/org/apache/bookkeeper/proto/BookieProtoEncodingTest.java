@@ -37,7 +37,6 @@ import org.apache.bookkeeper.proto.BookieProtoEncoding.ResponseDecoder;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.ResponseEnDeCoderPreV3;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.ResponseEnDecoderV3;
 import org.apache.bookkeeper.proto.BookieProtocol.AddResponse;
-import org.apache.bookkeeper.proto.AddRequest.Flag;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Test;
 
@@ -106,7 +105,7 @@ public class BookieProtoEncodingTest {
                 .setLedgerId(1L)
                 .setEntryId(2L)
                 .setMasterKey("".getBytes(UTF_8))
-                .setFlag(Flag.RECOVERY_ADD)
+                .setFlag(AddRequest.Flag.RECOVERY_ADD)
                 .setBody("test".getBytes(UTF_8));
 
 

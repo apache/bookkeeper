@@ -43,7 +43,6 @@ import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
-import org.apache.bookkeeper.proto.AuthMessage;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;

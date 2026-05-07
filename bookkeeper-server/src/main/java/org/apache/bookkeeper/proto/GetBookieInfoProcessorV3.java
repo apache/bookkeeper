@@ -24,11 +24,6 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.GetBookieInfoRequest;
-import org.apache.bookkeeper.proto.GetBookieInfoResponse;
-import org.apache.bookkeeper.proto.Request;
-import org.apache.bookkeeper.proto.Response;
-import org.apache.bookkeeper.proto.StatusCode;
 
 /**
  * A processor class for v3 bookie metadata packets.
