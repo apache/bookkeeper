@@ -40,15 +40,15 @@
   <!-- bookkeeper-proto -->
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.bookkeeper\.proto\.DataFormats.*" />
-  </Match>
-  <Match>
-    <!-- generated code, we can't be held responsible for findbugs in it //-->
     <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
   </Match>
+  <!-- lightproto-generated classes from DataFormats.proto -->
   <Match>
-    <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.bookkeeper\.bookie\.storage\.ldb\.DbLedgerStorageDataFormats.*" />
+    <Class name="~org\.apache\.bookkeeper\.proto\.(LedgerMetadataFormat|LedgerRereplicationLayoutFormat|UnderreplicatedLedgerFormat|CookieFormat|LockDataFormat|AuditorVoteFormat|CheckAllLedgersFormat|PlacementPolicyCheckFormat|ReplicasCheckFormat|BookieServiceInfoFormat|LightProtoCodec)(\$.*)?" />
+  </Match>
+  <!-- lightproto-generated classes from DbLedgerStorageDataFormats.proto -->
+  <Match>
+    <Class name="~org\.apache\.bookkeeper\.bookie\.storage\.ldb\.(LedgerData|LightProtoCodec)(\$.*)?" />
   </Match>
   <Match>
     <!-- generated code, we can't be held responsible for findbugs in it //-->
