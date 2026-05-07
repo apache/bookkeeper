@@ -24,11 +24,11 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.GetBookieInfoRequest;
+import org.apache.bookkeeper.proto.GetBookieInfoResponse;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.Response;
+import org.apache.bookkeeper.proto.StatusCode;
 
 /**
  * A processor class for v3 bookie metadata packets.
@@ -46,13 +46,13 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
         GetBookieInfoRequest getBookieInfoRequest = request.getGetBookieInfoRequest();
         long requested = getBookieInfoRequest.getRequested();
 
-        GetBookieInfoResponse.Builder getBookieInfoResponse = GetBookieInfoResponse.newBuilder();
+        GetBookieInfoResponse getBookieInfoResponse = new GetBookieInfoResponse();
 
         if (!isVersionCompatible()) {
             getBookieInfoResponse.setStatus(StatusCode.EBADVERSION);
             requestProcessor.getRequestStats().getGetBookieInfoStats()
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
-            return getBookieInfoResponse.build();
+            return getBookieInfoResponse;
         }
 
         log.debug().attr("request", request).log("Received new getBookieInfo request");
@@ -81,7 +81,7 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
         }
 
         getBookieInfoResponse.setStatus(status);
-        return getBookieInfoResponse.build();
+        return getBookieInfoResponse;
     }
 
     @Override
@@ -91,12 +91,11 @@ public class GetBookieInfoProcessorV3 extends PacketProcessorBaseV3 implements R
     }
 
     private void sendResponse(GetBookieInfoResponse getBookieInfoResponse) {
-        Response.Builder response = Response.newBuilder()
-                .setHeader(getHeader())
-                .setStatus(getBookieInfoResponse.getStatus())
-                .setGetBookieInfoResponse(getBookieInfoResponse);
-        sendResponse(response.getStatus(),
-                     response.build(),
+        Response response = new Response();
+        response.setHeader().copyFrom(getHeader());
+        response.setStatus(getBookieInfoResponse.getStatus());
+        response.setGetBookieInfoResponse().copyFrom(getBookieInfoResponse);
+        sendResponse(response.getStatus(), response,
                      requestProcessor.getRequestStats().getGetBookieInfoRequestStats());
     }
 }

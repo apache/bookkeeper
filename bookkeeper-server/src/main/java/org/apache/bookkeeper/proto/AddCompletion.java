@@ -117,7 +117,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
 
     @Override
     public void handleV2Response(
-            long ledgerId, long entryId, BookkeeperProtocol.StatusCode status,
+            long ledgerId, long entryId, StatusCode status,
             BookieProtocol.Response response) {
         perChannelBookieClient.addEntryOutstanding.dec();
         handleResponse(ledgerId, entryId, status);
@@ -125,17 +125,17 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
 
     @Override
     public void handleV3Response(
-            BookkeeperProtocol.Response response) {
+            Response response) {
         perChannelBookieClient.addEntryOutstanding.dec();
-        BookkeeperProtocol.AddResponse addResponse = response.getAddResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+        AddResponse addResponse = response.getAddResponse();
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? addResponse.getStatus() : response.getStatus();
         handleResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
                 status);
     }
 
     private void handleResponse(long ledgerId, long entryId,
-                                BookkeeperProtocol.StatusCode status) {
+                                StatusCode status) {
         logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.WriteException);

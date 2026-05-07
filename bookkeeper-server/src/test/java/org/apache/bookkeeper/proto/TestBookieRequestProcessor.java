@@ -29,7 +29,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -37,14 +36,14 @@ import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest.Flag;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
+import org.apache.bookkeeper.proto.AddRequest;
+import org.apache.bookkeeper.proto.AddRequest.Flag;
+import org.apache.bookkeeper.proto.BKPacketHeader;
+import org.apache.bookkeeper.proto.OperationType;
+import org.apache.bookkeeper.proto.ProtocolVersion;
+import org.apache.bookkeeper.proto.ReadRequest;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.WriteLacRequest;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Test;
 
@@ -92,60 +91,55 @@ public class TestBookieRequestProcessor {
 
     @Test
     public void testFlagsV3() {
-        ReadRequest read = ReadRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .setFlag(ReadRequest.Flag.FENCE_LEDGER).build();
+        ReadRequest read = new ReadRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setFlag(ReadRequest.Flag.FENCE_LEDGER);
         assertTrue(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
 
-        read = ReadRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK).build();
+        read = new ReadRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertTrue(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
 
-        read = ReadRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .build();
+        read = new ReadRequest()
+                .setLedgerId(10).setEntryId(1);
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.FENCE_LEDGER));
         assertFalse(RequestUtils.hasFlag(read, ReadRequest.Flag.ENTRY_PIGGYBACK));
 
-        AddRequest add = AddRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .setFlag(AddRequest.Flag.RECOVERY_ADD)
-            .setMasterKey(ByteString.EMPTY)
-            .setBody(ByteString.EMPTY)
-            .build();
+        AddRequest add = new AddRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setFlag(AddRequest.Flag.RECOVERY_ADD)
+                .setMasterKey(new byte[0])
+                .setBody(new byte[0]);
         assertTrue(RequestUtils.hasFlag(add, AddRequest.Flag.RECOVERY_ADD));
 
-        add = AddRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .setMasterKey(ByteString.EMPTY)
-            .setBody(ByteString.EMPTY)
-            .build();
+        add = new AddRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setMasterKey(new byte[0])
+                .setBody(new byte[0]);
         assertFalse(RequestUtils.hasFlag(add, AddRequest.Flag.RECOVERY_ADD));
 
-        add = AddRequest.newBuilder()
-            .setLedgerId(10).setEntryId(1)
-            .setFlag(AddRequest.Flag.RECOVERY_ADD)
-            .setMasterKey(ByteString.EMPTY)
-            .setBody(ByteString.EMPTY)
-            .build();
+        add = new AddRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setFlag(AddRequest.Flag.RECOVERY_ADD)
+                .setMasterKey(new byte[0])
+                .setBody(new byte[0]);
         assertTrue(RequestUtils.hasFlag(add, AddRequest.Flag.RECOVERY_ADD));
     }
 
     @Test
     public void testToString() {
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder();
-        headerBuilder.setVersion(ProtocolVersion.VERSION_THREE);
-        headerBuilder.setOperation(OperationType.ADD_ENTRY);
-        headerBuilder.setTxnId(5L);
-        BKPacketHeader header = headerBuilder.build();
-
-        AddRequest addRequest = AddRequest.newBuilder().setLedgerId(10).setEntryId(1)
-                .setMasterKey(ByteString.copyFrom("masterKey".getBytes()))
-                .setBody(ByteString.copyFrom("entrydata".getBytes())).build();
-        Request request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
+        Request request = new Request();
+        request.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(5L);
+        request.setAddRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setMasterKey("masterKey".getBytes())
+                .setBody("entrydata".getBytes());
 
         Channel channel = mock(Channel.class);
         ChannelHandlerContext ctx = mock(ChannelHandlerContext.class);
@@ -167,11 +161,13 @@ public class TestBookieRequestProcessor {
         assertFalse("writeEntryProcessorV3's toString shouldn't contain flag", toString.contains("flag"));
         assertFalse("writeEntryProcessorV3's toString shouldn't contain writeFlags", toString.contains("writeFlags"));
 
-        addRequest = AddRequest.newBuilder().setLedgerId(10).setEntryId(1)
-                .setMasterKey(ByteString.copyFrom("masterKey".getBytes()))
-                .setBody(ByteString.copyFrom("entrydata".getBytes())).setFlag(Flag.RECOVERY_ADD).setWriteFlags(0)
-                .build();
-        request = Request.newBuilder().setHeader(header).setAddRequest(addRequest).build();
+        request = freshHeaderRequest();
+        request.setAddRequest()
+                .setLedgerId(10).setEntryId(1)
+                .setMasterKey("masterKey".getBytes())
+                .setBody("entrydata".getBytes())
+                .setFlag(Flag.RECOVERY_ADD)
+                .setWriteFlags(0);
         writeEntryProcessorV3 = new WriteEntryProcessorV3(request, requestHandler, requestProcessor);
         toString = writeEntryProcessorV3.toString();
         assertFalse("writeEntryProcessorV3's toString should have filtered out body", toString.contains("body"));
@@ -180,9 +176,10 @@ public class TestBookieRequestProcessor {
         assertTrue("writeEntryProcessorV3's toString should contain flag", toString.contains("flag"));
         assertTrue("writeEntryProcessorV3's toString should contain writeFlags", toString.contains("writeFlags"));
 
-        ReadRequest readRequest = ReadRequest.newBuilder().setLedgerId(10).setEntryId(23)
-                .setMasterKey(ByteString.copyFrom("masterKey".getBytes())).build();
-        request = Request.newBuilder().setHeader(header).setReadRequest(readRequest).build();
+        request = freshHeaderRequest();
+        request.setReadRequest()
+                .setLedgerId(10).setEntryId(23)
+                .setMasterKey("masterKey".getBytes());
         toString = RequestUtils.toSafeString(request);
         assertFalse("ReadRequest's safeString should have filtered out masterKey", toString.contains("masterKey"));
         assertTrue("ReadRequest's safeString should contain ledgerId", toString.contains("ledgerId"));
@@ -194,20 +191,22 @@ public class TestBookieRequestProcessor {
         assertFalse("ReadRequest's safeString shouldn't contain previousLAC", toString.contains("previousLAC"));
         assertFalse("ReadRequest's safeString shouldn't contain timeOut", toString.contains("timeOut"));
 
-        readRequest = ReadRequest.newBuilder().setLedgerId(10).setEntryId(23).setPreviousLAC(2).setTimeOut(100)
-                .setMasterKey(ByteString.copyFrom("masterKey".getBytes())).setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK)
-                .build();
-        request = Request.newBuilder().setHeader(header).setReadRequest(readRequest).build();
+        request = freshHeaderRequest();
+        request.setReadRequest()
+                .setLedgerId(10).setEntryId(23).setPreviousLAC(2).setTimeOut(100)
+                .setMasterKey("masterKey".getBytes())
+                .setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
         toString = RequestUtils.toSafeString(request);
         assertFalse("ReadRequest's safeString should have filtered out masterKey", toString.contains("masterKey"));
         assertTrue("ReadRequest's safeString shouldn contain flag", toString.contains("flag"));
         assertTrue("ReadRequest's safeString shouldn contain previousLAC", toString.contains("previousLAC"));
         assertTrue("ReadRequest's safeString shouldn contain timeOut", toString.contains("timeOut"));
 
-        WriteLacRequest writeLacRequest = WriteLacRequest.newBuilder().setLedgerId(10).setLac(23)
-                .setMasterKey(ByteString.copyFrom("masterKey".getBytes()))
-                .setBody(ByteString.copyFrom("entrydata".getBytes())).build();
-        request = Request.newBuilder().setHeader(header).setWriteLacRequest(writeLacRequest).build();
+        request = freshHeaderRequest();
+        request.setWriteLacRequest()
+                .setLedgerId(10).setLac(23)
+                .setMasterKey("masterKey".getBytes())
+                .setBody("entrydata".getBytes());
         WriteLacProcessorV3 writeLacProcessorV3 = new WriteLacProcessorV3(request, null, requestProcessor);
         toString = writeLacProcessorV3.toString();
         assertFalse("writeLacProcessorV3's toString should have filtered out body", toString.contains("body"));
@@ -218,5 +217,14 @@ public class TestBookieRequestProcessor {
         assertTrue("writeLacProcessorV3's toString should contain version", toString.contains("version"));
         assertTrue("writeLacProcessorV3's toString should contain operation", toString.contains("operation"));
         assertTrue("writeLacProcessorV3's toString should contain txnId", toString.contains("txnId"));
+    }
+
+    private static Request freshHeaderRequest() {
+        Request request = new Request();
+        request.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(5L);
+        return request;
     }
 }

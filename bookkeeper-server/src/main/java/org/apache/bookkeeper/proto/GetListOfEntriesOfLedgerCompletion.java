@@ -56,17 +56,17 @@ class GetListOfEntriesOfLedgerCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = response
+    public void handleV3Response(Response response) {
+        GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = response
                 .getGetListOfEntriesOfLedgerResponse();
         ByteBuf availabilityOfEntriesOfLedgerBuffer = Unpooled.EMPTY_BUFFER;
-        BookkeeperProtocol.StatusCode status =
-                response.getStatus() == BookkeeperProtocol.StatusCode.EOK ? getListOfEntriesOfLedgerResponse.getStatus()
+        StatusCode status =
+                response.getStatus() == StatusCode.EOK ? getListOfEntriesOfLedgerResponse.getStatus()
                         : response.getStatus();
 
         if (getListOfEntriesOfLedgerResponse.hasAvailabilityOfEntriesOfLedger()) {
-            availabilityOfEntriesOfLedgerBuffer = Unpooled.wrappedBuffer(
-                    getListOfEntriesOfLedgerResponse.getAvailabilityOfEntriesOfLedger().asReadOnlyByteBuffer());
+            availabilityOfEntriesOfLedgerBuffer =
+                    getListOfEntriesOfLedgerResponse.getAvailabilityOfEntriesOfLedgerSlice();
         }
 
         logEvent(status).log("Got response from bookie");

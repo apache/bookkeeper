@@ -20,19 +20,18 @@
  */
 package org.apache.bookkeeper.proto;
 
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBuf;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.Response;
+import org.apache.bookkeeper.proto.StatusCode;
+import org.apache.bookkeeper.proto.WriteLacRequest;
+import org.apache.bookkeeper.proto.WriteLacResponse;
 
 
 @CustomLog
@@ -50,17 +49,17 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         long lac = writeLacRequest.getLac();
         long ledgerId = writeLacRequest.getLedgerId();
 
-        final WriteLacResponse.Builder writeLacResponse = WriteLacResponse.newBuilder().setLedgerId(ledgerId);
+        final WriteLacResponse writeLacResponse = new WriteLacResponse().setLedgerId(ledgerId);
 
         if (!isVersionCompatible()) {
             writeLacResponse.setStatus(StatusCode.EBADVERSION);
-            return writeLacResponse.build();
+            return writeLacResponse;
         }
 
         if (requestProcessor.bookie.isReadOnly()) {
             log.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             writeLacResponse.setStatus(StatusCode.EREADONLY);
-            return writeLacResponse.build();
+            return writeLacResponse;
         }
 
         BookkeeperInternalCallbacks.WriteCallback writeCallback = new BookkeeperInternalCallbacks.WriteCallback() {
@@ -87,21 +86,20 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     break;
                 }
                 writeLacResponse.setStatus(status);
-                Response.Builder response = Response.newBuilder()
-                        .setHeader(getHeader())
-                        .setStatus(writeLacResponse.getStatus())
-                        .setWriteLacResponse(writeLacResponse);
-                Response resp = response.build();
+                Response resp = new Response();
+                resp.setHeader().copyFrom(getHeader());
+                resp.setStatus(writeLacResponse.getStatus());
+                resp.setWriteLacResponse().copyFrom(writeLacResponse);
                 sendResponse(status, resp, requestProcessor.getRequestStats().getWriteLacRequestStats());
             }
         };
 
         StatusCode status = null;
-        ByteBuffer lacToAdd = writeLacRequest.getBody().asReadOnlyByteBuffer();
-        byte[] masterKey = writeLacRequest.getMasterKey().toByteArray();
+        ByteBuf lacToAdd = writeLacRequest.getBodySlice();
+        byte[] masterKey = writeLacRequest.getMasterKey();
 
         try {
-            requestProcessor.bookie.setExplicitLac(Unpooled.wrappedBuffer(lacToAdd),
+            requestProcessor.bookie.setExplicitLac(lacToAdd,
                     writeCallback, requestHandler, masterKey);
             status = StatusCode.EOK;
         } catch (BookieException.LedgerFencedAndDeletedException e) {
@@ -149,7 +147,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
             requestProcessor.getRequestStats().getWriteLacStats()
                 .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
             writeLacResponse.setStatus(status);
-            return writeLacResponse.build();
+            return writeLacResponse;
         }
         return null;
     }
@@ -158,11 +156,10 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     public void run() {
         WriteLacResponse writeLacResponse = getWriteLacResponse();
         if (null != writeLacResponse) {
-            Response.Builder response = Response.newBuilder()
-                    .setHeader(getHeader())
-                    .setStatus(writeLacResponse.getStatus())
-                    .setWriteLacResponse(writeLacResponse);
-            Response resp = response.build();
+            Response resp = new Response();
+            resp.setHeader().copyFrom(getHeader());
+            resp.setStatus(writeLacResponse.getStatus());
+            resp.setWriteLacResponse().copyFrom(writeLacResponse);
             sendResponse(
                 writeLacResponse.getStatus(),
                 resp,

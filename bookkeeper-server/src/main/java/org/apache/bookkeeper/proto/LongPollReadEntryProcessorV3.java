@@ -31,9 +31,9 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
 import org.apache.bookkeeper.common.util.Watcher;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.ReadResponse;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.StatusCode;
 
 /**
  * Processor handling long poll read entry request.
@@ -74,7 +74,7 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     }
 
     @Override
-    protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
+    protected ReadResponse readEntry(ReadResponse readResponseBuilder,
                                      long entryId,
                                      Stopwatch startTimeSw)
             throws IOException, BookieException {
@@ -129,10 +129,10 @@ class LongPollReadEntryProcessorV3 extends ReadEntryProcessorV3 implements Watch
     }
 
     private ReadResponse buildErrorResponse(StatusCode statusCode, Stopwatch sw) {
-        ReadResponse.Builder builder = ReadResponse.newBuilder()
+        ReadResponse readResponse = new ReadResponse()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId);
-        return buildResponse(builder, statusCode, sw);
+        return buildResponse(readResponse, statusCode, sw);
     }
 
     private ReadResponse getLongPollReadResponse() {

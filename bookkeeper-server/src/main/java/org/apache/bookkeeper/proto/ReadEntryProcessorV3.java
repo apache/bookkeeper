@@ -18,8 +18,8 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.base.Stopwatch;
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
@@ -31,11 +31,11 @@ import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.ReadRequest;
+import org.apache.bookkeeper.proto.ReadResponse;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.Response;
+import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 @CustomLog
@@ -101,7 +101,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
      */
     protected void handleReadResultForFenceRead(
         final ByteBuf entryBody,
-        final ReadResponse.Builder readResponseBuilder,
+        final ReadResponse readResponseBuilder,
         final long entryId,
         final Stopwatch startTimeSw) {
         // reset last phase start time to measure fence result waiting time
@@ -150,7 +150,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
      * @return read response or null if it is a fence read operation.
      * @throws IOException
      */
-    protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
+    protected ReadResponse readEntry(ReadResponse readResponseBuilder,
                                      long entryId,
                                      Stopwatch startTimeSw)
         throws IOException, BookieException {
@@ -169,7 +169,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
      * @return read response or null if it is a fence read operation.
      * @throws IOException
      */
-    protected ReadResponse readEntry(ReadResponse.Builder readResponseBuilder,
+    protected ReadResponse readEntry(ReadResponse readResponseBuilder,
                                      long entryId,
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
@@ -180,7 +180,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             return null;
         } else {
             try {
-                readResponseBuilder.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+                readResponseBuilder.setBody(ByteBufUtil.getBytes(entryBody));
                 if (readLACPiggyBack) {
                     readResponseBuilder.setEntryId(entryId);
                 } else {
@@ -189,7 +189,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                 }
                 registerSuccessfulEvent(readStats, startTimeSw);
                 readResponseBuilder.setStatus(StatusCode.EOK);
-                return readResponseBuilder.build();
+                return readResponseBuilder;
             } finally {
                 ReferenceCountUtil.release(entryBody);
             }
@@ -200,9 +200,9 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         final Stopwatch startTimeSw = Stopwatch.createStarted();
         final Channel channel = requestHandler.ctx().channel();
 
-        final ReadResponse.Builder readResponse = ReadResponse.newBuilder()
-            .setLedgerId(ledgerId)
-            .setEntryId(entryId);
+        final ReadResponse readResponse = new ReadResponse()
+                .setLedgerId(ledgerId)
+                .setEntryId(entryId);
         try {
             // handle fence request
             if (RequestUtils.isFenceRequest(readRequest)) {
@@ -217,7 +217,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                         .log("Fence ledger request received without master key");
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 } else {
-                    byte[] masterKey = readRequest.getMasterKey().toByteArray();
+                    byte[] masterKey = readRequest.getMasterKey();
                     fenceResult = requestProcessor.bookie.fenceLedger(ledgerId, masterKey);
                 }
             }
@@ -282,11 +282,10 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         }
 
         if (!isVersionCompatible()) {
-            ReadResponse readResponse = ReadResponse.newBuilder()
-                .setLedgerId(ledgerId)
-                .setEntryId(entryId)
-                .setStatus(StatusCode.EBADVERSION)
-                .build();
+            ReadResponse readResponse = new ReadResponse()
+                    .setLedgerId(ledgerId)
+                    .setEntryId(entryId)
+                    .setStatus(StatusCode.EBADVERSION);
             sendResponse(readResponse);
             return;
         }
@@ -301,7 +300,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         }
     }
 
-    private void getFenceResponse(ReadResponse.Builder readResponse,
+    private void getFenceResponse(ReadResponse readResponse,
                                   ByteBuf entryBody,
                                   boolean fenceResult) {
         StatusCode status;
@@ -310,7 +309,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
             registerFailedEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         } else {
             status = StatusCode.EOK;
-            readResponse.setBody(ByteString.copyFrom(entryBody.nioBuffer()));
+            readResponse.setBody(ByteBufUtil.getBytes(entryBody));
             registerSuccessfulEvent(requestProcessor.getRequestStats().getFenceReadWaitStats(), lastPhaseStartTime);
         }
 
@@ -321,7 +320,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         readResponse.setStatus(status);
     }
 
-    private void sendFenceResponse(ReadResponse.Builder readResponse,
+    private void sendFenceResponse(ReadResponse readResponse,
                                    ByteBuf entryBody,
                                    boolean fenceResult,
                                    Stopwatch startTimeSw) {
@@ -330,26 +329,24 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         // register fence read stat
         registerEvent(!fenceResult, requestProcessor.getRequestStats().getFenceReadEntryStats(), startTimeSw);
         // send the fence read response
-        sendResponse(readResponse.build());
+        sendResponse(readResponse);
     }
 
     protected ReadResponse buildResponse(
-            ReadResponse.Builder readResponseBuilder,
+            ReadResponse readResponseBuilder,
             StatusCode statusCode,
             Stopwatch startTimeSw) {
         registerEvent(!statusCode.equals(StatusCode.EOK), readStats, startTimeSw);
         readResponseBuilder.setStatus(statusCode);
-        return readResponseBuilder.build();
+        return readResponseBuilder;
     }
 
     protected void sendResponse(ReadResponse readResponse) {
-        Response.Builder response = Response.newBuilder()
-                .setHeader(getHeader())
-                .setStatus(readResponse.getStatus())
-                .setReadResponse(readResponse);
-        sendResponse(response.getStatus(),
-                     response.build(),
-                     reqStats);
+        Response response = new Response();
+        response.setHeader().copyFrom(getHeader());
+        response.setStatus(readResponse.getStatus());
+        response.setReadResponse().copyFrom(readResponse);
+        sendResponse(response.getStatus(), response, reqStats);
         requestProcessor.onReadRequestFinish();
     }
 

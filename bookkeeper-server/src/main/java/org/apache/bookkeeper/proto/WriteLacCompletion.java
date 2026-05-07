@@ -61,9 +61,9 @@ class WriteLacCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.WriteLacResponse writeLacResponse = response.getWriteLacResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+    public void handleV3Response(Response response) {
+        WriteLacResponse writeLacResponse = response.getWriteLacResponse();
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? writeLacResponse.getStatus() : response.getStatus();
         long ledgerId = writeLacResponse.getLedgerId();
 

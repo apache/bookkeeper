@@ -24,7 +24,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -34,11 +33,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
+import org.apache.bookkeeper.proto.BKPacketHeader;
+import org.apache.bookkeeper.proto.OperationType;
+import org.apache.bookkeeper.proto.ProtocolVersion;
+import org.apache.bookkeeper.proto.ReadRequest;
+import org.apache.bookkeeper.proto.Request;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.After;
 import org.junit.Before;
@@ -68,20 +67,17 @@ public class LongPollReadEntryProcessorV3Test {
 
     @Test
     public void testWatchIsCancelledOnTimeout() throws Exception {
-        Request request = Request.newBuilder()
-            .setHeader(BKPacketHeader.newBuilder()
-                       .setTxnId(System.currentTimeMillis())
-                       .setVersion(ProtocolVersion.VERSION_THREE)
-                       .setOperation(OperationType.READ_ENTRY)
-                       .build())
-            .setReadRequest(ReadRequest.newBuilder()
-                            .setLedgerId(10)
-                            .setEntryId(1)
-                            .setMasterKey(ByteString.copyFrom(new byte[0]))
-                            .setPreviousLAC(0)
-                            .setTimeOut(1)
-                            .build())
-            .build();
+        Request request = new Request();
+        request.setHeader()
+                .setTxnId(System.currentTimeMillis())
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.READ_ENTRY);
+        request.setReadRequest()
+                .setLedgerId(10)
+                .setEntryId(1)
+                .setMasterKey(new byte[0])
+                .setPreviousLAC(0)
+                .setTimeOut(1);
 
         Channel channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);

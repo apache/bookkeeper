@@ -26,10 +26,10 @@ import io.netty.channel.ChannelFutureListener;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.BKPacketHeader;
+import org.apache.bookkeeper.proto.ProtocolVersion;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.StringUtils;
 
@@ -125,11 +125,10 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
      * @return
      */
     protected BKPacketHeader getHeader() {
-        BKPacketHeader.Builder header = BKPacketHeader.newBuilder();
-        header.setVersion(ProtocolVersion.VERSION_THREE);
-        header.setOperation(request.getHeader().getOperation());
-        header.setTxnId(request.getHeader().getTxnId());
-        return header.build();
+        return new BKPacketHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(request.getHeader().getOperation())
+                .setTxnId(request.getHeader().getTxnId());
     }
 
     @Override

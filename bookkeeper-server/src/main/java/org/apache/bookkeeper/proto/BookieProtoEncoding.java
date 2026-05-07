@@ -20,26 +20,17 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.ExtensionRegistry;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.MessageLite;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundHandlerAdapter;
 import io.netty.channel.ChannelPromise;
 import io.netty.util.ReferenceCountUtil;
-import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import lombok.CustomLog;
 import org.apache.bookkeeper.proto.BookieProtocol.PacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.checksum.MacDigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
 
@@ -79,14 +70,12 @@ public class BookieProtoEncoding {
          * @throws Exception
          */
         Object decode(ByteBuf packet) throws Exception;
-
     }
 
     /**
      * An encoder/decoder for the Bookkeeper protocol before version 3.
      */
     public static class RequestEnDeCoderPreV3 implements EnDecoder {
-        final ExtensionRegistry extensionRegistry;
 
         //This empty master key is used when an empty password is provided which is the hash of an empty string
         private static final byte[] emptyPasswordMasterKey;
@@ -96,10 +85,6 @@ public class BookieProtoEncoding {
             } catch (NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
-        }
-
-        public RequestEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
-            this.extensionRegistry = extensionRegistry;
         }
 
         @Override
@@ -151,14 +136,13 @@ public class BookieProtoEncoding {
                 r.recycle();
                 return buf;
             } else if (r instanceof BookieProtocol.AuthRequest) {
-                BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
+                AuthMessage am = ((BookieProtocol.AuthRequest) r).getAuthMessage();
                 int totalHeaderSize = 4; // for request type
                 int totalSize = totalHeaderSize + am.getSerializedSize();
                 ByteBuf buf = allocator.buffer(totalSize + 4 /* frame size */);
                 buf.writeInt(totalSize);
                 buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), r.getFlags()));
-                ByteBufOutputStream bufStream = new ByteBufOutputStream(buf);
-                am.writeTo(bufStream);
+                am.writeTo(buf);
                 return buf;
             } else {
                 return msg;
@@ -219,9 +203,10 @@ public class BookieProtoEncoding {
                             requestId, maxCount, maxSize);
                 }
             case BookieProtocol.AUTH:
-                BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
-                builder.mergeFrom(new ByteBufInputStream(packet), extensionRegistry);
-                return new BookieProtocol.AuthRequest(version, builder.build());
+                AuthMessage am = new AuthMessage();
+                am.parseFrom(packet, packet.readableBytes());
+                am.materialize();
+                return new BookieProtocol.AuthRequest(version, am);
 
             default:
                 throw new IllegalStateException("Received unknown request op code = " + opCode);
@@ -258,11 +243,6 @@ public class BookieProtoEncoding {
      * A response encoder/decoder for the Bookkeeper protocol before version 3.
      */
     public static class ResponseEnDeCoderPreV3 implements EnDecoder {
-        final ExtensionRegistry extensionRegistry;
-
-        public ResponseEnDeCoderPreV3(ExtensionRegistry extensionRegistry) {
-            this.extensionRegistry = extensionRegistry;
-        }
 
         private static final int RESPONSE_HEADERS_SIZE = 24;
 
@@ -340,14 +320,14 @@ public class BookieProtoEncoding {
                     buf.writeLong(r.getEntryId());
                     return buf;
                 } else if (msg instanceof BookieProtocol.AuthResponse) {
-                    BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
+                    AuthMessage am = ((BookieProtocol.AuthResponse) r).getAuthMessage();
                     int payloadSize = 4 + am.getSerializedSize();
                     int bufferSize = payloadSize + 4 /* frame size */;
 
                     ByteBuf buf = allocator.buffer(bufferSize);
                     buf.writeInt(payloadSize);
                     buf.writeInt(PacketHeader.toInt(r.getProtocolVersion(), r.getOpCode(), (short) 0));
-                    buf.writeBytes(am.toByteArray());
+                    am.writeTo(buf);
                     return buf;
                 } else {
                     log.error().attr("type", msg.getClass().getName()).log("Cannot encode unknown response type");
@@ -400,10 +380,9 @@ public class BookieProtoEncoding {
                 return new BookieProtocol.BatchedReadResponse(version, rc, ledgerId, entryId, requestId, data == null
                         ? ByteBufList.get() : data.retain());
             case BookieProtocol.AUTH:
-                ByteBufInputStream bufStream = new ByteBufInputStream(buffer);
-                BookkeeperProtocol.AuthMessage.Builder builder = BookkeeperProtocol.AuthMessage.newBuilder();
-                builder.mergeFrom(bufStream, extensionRegistry);
-                BookkeeperProtocol.AuthMessage am = builder.build();
+                AuthMessage am = new AuthMessage();
+                am.parseFrom(buffer, buffer.readableBytes());
+                am.materialize();
                 return new BookieProtocol.AuthResponse(version, am);
             default:
                 throw new IllegalStateException("Received unknown response : op code = " + opCode);
@@ -423,21 +402,20 @@ public class BookieProtoEncoding {
      * A request encoder/decoder for the Bookkeeper protocol version 3.
      */
     public static class RequestEnDecoderV3 implements EnDecoder {
-        final ExtensionRegistry extensionRegistry;
-
-        public RequestEnDecoderV3(ExtensionRegistry extensionRegistry) {
-            this.extensionRegistry = extensionRegistry;
-        }
 
         @Override
         public Object decode(ByteBuf packet) throws Exception {
-            return BookkeeperProtocol.Request.parseFrom(new ByteBufInputStream(packet), extensionRegistry);
+            Request request = new Request();
+            request.parseFrom(packet, packet.readableBytes());
+            // Lightproto keeps references to the source buffer for lazy field access.
+            // Materialize so the request stays valid after the buffer is released.
+            request.materialize();
+            return request;
         }
 
         @Override
         public Object encode(Object msg, ByteBufAllocator allocator) throws Exception {
-            BookkeeperProtocol.Request request = (BookkeeperProtocol.Request) msg;
-            return serializeProtobuf(request, allocator);
+            return serializeProtobuf((Request) msg, allocator);
         }
 
     }
@@ -446,49 +424,33 @@ public class BookieProtoEncoding {
      * A response encoder/decoder for the Bookkeeper protocol version 3.
      */
     public static class ResponseEnDecoderV3 implements EnDecoder {
-        final ExtensionRegistry extensionRegistry;
-
-        public ResponseEnDecoderV3(ExtensionRegistry extensionRegistry) {
-            this.extensionRegistry = extensionRegistry;
-        }
 
         @Override
         public Object decode(ByteBuf packet) throws Exception {
-            return BookkeeperProtocol.Response.parseFrom(new ByteBufInputStream(packet),
-                                                         extensionRegistry);
+            Response response = new Response();
+            response.parseFrom(packet, packet.readableBytes());
+            // Lightproto keeps references to the source buffer for lazy field access.
+            // Materialize so the response stays valid after the buffer is released.
+            response.materialize();
+            return response;
         }
 
         @Override
         public Object encode(Object msg, ByteBufAllocator allocator) throws Exception {
-            BookkeeperProtocol.Response response = (BookkeeperProtocol.Response) msg;
-            return serializeProtobuf(response, allocator);
+            return serializeProtobuf((Response) msg, allocator);
         }
 
     }
 
-    private static ByteBuf serializeProtobuf(MessageLite msg, ByteBufAllocator allocator) {
+    private static ByteBuf serializeProtobuf(LightProtoCodec.LightProtoMessage msg, ByteBufAllocator allocator) {
         int size = msg.getSerializedSize();
         int frameSize = size + 4;
 
-        // Protobuf serialization is the last step of the netty pipeline. We used to allocate
-        // a heap buffer while serializing and pass it down to netty library.
-        // In AbstractChannel#filterOutboundMessage(), netty copies that data to a direct buffer if
-        // it is currently in heap (otherwise skips it and uses it directly).
-        // Allocating a direct buffer reducing unnecessary CPU cycles for buffer copies in BK client
-        // and also helps alleviate pressure off the GC, since there is less memory churn.
-        // Bookies aren't usually CPU bound. This change improves READ_ENTRY code paths by a small factor as well.
+        // Protobuf serialization is the last step of the netty pipeline. We allocate
+        // a direct buffer to avoid an extra copy in netty's AbstractChannel#filterOutboundMessage().
         ByteBuf buf = allocator.directBuffer(frameSize, frameSize);
         buf.writeInt(size);
-
-        try {
-            msg.writeTo(CodedOutputStream.newInstance(buf.nioBuffer(buf.writerIndex(), size)));
-        } catch (IOException e) {
-            // This is in-memory serialization, should not fail
-            throw new RuntimeException(e);
-        }
-
-        // Advance writer idx
-        buf.writerIndex(frameSize);
+        msg.writeTo(buf);
         return buf;
     }
 
@@ -501,9 +463,9 @@ public class BookieProtoEncoding {
         final EnDecoder reqPreV3;
         final EnDecoder reqV3;
 
-        public RequestEncoder(ExtensionRegistry extensionRegistry) {
-            reqPreV3 = new RequestEnDeCoderPreV3(extensionRegistry);
-            reqV3 = new RequestEnDecoderV3(extensionRegistry);
+        public RequestEncoder() {
+            reqPreV3 = new RequestEnDeCoderPreV3();
+            reqV3 = new RequestEnDecoderV3();
         }
 
         @Override
@@ -514,7 +476,7 @@ public class BookieProtoEncoding {
                     .log("Encode request to channel");
             if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
                 ctx.write(msg, promise);
-            } else if (msg instanceof BookkeeperProtocol.Request) {
+            } else if (msg instanceof Request) {
                 ctx.write(reqV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Request) {
                 ctx.write(reqPreV3.encode(msg, ctx.alloc()), promise);
@@ -537,9 +499,9 @@ public class BookieProtoEncoding {
         final EnDecoder reqV3;
         boolean usingV3Protocol;
 
-        RequestDecoder(ExtensionRegistry extensionRegistry) {
-            reqPreV3 = new RequestEnDeCoderPreV3(extensionRegistry);
-            reqV3 = new RequestEnDecoderV3(extensionRegistry);
+        public RequestDecoder() {
+            reqPreV3 = new RequestEnDeCoderPreV3();
+            reqV3 = new RequestEnDecoderV3();
             usingV3Protocol = true;
         }
 
@@ -564,7 +526,7 @@ public class BookieProtoEncoding {
                 if (usingV3Protocol) {
                     try {
                         result = reqV3.decode(buffer);
-                    } catch (InvalidProtocolBufferException e) {
+                    } catch (RuntimeException e) {
                         usingV3Protocol = false;
                         buffer.resetReaderIndex();
                         result = reqPreV3.decode(buffer);
@@ -587,9 +549,9 @@ public class BookieProtoEncoding {
         final EnDecoder repPreV3;
         final EnDecoder repV3;
 
-        ResponseEncoder(ExtensionRegistry extensionRegistry) {
-            repPreV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
-            repV3 = new ResponseEnDecoderV3(extensionRegistry);
+        public ResponseEncoder() {
+            repPreV3 = new ResponseEnDeCoderPreV3();
+            repV3 = new ResponseEnDecoderV3();
         }
 
         @Override
@@ -601,7 +563,7 @@ public class BookieProtoEncoding {
 
             if (msg instanceof ByteBuf) {
                 ctx.write(msg, promise);
-            } else if (msg instanceof BookkeeperProtocol.Response) {
+            } else if (msg instanceof Response) {
                 ctx.write(repV3.encode(msg, ctx.alloc()), promise);
             } else if (msg instanceof BookieProtocol.Response) {
                 ctx.write(repPreV3.encode(msg, ctx.alloc()), promise);
@@ -626,11 +588,9 @@ public class BookieProtoEncoding {
         final boolean tlsEnabled;
         boolean usingV3Protocol;
 
-        ResponseDecoder(ExtensionRegistry extensionRegistry,
-                        boolean useV2Protocol,
-                        boolean tlsEnabled) {
-            this.repPreV3 = new ResponseEnDeCoderPreV3(extensionRegistry);
-            this.repV3 = new ResponseEnDecoderV3(extensionRegistry);
+        public ResponseDecoder(boolean useV2Protocol, boolean tlsEnabled) {
+            this.repPreV3 = new ResponseEnDeCoderPreV3();
+            this.repV3 = new ResponseEnDecoderV3();
             this.useV2Protocol = useV2Protocol;
             this.tlsEnabled = tlsEnabled;
             usingV3Protocol = true;
@@ -667,7 +627,7 @@ public class BookieProtoEncoding {
                                 usingV3Protocol = false;
                                 log.debug("Degrade bookkeeper to v2 after starting TLS.");
                             }
-                        } catch (InvalidProtocolBufferException e) {
+                        } catch (RuntimeException e) {
                             usingV3Protocol = false;
                             buffer.resetReaderIndex();
                             result = repPreV3.decode(buffer);

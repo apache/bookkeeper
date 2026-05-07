@@ -38,13 +38,13 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
+import org.apache.bookkeeper.proto.BKPacketHeader;
+import org.apache.bookkeeper.proto.ForceLedgerRequest;
+import org.apache.bookkeeper.proto.OperationType;
+import org.apache.bookkeeper.proto.ProtocolVersion;
+import org.apache.bookkeeper.proto.Request;
+import org.apache.bookkeeper.proto.Response;
+import org.apache.bookkeeper.proto.StatusCode;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,16 +64,12 @@ public class ForceLedgerProcessorV3Test {
 
     @Before
     public void setup() {
-        request = Request.newBuilder()
-            .setHeader(BKPacketHeader.newBuilder()
+        request = new Request();
+        request.setHeader()
                 .setTxnId(System.currentTimeMillis())
                 .setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.ADD_ENTRY)
-                .build())
-            .setForceLedgerRequest(ForceLedgerRequest.newBuilder()
-                .setLedgerId(System.currentTimeMillis())
-                .build())
-            .build();
+                .setOperation(OperationType.ADD_ENTRY);
+        request.setForceLedgerRequest().setLedgerId(System.currentTimeMillis());
 
 
         channel = mock(Channel.class);

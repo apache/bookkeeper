@@ -27,7 +27,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
@@ -316,11 +315,11 @@ public class BookieRequestProcessor implements RequestProcessor {
         Channel channel = requestHandler.ctx().channel();
         // If we can decode this packet as a Request protobuf packet, process
         // it as a version 3 packet. Else, just use the old protocol.
-        if (msg instanceof BookkeeperProtocol.Request) {
-            BookkeeperProtocol.Request r = (BookkeeperProtocol.Request) msg;
+        if (msg instanceof Request) {
+            Request r = (Request) msg;
             restoreMdcContextFromRequest(r);
             try {
-                BookkeeperProtocol.BKPacketHeader header = r.getHeader();
+                BKPacketHeader header = r.getHeader();
                 switch (header.getOperation()) {
                     case ADD_ENTRY:
                         processAddRequestV3(r, requestHandler);
@@ -335,16 +334,12 @@ public class BookieRequestProcessor implements RequestProcessor {
                         log.info()
                                 .attr("clientAddress", channel.remoteAddress())
                                 .log("Ignoring auth operation from client");
-                        BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
-                                .newBuilder()
+                        Response authResponse = new Response();
+                        authResponse.setHeader().copyFrom(r.getHeader());
+                        authResponse.setStatus(StatusCode.EOK)
+                                .setAuthResponse()
                                 .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
-                                .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
-                                .build();
-                        final BookkeeperProtocol.Response authResponse = BookkeeperProtocol.Response
-                                .newBuilder().setHeader(r.getHeader())
-                                .setStatus(BookkeeperProtocol.StatusCode.EOK)
-                                .setAuthResponse(message)
-                                .build();
+                                .setPayload(AuthToken.NULL.getData());
                         writeAndFlush(channel, authResponse);
                         break;
                     case WRITE_LAC:
@@ -364,10 +359,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                         break;
                     default:
                         log.info().attr("operationType", header.getOperation()).log("Unknown operation type");
-                        final BookkeeperProtocol.Response response =
-                                BookkeeperProtocol.Response.newBuilder().setHeader(r.getHeader())
-                                        .setStatus(BookkeeperProtocol.StatusCode.EBADREQ)
-                                        .build();
+                        Response response = new Response();
+                        response.setHeader().copyFrom(r.getHeader());
+                        response.setStatus(StatusCode.EBADREQ);
                         writeAndFlush(channel, response);
                         if (statsEnabled) {
                             bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
@@ -396,11 +390,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                 case BookieProtocol.AUTH:
                     log.info().attr("clientAddress", requestHandler.ctx().channel().remoteAddress())
                             .log("Ignoring auth operation from client");
-                    BookkeeperProtocol.AuthMessage message = BookkeeperProtocol.AuthMessage
-                            .newBuilder()
+                    AuthMessage message = new AuthMessage()
                             .setAuthPluginName(AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME)
-                            .setPayload(ByteString.copyFrom(AuthToken.NULL.getData()))
-                            .build();
+                            .setPayload(AuthToken.NULL.getData());
 
                     final BookieProtocol.AuthResponse response = new BookieProtocol.AuthResponse(
                             BookieProtocol.CURRENT_PROTOCOL_VERSION, message);
@@ -419,36 +411,37 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void restoreMdcContextFromRequest(BookkeeperProtocol.Request req) {
+    private void restoreMdcContextFromRequest(Request req) {
         if (preserveMdcForTaskExecution) {
             MDC.clear();
-            for (BookkeeperProtocol.ContextPair pair: req.getRequestContextList()) {
+            for (int i = 0; i < req.getRequestContextsCount(); i++) {
+                ContextPair pair = req.getRequestContextAt(i);
                 MDC.put(pair.getKey(), pair.getValue());
             }
         }
     }
 
-    private void processWriteLacRequestV3(final BookkeeperProtocol.Request r,
+    private void processWriteLacRequestV3(final Request r,
                                           final BookieRequestHandler requestHandler) {
         WriteLacProcessorV3 writeLac = new WriteLacProcessorV3(r, requestHandler, this);
         if (null == writeThreadPool) {
             writeLac.run();
         } else {
-            writeThreadPool.executeOrdered(r.getAddRequest().getLedgerId(), writeLac);
+            writeThreadPool.executeOrdered(r.getWriteLacRequest().getLedgerId(), writeLac);
         }
     }
 
-    private void processReadLacRequestV3(final BookkeeperProtocol.Request r,
+    private void processReadLacRequestV3(final Request r,
                                          final BookieRequestHandler requestHandler) {
         ReadLacProcessorV3 readLac = new ReadLacProcessorV3(r, requestHandler, this);
         if (null == readThreadPool) {
             readLac.run();
         } else {
-            readThreadPool.executeOrdered(r.getAddRequest().getLedgerId(), readLac);
+            readThreadPool.executeOrdered(r.getReadLacRequest().getLedgerId(), readLac);
         }
     }
 
-    private void processAddRequestV3(final BookkeeperProtocol.Request r, final BookieRequestHandler requestHandler) {
+    private void processAddRequestV3(final Request r, final BookieRequestHandler requestHandler) {
         WriteEntryProcessorV3 write = new WriteEntryProcessorV3(r, requestHandler, this);
 
         final OrderedExecutor threadPool;
@@ -468,21 +461,19 @@ public class BookieRequestProcessor implements RequestProcessor {
                         .attr("entryId", () -> r.getAddRequest().getEntryId())
                         .log("Failed to process request to add entry. Too many pending requests");
                 getRequestStats().getAddEntryRejectedCounter().inc();
-                BookkeeperProtocol.AddResponse.Builder addResponse = BookkeeperProtocol.AddResponse.newBuilder()
+                Response resp = new Response();
+                resp.setHeader().copyFrom(write.getHeader());
+                resp.setStatus(StatusCode.ETOOMANYREQUESTS);
+                resp.setAddResponse()
                         .setLedgerId(r.getAddRequest().getLedgerId())
                         .setEntryId(r.getAddRequest().getEntryId())
-                        .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
-                BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
-                        .setHeader(write.getHeader())
-                        .setStatus(addResponse.getStatus())
-                        .setAddResponse(addResponse);
-                BookkeeperProtocol.Response resp = response.build();
-                write.sendResponse(addResponse.getStatus(), resp, requestStats.getAddRequestStats());
+                        .setStatus(StatusCode.ETOOMANYREQUESTS);
+                write.sendResponse(StatusCode.ETOOMANYREQUESTS, resp, requestStats.getAddRequestStats());
             }
         }
     }
 
-    private void processForceLedgerRequestV3(final BookkeeperProtocol.Request r,
+    private void processForceLedgerRequestV3(final Request r,
                                              final BookieRequestHandler requestHandler) {
         ForceLedgerProcessorV3 forceLedger = new ForceLedgerProcessorV3(r, requestHandler, this);
 
@@ -501,24 +492,21 @@ public class BookieRequestProcessor implements RequestProcessor {
             } catch (RejectedExecutionException e) {
                 log.debug().attr("ledgerId", () -> r.getForceLedgerRequest().getLedgerId())
                         .log("Failed to process request to force ledger. Too many pending requests");
-                BookkeeperProtocol.ForceLedgerResponse.Builder forceLedgerResponse =
-                        BookkeeperProtocol.ForceLedgerResponse.newBuilder()
+                Response resp = new Response();
+                resp.setHeader().copyFrom(forceLedger.getHeader());
+                resp.setStatus(StatusCode.ETOOMANYREQUESTS);
+                resp.setForceLedgerResponse()
                         .setLedgerId(r.getForceLedgerRequest().getLedgerId())
-                        .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
-                BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
-                        .setHeader(forceLedger.getHeader())
-                        .setStatus(forceLedgerResponse.getStatus())
-                        .setForceLedgerResponse(forceLedgerResponse);
-                BookkeeperProtocol.Response resp = response.build();
+                        .setStatus(StatusCode.ETOOMANYREQUESTS);
                 forceLedger.sendResponse(
-                    forceLedgerResponse.getStatus(),
+                    StatusCode.ETOOMANYREQUESTS,
                     resp,
                     requestStats.getForceLedgerRequestStats());
             }
         }
     }
 
-    private void processReadRequestV3(final BookkeeperProtocol.Request r, final BookieRequestHandler requestHandler) {
+    private void processReadRequestV3(final Request r, final BookieRequestHandler requestHandler) {
         ExecutorService fenceThread = null == highPriorityThreadPool ? null :
                 highPriorityThreadPool.chooseThread(requestHandler.ctx());
 
@@ -537,7 +525,7 @@ public class BookieRequestProcessor implements RequestProcessor {
             // gets executed as fast as possible, so bypass the normal readThreadPool
             // and execute in highPriorityThreadPool
             boolean isHighPriority = RequestUtils.isHighPriority(r)
-                || hasFlag(r.getReadRequest(), BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
+                || hasFlag(r.getReadRequest(), ReadRequest.Flag.FENCE_LEDGER);
             if (isHighPriority) {
                 threadPool = highPriorityThreadPool;
             } else {
@@ -555,35 +543,32 @@ public class BookieRequestProcessor implements RequestProcessor {
                         .attr("entryId", () -> r.getReadRequest().getEntryId())
                         .log("Failed to process request to read entry. Too many pending requests");
                 getRequestStats().getReadEntryRejectedCounter().inc();
-                BookkeeperProtocol.ReadResponse.Builder readResponse = BookkeeperProtocol.ReadResponse.newBuilder()
-                    .setLedgerId(r.getReadRequest().getLedgerId())
-                    .setEntryId(r.getReadRequest().getEntryId())
-                    .setStatus(BookkeeperProtocol.StatusCode.ETOOMANYREQUESTS);
-                BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder()
-                    .setHeader(read.getHeader())
-                    .setStatus(readResponse.getStatus())
-                    .setReadResponse(readResponse);
-                BookkeeperProtocol.Response resp = response.build();
-                read.sendResponse(readResponse.getStatus(), resp, requestStats.getReadRequestStats());
+                Response resp = new Response();
+                resp.setHeader().copyFrom(read.getHeader());
+                resp.setStatus(StatusCode.ETOOMANYREQUESTS);
+                resp.setReadResponse()
+                        .setLedgerId(r.getReadRequest().getLedgerId())
+                        .setEntryId(r.getReadRequest().getEntryId())
+                        .setStatus(StatusCode.ETOOMANYREQUESTS);
+                read.sendResponse(StatusCode.ETOOMANYREQUESTS, resp, requestStats.getReadRequestStats());
                 onReadRequestFinish();
             }
         }
     }
 
-    private void processStartTLSRequestV3(final BookkeeperProtocol.Request r,
+    private void processStartTLSRequestV3(final Request r,
                                           final BookieRequestHandler requestHandler) {
-        BookkeeperProtocol.Response.Builder response = BookkeeperProtocol.Response.newBuilder();
-        BookkeeperProtocol.BKPacketHeader.Builder header = BookkeeperProtocol.BKPacketHeader.newBuilder();
-        header.setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE);
-        header.setOperation(r.getHeader().getOperation());
-        header.setTxnId(r.getHeader().getTxnId());
-        response.setHeader(header.build());
+        Response response = new Response();
+        response.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(r.getHeader().getOperation())
+                .setTxnId(r.getHeader().getTxnId());
         final Channel c = requestHandler.ctx().channel();
 
         if (shFactory == null) {
             log.error("Got StartTLS request but TLS not configured");
-            response.setStatus(BookkeeperProtocol.StatusCode.EBADREQ);
-            writeAndFlush(c, response.build());
+            response.setStatus(StatusCode.EBADREQ);
+            writeAndFlush(c, response);
         } else {
             log.info().attr("channel", c).log("Starting TLS handshake with client");
             // there is no need to execute in a different thread as this operation is light
@@ -595,9 +580,8 @@ public class BookieRequestProcessor implements RequestProcessor {
                 c.pipeline().addFirst(TLS_HANDLER_NAME, sslHandler);
             }
 
-            response.setStatus(BookkeeperProtocol.StatusCode.EOK);
-            BookkeeperProtocol.StartTLSResponse.Builder builder = BookkeeperProtocol.StartTLSResponse.newBuilder();
-            response.setStartTLSResponse(builder.build());
+            response.setStatus(StatusCode.EOK);
+            response.setStartTLSResponse();
             sslHandler.handshakeFuture().addListener(new GenericFutureListener<Future<Channel>>() {
                 @Override
                 public void operationComplete(Future<Channel> future) throws Exception {
@@ -619,10 +603,9 @@ public class BookieRequestProcessor implements RequestProcessor {
                         } else {
                             log.error().exception(future.cause()).log("TLS Handshake failure");
                         }
-                        final BookkeeperProtocol.Response errResponse = BookkeeperProtocol.Response.newBuilder()
-                                .setHeader(r.getHeader())
-                                .setStatus(BookkeeperProtocol.StatusCode.EIO)
-                                .build();
+                        Response errResponse = new Response();
+                        errResponse.setHeader().copyFrom(r.getHeader());
+                        errResponse.setStatus(StatusCode.EIO);
                         writeAndFlush(c, errResponse);
                         if (statsEnabled) {
                             bkStats.getOpStats(BKStats.STATS_UNKNOWN).incrementFailedOps();
@@ -630,11 +613,11 @@ public class BookieRequestProcessor implements RequestProcessor {
                     }
                 }
             });
-            writeAndFlush(c, response.build());
+            writeAndFlush(c, response);
         }
     }
 
-    private void processGetBookieInfoRequestV3(final BookkeeperProtocol.Request r,
+    private void processGetBookieInfoRequestV3(final Request r,
                                                final BookieRequestHandler requestHandler) {
         GetBookieInfoProcessorV3 getBookieInfo = new GetBookieInfoProcessorV3(r, requestHandler, this);
         if (null == readThreadPool) {
@@ -644,7 +627,7 @@ public class BookieRequestProcessor implements RequestProcessor {
         }
     }
 
-    private void processGetListOfEntriesOfLedgerProcessorV3(final BookkeeperProtocol.Request r,
+    private void processGetListOfEntriesOfLedgerProcessorV3(final Request r,
                                                             final BookieRequestHandler requestHandler) {
         GetListOfEntriesOfLedgerProcessorV3 getListOfEntriesOfLedger =
                 new GetListOfEntriesOfLedgerProcessorV3(r, requestHandler, this);

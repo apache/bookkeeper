@@ -35,7 +35,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.proto.GetBookieInfoRequest;
 import org.apache.commons.collections4.CollectionUtils;
 
 /**
@@ -46,8 +46,8 @@ import org.apache.commons.collections4.CollectionUtils;
 @CustomLog
 public class BookieInfoReader {
     private static final long GET_BOOKIE_INFO_REQUEST_FLAGS =
-        BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
-                               | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+        GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                               | GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
 
     private final ScheduledExecutorService scheduler;
     private final BookKeeper bk;
@@ -329,8 +329,8 @@ public class BookieInfoReader {
         }
 
         BookieClient bkc = bk.getBookieClient();
-        final long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
-                               | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+        final long requested = GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                               | GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
         totalSent = 0;
         completedCnt = 0;
         errorCnt = 0;
@@ -413,8 +413,8 @@ public class BookieInfoReader {
         final ConcurrentMap<BookieId, BookieInfo> map =
             new ConcurrentHashMap<BookieId, BookieInfo>();
         final CountDownLatch latch = new CountDownLatch(1);
-        long requested = BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
-                         | BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
+        long requested = GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE
+                         | GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE;
 
         Collection<BookieId> bookies;
         bookies = bk.bookieWatcher.getBookies();

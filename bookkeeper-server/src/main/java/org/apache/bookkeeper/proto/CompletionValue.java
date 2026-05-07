@@ -89,7 +89,7 @@ abstract class CompletionValue {
                 TimeUnit.NANOSECONDS);
         errorOut(BKException.Code.TimeoutException);
     }
-    protected Event logEvent(BookkeeperProtocol.StatusCode status) {
+    protected Event logEvent(StatusCode status) {
         return log.debug()
                 .attr("operation", operationName)
                 .attr("bookieId", perChannelBookieClient.bookieId)
@@ -98,7 +98,7 @@ abstract class CompletionValue {
                 .attr("status", status);
     }
 
-    protected int convertStatus(BookkeeperProtocol.StatusCode status, int defaultStatus) {
+    protected int convertStatus(StatusCode status, int defaultStatus) {
         // convert to BKException code
         int rcToRet = statusCodeToExceptionCode(status);
         if (rcToRet == BKException.Code.UNINITIALIZED) {
@@ -119,7 +119,7 @@ abstract class CompletionValue {
      * @param status
      * @return {@link BKException.Code.UNINITIALIZED} if the statuscode is unknown.
      */
-    private int statusCodeToExceptionCode(BookkeeperProtocol.StatusCode status) {
+    private int statusCodeToExceptionCode(StatusCode status) {
         switch (status) {
             case EOK:
                 return BKException.Code.OK;
@@ -171,13 +171,13 @@ abstract class CompletionValue {
     }
 
     public void handleV2Response(
-            long ledgerId, long entryId, BookkeeperProtocol.StatusCode status,
+            long ledgerId, long entryId, StatusCode status,
             BookieProtocol.Response response) {
         log.warn().attr("response", response).log("Unhandled V2 response");
     }
 
     public abstract void handleV3Response(
-            BookkeeperProtocol.Response response);
+            Response response);
 
     public void release() {}
 }

@@ -61,19 +61,19 @@ class ReadLacCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.ReadLacResponse readLacResponse = response.getReadLacResponse();
+    public void handleV3Response(Response response) {
+        ReadLacResponse readLacResponse = response.getReadLacResponse();
         ByteBuf lacBuffer = Unpooled.EMPTY_BUFFER;
         ByteBuf lastEntryBuffer = Unpooled.EMPTY_BUFFER;
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? readLacResponse.getStatus() : response.getStatus();
 
         if (readLacResponse.hasLacBody()) {
-            lacBuffer = Unpooled.wrappedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
+            lacBuffer = readLacResponse.getLacBodySlice();
         }
 
         if (readLacResponse.hasLastEntryBody()) {
-            lastEntryBuffer = Unpooled.wrappedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
+            lastEntryBuffer = readLacResponse.getLastEntryBodySlice();
         }
 
         logEvent(status).log("Got response from bookie");

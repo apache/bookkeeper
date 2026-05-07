@@ -26,10 +26,6 @@
   <name>Apache BookKeeper :: Protocols</name>
   <dependencies>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
-    </dependency>
-    <dependency>
       <groupId>io.netty</groupId>
       <artifactId>netty-buffer</artifactId>
     </dependency>
@@ -42,40 +38,16 @@
         <configuration>
           <excludes>
             <!-- exclude generated files //-->
-            <exclude>**/BookkeeperProtocol.java</exclude>
             <exclude>target/generated-sources/lightproto/**</exclude>
             <exclude>**/.checkstyle</exclude>
           </excludes>
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>${protobuf-maven-plugin.version}</version>
-        <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
-          <checkStaleness>true</checkStaleness>
-          <includes>
-            <include>BookkeeperProtocol.proto</include>
-          </includes>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>io.streamnative.lightproto</groupId>
         <artifactId>lightproto-maven-plugin</artifactId>
         <version>${lightproto-maven-plugin.version}</version>
         <configuration>
-          <sources>
-            <source>${project.basedir}/src/main/proto/DataFormats.proto</source>
-            <source>${project.basedir}/src/main/proto/DbLedgerStorageDataFormats.proto</source>
-          </sources>
           <targetSourcesSubDir>generated-sources/lightproto/java</targetSourcesSubDir>
           <generateTextFormat>true</generateTextFormat>
         </configuration>

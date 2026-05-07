@@ -67,7 +67,7 @@ class ReadCompletion extends CompletionValue {
 
     @Override
     public void handleV2Response(long ledgerId, long entryId,
-                                 BookkeeperProtocol.StatusCode status,
+                                 StatusCode status,
                                  BookieProtocol.Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
         if (!(response instanceof BookieProtocol.ReadResponse)) {
@@ -79,14 +79,14 @@ class ReadCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
+    public void handleV3Response(Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
-        BookkeeperProtocol.ReadResponse readResponse = response.getReadResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+        ReadResponse readResponse = response.getReadResponse();
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? readResponse.getStatus() : response.getStatus();
         ByteBuf buffer = Unpooled.EMPTY_BUFFER;
         if (readResponse.hasBody()) {
-            buffer = Unpooled.wrappedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
+            buffer = readResponse.getBodySlice();
         }
         long maxLAC = INVALID_ENTRY_ID;
         if (readResponse.hasMaxLAC()) {
@@ -105,7 +105,7 @@ class ReadCompletion extends CompletionValue {
 
     private void handleReadResponse(long ledgerId,
                                     long entryId,
-                                    BookkeeperProtocol.StatusCode status,
+                                    StatusCode status,
                                     ByteBuf buffer,
                                     long maxLAC, // max known lac piggy-back from bookies
                                     long lacUpdateTimestamp) { // the timestamp when the lac is updated.
