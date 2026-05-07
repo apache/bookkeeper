@@ -95,7 +95,7 @@ import org.apache.bookkeeper.meta.zk.ZKMetadataBookieDriver;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
-import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
+import org.apache.bookkeeper.proto.BookieServiceInfoFormat;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.replication.ReplicationStats;
 import org.apache.bookkeeper.server.Main;
@@ -550,8 +550,9 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         byte[] bkRegNodeData = zkc.getData(bkRegPath, null, null);
         assertFalse("Bookie service info not written", bkRegNodeData == null || bkRegNodeData.length == 0);
 
-        BookieServiceInfoFormat serializedBookieServiceInfo = BookieServiceInfoFormat.parseFrom(bkRegNodeData);
-        BookieServiceInfoFormat.Endpoint serializedEndpoint = serializedBookieServiceInfo.getEndpoints(0);
+        BookieServiceInfoFormat serializedBookieServiceInfo = new BookieServiceInfoFormat();
+        serializedBookieServiceInfo.parseFrom(bkRegNodeData);
+        BookieServiceInfoFormat.Endpoint serializedEndpoint = serializedBookieServiceInfo.getEndpointAt(0);
         assertNotNull("Serialized Bookie endpoint not found", serializedEndpoint);
 
         assertEquals(endpoint.getId(), serializedEndpoint.getId());

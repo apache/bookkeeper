@@ -32,6 +32,7 @@ import org.apache.bookkeeper.client.RoundRobinDistributionSchedule;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,7 +83,7 @@ public class MockBookies {
 
     public ByteBuf generateEntry(long ledgerId, long entryId, long lac) throws Exception {
         DigestManager digestManager = DigestManager.instantiate(ledgerId, new byte[0],
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C,
+                LedgerMetadataFormat.DigestType.CRC32C,
                 UnpooledByteBufAllocator.DEFAULT, false);
         return ByteBufList.coalesce((ByteBufList) digestManager.computeDigestAndPackageForSending(
                 entryId, lac, 0, Unpooled.buffer(10), new byte[20], 0));

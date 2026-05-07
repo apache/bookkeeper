@@ -27,7 +27,6 @@ import static org.apache.bookkeeper.util.BookKeeperConstants.READONLY;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
@@ -56,7 +54,7 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
+import org.apache.bookkeeper.proto.BookieServiceInfoFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -239,33 +237,18 @@ public class ZKRegistrationManager implements RegistrationManager {
     @VisibleForTesting
     static byte[] serializeBookieServiceInfo(BookieServiceInfo bookieServiceInfo) {
         log.debug().attr("bookieServiceInfo", bookieServiceInfo).log("serialize BookieServiceInfo");
-        try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
-            BookieServiceInfoFormat.Builder builder = BookieServiceInfoFormat.newBuilder();
-            List<BookieServiceInfoFormat.Endpoint> bsiEndpoints = bookieServiceInfo.getEndpoints().stream()
-                    .map(e -> {
-                        return BookieServiceInfoFormat.Endpoint.newBuilder()
-                               .setId(e.getId())
-                               .setPort(e.getPort())
-                               .setHost(e.getHost())
-                               .setProtocol(e.getProtocol())
-                               .addAllAuth(e.getAuth())
-                               .addAllExtensions(e.getExtensions())
-                               .build();
-                    })
-                    .collect(Collectors.toList());
-
-            builder.addAllEndpoints(bsiEndpoints);
-            builder.putAllProperties(bookieServiceInfo.getProperties());
-
-            builder.build().writeTo(os);
-            return os.toByteArray();
-        } catch (IOException err) {
-            log.error()
-                    .exception(err)
-                    .attr("bookieServiceInfo", bookieServiceInfo)
-                    .log("Cannot serialize bookieServiceInfo");
-            throw new RuntimeException(err);
+        BookieServiceInfoFormat fmt = new BookieServiceInfoFormat();
+        for (BookieServiceInfo.Endpoint e : bookieServiceInfo.getEndpoints()) {
+            BookieServiceInfoFormat.Endpoint endpoint = fmt.addEndpoint()
+                    .setId(e.getId())
+                    .setPort(e.getPort())
+                    .setHost(e.getHost())
+                    .setProtocol(e.getProtocol());
+            endpoint.addAllAuths(e.getAuth());
+            endpoint.addAllExtensions(e.getExtensions());
         }
+        bookieServiceInfo.getProperties().forEach(fmt::putProperties);
+        return fmt.toByteArray();
     }
 
     private void doRegisterBookie(String regPath, BookieServiceInfo bookieServiceInfo) throws BookieException {
