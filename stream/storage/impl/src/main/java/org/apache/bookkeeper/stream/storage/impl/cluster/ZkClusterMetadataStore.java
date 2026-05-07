@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.stream.storage.StorageConstants.getServersPa
 import static org.apache.bookkeeper.stream.storage.StorageConstants.getStoragePath;
 import static org.apache.bookkeeper.stream.storage.StorageConstants.getWritableServersPath;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
@@ -95,11 +94,8 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
 
     @Override
     public boolean initializeCluster(int numStorageContainers, Optional<String> segmentStorePath) {
-        ClusterMetadata metadata = ClusterMetadata.newBuilder()
-            .setNumStorageContainers(numStorageContainers)
-            .build();
-        ClusterAssignmentData assignmentData = ClusterAssignmentData.newBuilder()
-            .build();
+        ClusterMetadata metadata = new ClusterMetadata().setNumStorageContainers(numStorageContainers);
+        ClusterAssignmentData assignmentData = new ClusterAssignmentData();
         try {
             // we are using dlog for the storage backend, so we need to initialize the dlog namespace
             BKDLConfig dlogConfig = new BKDLConfig(
@@ -130,10 +126,16 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     public ClusterAssignmentData getClusterAssignmentData() {
         try {
             byte[] data = client.getData().forPath(zkClusterAssignmentPath);
-            return ClusterAssignmentData.parseFrom(data);
-        } catch (InvalidProtocolBufferException ie) {
-            throw new StorageRuntimeException("The cluster assignment data from zookeeper @"
-                + zkClusterAssignmentPath + " is corrupted", ie);
+            ClusterAssignmentData assignmentData = new ClusterAssignmentData();
+            try {
+                assignmentData.parseFrom(data);
+            } catch (RuntimeException ie) {
+                throw new StorageRuntimeException("The cluster assignment data from zookeeper @"
+                    + zkClusterAssignmentPath + " is corrupted", ie);
+            }
+            return assignmentData;
+        } catch (StorageRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new StorageRuntimeException("Failed to fetch cluster assignment data from zookeeper @"
                 + zkClusterAssignmentPath, e);
@@ -193,10 +195,16 @@ public class ZkClusterMetadataStore implements ClusterMetadataStore {
     public ClusterMetadata getClusterMetadata() {
         try {
             byte[] data = client.getData().forPath(zkClusterMetadataPath);
-            return ClusterMetadata.parseFrom(data);
-        } catch (InvalidProtocolBufferException ie) {
-            throw new StorageRuntimeException("The cluster metadata from zookeeper @"
-                + zkClusterMetadataPath + " is corrupted", ie);
+            ClusterMetadata metadata = new ClusterMetadata();
+            try {
+                metadata.parseFrom(data);
+            } catch (RuntimeException ie) {
+                throw new StorageRuntimeException("The cluster metadata from zookeeper @"
+                    + zkClusterMetadataPath + " is corrupted", ie);
+            }
+            return metadata;
+        } catch (StorageRuntimeException e) {
+            throw e;
         } catch (Exception e) {
             throw new StorageRuntimeException("Failed to fetch cluster metadata from zookeeper @"
                 + zkClusterMetadataPath, e);

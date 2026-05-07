@@ -81,14 +81,15 @@ public class DefaultStorageContainerController implements StorageContainerContro
         // 1. get current server assignments
         Map<BookieId, Set<Long>> currentServerAssignments;
         try {
-            currentServerAssignments = currentState.getServersMap()
-                .entrySet()
-                .stream()
-                .collect(Collectors.toMap(e1 -> {
-                        return BookieId.parse(e1.getKey());
-                    },
-                    e2 -> e2.getValue().getContainersList().stream().collect(Collectors.toSet())
-                ));
+            currentServerAssignments = Maps.newHashMap();
+            Map<BookieId, Set<Long>> finalAssignments = currentServerAssignments;
+            currentState.forEachServers((server, assignment) -> {
+                Set<Long> containers = Sets.newHashSet();
+                for (int i = 0; i < assignment.getContainersCount(); i++) {
+                    containers.add(assignment.getContainerAt(i));
+                }
+                finalAssignments.put(BookieId.parse(server), containers);
+            });
         } catch (UncheckedExecutionException uee) {
             log.warn()
                 .attr("currentState", currentState)
@@ -181,15 +182,14 @@ public class DefaultStorageContainerController implements StorageContainerContro
         }
 
         // 9. the new ideal state is computed, finalize it
-        Map<String, ServerAssignmentData> newAssignmentMap = Maps.newHashMap();
-        assignmentQueue.forEach(assignment -> newAssignmentMap.put(
-            assignment.getKey().toString(),
-            ServerAssignmentData.newBuilder()
-                .addAllContainers(assignment.getValue())
-                .build()));
-        return ClusterAssignmentData.newBuilder()
-            .putAllServers(newAssignmentMap)
-            .build();
+        ClusterAssignmentData result = new ClusterAssignmentData();
+        for (Pair<BookieId, LinkedList<Long>> assignment : assignmentQueue) {
+            ServerAssignmentData server = result.putServers(assignment.getKey().toString());
+            for (long container : assignment.getValue()) {
+                server.addContainer(container);
+            }
+        }
+        return result;
     }
 
     static ClusterAssignmentData initializeIdealState(ClusterMetadata clusterMetadata,
@@ -202,24 +202,20 @@ public class DefaultStorageContainerController implements StorageContainerContro
         int numTotalContainers = (int) clusterMetadata.getNumStorageContainers();
         int numContainersPerServer = numTotalContainers / currentCluster.size();
 
-        Map<String, ServerAssignmentData> assignmentMap = Maps.newHashMap();
+        ClusterAssignmentData result = new ClusterAssignmentData();
         for (int serverIdx = 0; serverIdx < serverList.size(); serverIdx++) {
             BookieId server = serverList.get(serverIdx);
+            ServerAssignmentData assignmentData = result.putServers(server.toString());
 
             int finalServerIdx = serverIdx;
-            ServerAssignmentData assignmentData = ServerAssignmentData.newBuilder()
-                .addAllContainers(
-                    LongStream.rangeClosed(0, numContainersPerServer).boxed()
-                        .map(j -> j * numServers + finalServerIdx)
-                        .filter(containerId -> containerId < numTotalContainers)
-                        .collect(Collectors.toSet()))
-                .build();
-            assignmentMap.put(server.toString(), assignmentData);
+            LongStream.rangeClosed(0, numContainersPerServer)
+                .map(j -> j * numServers + finalServerIdx)
+                .filter(containerId -> containerId < numTotalContainers)
+                .distinct()
+                .forEach(assignmentData::addContainer);
         }
 
-        return ClusterAssignmentData.newBuilder()
-            .putAllServers(assignmentMap)
-            .build();
+        return result;
     }
 
 }

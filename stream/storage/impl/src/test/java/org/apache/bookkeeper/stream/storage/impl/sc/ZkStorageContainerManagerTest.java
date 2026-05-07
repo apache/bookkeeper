@@ -150,13 +150,8 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
             .thenReturn(mockSc2);
 
         // update assignment map
-        ClusterAssignmentData cad = ClusterAssignmentData.newBuilder()
-            .putServers(
-                NetUtils.endpointToString(myEndpoint),
-                ServerAssignmentData.newBuilder()
-                    .addContainers(containerId)
-                    .build())
-            .build();
+        ClusterAssignmentData cad = new ClusterAssignmentData();
+        cad.putServers(NetUtils.endpointToString(myEndpoint)).addContainer(containerId);
         clusterMetadataStore.updateClusterAssignmentData(cad);
 
         // notify the container to complete startup
@@ -170,13 +165,8 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
 
 
         // update assignment map to remove containerId and add containerId2
-        ClusterAssignmentData newCad = ClusterAssignmentData.newBuilder()
-            .putServers(
-                NetUtils.endpointToString(myEndpoint),
-                ServerAssignmentData.newBuilder()
-                    .addContainers(22L)
-                    .build())
-            .build();
+        ClusterAssignmentData newCad = new ClusterAssignmentData();
+        newCad.putServers(NetUtils.endpointToString(myEndpoint)).addContainer(22L);
         clusterMetadataStore.updateClusterAssignmentData(newCad);
 
         // notify the container1 to stop and container2 to start
@@ -210,13 +200,8 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
             .thenReturn(mockSc);
 
         // update assignment map
-        ClusterAssignmentData cad = ClusterAssignmentData.newBuilder()
-            .putServers(
-                NetUtils.endpointToString(myEndpoint),
-                ServerAssignmentData.newBuilder()
-                    .addContainers(containerId)
-                    .build())
-            .build();
+        ClusterAssignmentData cad = new ClusterAssignmentData();
+        cad.putServers(NetUtils.endpointToString(myEndpoint)).addContainer(containerId);
         clusterMetadataStore.updateClusterAssignmentData(cad);
 
         // wait until container start is called
@@ -226,7 +211,7 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
         assertTrue(scManager.getPendingStartStopContainers().contains(containerId));
 
         // now shutting the manager down
-        cad = ClusterAssignmentData.newBuilder().build();
+        cad = new ClusterAssignmentData();
         clusterMetadataStore.updateClusterAssignmentData(cad);
 
         // the container should not be stopped since it is pending starting.
@@ -282,13 +267,8 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
         scManager.start();
 
         // update assignment map
-        ClusterAssignmentData cad = ClusterAssignmentData.newBuilder()
-            .putServers(
-                NetUtils.endpointToString(myEndpoint),
-                ServerAssignmentData.newBuilder()
-                    .addContainers(containerId)
-                    .build())
-            .build();
+        ClusterAssignmentData cad = new ClusterAssignmentData();
+        cad.putServers(NetUtils.endpointToString(myEndpoint)).addContainer(containerId);
         clusterMetadataStore.updateClusterAssignmentData(cad);
 
         // wait until container start is called and verify it is not started.
