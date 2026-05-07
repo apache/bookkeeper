@@ -982,7 +982,10 @@ public class LedgerHandle implements WriteHandle {
     public CompletableFuture<LedgerEntries> batchReadUnconfirmedAsync(long startEntry, int maxCount, long maxSize) {
         // Little sanity check
         if (startEntry < 0 || maxCount < 0 || maxSize < 0) {
-            LOG.error("IncorrectParameterException on ledgerId:{} firstEntry:{} when batch read", ledgerId, startEntry);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .attr("startEntry", startEntry)
+                    .log("IncorrectParameterException when batch read");
             return FutureUtils.exception(new BKIncorrectParameterException());
         }
 
