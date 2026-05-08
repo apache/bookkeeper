@@ -128,7 +128,11 @@ public class PByteBufSimpleTableImpl
 
     private void populateRoutingHeader(RoutingHeader header, ByteBuf pKey) {
         header.setStreamId(streamId);
-        header.setRKey(pKey);
+        // Use a slice so this header's rKey has its own readerIndex independent of the
+        // request's key/value fields when those alias the same underlying ByteBuf:
+        // lightproto's serializer calls ByteBuf#writeBytes(src) which advances src's
+        // readerIndex, so two fields backed by the same ByteBuf would clobber each other.
+        header.setRKey(pKey.slice());
     }
 
     private Channel getChannel(ByteBuf pKey) {

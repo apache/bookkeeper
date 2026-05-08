@@ -86,7 +86,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     private void populateRoutingHeader(RoutingHeader header, ByteBuf pKey) {
         header.setStreamId(streamId);
         header.setRangeId(rangeProps.getRangeId());
-        header.setRKey(pKey);
+        // Slice so the rKey has its own readerIndex independent of any other ByteBuf
+        // fields that alias the same underlying buffer. See PByteBufSimpleTableImpl
+        // for details.
+        header.setRKey(pKey.slice());
     }
 
     @Override
