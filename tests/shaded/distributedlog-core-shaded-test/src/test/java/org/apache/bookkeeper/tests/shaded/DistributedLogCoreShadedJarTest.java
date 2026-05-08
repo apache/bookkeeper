@@ -53,13 +53,9 @@ import org.mockito.junit.MockitoJUnitRunner;
 public class DistributedLogCoreShadedJarTest {
 
     @Test(expected = ClassNotFoundException.class)
-    public void testProtobufIsShaded() throws Exception {
+    public void testProtobufIsNotIncluded() throws Exception {
+        // protobuf-java is no longer a runtime dependency after the LightProto migration
         Class.forName("com.google.protobuf.Message");
-    }
-
-    @Test
-    public void testProtobufShadedPath() throws Exception {
-        Class.forName("dlshade.com.google.protobuf.Message");
     }
 
     @Test(expected = ClassNotFoundException.class)
@@ -97,12 +93,12 @@ public class DistributedLogCoreShadedJarTest {
 
     @Test(expected = ClassNotFoundException.class)
     public void testBookKeeperProto() throws Exception {
-        Class.forName("org.apache.bookkeeper.proto.BookkeeperProtocol");
+        Class.forName("org.apache.bookkeeper.proto.AddRequest");
     }
 
     @Test
     public void testBookKeeperProtoShade() throws Exception {
-        Class.forName("dlshade.org.apache.bookkeeper.proto.BookkeeperProtocol");
+        Class.forName("dlshade.org.apache.bookkeeper.proto.AddRequest");
         assertTrue(true);
     }
 

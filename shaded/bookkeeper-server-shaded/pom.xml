@@ -72,7 +72,6 @@
                 <includes>
                   <include>com.google.guava:guava</include>
                   <include>com.google.guava:failureaccess</include>
-                  <include>com.google.protobuf:protobuf-java</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-common-allocator</include>
                   <include>org.apache.bookkeeper:native-library-common</include>
