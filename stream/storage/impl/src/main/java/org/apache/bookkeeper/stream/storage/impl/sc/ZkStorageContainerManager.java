@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,7 +34,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -58,6 +58,8 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 public class ZkStorageContainerManager
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements StorageContainerManager, Consumer<Void> {
+
+    private static final ServerAssignmentData EMPTY_SERVER_ASSIGNMENT = new ServerAssignmentData();
 
     private final Endpoint endpoint;
     private final ClusterMetadataStore metadataStore;
@@ -161,11 +163,9 @@ public class ZkStorageContainerManager
             return false;
         }
 
-        Map<Endpoint, ServerAssignmentData> newAssignmentMap = clusterAssignmentData.getServersMap().entrySet()
-            .stream()
-            .collect(Collectors.toMap(
-                e -> NetUtils.parseEndpoint(e.getKey()),
-                e -> e.getValue()));
+        Map<Endpoint, ServerAssignmentData> newAssignmentMap = new HashMap<>();
+        clusterAssignmentData.forEachServers(
+            (server, assignment) -> newAssignmentMap.put(NetUtils.parseEndpoint(server), assignment));
 
         Set<Endpoint> oldAssignedServers = clusterAssignmentMap.keySet();
         Set<Endpoint> newAssignedServers = newAssignmentMap.keySet();
@@ -191,7 +191,9 @@ public class ZkStorageContainerManager
         serversJoined.forEach(ep -> {
             ServerAssignmentData sad = newAssignmentMap.get(ep);
             if (null != sad) {
-                sad.getContainersList().forEach(container -> containerAssignmentMap.put(container, ep));
+                for (int i = 0; i < sad.getContainersCount(); i++) {
+                    containerAssignmentMap.put(sad.getContainerAt(i), ep);
+                }
             }
         });
     }
@@ -204,7 +206,9 @@ public class ZkStorageContainerManager
         serversLeft.forEach(ep -> {
             ServerAssignmentData sad = oldAssignmentMap.get(ep);
             if (null != sad) {
-                sad.getContainersList().forEach(container -> containerAssignmentMap.remove(container, ep));
+                for (int i = 0; i < sad.getContainersCount(); i++) {
+                    containerAssignmentMap.remove(sad.getContainerAt(i), ep);
+                }
             }
         });
     }
@@ -214,8 +218,8 @@ public class ZkStorageContainerManager
                                                  Map<Endpoint, ServerAssignmentData> newAssignmentMap) {
         commonServers.forEach(ep -> {
 
-            ServerAssignmentData oldSad = oldAssignmentMap.getOrDefault(ep, ServerAssignmentData.getDefaultInstance());
-            ServerAssignmentData newSad = newAssignmentMap.getOrDefault(ep, ServerAssignmentData.getDefaultInstance());
+            ServerAssignmentData oldSad = oldAssignmentMap.getOrDefault(ep, EMPTY_SERVER_ASSIGNMENT);
+            ServerAssignmentData newSad = newAssignmentMap.getOrDefault(ep, EMPTY_SERVER_ASSIGNMENT);
 
             if (oldSad.equals(newSad)) {
                 return;
@@ -225,8 +229,12 @@ public class ZkStorageContainerManager
                     .attr("oldAssignment", oldSad)
                     .attr("newAssignment", newSad)
                     .log("Server assignment is changed");
-                oldSad.getContainersList().forEach(container -> containerAssignmentMap.remove(container, ep));
-                newSad.getContainersList().forEach(container -> containerAssignmentMap.put(container, ep));
+                for (int i = 0; i < oldSad.getContainersCount(); i++) {
+                    containerAssignmentMap.remove(oldSad.getContainerAt(i), ep);
+                }
+                for (int i = 0; i < newSad.getContainersCount(); i++) {
+                    containerAssignmentMap.put(newSad.getContainerAt(i), ep);
+                }
             }
 
         });
@@ -239,7 +247,10 @@ public class ZkStorageContainerManager
     }
 
     private void processMyAssignment(ServerAssignmentData myAssignment) {
-        Set<Long> assignedContainerSet = myAssignment.getContainersList().stream().collect(Collectors.toSet());
+        Set<Long> assignedContainerSet = Sets.newHashSet();
+        for (int i = 0; i < myAssignment.getContainersCount(); i++) {
+            assignedContainerSet.add(myAssignment.getContainerAt(i));
+        }
         Set<Long> liveContainerSet = Sets.newHashSet(liveContainers.keySet());
 
         Set<Long> containersToStart =
