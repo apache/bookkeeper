@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -38,7 +38,7 @@ import org.junit.rules.TestName;
 /**
  * Unit test of {@link ZkClusterControllerLeaderSelector}.
  */
-@Slf4j
+@CustomLog
 public class ZkClusterControllerLeaderSelectorTest extends ZooKeeperClusterTestCase {
 
     @Rule
@@ -121,7 +121,7 @@ public class ZkClusterControllerLeaderSelectorTest extends ZooKeeperClusterTestC
                 try {
                     TimeUnit.SECONDS.sleep(Long.MAX_VALUE);
                 } catch (InterruptedException ie) {
-                    log.info("Leader is interrupted", ie);
+                    log.info().exception(ie).log("Leader is interrupted");
                     Thread.currentThread().interrupt();
                     interruptedLatch.countDown();
                 }
@@ -162,7 +162,7 @@ public class ZkClusterControllerLeaderSelectorTest extends ZooKeeperClusterTestC
                 try {
                     TimeUnit.SECONDS.sleep(Long.MAX_VALUE);
                 } catch (InterruptedException ie) {
-                    log.info("Leader is interrupted", ie);
+                    log.info().exception(ie).log("Leader is interrupted");
                     Thread.currentThread().interrupt();
                 }
             }

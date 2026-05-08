@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.distributedlog.Entry.Writer;
 import org.apache.distributedlog.exceptions.InvalidEnvelopedEntryException;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
@@ -41,15 +42,12 @@ import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.io.CompressionCodec.Type;
 import org.apache.distributedlog.io.CompressionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link ByteBuf} based log record set writer.
  */
+@CustomLog
 class EnvelopedEntryWriter implements Writer {
-
-    private static final Logger logger = LoggerFactory.getLogger(EnvelopedEntryWriter.class);
 
     private static class WriteRequest {
 
@@ -117,8 +115,7 @@ class EnvelopedEntryWriter implements Writer {
             writeRequests.add(new WriteRequest(numRecords, transmitPromise));
             maxTxId = Math.max(maxTxId, record.getTransactionId());
         } catch (IOException e) {
-            logger.error("Failed to append record to record set of {} : ",
-                    logName, e);
+            log.error().attr("logName", logName).exception(e).log("Failed to append record to record set");
             throw new WriteException(logName, "Failed to append record to record set of "
                     + logName);
         }

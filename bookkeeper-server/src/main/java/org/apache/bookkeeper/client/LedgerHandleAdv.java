@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.client;
 
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.io.Serializable;
@@ -38,17 +39,12 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 /**
  * Ledger Advanced handle extends {@link LedgerHandle} to provide API to add entries with
  * user supplied entryIds. Through this interface Ledger Length may not be accurate while the
  * ledger being written.
  */
 public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerHandleAdv.class);
 
     static class PendingOpsComparator implements Comparator<PendingAddOp>, Serializable {
         @Override
@@ -61,7 +57,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     long ledgerId, Versioned<LedgerMetadata> metadata,
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags)
             throws GeneralSecurityException, NumberFormatException {
-        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags);
+        this(clientCtx, ledgerId, metadata, digestType, password, writeFlags, null);
+    }
+
+    LedgerHandleAdv(ClientContext clientCtx,
+                    long ledgerId, Versioned<LedgerMetadata> metadata,
+                    BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags,
+                    Logger parentLogger)
+            throws GeneralSecurityException, NumberFormatException {
+        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags, parentLogger);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 
@@ -101,9 +105,9 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
     @Override
     public long addEntry(final long entryId, byte[] data, int offset, int length) throws InterruptedException,
             BKException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Adding entry {}", data);
-        }
+
+        log.debug().attr("data", data).log("Adding entry");
+
 
         SyncAddCallback callback = new SyncAddCallback();
         asyncAddEntry(entryId, data, offset, length, callback, null);
@@ -207,7 +211,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
         op.setEntryId(entryId);
 
         if ((entryId <= this.lastAddConfirmed) || pendingAddOps.contains(op)) {
-            LOG.error("Trying to re-add duplicate entryid:{}", entryId);
+            log.error().attr("entryId", entryId).log("Trying to re-add duplicate entryId");
             op.submitCallback(BKException.Code.DuplicateEntryIdException);
             return;
         }
@@ -245,7 +249,7 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                 clientCtx.getMainWorkerPool().submit(new Runnable() {
                     @Override
                     public void run() {
-                        LOG.warn("Attempt to add to closed ledger: {}", ledgerId);
+                        log.warn("Attempt to add to closed ledger");
                         op.cb.addCompleteWithLatency(BKException.Code.LedgerClosedException,
                                 LedgerHandleAdv.this, op.getEntryId(), 0, op.ctx);
                         op.recyclePendAddOpObject();

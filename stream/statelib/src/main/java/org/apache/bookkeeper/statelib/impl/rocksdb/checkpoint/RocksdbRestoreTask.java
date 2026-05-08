@@ -24,7 +24,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
@@ -32,7 +32,7 @@ import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
 /**
  * A task that restore a rocksdb instance.
  */
-@Slf4j
+@CustomLog
 public class RocksdbRestoreTask {
 
     private final String dbName;
@@ -70,8 +70,10 @@ public class RocksdbRestoreTask {
             List<CheckpointFile> files = getCheckpointFiles(checkpointedDir, metadata);
             copyFilesFromRemote(checkpointId, files);
         } catch (IOException ioe) {
-            log.error("Failed to restore checkpoint {} to local directory {}",
-                new Object[] { checkpointId, checkpointedDir, ioe });
+            log.error().attr("checkpointId", checkpointId)
+                .attr("directory", checkpointedDir)
+                .exception(ioe)
+                .log("Failed to restore checkpoint to local directory");
             throw new StateStoreException(
                 "Failed to restore checkpoint " + checkpointId + " to local directory " + checkpointedDir,
                 ioe);

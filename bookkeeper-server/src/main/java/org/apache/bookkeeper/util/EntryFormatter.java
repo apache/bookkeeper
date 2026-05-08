@@ -21,17 +21,15 @@
 
 package org.apache.bookkeeper.util;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Formatter to format an entry.
  */
+@CustomLog
 public abstract class EntryFormatter {
-
-    private static final Logger LOG = LoggerFactory.getLogger(EntryFormatter.class);
 
     /**
      * Format an entry into a readable format.
@@ -56,8 +54,8 @@ public abstract class EntryFormatter {
             Class<? extends EntryFormatter> entryFormatterClass = conf.getEntryFormatterClass();
             formatter = ReflectionUtils.newInstance(entryFormatterClass);
         } catch (Exception e) {
-            LOG.warn("No formatter class found", e);
-            LOG.warn("Using Default String Formatter.");
+            log.warn().exception(e).log("No formatter class found");
+            log.warn("Using Default String Formatter.");
             formatter = new StringEntryFormatter();
         }
         return formatter;
@@ -70,7 +68,7 @@ public abstract class EntryFormatter {
         } else if ("string".equals(opt)) {
             formatter = new StringEntryFormatter();
         } else {
-            LOG.warn("specified unexpected entryformat {}, so default EntryFormatter is used", opt);
+            log.warn().attr("format", opt).log("specified unexpected entryformat, so default EntryFormatter is used");
             formatter = newEntryFormatter(conf);
         }
         return formatter;

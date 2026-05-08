@@ -26,6 +26,7 @@ import java.io.File;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.LegacyCookieValidation;
@@ -38,8 +39,6 @@ import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper expand storage related http request.
@@ -47,9 +46,9 @@ import org.slf4j.LoggerFactory;
  * User should update the directories info in the conf file with new empty ledger/index
  * directories, before running the command.
  */
+@CustomLog
 public class ExpandStorageService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(ExpandStorageService.class);
 
     protected ServerConfiguration conf;
 
@@ -94,16 +93,14 @@ public class ExpandStorageService implements HttpEndpointService {
                     validation.checkCookies(dirs);
                 }
             } catch (BookieException e) {
-                LOG.error("Exception occurred while updating cookie for storage expansion", e);
+                log.error().exception(e).log("Exception occurred while updating cookie for storage expansion");
                 response.setCode(HttpServer.StatusCode.INTERNAL_ERROR);
                 response.setBody("Exception while updating cookie for storage expansion");
                 return response;
             }
 
             String jsonResponse = "Success expand storage";
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
+            log.debug().attr("body", jsonResponse).log("output body");
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

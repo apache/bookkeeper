@@ -25,7 +25,7 @@ import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.tools.perf.table.PerfClient.Flags;
 import org.apache.bookkeeper.tools.perf.table.PerfClient.OP;
@@ -34,7 +34,7 @@ import org.apache.bookkeeper.tools.perf.table.PerfClient.OpStats;
 /**
  * Write task to inject key/value pairs to the table.
  */
-@Slf4j
+@CustomLog
 abstract class IncrementTask extends BenchmarkTask {
 
     protected final RateLimiter limiter;
@@ -83,7 +83,7 @@ abstract class IncrementTask extends BenchmarkTask {
                     semaphore.release();
                 }
                 if (null != cause) {
-                    log.error("Error at increment key/amount", cause);
+                    log.error().exception(cause).log("Error at increment key/amount");
                 } else {
                     long latencyMicros = TimeUnit.NANOSECONDS.toMicros(
                         System.nanoTime() - startTime

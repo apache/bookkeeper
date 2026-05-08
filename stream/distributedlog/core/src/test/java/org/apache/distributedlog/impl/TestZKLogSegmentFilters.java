@@ -27,22 +27,16 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
-
 
 /**
  * TestZKLogSegmentFilters.
  */
+@CustomLog
 public class TestZKLogSegmentFilters {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestZKLogSegmentFilters.class);
 
     @Test(timeout = 60000)
     public void testWriteFilter() {
@@ -71,7 +65,8 @@ public class TestZKLogSegmentFilters {
         expectedFilteredSegments.add(DistributedLogConstants.COMPLETED_LOGSEGMENT_PREFIX + "_1_2_3_4_5_6_7_8_9");
 
         Collection<String> filteredCollection = WRITE_HANDLE_FILTER.filter(segments);
-        LOG.info("Filter log segments {} to {}.", segments, filteredCollection);
+        log.info().attr("segments", segments).attr("filteredCollection", filteredCollection)
+                .log("Filter log segments");
         assertEquals(expectedFilteredSegments.size(), filteredCollection.size());
 
         Set<String> filteredSegments = Sets.newHashSet(filteredCollection);

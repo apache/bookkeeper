@@ -30,7 +30,7 @@ import java.util.NavigableMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.LongStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
 import org.apache.bookkeeper.stream.proto.RangeState;
@@ -44,7 +44,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link MetaRangeImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
 
     private StreamProperties streamProps;

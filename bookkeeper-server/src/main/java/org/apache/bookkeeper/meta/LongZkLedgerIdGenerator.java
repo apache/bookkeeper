@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -31,8 +32,6 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper based ledger id generator class, which using EPHEMERAL_SEQUENTIAL
@@ -54,8 +53,8 @@ import org.slf4j.LoggerFactory;
  * <p>The reason for treating ids which are less than Integer.MAX_INT differently is to maintain backwards
  * compatibility. This is a drop-in replacement for ZkLedgerIdGenerator.
  */
+@CustomLog
 public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
-    private static final Logger LOG = LoggerFactory.getLogger(LongZkLedgerIdGenerator.class);
     private ZooKeeper zk;
     private String ledgerIdGenPath;
     private ZkLedgerIdGenerator shortIdGen;
@@ -99,20 +98,21 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                         Long newHighBits = highBits + 1;
                         createHOBPathAndGenerateId(ledgerPrefix, newHighBits.intValue(), cb);
                     } catch (KeeperException e) {
-                        LOG.error("Failed to create long ledger ID path", e);
+                        log.error().exception(e).log("Failed to create long ledger ID path");
                         cb.operationComplete(BKException.Code.ZKException, null);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        LOG.error("Failed to create long ledger ID path", e);
+                        log.error().exception(e).log("Failed to create long ledger ID path");
                         cb.operationComplete(BKException.Code.InterruptedException, null);
                     } catch (IOException e) {
-                        LOG.error("Failed to create long ledger ID path", e);
+                        log.error().exception(e).log("Failed to create long ledger ID path");
                         cb.operationComplete(BKException.Code.IllegalOpException, null);
                     }
 
                 } else {
-                    LOG.error("Failed to create long ledger ID path",
-                            KeeperException.create(KeeperException.Code.get(rc)));
+                    log.error()
+                            .exception(KeeperException.create(KeeperException.Code.get(rc)))
+                            .log("Failed to create long ledger ID path");
                     cb.operationComplete(BKException.Code.ZKException, null);
                 }
             }
@@ -132,16 +132,12 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
     private void createHOBPathAndGenerateId(String ledgerPrefix, int hob, final GenericCallback<Long> cb)
             throws KeeperException, InterruptedException, IOException {
         try {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Creating HOB path: {}", ledgerPrefix + formatHalfId(hob));
-            }
+            log.debug().attr("path", ledgerPrefix + formatHalfId(hob)).log("Creating HOB path");
             zk.create(ledgerPrefix + formatHalfId(hob), new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         } catch (KeeperException.NodeExistsException e) {
             // It's fine if we lost a race to create the node (NodeExistsException).
             // All other exceptions should continue unwinding.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Tried to create High-order-bits node, but it already existed!", e);
-            }
+            log.debug().exception(e).log("Tried to create High-order-bits node, but it already existed");
         }
         // We just created a new HOB directory. Invalidate the directory cache
         invalidateDirectoryCache();
@@ -213,16 +209,12 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
 
             for (int i = 0; i < highOrderDirs.length - 3; i++) {
                 String path = ledgerPrefix + formatHalfId(((Long) highOrderDirs[i]).intValue());
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("DELETING HIGH ORDER DIR: {}", path);
-                }
+                log.debug().attr("path", path).log("Deleting high order dir");
                 try {
                     zk.delete(path, 0);
                 } catch (KeeperException e) {
                     // We don't care if we fail. Just warn about it.
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Failed to delete {}", path);
-                    }
+                    log.debug().attr("path", path).log("Failed to delete");
                 }
             }
         }
@@ -237,16 +229,16 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.PRESENT);
                             generateLongLedgerId(cb);
                         } catch (KeeperException e) {
-                            LOG.error("Failed to create long ledger ID path", e);
+                            log.error().exception(e).log("Failed to create long ledger ID path");
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
                             cb.operationComplete(BKException.Code.ZKException, null);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
-                            LOG.error("Failed to create long ledger ID path", e);
+                            log.error().exception(e).log("Failed to create long ledger ID path");
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
                             cb.operationComplete(BKException.Code.InterruptedException, null);
                         } catch (IOException e) {
-                            LOG.error("Failed to create long ledger ID path", e);
+                            log.error().exception(e).log("Failed to create long ledger ID path");
                             setLedgerIdGenPathStatus(HighOrderLedgerIdGenPathStatus.UNKNOWN);
                             cb.operationComplete(BKException.Code.IllegalOpException, null);
                         }
@@ -316,14 +308,14 @@ public class LongZkLedgerIdGenerator implements LedgerIdGenerator {
                 generateLongLedgerId(cb);
             }
         } catch (KeeperException e) {
-            LOG.error("Failed to create long ledger ID path", e);
+            log.error().exception(e).log("Failed to create long ledger ID path");
             cb.operationComplete(BKException.Code.ZKException, null);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error("Failed to create long ledger ID path", e);
+            log.error().exception(e).log("Failed to create long ledger ID path");
             cb.operationComplete(BKException.Code.InterruptedException, null);
         } catch (IOException e) {
-            LOG.error("Failed to create long ledger ID path", e);
+            log.error().exception(e).log("Failed to create long ledger ID path");
             cb.operationComplete(BKException.Code.IllegalOpException, null);
         }
     }

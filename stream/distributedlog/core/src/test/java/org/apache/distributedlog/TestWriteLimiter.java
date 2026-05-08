@@ -17,24 +17,22 @@
  */
 package org.apache.distributedlog;
 
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.SettableFeature;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.distributedlog.exceptions.OverCapacityException;
 import org.apache.distributedlog.util.SimplePermitLimiter;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for {@link org.apache.distributedlog.util.SimplePermitLimiter}.
  */
+@CustomLog
 public class TestWriteLimiter {
-    static final Logger LOG = LoggerFactory.getLogger(TestWriteLimiter.class);
 
     SimplePermitLimiter createPermitLimiter(boolean darkmode, int permits) {
         return createPermitLimiter(darkmode, permits, new SettableFeature("", 0));

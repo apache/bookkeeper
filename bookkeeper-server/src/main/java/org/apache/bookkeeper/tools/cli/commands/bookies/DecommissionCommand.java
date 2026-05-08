@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -38,8 +39,6 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to trigger AuditTask by resetting lostBookieRecoveryDelay and
@@ -47,9 +46,8 @@ import org.slf4j.LoggerFactory;
  * and Cookie of the decommissioned bookie should be deleted from metadata
  * server.
  */
+@CustomLog
 public class DecommissionCommand extends BookieCommand<DecommissionCommand.DecommissionFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(DecommissionCommand.class);
 
     private static final String NAME = "decommission";
     private static final String DESC =
@@ -95,26 +93,30 @@ public class DecommissionCommand extends BookieCommand<DecommissionCommand.Decom
                                                                   ? BookieImpl.getBookieId(conf)
                                                                   : BookieId.parse(remoteBookieidToDecommission));
             admin.decommissionBookie(bookieAddressToDecommission);
-            LOG.info("The ledgers stored in the given decommissioning bookie: {} are properly replicated",
-                     bookieAddressToDecommission);
+            log.info()
+                    .attr("bookieAddressToDecommission", bookieAddressToDecommission)
+                    .log("The ledgers stored in the given decommissioning bookie: are properly replicated");
             runFunctionWithRegistrationManager(conf, rm -> {
                 try {
                     Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieAddressToDecommission);
                     cookie.getValue().deleteFromRegistrationManager(rm, bookieAddressToDecommission,
                                                                     cookie.getVersion());
                 } catch (BookieException.CookieNotFoundException nne) {
-                    LOG.warn("No cookie to remove for the decommissioning bookie: {}, it could be deleted already",
-                             bookieAddressToDecommission, nne);
+                    log.warn()
+                            .attr("bookieAddressToDecommission", bookieAddressToDecommission)
+                            .exception(nne)
+                            .log("No cookie to remove for the decommissioning bookie, it could be deleted already");
                 } catch (BookieException be) {
                     throw new UncheckedExecutionException(be.getMessage(), be);
                 }
                 return true;
             });
-            LOG.info("Cookie of the decommissioned bookie: {} is deleted successfully",
-                     bookieAddressToDecommission);
+            log.info()
+                    .attr("bookieAddressToDecommission", bookieAddressToDecommission)
+                    .log("Cookie of the decommissioned bookie: is deleted successfully");
             return true;
         } catch (Exception e) {
-            LOG.error("Received exception in DecommissionBookieCmd ", e);
+            log.error().exception(e).log("Received exception in DecommissionBookieCmd");
             return false;
         } finally {
             if (admin != null) {

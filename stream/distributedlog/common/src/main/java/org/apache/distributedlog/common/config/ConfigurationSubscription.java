@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.FileBasedConfiguration;
 import org.apache.commons.configuration2.PropertiesConfiguration;
 import org.apache.commons.configuration2.builder.ConfigurationBuilderEvent;
@@ -41,8 +42,6 @@ import org.apache.commons.configuration2.convert.DefaultListDelimiterHandler;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.commons.configuration2.reloading.PeriodicReloadingTrigger;
 import org.apache.commons.configuration2.reloading.ReloadingController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ConfigurationSubscription publishes a reloading, thread-safe view of file configuration. The class
@@ -55,8 +54,8 @@ import org.slf4j.LoggerFactory;
  * 2. The underlying FileConfiguration is not at all thread-safe, so its important to ensure access
  * to this object is always single threaded.
  */
+@CustomLog
 public class ConfigurationSubscription implements AutoCloseable {
-    static final Logger LOG = LoggerFactory.getLogger(ConfigurationSubscription.class);
 
     private final ConcurrentBaseConfiguration viewConfig;
     private final ScheduledExecutorService executorService;
@@ -117,7 +116,7 @@ public class ConfigurationSubscription implements AutoCloseable {
                     try {
                         configChanged(configFile, event);
                     } catch (ConfigurationException e) {
-                        LOG.error("Config reload failed for file {}", configFile, e);
+                        log.error().attr("configFile", configFile).exception(e).log("Config reload failed for file");
                     }
                 });
                 FileBasedConfiguration fileConfig = configBuilder.getConfiguration();
@@ -125,7 +124,7 @@ public class ConfigurationSubscription implements AutoCloseable {
             }
         } catch (ConfigurationException ex) {
             if (!fileNotFound(ex)) {
-                LOG.error("Config init failed", ex);
+                log.error().exception(ex).log("Config init failed");
             }
         }
     }
@@ -144,10 +143,8 @@ public class ConfigurationSubscription implements AutoCloseable {
         for (Map.Entry<File, FileBasedConfiguration> entry : fileConfigs.entrySet()) {
             File configFile = entry.getKey();
             FileBasedConfiguration fileConfig = entry.getValue();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Check and reload config, file={}, lastModified={}", configFile,
-                        configFile.lastModified());
-            }
+            log.debug().attr("file", configFile).attr("lastModified", configFile.lastModified())
+                    .log("Check and reload config");
             // load keys
             Iterator keyIter = fileConfig.getKeys();
             while (keyIter.hasNext()) {
@@ -163,7 +160,7 @@ public class ConfigurationSubscription implements AutoCloseable {
                 clearViewProperty(key);
             }
         }
-        LOG.info("Reload features : {}", confKeys);
+        log.info().attr("features", confKeys).log("Reload features");
         // load keys from files
         for (Map.Entry<File, FileBasedConfiguration> entry : fileConfigs.entrySet()) {
             File configFile = entry.getKey();
@@ -172,7 +169,7 @@ public class ConfigurationSubscription implements AutoCloseable {
                 loadView(fileConfig);
             } catch (Exception ex) {
                 if (!fileNotFound(ex)) {
-                    LOG.error("Config reload failed for file {}", configFile, ex);
+                    log.error().attr("configFile", configFile).exception(ex).log("Config reload failed for file");
                 }
             }
         }
@@ -195,9 +192,7 @@ public class ConfigurationSubscription implements AutoCloseable {
     }
 
     private void clearViewProperty(String key) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Removing property, key={}", key);
-        }
+        log.debug().attr("key", key).log("Removing property");
         viewConfig.clearProperty(key);
     }
 
@@ -205,9 +200,7 @@ public class ConfigurationSubscription implements AutoCloseable {
                                  String key,
                                  Object value) {
         if (!viewConfig.containsKey(key) || !viewConfig.getProperty(key).equals(value)) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Setting property, key={} value={}", key, fileConfig.getProperty(key));
-            }
+            log.debug().attr("key", key).attr("value", fileConfig.getProperty(key)).log("Setting property");
             viewConfig.setProperty(key, fileConfig.getProperty(key));
         }
     }

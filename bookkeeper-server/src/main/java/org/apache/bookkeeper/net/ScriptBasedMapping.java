@@ -22,11 +22,10 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.StringTokenizer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.util.Shell.ShellCommandExecutor;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class implements the {@link DNSToSwitchMapping} interface using a
@@ -126,10 +125,10 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
      * This is the uncached script mapping that is fed into the cache managed
      * by the superclass {@link CachedDNSToSwitchMapping}.
      */
+    @CustomLog
     private static final class RawScriptBasedMapping extends AbstractDNSToSwitchMapping {
         private String scriptName;
         private int maxArgs; //max hostnames per call of the script
-        private static final Logger LOG = LoggerFactory.getLogger(RawScriptBasedMapping.class);
 
         /*
          * extract 'scriptName' and 'maxArgs' parameters from the conf and throw
@@ -172,8 +171,10 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                 try {
                     s.execute();
                 } catch (Exception e) {
-                    LOG.error("Conf validation failed. Got exception for sanity check of script: " + this.scriptName,
-                            e);
+                    log.error()
+                            .attr("script", this.scriptName)
+                            .exception(e)
+                            .log("Conf validation failed. Got exception for sanity check of script");
                     throw new RuntimeException(
                             "Conf validation failed. Got exception for sanity check of script: " + this.scriptName, e);
                 }
@@ -209,8 +210,11 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
 
                 if (m.size() != names.size()) {
                     // invalid number of entries returned by the script
-                    LOG.error("Script " + scriptName + " returned " + m.size() + " values when "
-                            + names.size() + " were expected.");
+                    log.error()
+                            .attr("script", scriptName)
+                            .attr("returnedCount", m.size())
+                            .attr("expectedCount", names.size())
+                            .log("Script returned unexpected number of values");
                     return null;
                 }
             } else {
@@ -238,8 +242,11 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
             StringBuilder allOutput = new StringBuilder();
             int numProcessed = 0;
             if (maxArgs < MIN_ALLOWABLE_ARGS) {
-                LOG.warn("Invalid value " + maxArgs + " for " + SCRIPT_ARG_COUNT_KEY
-                        + "; must be >= " + MIN_ALLOWABLE_ARGS);
+                log.warn()
+                        .attr("maxArgs", maxArgs)
+                        .attr("configKey", SCRIPT_ARG_COUNT_KEY)
+                        .attr("minAllowable", MIN_ALLOWABLE_ARGS)
+                        .log("Invalid value for script arg count; must be >= minimum");
                 return null;
             }
 
@@ -262,7 +269,10 @@ public final class ScriptBasedMapping extends CachedDNSToSwitchMapping {
                     s.execute();
                     allOutput.append(s.getOutput()).append(" ");
                 } catch (Exception e) {
-                    LOG.warn("Exception running: {} Exception message: {}", s, e.getMessage());
+                    log.warn()
+                            .attr("command", s)
+                            .exceptionMessage(e)
+                            .log("Exception running command");
                     return null;
                 }
                 loopCount++;

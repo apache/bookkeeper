@@ -25,15 +25,13 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * This is going to provide a stabilize network topology regarding to flapping zookeeper registration.
  */
+@CustomLog
 public class StabilizeNetworkTopology implements NetworkTopology {
-
-    private static final Logger logger = LoggerFactory.getLogger(StabilizeNetworkTopology.class);
 
     static class NodeStatus {
         long lastPresentTime;
@@ -88,8 +86,11 @@ public class StabilizeNetworkTopology implements NetworkTopology {
             } else if (status.isTentativeToRemove()) {
                 long millisSinceLastSeen = System.currentTimeMillis() - status.getLastPresentTime();
                 if (millisSinceLastSeen >= stabilizePeriodMillis) {
-                    logger.info("Node {} (seen @ {}) becomes stale for {} ms, remove it from the topology.",
-                            node, status.getLastPresentTime(), millisSinceLastSeen);
+                    log.info()
+                            .attr("node", node)
+                            .attr("lastPresentTime", status.getLastPresentTime())
+                            .attr("millisSinceLastSeen", millisSinceLastSeen)
+                            .log("Node becomes stale, remove it from the topology");
                     impl.remove(node);
                     nodeStatuses.remove(node, status);
                 }

@@ -38,6 +38,7 @@ import io.netty.channel.DefaultEventLoopGroup;
 import io.netty.channel.EventLoop;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.WriteBufferWaterMark;
+import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.group.ChannelGroup;
@@ -48,11 +49,11 @@ import io.netty.channel.local.LocalChannel;
 import io.netty.channel.local.LocalServerChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.channel.uring.IoUringChannelOption;
+import io.netty.channel.uring.IoUringServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringServerSocketChannel;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -68,6 +69,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.BookKeeperPrincipal;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
@@ -83,15 +85,12 @@ import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Netty server for serving bookie requests.
  */
+@CustomLog
 class BookieNettyServer {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BookieNettyServer.class);
     public static final String CONSOLIDATION_HANDLER_NAME = "consolidation";
 
     final int maxFrameSize;
@@ -162,8 +161,10 @@ class BookieNettyServer {
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
-                            LOG.warn("Failed to acquire CPU core for thread {} {}",
-                                    Thread.currentThread().getName(), t.getMessage(), t);
+                            log.warn()
+                                    .exception(t)
+                                    .attr("threadName", Thread.currentThread().getName())
+                                    .log("Failed to acquire CPU core for thread");
                         }
                     });
                 }
@@ -261,7 +262,7 @@ class BookieNettyServer {
                             result.addAll(Arrays.asList(certificates));
                             return result;
                         } catch (SSLPeerUnverifiedException err) {
-                            LOG.error("Failed to get peer certificates", err);
+                            log.error().exception(err).log("Failed to get peer certificates");
                             return Collections.emptyList();
                         }
 
@@ -274,7 +275,7 @@ class BookieNettyServer {
                     if (c != null) {
                         c.close();
                     }
-                    LOG.info("authplugin disconnected channel {}", channel);
+                    log.info().attr("channel", channel).log("authplugin disconnected channel");
                 }
 
                 @Override
@@ -284,7 +285,10 @@ class BookieNettyServer {
 
                 @Override
                 public void setAuthorizedId(BookKeeperPrincipal principal) {
-                    LOG.info("connection {} authenticated as {}", channel, principal);
+                    log.info()
+                            .attr("channel", channel)
+                            .attr("principal", principal)
+                            .log("connection authenticated");
                     authorizedId = principal;
                 }
 
@@ -317,6 +321,7 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.ALLOCATOR, allocator);
             bootstrap.group(acceptorGroup, eventLoopGroup);
             bootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
+            bootstrap.childOption(ChannelOption.SO_KEEPALIVE, conf.getServerSockKeepalive());
             bootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
             bootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
@@ -324,8 +329,34 @@ class BookieNettyServer {
             bootstrap.childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            if (eventLoopGroup instanceof IOUringEventLoopGroup){
-                bootstrap.channel(IOUringServerSocketChannel.class);
+            // Set TCP keepalive parameters if configured. Use childOption() so that these
+            // options are applied to each accepted SocketChannel (not the listening
+            // ServerSocketChannel), which is the Netty-idiomatic approach and avoids
+            // relying on OS-level socket option inheritance behavior.
+            if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    bootstrap.childOption(IoUringChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
+                if (conf.getServerTcpKeepIdle() > 0) {
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPIDLE, conf.getServerTcpKeepIdle());
+                }
+                if (conf.getServerTcpKeepIntvl() > 0) {
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPINTVL, conf.getServerTcpKeepIntvl());
+                }
+                if (conf.getServerTcpKeepCnt() > 0) {
+                    bootstrap.childOption(EpollChannelOption.TCP_KEEPCNT, conf.getServerTcpKeepCnt());
+                }
+            }
+
+            if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+                bootstrap.channel(IoUringServerSocketChannel.class);
             } else if (eventLoopGroup instanceof EpollEventLoopGroup) {
                 bootstrap.channel(EpollServerSocketChannel.class);
             } else {
@@ -366,7 +397,7 @@ class BookieNettyServer {
             });
 
             // Bind and start to accept incoming connections
-            LOG.info("Binding bookie-rpc endpoint to {}", address);
+            log.info().attr("address", address).log("Binding bookie-rpc endpoint");
             Channel listen = bootstrap.bind(address.getAddress(), address.getPort()).sync().channel();
 
             if (listen.localAddress() instanceof InetSocketAddress) {
@@ -383,24 +414,16 @@ class BookieNettyServer {
             ServerBootstrap jvmBootstrap = new ServerBootstrap();
             jvmBootstrap.childOption(ChannelOption.ALLOCATOR, new PooledByteBufAllocator(true));
             jvmBootstrap.group(jvmEventLoopGroup, jvmEventLoopGroup);
-            jvmBootstrap.childOption(ChannelOption.TCP_NODELAY, conf.getServerTcpNoDelay());
-            jvmBootstrap.childOption(ChannelOption.SO_KEEPALIVE, conf.getServerSockKeepalive());
-            jvmBootstrap.childOption(ChannelOption.SO_LINGER, conf.getServerSockLinger());
             jvmBootstrap.childOption(ChannelOption.RCVBUF_ALLOCATOR,
                     new AdaptiveRecvByteBufAllocator(conf.getRecvByteBufAllocatorSizeMin(),
                             conf.getRecvByteBufAllocatorSizeInitial(), conf.getRecvByteBufAllocatorSizeMax()));
             jvmBootstrap.option(ChannelOption.WRITE_BUFFER_WATER_MARK, new WriteBufferWaterMark(
                     conf.getServerWriteBufferLowWaterMark(), conf.getServerWriteBufferHighWaterMark()));
 
-            if (jvmEventLoopGroup instanceof DefaultEventLoopGroup) {
-                jvmBootstrap.channel(LocalServerChannel.class);
-            } else if (jvmEventLoopGroup instanceof IOUringEventLoopGroup) {
-                jvmBootstrap.channel(IOUringServerSocketChannel.class);
-            } else if (jvmEventLoopGroup instanceof EpollEventLoopGroup) {
-                jvmBootstrap.channel(EpollServerSocketChannel.class);
-            } else {
-                jvmBootstrap.channel(NioServerSocketChannel.class);
-            }
+            // Local transport (BOOKKEEPER-896) is an in-VM transport that does not involve
+            // the network stack, so network-related socket options such as TCP_NODELAY,
+            // SO_KEEPALIVE, SO_LINGER and TCP_KEEP* are not applicable and must not be set here.
+            jvmBootstrap.channel(LocalServerChannel.class);
 
             jvmBootstrap.childHandler(new ChannelInitializer<LocalChannel>() {
                 @Override
@@ -430,7 +453,7 @@ class BookieNettyServer {
                     pipeline.addLast("contextHandler", contextHandler);
                 }
             });
-            LOG.info("Binding jvm bookie-rpc endpoint to {}", bookieId.toString());
+            log.info().attr("bookieId", bookieId.toString()).log("Binding jvm bookie-rpc endpoint");
             // use the same address 'name', so clients can find local Bookie still discovering them using ZK
             jvmBootstrap.bind(new LocalAddress(bookieId.toString())).sync();
             LocalBookiesRegistry.registerLocalBookieAddress(bookieId);
@@ -442,7 +465,7 @@ class BookieNettyServer {
     }
 
     void shutdown() {
-        LOG.info("Shutting down BookieNettyServer");
+        log.info("Shutting down BookieNettyServer");
         isRunning.set(false);
 
         if (!isClosed.compareAndSet(false, true)) {

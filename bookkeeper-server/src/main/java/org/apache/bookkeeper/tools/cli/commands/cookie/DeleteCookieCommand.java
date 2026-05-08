@@ -22,7 +22,6 @@ package org.apache.bookkeeper.tools.cli.commands.cookie;
 import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -35,7 +34,6 @@ import org.apache.bookkeeper.versioning.LongVersion;
 /**
  * A command that deletes cookie.
  */
-@Slf4j
 public class DeleteCookieCommand extends CookieCommand<Flags> {
 
     private static final String NAME = "delete";

@@ -18,7 +18,7 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.cluster;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.recipes.leader.LeaderSelectorListener;
@@ -30,7 +30,7 @@ import org.apache.curator.framework.state.ConnectionState;
  * <p>The controller leader is responsible for making sure all storage containers are assigned to servers, and load
  * balancing storage containers if necessary.
  */
-@Slf4j
+@CustomLog
 class ZkClusterControllerLeaderSelectorListener implements LeaderSelectorListener {
 
     private final ClusterControllerLeader controller;
@@ -47,7 +47,7 @@ class ZkClusterControllerLeaderSelectorListener implements LeaderSelectorListene
 
     @Override
     public void stateChanged(CuratorFramework client, ConnectionState newState) {
-        log.info("zookeeper connection state changed to {} for cluster controller", newState);
+        log.info().attr("newState", newState).log("zookeeper connection state changed for cluster controller");
     }
 
 }

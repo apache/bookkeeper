@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -61,15 +62,12 @@ import org.apache.zookeeper.Op;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper based log segment metadata store.
  */
+@CustomLog
 public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watcher, Children2Callback {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZKLogSegmentMetadataStore.class);
 
     private static final List<String> EMPTY_LIST = ImmutableList.of();
 
@@ -116,7 +114,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
             if (null != store.listeners.get(logSegmentsPath)) {
                 store.zkGetLogSegmentNames(logSegmentsPath, store).whenComplete(this);
             } else {
-                logger.debug("Log segments listener for {} has been removed.", logSegmentsPath);
+                log.debug()
+                        .attr("logSegmentsPath", logSegmentsPath)
+                        .log("Log segments listener for has been removed.");
             }
         }
     }
@@ -274,7 +274,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
         Op deleteOp = Op.delete(
                 segment.getZkPath(),
                 -1);
-        logger.info("Delete segment : {}", segment);
+        log.info().attr("segment", segment).log("Delete segment");
         txn.addOp(DefaultZKOp.of(deleteOp, new OpListener<Void>() {
             @Override
             public void onCommit(Void r) {
@@ -285,7 +285,7 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
 
             @Override
             public void onAbort(Throwable t) {
-                logger.info("Aborted transaction on deleting segment {}", segment);
+                log.info().attr("segment", segment).log("Aborted transaction on deleting segment");
                 KeeperException.Code kc;
                 if (t instanceof KeeperException) {
                     kc = ((KeeperException) t).code();
@@ -412,7 +412,9 @@ public class ZKLogSegmentMetadataStore implements LogSegmentMetadataStore, Watch
                         if (!listeners.containsKey(logSegmentsPath)) {
                             // listener set has been removed, add it back
                             if (null != listeners.putIfAbsent(logSegmentsPath, listenerSet)) {
-                                logger.debug("Listener set is already found for log segments path {}", logSegmentsPath);
+                                log.debug()
+                                        .attr("logSegmentsPath", logSegmentsPath)
+                                        .log("Listener set is already found for log segments path");
                             }
                         }
                     }

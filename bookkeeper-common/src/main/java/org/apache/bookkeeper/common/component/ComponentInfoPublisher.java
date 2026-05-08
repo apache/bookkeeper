@@ -23,14 +23,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Allows a component to publish information about
  * the services it implements, the endpoints it exposes
  * and other useful information for management tools and client.
  */
-@Slf4j
+@CustomLog
 public class ComponentInfoPublisher {
 
     private final Map<String, String> properties = new ConcurrentHashMap<>();
@@ -99,9 +99,10 @@ public class ComponentInfoPublisher {
      * @param value the value, null values are not allowed.
      */
     public void publishProperty(String key, String value) {
-        if (log.isDebugEnabled()) {
-            log.debug("publish {}={}", key, value);
-        }
+        log.debug()
+                .attr("key", key)
+                .attr("value", value)
+                .log("publish");
         if (startupFinished) {
             throw new IllegalStateException("Server already started, cannot publish " + key);
         }
@@ -112,9 +113,10 @@ public class ComponentInfoPublisher {
     }
 
     public void publishEndpoint(EndpointInfo endpoint) {
-        if (log.isDebugEnabled()) {
-            log.debug("publishEndpoint {} on {}", endpoint, this);
-        }
+        log.debug()
+                .attr("endpoint", endpoint)
+                .attr("publisher", this)
+                .log("publishEndpoint");
         EndpointInfo exists = endpoints.put(endpoint.id, endpoint);
         if (exists != null) {
             throw new IllegalStateException("An endpoint with id " + endpoint.id

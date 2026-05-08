@@ -25,20 +25,18 @@ import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.ResourceLeakDetector;
 import io.netty.util.ResourceLeakDetector.Level;
 import java.util.function.Consumer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.common.allocator.LeakDetectionPolicy;
 import org.apache.bookkeeper.common.allocator.OutOfMemoryPolicy;
 import org.apache.bookkeeper.common.allocator.PoolingPolicy;
 import org.apache.bookkeeper.common.util.ShutdownUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of {@link ByteBufAllocator}.
  */
+@CustomLog
 public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements ByteBufAllocatorWithOomHandler {
-
-    private static final Logger log = LoggerFactory.getLogger(ByteBufAllocatorImpl.class);
 
     // Same as AbstractByteBufAllocator, but copied here since it's not visible
     private static final int DEFAULT_INITIAL_CAPACITY = 256;
@@ -69,7 +67,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
         this.exitOnOutOfMemory = exitOnOutOfMemory;
         if (outOfMemoryListener == null) {
             this.outOfMemoryListener = (v) -> {
-                log.error("Unable to allocate memory", v);
+                log.error().exception(v).log("Unable to allocate memory");
             };
         } else {
             this.outOfMemoryListener = outOfMemoryListener;
@@ -105,9 +103,7 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
         // allocators
         switch (leakDetectionPolicy) {
         case Disabled:
-            if (log.isDebugEnabled()) {
-                log.debug("Disable Netty allocator leak detector");
-            }
+            log.debug("Disable Netty allocator leak detector");
             ResourceLeakDetector.setLevel(Level.DISABLED);
             break;
 
@@ -201,10 +197,10 @@ public class ByteBufAllocatorImpl extends AbstractByteBufAllocator implements By
         try {
             outOfMemoryListener.accept(outOfMemoryError);
         } catch (Throwable e) {
-            log.warn("Consume outOfMemory error failed.", e);
+            log.warn().exception(e).log("Consume outOfMemory error failed");
         }
         if (exitOnOutOfMemory) {
-            log.info("Exiting JVM process for OOM error: {}", outOfMemoryError.getMessage(), outOfMemoryError);
+            log.info().exception(outOfMemoryError).log("Exiting JVM process for OOM error");
             ShutdownUtil.triggerImmediateForcefulShutdown();
         }
     }

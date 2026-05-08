@@ -19,7 +19,7 @@
 
 package org.apache.bookkeeper.tools.perf.table;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -30,7 +30,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * Command to benchmark table service.
  */
-@Slf4j
+@CustomLog
 public class BenchmarkCommand extends BKCommand<Flags> {
 
     private static final String NAME = "benchmark";

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.common.functions.VoidFunctions;
 
@@ -32,7 +32,7 @@ import org.apache.distributedlog.common.functions.VoidFunctions;
  *
  * @since 0.3.32
  */
-@Slf4j
+@CustomLog
 public final class Abortables {
 
     private Abortables() {}
@@ -82,7 +82,8 @@ public final class Abortables {
             abortable.abort();
         } catch (IOException ioe) {
             if (swallowIOException) {
-                log.warn("IOException thrown while aborting Abortable {} : ", abortable, ioe);
+                log.warn().attr("abortable", abortable).exception(ioe)
+                        .log("IOException thrown while aborting Abortable");
             } else {
                 throw ioe;
             }
@@ -108,7 +109,8 @@ public final class Abortables {
             FutureUtils.result(abortable.asyncAbort());
         } catch (Exception e) {
             if (swallowIOException) {
-                log.warn("IOException thrown while aborting Abortable {} : ", abortable, e);
+                log.warn().attr("abortable", abortable).exception(e)
+                        .log("IOException thrown while aborting Abortable");
             } else {
                 if (e instanceof IOException) {
                     throw (IOException) e;
@@ -134,7 +136,8 @@ public final class Abortables {
         try {
             abort(abortable, true);
         } catch (IOException e) {
-            log.error("Unexpected IOException thrown while aborting Abortable {} quietly : ", abortable, e);
+            log.error().attr("abortable", abortable).exception(e)
+                    .log("Unexpected IOException thrown while aborting Abortable quietly");
         }
     }
 
@@ -153,7 +156,8 @@ public final class Abortables {
         try {
             abort(abortable, true);
         } catch (IOException e) {
-            log.error("Unexpected IOException thrown while aborting Abortable {} quietly : ", abortable, e);
+            log.error().attr("abortable", abortable).exception(e)
+                    .log("Unexpected IOException thrown while aborting Abortable quietly");
         }
     }
 

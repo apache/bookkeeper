@@ -19,17 +19,17 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import lombok.CustomLog;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class encapsulates ledger layout information that is persistently stored
  * in registration service. It provides parsing and serialization methods of such
  * information.
  */
-@Slf4j
+@CustomLog
 @Getter
 @EqualsAndHashCode
 @ToString
@@ -80,9 +80,7 @@ public class LedgerLayout {
           new StringBuilder().append(layoutFormatVersion).append(lSplitter)
               .append(managerFactoryClass).append(splitter).append(managerVersion).toString();
 
-        if (log.isDebugEnabled()) {
-            log.debug("Serialized layout info: {}", s);
-        }
+        log.debug().attr("layoutInfo", s).log("Serialized layout info");
         return s.getBytes(StandardCharsets.UTF_8);
     }
 
@@ -97,9 +95,7 @@ public class LedgerLayout {
      */
     public static LedgerLayout parseLayout(byte[] bytes) throws IOException {
         String layout = new String(bytes, StandardCharsets.UTF_8);
-        if (log.isDebugEnabled()) {
-            log.debug("Parsing Layout: {}", layout);
-        }
+        log.debug().attr("layout", layout).log("Parsing Layout");
 
         String[] lines = layout.split(lSplitter);
 

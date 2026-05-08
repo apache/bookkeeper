@@ -19,13 +19,13 @@
 package org.apache.bookkeeper.common.component;
 
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Utils to start components.
  */
-@Slf4j
+@CustomLog
 public class ComponentStarter {
 
     static class ComponentShutdownHook implements Runnable {
@@ -41,14 +41,18 @@ public class ComponentStarter {
 
         @Override
         public void run() {
-            log.info("Closing component {} in shutdown hook.", component.getName());
+            log.info().attr("component", component.getName()).log("Closing component in shutdown hook");
             try {
                 component.close();
-                log.info("Closed component {} in shutdown hook successfully. Exiting.", component.getName());
+                log.info()
+                        .attr("component", component.getName())
+                        .log("Closed component in shutdown hook successfully. Exiting");
                 FutureUtils.complete(future, null);
             } catch (Throwable e) {
-                log.error("Failed to close component {} in shutdown hook gracefully, Exiting anyway",
-                    component.getName(), e);
+                log.error()
+                        .exception(e)
+                        .attr("component", component.getName())
+                        .log("Failed to close component in shutdown hook gracefully, Exiting anyway");
                 future.completeExceptionally(e);
             }
         }
@@ -72,8 +76,11 @@ public class ComponentStarter {
 
         // register a component exception handler
         component.setExceptionHandler((t, e) -> {
-            log.error("Triggered exceptionHandler of Component: {} because of Exception in Thread: {}",
-                    component.getName(), t, e);
+            log.error()
+                    .exception(e)
+                    .attr("component", component.getName())
+                    .attr("thread", t)
+                    .log("Triggered exceptionHandler of Component because of Exception in Thread");
             System.err.println(e.getMessage());
             // start the shutdown hook when an uncaught exception happen in the lifecycle component.
             try {
@@ -86,9 +93,9 @@ public class ComponentStarter {
 
         component.publishInfo(new ComponentInfoPublisher());
 
-        log.info("Starting component {}.", component.getName());
+        log.info().attr("component", component.getName()).log("Starting component");
         component.start();
-        log.info("Started component {}.", component.getName());
+        log.info().attr("component", component.getName()).log("Started component");
         return future;
     }
 

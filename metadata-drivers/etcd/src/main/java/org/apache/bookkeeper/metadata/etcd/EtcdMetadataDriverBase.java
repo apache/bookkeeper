@@ -22,7 +22,7 @@ import io.etcd.jetcd.Client;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LayoutManager;
@@ -35,7 +35,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 /**
  * This is a mixin class for supporting etcd based metadata drivers.
  */
-@Slf4j
+@CustomLog
 class EtcdMetadataDriverBase implements AutoCloseable {
 
     static final String SCHEME = "etcd";
@@ -71,7 +71,7 @@ class EtcdMetadataDriverBase implements AutoCloseable {
         try {
             metadataServiceUriStr = conf.getMetadataServiceUri();
         } catch (ConfigurationException ce) {
-            log.error("Failed to retrieve metadata service uri from configuration", ce);
+            log.error().exception(ce).log("Failed to retrieve metadata service uri from configuration");
             throw new MetadataException(Code.INVALID_METADATA_SERVICE_URI, ce);
         }
         ServiceURI serviceURI = ServiceURI.create(metadataServiceUriStr);
@@ -82,8 +82,10 @@ class EtcdMetadataDriverBase implements AutoCloseable {
             .map(host -> String.format("http://%s", host))
             .collect(Collectors.toList());
 
-        log.info("Initializing etcd metadata driver : etcd endpoints = {}, key scope = {}",
-            etcdEndpoints, keyPrefix);
+        log.info()
+                .attr("etcdEndpoints", etcdEndpoints)
+                .attr("keyScope", keyPrefix)
+                .log("Initializing etcd metadata driver");
 
         synchronized (this) {
             this.client = Client.builder()
@@ -121,7 +123,7 @@ class EtcdMetadataDriverBase implements AutoCloseable {
             try {
                 lmFactory.close();
             } catch (IOException e) {
-                log.error("Failed to close ledger manager factory", e);
+                log.error().exception(e).log("Failed to close ledger manager factory");
             }
             lmFactory = null;
         }

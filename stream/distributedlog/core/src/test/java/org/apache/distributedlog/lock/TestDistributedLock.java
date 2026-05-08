@@ -31,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -52,16 +53,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Distributed Lock Tests.
  */
+@CustomLog
 public class TestDistributedLock extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestDistributedLock.class);
 
     @Rule
     public TestName runtime = new TestName();
@@ -347,7 +344,6 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertEquals(lockId0_2,
                 Utils.ioResult(asyncParseClientID(zkc0.get(), lockPath, children.get(0))));
 
-
         SessionLockFactory lockFactory = createLockFactory(clientId, zkc);
         final ZKDistributedLock lock1 =
                 new ZKDistributedLock(lockStateExecutor, lockFactory, lockPath,
@@ -360,7 +356,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
                     Utils.ioResult(lock1.asyncAcquire());
                     lockLatch.countDown();
                 } catch (Exception e) {
-                    logger.error("Failed on locking lock1 : ", e);
+                    log.error().exception(e).log("Failed on locking lock1");
                 }
             }
         }, "lock-thread");
@@ -507,7 +503,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
                     Utils.ioResult(lock1.asyncAcquire());
                     lock1DoneLatch.countDown();
                 } catch (Exception e) {
-                    logger.error("Error on acquiring lock1 : ", e);
+                    log.error().exception(e).log("Error on acquiring lock1");
                 }
             }
         }, "lock1-thread");
@@ -526,9 +522,9 @@ public class TestDistributedLock extends TestDistributedLogBase {
         assertEquals(((ZKSessionLock) lock1.getInternalLock()).getLockId(),
                 Utils.ioResult(asyncParseClientID(zkc.get(), lockPath, children.get(1))));
 
-        logger.info("Expiring session on lock0");
+        log.info("Expiring session on lock0");
         ZooKeeperClientUtils.expireSession(zkc0, zkServers, sessionTimeoutMs);
-        logger.info("Session on lock0 is expired");
+        log.info("Session on lock0 is expired");
         lock1DoneLatch.await();
         assertFalse(lock0.haveLock());
         assertTrue(lock1.haveLock());
@@ -549,7 +545,7 @@ public class TestDistributedLock extends TestDistributedLogBase {
                         oafe.getCurrentOwner());
             }
         } else {
-            logger.info("Waiting lock0 to attempt acquisition after session expired");
+            log.info("Waiting lock0 to attempt acquisition after session expired");
             // session expire will trigger lock re-acquisition
             CompletableFuture<ZKDistributedLock> asyncLockAcquireFuture;
             do {

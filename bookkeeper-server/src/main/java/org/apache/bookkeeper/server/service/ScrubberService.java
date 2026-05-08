@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -43,14 +44,12 @@ import org.apache.bookkeeper.server.conf.BookieConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A {@link org.apache.bookkeeper.common.component.LifecycleComponent} that runs the scrubber background service.
  */
+@CustomLog
 public class ScrubberService extends ServerLifecycleComponent {
-    private static final Logger LOG = LoggerFactory.getLogger(ScrubberService.class);
 
     private static final String NAME = "scrubber";
     private final ScheduledExecutorService executor;
@@ -106,15 +105,18 @@ public class ScrubberService extends ServerLifecycleComponent {
             List<LedgerStorage.DetectedInconsistency> errors = ledgerStorage.localConsistencyCheck(scrubRateLimiter);
             if (errors.size() > 0) {
                 errorCounter.addCount(errors.size());
-                LOG.error("Found inconsistency during localConsistencyCheck:");
+                log.error("Found inconsistency during localConsistencyCheck");
                 for (LedgerStorage.DetectedInconsistency error : errors) {
-                    LOG.error("Ledger {}, entry {}: ", error.getLedgerId(), error.getEntryId(), error.getException());
+                    log.error()
+                            .attr("ledgerId", error.getLedgerId())
+                            .attr("entryId", error.getEntryId())
+                            .exception(error.getException()).log("Inconsistency detected");
                 }
             }
             success = true;
         } catch (IOException e) {
             fatalErrorCounter.inc();
-            LOG.error("Got fatal exception {} running localConsistencyCheck", e.toString());
+            log.error().exception(e).log("Got fatal exception running localConsistencyCheck");
         }
         if (success) {
             scrubCounter.registerSuccessfulEvent(MathUtils.elapsedNanos(start), TimeUnit.NANOSECONDS);

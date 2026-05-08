@@ -29,7 +29,6 @@ import lombok.Builder;
 import lombok.Builder.Default;
 import lombok.Data;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.conf.validators.NullValidator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
@@ -43,7 +42,6 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
 @Builder(builderMethodName = "internalBuilder")
 @Accessors(fluent = true)
 @Public
-@Slf4j
 public class ConfigKey {
 
     public static final Comparator<ConfigKey> ORDERING = (o1, o2) -> {

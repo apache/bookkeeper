@@ -21,7 +21,7 @@ package org.apache.bookkeeper.stream.storage.impl.routing;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.clients.impl.routing.RangeRouter;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -32,7 +32,7 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 /**
  * A default implementation of {@link RangeRoutingTable}.
  */
-@Slf4j
+@CustomLog
 public class RangeRoutingTableImpl implements RangeRoutingTable {
 
     private final StorageServerClientManager manager;

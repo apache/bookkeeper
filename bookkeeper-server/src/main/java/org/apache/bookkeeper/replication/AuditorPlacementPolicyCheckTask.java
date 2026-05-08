@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
+import lombok.CustomLog;
 import lombok.Getter;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -41,12 +42,10 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.zookeeper.AsyncCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Getter
+@CustomLog
 public class AuditorPlacementPolicyCheckTask extends AuditorTask {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditorPlacementPolicyCheckTask.class);
 
     private final long underreplicatedLedgerRecoveryGracePeriod;
 
@@ -74,19 +73,19 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
     @Override
     protected void runTask() {
         if (hasBookieCheckTask()) {
-            LOG.info("Audit bookie task already scheduled; skipping periodic placement policy check task");
+            log.info("Audit bookie task already scheduled; skipping periodic placement policy check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
 
         try {
             if (!isLedgerReplicationEnabled()) {
-                LOG.info("Ledger replication disabled, skipping placementPolicyCheck");
+                log.info("Ledger replication disabled, skipping placementPolicyCheck");
                 return;
             }
 
             Stopwatch stopwatch = Stopwatch.createStarted();
-            LOG.info("Starting PlacementPolicyCheck");
+            log.info("Starting PlacementPolicyCheck");
             placementPolicyCheck();
             long placementPolicyCheckDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
             int numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue =
@@ -97,16 +96,12 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                     numOfClosedLedgersAuditedInPlacementPolicyCheck.get();
             int numOfURLedgersElapsedRecoveryGracePeriodValue =
                     numOfURLedgersElapsedRecoveryGracePeriod.get();
-            LOG.info(
-                    "Completed placementPolicyCheck in {} milliSeconds."
-                            + " numOfClosedLedgersAuditedInPlacementPolicyCheck {}"
-                            + " numOfLedgersNotAdheringToPlacementPolicy {}"
-                            + " numOfLedgersSoftlyAdheringToPlacementPolicy {}"
-                            + " numOfURLedgersElapsedRecoveryGracePeriod {}",
-                    placementPolicyCheckDuration, numOfClosedLedgersAuditedInPlacementPolicyCheckValue,
-                    numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue,
-                    numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
-                    numOfURLedgersElapsedRecoveryGracePeriodValue);
+            log.info().attr("durationMs", placementPolicyCheckDuration)
+                    .attr("numOfClosedLedgersAudited", numOfClosedLedgersAuditedInPlacementPolicyCheckValue)
+                    .attr("numOfLedgersNotAdhering", numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue)
+                    .attr("numOfLedgersSoftlyAdhering", numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue)
+                    .attr("numOfURLedgersElapsedGracePeriod", numOfURLedgersElapsedRecoveryGracePeriodValue)
+                    .log("Completed placementPolicyCheck");
             auditorStats.getLedgersNotAdheringToPlacementPolicyGuageValue()
                     .set(numOfLedgersFoundNotAdheringInPlacementPolicyCheckValue);
             auditorStats.getLedgersSoftlyAdheringToPlacementPolicyGuageValue()
@@ -152,16 +147,13 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                         .set(numOfURLedgersElapsedRecoveryGracePeriodValue);
             }
 
-            LOG.error(
-                    "BKAuditException running periodic placementPolicy check."
-                            + "numOfLedgersNotAdheringToPlacementPolicy {}, "
-                            + "numOfLedgersSoftlyAdheringToPlacementPolicy {},"
-                            + "numOfURLedgersElapsedRecoveryGracePeriod {}",
-                    numOfLedgersFoundInPlacementPolicyCheckValue,
-                    numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue,
-                    numOfURLedgersElapsedRecoveryGracePeriodValue, e);
+            log.error().attr("numOfLedgersNotAdhering", numOfLedgersFoundInPlacementPolicyCheckValue)
+                    .attr("numOfLedgersSoftlyAdhering", numOfLedgersFoundSoftlyAdheringInPlacementPolicyCheckValue)
+                    .attr("numOfURLedgersElapsedGracePeriod", numOfURLedgersElapsedRecoveryGracePeriodValue)
+                    .exception(e)
+                    .log("BKAuditException running periodic placementPolicy check");
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Underreplication manager unavailable running periodic check", ue);
+            log.error().exception(ue).log("Underreplication manager unavailable running periodic check");
         }
     }
 
@@ -193,11 +185,13 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                 }
             }
             if (urLedgersElapsedRecoveryGracePeriod.isEmpty()) {
-                LOG.info("No Underreplicated ledger has elapsed recovery graceperiod: {}",
-                        urLedgersElapsedRecoveryGracePeriod);
+                log.info()
+                        .attr("urLedgers", urLedgersElapsedRecoveryGracePeriod)
+                        .log("No Underreplicated ledger has elapsed recovery grace period");
             } else {
-                LOG.error("Following Underreplicated ledgers have elapsed recovery graceperiod: {}",
-                        urLedgersElapsedRecoveryGracePeriod);
+                log.error()
+                        .attr("urLedgers", urLedgersElapsedRecoveryGracePeriod)
+                        .log("Following Underreplicated ledgers have elapsed recovery grace period");
             }
         }
         BookkeeperInternalCallbacks.Processor<Long> ledgerProcessor =
@@ -209,13 +203,12 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                                 doPlacementPolicyCheck(ledgerId, iterCallback, metadataVer);
                             } else if (BKException.getExceptionCode(exception)
                                     == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Ignoring replication of already deleted ledger {}",
-                                            ledgerId);
-                                }
+                                    log.debug()
+                                            .attr("ledgerId", ledgerId)
+                                            .log("Ignoring replication of already deleted ledger");
                                 iterCallback.processResult(BKException.Code.OK, null, null);
                             } else {
-                                LOG.warn("Unable to read the ledger: {} information", ledgerId);
+                                log.warn().attr("ledgerId", ledgerId).log("Unable to read the ledger information");
                                 iterCallback.processResult(BKException.getExceptionCode(exception), null, null);
                             }
                         });
@@ -244,10 +237,10 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
         try {
             ledgerUnderreplicationManager.setPlacementPolicyCheckCTime(System.currentTimeMillis());
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Got exception while trying to set PlacementPolicyCheckCTime", ue);
+            log.error().exception(ue).log("Got exception while trying to set PlacementPolicyCheckCTime");
         }
     }
 
@@ -269,23 +262,23 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                                 ackQuorumSize);
                 if (segmentAdheringToPlacementPolicy == EnsemblePlacementPolicy.PlacementPolicyAdherence.FAIL) {
                     foundSegmentNotAdheringToPlacementPolicy = true;
-                    LOG.warn(
-                            "For ledger: {}, Segment starting at entry: {}, with ensemble: {} having "
-                                    + "writeQuorumSize: {} and ackQuorumSize: {} is not adhering to "
-                                    + "EnsemblePlacementPolicy",
-                            ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
-                            ackQuorumSize);
+                    log.warn()
+                            .attr("ledgerId", ledgerId)
+                            .attr("startEntryId", startEntryIdOfSegment)
+                            .attr("ensemble", ensembleOfSegment)
+                            .attr("writeQuorumSize", writeQuorumSize)
+                            .attr("ackQuorumSize", ackQuorumSize)
+                            .log("Segment is not adhering to EnsemblePlacementPolicy");
                 } else if (segmentAdheringToPlacementPolicy
                         == EnsemblePlacementPolicy.PlacementPolicyAdherence.MEETS_SOFT) {
                     foundSegmentSoftlyAdheringToPlacementPolicy = true;
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug(
-                                "For ledger: {}, Segment starting at entry: {}, with ensemble: {}"
-                                        + " having writeQuorumSize: {} and ackQuorumSize: {} is"
-                                        + " softly adhering to EnsemblePlacementPolicy",
-                                ledgerId, startEntryIdOfSegment, ensembleOfSegment, writeQuorumSize,
-                                ackQuorumSize);
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerId)
+                            .attr("startEntryId", startEntryIdOfSegment)
+                            .attr("ensemble", ensembleOfSegment)
+                            .attr("writeQuorumSize", writeQuorumSize)
+                            .attr("ackQuorumSize", ackQuorumSize)
+                            .log("Segment is softly adhering to EnsemblePlacementPolicy");
                 }
             }
             if (foundSegmentNotAdheringToPlacementPolicy) {
@@ -295,15 +288,19 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
                     ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId,
                             Collections.emptyList()).whenComplete((res, e) -> {
                         if (e != null) {
-                            LOG.error("For ledger: {}, the placement policy not adhering bookie "
-                                            + "storage, mark it to under replication manager failed.",
-                                    ledgerId, e);
+                            log.error()
+                                    .attr("ledgerId", ledgerId)
+                                    .exception(e)
+                                    .log("Placement policy not adhering bookie"
+                                            + " storage, mark to under replication"
+                                            + " manager failed");
                             return;
                         }
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("For ledger: {}, the placement policy not adhering bookie"
-                                    + " storage, mark it to under replication manager", ledgerId);
-                        }
+                        log.debug()
+                                .attr("ledgerId", ledgerId)
+                                .log("Placement policy not adhering bookie"
+                                        + " storage, marked to under replication"
+                                        + " manager");
                     });
                 }
             } else if (foundSegmentSoftlyAdheringToPlacementPolicy) {
@@ -312,10 +309,9 @@ public class AuditorPlacementPolicyCheckTask extends AuditorTask {
             }
             numOfClosedLedgersAuditedInPlacementPolicyCheck.incrementAndGet();
         } else {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Ledger: {} is not yet closed, so skipping the placementPolicy"
-                        + "check analysis for now", ledgerId);
-            }
+            log.debug()
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger is not yet closed, so skipping the placementPolicy check analysis for now");
         }
         iterCallback.processResult(BKException.Code.OK, null, null);
     }

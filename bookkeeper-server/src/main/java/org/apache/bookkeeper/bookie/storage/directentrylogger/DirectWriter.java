@@ -24,6 +24,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static org.apache.bookkeeper.common.util.ExceptionMessageHelper.exMsg;
 
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -33,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOException;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.commons.lang3.SystemUtils;
 
 class DirectWriter implements LogWriter {
@@ -45,7 +45,7 @@ class DirectWriter implements LogWriter {
     final ExecutorService writeExecutor;
     final Object bufferLock = new Object();
     final List<Future<?>> outstandingWrites = new ArrayList<Future<?>>();
-    final Slogger slog;
+    final Logger log;
     Buffer nativeBuffer;
     long offset;
     private static volatile boolean useFallocate = true;
@@ -55,13 +55,13 @@ class DirectWriter implements LogWriter {
                  long maxFileSize,
                  ExecutorService writeExecutor,
                  BufferPool bufferPool,
-                 NativeIO nativeIO, Slogger slog) throws IOException {
+                 NativeIO nativeIO, Logger log) throws IOException {
         checkArgument(maxFileSize > 0, "Max file size (%d) must be positive");
         this.id = id;
         this.filename = filename;
         this.writeExecutor = writeExecutor;
         this.nativeIO = nativeIO;
-        this.slog = slog.ctx(DirectWriter.class);
+        this.log = Logger.get(DirectWriter.class).with().ctx(log).build();
 
         offset = 0;
 
@@ -78,7 +78,7 @@ class DirectWriter implements LogWriter {
         if (useFallocate) {
             if (!SystemUtils.IS_OS_LINUX) {
                 disableUseFallocate();
-                this.slog.warn(Events.FALLOCATE_NOT_AVAILABLE);
+                this.log.warn("Fallocate not available");
             } else {
                 try {
                     int ret = nativeIO.fallocate(fd, NativeIO.FALLOC_FL_ZERO_RANGE, 0, maxFileSize);
@@ -87,10 +87,11 @@ class DirectWriter implements LogWriter {
                     // fallocate(2) is not supported on all filesystems.  Since this is an optimization, disable
                     // subsequent usage instead of failing the operation.
                     disableUseFallocate();
-                    this.slog.kv("message", ex.getMessage())
-                        .kv("file", filename)
-                        .kv("errno", ex.getErrno())
-                        .warn(Events.FALLOCATE_NOT_AVAILABLE);
+                    this.log.warn()
+                        .exceptionMessage(ex)
+                        .attr("file", filename)
+                        .attr("errno", ex.getErrno())
+                        .log("Fallocate not available");
                 }
             }
         }

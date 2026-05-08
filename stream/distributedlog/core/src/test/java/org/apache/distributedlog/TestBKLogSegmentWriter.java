@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -65,6 +66,7 @@ import org.junit.rules.TestName;
 /**
  * Test Case for BookKeeper Based Log Segment Writer.
  */
+@CustomLog
 public class TestBKLogSegmentWriter extends TestDistributedLogBase {
 
     @Rule
@@ -537,7 +539,7 @@ public class TestBKLogSegmentWriter extends TestDistributedLogBase {
                 deferLatch.await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOG.warn("Interrupted on deferring completion : ", e);
+                log.warn().exception(e).log("Interrupted on deferring completion");
             }
         });
 

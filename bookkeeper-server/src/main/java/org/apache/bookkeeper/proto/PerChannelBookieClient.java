@@ -22,6 +22,7 @@ import com.google.common.collect.Sets;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.ExtensionRegistry;
 import com.google.protobuf.UnsafeByteOperations;
+import io.github.merlimat.slog.Logger;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -46,15 +47,14 @@ import io.netty.channel.local.LocalAddress;
 import io.netty.channel.local.LocalChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.channel.unix.Errors.NativeIoException;
+import io.netty.channel.uring.IoUringChannelOption;
+import io.netty.channel.uring.IoUringSocketChannel;
 import io.netty.handler.codec.CorruptedFrameException;
 import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.codec.TooLongFrameException;
 import io.netty.handler.flush.FlushConsolidationHandler;
 import io.netty.handler.ssl.SslHandler;
-import io.netty.incubator.channel.uring.IOUringChannelOption;
-import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
-import io.netty.incubator.channel.uring.IOUringSocketChannel;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCounted;
@@ -128,11 +128,10 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory.NodeType;
 import org.apache.bookkeeper.util.ByteBufList;
+import org.apache.bookkeeper.util.EventLoopUtil;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentOpenHashMap;
 import org.apache.bookkeeper.util.collections.SynchronizedHashMultiMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /**
@@ -146,7 +145,7 @@ import org.slf4j.MDC;
 @Sharable
 public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
-    static final Logger LOG = LoggerFactory.getLogger(PerChannelBookieClient.class);
+    private final Logger log;
 
     // this set contains the bookie error return codes that we do not consider for a bookie to be "faulty"
     protected static final Set<Integer> EXPECTED_BK_OPERATION_ERRORS = Collections.unmodifiableSet(Sets
@@ -374,6 +373,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.maxFrameSize = conf.getNettyMaxFrameSizeBytes();
         this.conf = conf;
         this.bookieId = bookieId;
+        this.log = Logger.get(PerChannelBookieClient.class)
+                .with()
+                .attr("bookieId", bookieId)
+                .attr("channel", () -> channel)
+                .build();
         this.bookieAddressResolver = bookieAddressResolver;
         this.executor = executor;
         if (LocalBookiesRegistry.isLocalBookie(bookieId)) {
@@ -471,13 +475,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 if (c != null) {
                     c.close().addListener(x -> makeWritable());
                 }
-                LOG.info("authplugin disconnected channel {}", channel);
+                log.info("authplugin disconnected");
             }
 
             @Override
             public void setAuthorizedId(BookKeeperPrincipal principal) {
                 authorizedId = principal;
-                LOG.info("connection {} authenticated as {}", channel, principal);
+                log.info()
+                        .attr("principal", principal)
+                        .log("connection authenticated");
             }
 
             @Override
@@ -517,25 +523,22 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     protected ChannelFuture connect() {
         final long startTime = MathUtils.nowInNano();
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Connecting to bookie: {}", bookieId);
-        }
+        log.debug("Connecting to bookie");
         BookieSocketAddress addr;
         try {
             addr = bookieAddressResolver.resolve(bookieId);
         } catch (BookieAddressResolver.BookieIdNotResolvedException err) {
-            LOG.error("Cannot connect to {} as endpoint resolution failed (probably bookie is down) err {}",
-                    bookieId, err.toString());
+            log.error().exception(err).log("Cannot connect as endpoint resolution failed (probably bookie is down)");
             return processBookieNotResolvedError(startTime, err);
         }
 
         // Set up the ClientBootStrap so we can create a new Channel connection to the bookie.
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group(eventLoopGroup);
-        if (eventLoopGroup instanceof IOUringEventLoopGroup) {
-            bootstrap.channel(IOUringSocketChannel.class);
+        if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+            bootstrap.channel(IoUringSocketChannel.class);
             try {
-                bootstrap.option(IOUringChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
+                bootstrap.option(IoUringChannelOption.TCP_USER_TIMEOUT, conf.getTcpUserTimeoutMillis());
             } catch (NoSuchElementException e) {
                 // Property not set, so keeping default value.
             }
@@ -571,6 +574,17 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
                 if (conf.getTcpKeepCnt() > 0) {
                     bootstrap.option(EpollChannelOption.TCP_KEEPCNT, conf.getTcpKeepCnt());
+                }
+            } else if (EventLoopUtil.isIoUringGroup(eventLoopGroup)) {
+                // Set TCP keepalive parameters for IoUring if configured
+                if (conf.getTcpKeepIdle() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPIDLE, conf.getTcpKeepIdle());
+                }
+                if (conf.getTcpKeepIntvl() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPINTVL, conf.getTcpKeepIntvl());
+                }
+                if (conf.getTcpKeepCnt() > 0) {
+                    bootstrap.option(IoUringChannelOption.TCP_KEEPCNT, conf.getTcpKeepCnt());
                 }
             }
             // if buffer sizes are 0, let OS auto-tune it
@@ -720,7 +734,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx) {
         if (useV2WireProtocol) {
-                LOG.error("force is not allowed with v2 protocol");
+                log.error("force is not allowed with v2 protocol");
                 executor.executeOrdered(ledgerId, () -> {
                     cb.forceLedgerComplete(BKException.Code.IllegalOpException, ledgerId, bookieId, ctx);
                 });
@@ -778,7 +792,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         Runnable cleanupActionAfterWrite = null;
         if (useV2WireProtocol) {
             if (writeFlags.contains(WriteFlag.DEFERRED_SYNC)) {
-                LOG.error("invalid writeflags {} for v2 protocol", writeFlags);
+                log.error().attr("writeFlags", writeFlags).log("invalid writeflags for v2 protocol");
                 cb.writeComplete(BKException.Code.IllegalOpException, ledgerId, entryId, bookieId, ctx);
                 return;
             }
@@ -1074,8 +1088,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         timedOutOperations += completionObjectsV2Conflicts.removeIf(timeoutCheck);
 
         if (timedOutOperations > 0) {
-            LOG.info("Timed-out {} operations to channel {} for {}",
-                     timedOutOperations, channel, bookieId);
+            log.info()
+                    .attr("timedOutOperations", timedOutOperations)
+                    .log("Timed-out operations");
         }
     }
 
@@ -1087,7 +1102,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     public void disconnect(boolean wait) {
-        LOG.info("Disconnecting the per channel bookie client for {}", bookieId);
+        log.info("Disconnecting the per channel bookie client");
         closeInternal(false, wait);
     }
 
@@ -1099,7 +1114,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     public void close(boolean wait) {
-        LOG.info("Closing the per channel bookie client for {}", bookieId);
+        log.info("Closing the per channel bookie client");
         closeLock.writeLock().lock();
         try {
             if (ConnectionState.CLOSED == state) {
@@ -1141,9 +1156,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private ChannelFuture closeChannel(Channel c) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Closing channel {}", c);
-        }
+        log.debug().attr("channel", c).log("Closing channel");
         return c.close().addListener(x -> makeWritable());
     }
 
@@ -1168,7 +1181,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                final boolean allowFastFail, final Runnable cleanupActionFailedBeforeWrite,
                                final Runnable cleanupActionAfterWrite) {
         if (channel == null) {
-            LOG.warn("Operation {} failed: channel == null", StringUtils.requestToString(request));
+            log.warn().attr("request", StringUtils.requestToString(request)).log("Operation failed: channel == null");
             errorOut(key);
             if (cleanupActionFailedBeforeWrite != null) {
                 cleanupActionFailedBeforeWrite.run();
@@ -1183,8 +1196,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
 
         if (allowFastFail && !isWritable) {
-            LOG.warn("Operation {} failed: TooManyRequestsException",
-                    StringUtils.requestToString(request));
+            log.warn().attr("request", StringUtils.requestToString(request))
+                    .log("Operation failed: TooManyRequestsException");
 
             errorOut(key, BKException.Code.TooManyRequestsException);
             if (cleanupActionFailedBeforeWrite != null) {
@@ -1208,7 +1221,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         try {
                             future.get();
                         } catch (Exception ex) {
-                            LOG.warn("Failed to request to the bookie: {}", bookieId, ex);
+                            log.warn().exception(ex).log("Failed to request to the bookie");
                         }
                         nettyOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                         errorOut(key);
@@ -1221,7 +1234,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             });
             channel.writeAndFlush(request, promise);
         } catch (Throwable e) {
-            LOG.warn("Operation {} failed", StringUtils.requestToString(request), e);
+            log.warn()
+                    .exception(e)
+                    .attr("request", StringUtils.requestToString(request))
+                    .log("Operation failed");
             errorOut(key);
             if (cleanupActionFailedBeforeWrite != null) {
                 cleanupActionFailedBeforeWrite.run();
@@ -1230,9 +1246,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     void errorOut(final CompletionKey key) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Removing completion key: {}", key);
-        }
+        log.debug().attr("completionKey", key).log("Removing completion key");
         CompletionValue completion = completionObjects.remove(key);
         if (completion != null) {
             completion.errorOut();
@@ -1243,9 +1257,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     void errorOut(final CompletionKey key, final int rc) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Removing completion key: {}", key);
-        }
+        log.debug().attr("completionKey", key).log("Removing completion key");
         CompletionValue completion = completionObjects.remove(key);
         if (completion != null) {
             completion.errorOut(rc);
@@ -1301,7 +1313,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        LOG.info("Disconnected from bookie channel {}", ctx.channel());
+        log.info().attr("channel", ctx.channel()).log("Disconnected from bookie channel");
         if (ctx.channel() != null) {
             closeChannel(ctx.channel());
             if (ctx.channel().pipeline().get(SslHandler.class) != null) {
@@ -1334,13 +1346,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         exceptionCounter.inc();
         if (cause instanceof CorruptedFrameException || cause instanceof TooLongFrameException) {
-            LOG.error("Corrupted frame received from bookie: {}", ctx.channel());
+            log.error().attr("channel", ctx.channel()).log("Corrupted frame received from bookie");
             ctx.close();
             return;
         }
 
         if (cause instanceof AuthHandler.AuthenticationException) {
-            LOG.error("Error authenticating connection", cause);
+            log.error().exception(cause).log("Error authenticating connection");
             errorOutOutstandingEntries(BKException.Code.UnauthorizedAccessException);
             Channel c = ctx.channel();
             if (c != null) {
@@ -1353,7 +1365,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // see https://stackoverflow.com/a/62465859 for details about the reason
         // therefore catch SSLException to also cover TLSv1.3
         if (cause instanceof DecoderException && cause.getCause() instanceof SSLException) {
-            LOG.error("TLS handshake failed", cause);
+            log.error().exception(cause).log("TLS handshake failed");
             errorOutPendingOps(BKException.Code.SecurityException);
             Channel c = ctx.channel();
             if (c != null) {
@@ -1366,9 +1378,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             if (cause instanceof NativeIoException) {
                 // Stack trace is not very interesting for native IO exceptio, the important part is in
                 // the exception message
-                LOG.warn("Exception caught on:{} cause: {}", ctx.channel(), cause.getMessage());
+                log.warn()
+                        .attr("channel", ctx.channel())
+                        .attr("cause", cause.getMessage())
+                        .log("Exception caught");
             } else {
-                LOG.warn("Exception caught on:{} cause:", ctx.channel(), cause);
+                log.warn()
+                        .exception(cause)
+                        .attr("channel", ctx.channel())
+                        .log("Exception caught");
             }
             ctx.close();
             return;
@@ -1376,12 +1394,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         synchronized (this) {
             if (state == ConnectionState.CLOSED) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Unexpected exception caught by bookie client channel handler, "
-                            + "but the client is closed, so it isn't important", cause);
-                }
+                log.debug().exception(cause)
+                        .log("Unexpected exception caught by bookie client channel handler, but the client is closed");
             } else {
-                LOG.error("Unexpected exception caught by bookie client channel handler", cause);
+                log.error().exception(cause).log("Unexpected exception caught by bookie client channel handler");
             }
         }
 
@@ -1421,10 +1437,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : " + operationType
-                        + " and ledger:entry : " + response.ledgerId + ":" + response.entryId);
-            }
+            log.debug().attr("operationType", operationType)
+                    .attr("ledgerId", response.ledgerId).attr("entryId", response.entryId)
+                    .log("Unexpected response received from bookie");
             response.release();
         } else {
             long orderingKey = completionValue.ledgerId;
@@ -1535,14 +1550,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final BKPacketHeader header = response.getHeader();
 
         final CompletionKey key = newCompletionKey(header.getTxnId(), header.getOperation());
-        final CompletionValue completionValue = completionObjects.get(key);
+        final CompletionValue completionValue = completionObjects.remove(key);
 
         if (null == completionValue) {
             // Unexpected response, so log it. The txnId should have been present.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Unexpected response received from bookie : " + bookieId + " for type : "
-                        + header.getOperation() + " and txnId : " + header.getTxnId());
-            }
+            log.debug().attr("operationType", () -> header.getOperation())
+                    .attr("txnId", () -> header.getTxnId())
+                    .log("Unexpected response received from bookie");
         } else {
             long orderingKey = completionValue.ledgerId;
             executor.executeOrdered(orderingKey, new Runnable() {
@@ -1560,8 +1574,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 }
             });
         }
-
-        completionObjects.remove(key);
     }
 
     void initTLSHandshake() {
@@ -1580,7 +1592,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         } else {
             throw new RuntimeException("Unexpected socket address type");
         }
-        LOG.info("Starting TLS handshake with {}:{}", address.getHostString(), address.getPort());
+        log.info()
+                .attr("host", address.getHostString())
+                .attr("port", address.getPort())
+                .log("Starting TLS handshake");
         SslHandler sslHandler = parentObj.shFactory.newTLSHandler(address.getHostName(), address.getPort());
         String sslHandlerName = parentObj.shFactory.getHandlerName();
         if (channel.pipeline().names().contains(CONSOLIDATION_HANDLER_NAME)) {
@@ -1597,7 +1612,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
                     synchronized (PerChannelBookieClient.this) {
                         if (future.isSuccess() && state == ConnectionState.CONNECTING) {
-                            LOG.error("Connection state changed before TLS handshake completed {}/{}", bookieId, state);
+                            log.error().attr("state", state)
+                                    .log("Connection state changed before TLS handshake completed");
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             closeChannel(channel);
                             channel = null;
@@ -1606,7 +1622,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             }
                         } else if (future.isSuccess() && state == ConnectionState.START_TLS) {
                             rc = BKException.Code.OK;
-                            LOG.info("Successfully connected to bookie using TLS: " + bookieId);
+                            log.info("Successfully connected to bookie using TLS");
 
                             state = ConnectionState.CONNECTED;
                             AuthHandler.ClientSideHandler authHandler = future.get().pipeline()
@@ -1615,22 +1631,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             activeTlsChannelCounter.inc();
                         } else if (future.isSuccess()
                                 && (state == ConnectionState.CLOSED || state == ConnectionState.DISCONNECTED)) {
-                            LOG.warn("Closed before TLS handshake completed, clean up: {}, current state {}",
-                                    channel, state);
+                            log.warn()
+                                    .attr("state", state)
+                                    .log("Closed before TLS handshake completed, clean up");
                             closeChannel(channel);
                             rc = BKException.Code.BookieHandleNotAvailableException;
                             channel = null;
                         } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Already connected with another channel({}), "
-                                                + "so close the new channel({})",
-                                        channel, channel);
-                            }
+                            log.debug("Already connected with another channel, so close the new channel");
                             closeChannel(channel);
                             return; // pendingOps should have been completed when other channel connected
                         } else {
-                            LOG.error("TLS handshake failed with bookie: {}/{}, current state {} : ",
-                                    channel, bookieId, state, future.cause());
+                            log.error()
+                                    .exception(future.cause())
+                                    .attr("state", state).log("TLS handshake failed with bookie");
                             rc = BKException.Code.SecurityException;
                             closeChannel(channel);
                             channel = null;
@@ -1744,9 +1758,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         @Override
         public void operationComplete(ChannelFuture future) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Channel connected ({}) {}", future.isSuccess(), future.channel());
-            }
+            log.debug()
+                    .attr("success", () -> future.isSuccess())
+                    .attr("channel", () -> future.channel())
+                    .log("Channel connected");
             int rc;
             Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
 
@@ -1765,18 +1780,20 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     rc = BKException.Code.OK;
                     channel = future.channel();
                     if (shFactory != null) {
-                        LOG.info("Successfully connected to bookie: {} {} initiate TLS", bookieId, future.channel());
+                        log.info()
+                                .attr("channel", future.channel())
+                                .log("Successfully connected to bookie, initiate TLS");
                         makeWritable();
                         initiateTLS();
                         return;
                     } else {
-                        LOG.info("Successfully connected to bookie: {} {}", bookieId, future.channel());
+                        log.info().attr("channel", future.channel()).log("Successfully connected to bookie");
                         state = ConnectionState.CONNECTED;
                         activeNonTlsChannelCounter.inc();
                     }
                 } else if (future.isSuccess() && state == ConnectionState.START_TLS) {
                     rc = BKException.Code.OK;
-                    LOG.info("Successfully connected to bookie using TLS: " + bookieId);
+                    log.info("Successfully connected to bookie using TLS");
 
                     state = ConnectionState.CONNECTED;
                     AuthHandler.ClientSideHandler authHandler = future.channel().pipeline()
@@ -1785,28 +1802,34 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     activeTlsChannelCounter.inc();
                 } else if (future.isSuccess() && (state == ConnectionState.CLOSED
                     || state == ConnectionState.DISCONNECTED)) {
-                    LOG.warn("Closed before connection completed, clean up: {}, current state {}",
-                            future.channel(), state);
+                    log.warn()
+                            .attr("channel", future.channel())
+                            .attr("state", state)
+                            .log("Closed before connection completed, clean up");
                     closeChannel(future.channel());
                     rc = BKException.Code.BookieHandleNotAvailableException;
                     channel = null;
                 } else if (future.isSuccess() && state == ConnectionState.CONNECTED) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Already connected with another channel({}), so close the new channel({})", channel,
-                                future.channel());
-                    }
+                    log.debug()
+                            .attr("existingChannel", channel)
+                            .attr("newChannel", () -> future.channel())
+                            .log("Already connected with another channel, so close the new channel");
                     closeChannel(future.channel());
                     return; // pendingOps should have been completed when other channel connected
                 } else {
                     Throwable cause = future.cause();
                     if (cause instanceof UnknownHostException || cause instanceof NativeIoException) {
                         // Don't log stack trace for common errors
-                        logBookieUnavailable(() -> LOG.warn("Could not connect to bookie: {}/{}, current state {} : {}",
-                                future.channel(), bookieId, state, future.cause().getMessage()));
+                        logBookieUnavailable(() ->
+                            log.warn().attr("channel", future.channel())
+                                .attr("state", state).attr("cause", future.cause().getMessage())
+                                .log("Could not connect to bookie"));
                     } else {
                         // Regular exceptions, include stack trace
-                        logBookieUnavailable(() -> LOG.error("Could not connect to bookie: {}/{}, current state {} : ",
-                                future.channel(), bookieId, state, future.cause()));
+                        logBookieUnavailable(() ->
+                            log.error().exception(future.cause())
+                                .attr("channel", future.channel()).attr("state", state)
+                                .log("Could not connect to bookie"));
                     }
 
                     rc = BKException.Code.BookieHandleNotAvailableException;
@@ -1849,7 +1872,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     private void initiateTLS() {
-        LOG.info("Initializing TLS to {}", channel);
+        log.info("Initializing TLS");
         assert state == ConnectionState.CONNECTING;
         final long txnId = getTxnId();
         final CompletionKey completionKey = new TxnCompletionKey(txnId, OperationType.START_TLS);
@@ -1867,7 +1890,9 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     protected void failTLS(int rc) {
-        LOG.error("TLS failure on: {}, rc: {}", channel, rc);
+        log.error()
+                .attr("rc", rc)
+                .log("TLS failure");
         Queue<GenericCallback<PerChannelBookieClient>> oldPendingOps;
         synchronized (this) {
             disconnect();

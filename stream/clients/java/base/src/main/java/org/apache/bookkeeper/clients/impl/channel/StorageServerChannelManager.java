@@ -24,14 +24,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 
 /**
  * A manager manages channels to range servers.
  */
-@Slf4j
+@CustomLog
 public class StorageServerChannelManager implements AutoCloseable {
 
     private final ReentrantReadWriteLock lock;
@@ -69,21 +69,21 @@ public class StorageServerChannelManager implements AutoCloseable {
         lock.readLock().lock();
         try {
             if (closed) {
-                log.warn("Skip adding channel {} of range server {} since the channel manager is already closed",
-                    channel, endpoint);
+                log.warn()
+                    .attr("channel", channel)
+                    .attr("endpoint", endpoint)
+                    .log("Skip adding channel since the channel manager is already closed");
                 channel.close();
                 return false;
             }
 
             StorageServerChannel oldChannel = channels.putIfAbsent(endpoint, channel);
             if (null != oldChannel) {
-                if (log.isDebugEnabled()) {
-                    log.debug("KeyRange server ({}) already existed in the channel manager.", endpoint);
-                }
+                log.debug().attr("endpoint", endpoint).log("KeyRange server already existed in the channel manager.");
                 channel.close();
                 return false;
             } else {
-                log.info("Added range server ({}) into the channel manager.", endpoint);
+                log.info().attr("endpoint", endpoint).log("Added range server into the channel manager.");
                 return true;
             }
         } finally {
@@ -117,8 +117,10 @@ public class StorageServerChannelManager implements AutoCloseable {
         lock.readLock().lock();
         try {
             if (closed) {
-                log.warn("Skip removing channel {} of range server {} since the channel manager is already closed",
-                    channel, endpoint);
+                log.warn()
+                    .attr("channel", channel)
+                    .attr("endpoint", endpoint)
+                    .log("Skip removing channel since the channel manager is already closed");
                 return null;
             }
 
@@ -133,12 +135,12 @@ public class StorageServerChannelManager implements AutoCloseable {
                 }
             }
             if (null == channelRemoved) {
-                if (log.isDebugEnabled()) {
-                    log.debug("No channel associated with endpoint {} to be removed.", endpoint);
-                }
+                log.debug().attr("endpoint", endpoint).log("No channel associated with endpoint to be removed.");
             } else {
-                log.info("Removed channel {} for range server {} successfully",
-                    channelRemoved, endpoint);
+                log.info()
+                    .attr("channel", channelRemoved)
+                    .attr("endpoint", endpoint)
+                    .log("Removed channel for range server successfully");
             }
             if (null != channelRemoved) {
                 channelRemoved.close();

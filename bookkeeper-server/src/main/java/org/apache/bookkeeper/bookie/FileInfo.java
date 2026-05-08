@@ -33,11 +33,10 @@ import java.io.RandomAccessFile;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.Watchable;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is the file handle for a ledger's index file that maps entry ids to location.
@@ -59,8 +58,8 @@ import org.slf4j.LoggerFactory;
  * in entry loggers.
  * </p>
  */
+@CustomLog
 class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
-    private static final Logger LOG = LoggerFactory.getLogger(FileInfo.class);
 
     static final int NO_MASTER_KEY = -1;
     static final int STATE_FENCED_BIT = 0x1;
@@ -127,9 +126,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             }
             lacToReturn = this.lac;
         }
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Updating LAC {} , {}", lacToReturn, lac);
-        }
+        log.trace()
+                .attr("currentLac", lacToReturn)
+                .attr("newLac", lac)
+                .log("Updating LAC");
 
         if (changed) {
             notifyWatchers(LastAddConfirmedUpdateNotification.FUNC, lacToReturn);
@@ -140,9 +140,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     synchronized boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                        Watcher<LastAddConfirmedUpdateNotification> watcher) {
         if ((null != lac && lac > previousLAC) || isClosed) {
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Wait For LAC {} , {}", this.lac, previousLAC);
-            }
+            log.trace()
+                    .attr("lac", this.lac)
+                    .attr("previousLAC", previousLAC)
+                    .log("Wait For LAC");
             return false;
         }
 
@@ -169,9 +170,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
     public ByteBuf getExplicitLac() {
         ByteBuf retLac = null;
         synchronized (this) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("fileInfo:GetLac: {}", explicitLac);
-            }
+            log.debug().attr("explicitLac", explicitLac).log("fileInfo:GetLac");
             if (explicitLac != null) {
                 retLac = Unpooled.buffer(explicitLac.capacity());
                 explicitLac.rewind(); //copy from the beginning
@@ -196,9 +195,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             explicitLac.getLong();
             explicitLacValue = explicitLac.getLong();
             explicitLac.rewind();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("fileInfo:SetLac: {}", explicitLac);
-            }
+            log.debug().attr("explicitLac", explicitLac).log("fileInfo:SetLac");
             needFlushHeader = true;
         }
         setLastAddConfirmed(explicitLacValue);
@@ -309,9 +306,12 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
             try {
                 readHeader();
             } catch (BufferUnderflowException buf) {
-                LOG.warn("Exception when reading header of {}.", lf, buf);
+                log.warn()
+                        .exception(buf)
+                        .attr("file", lf)
+                        .log("Exception when reading header");
                 if (null != masterKey) {
-                    LOG.warn("Attempting to write header of {} again.", lf);
+                    log.warn().attr("file", lf).log("Attempting to write header again.");
                     writeHeader();
                 } else {
                     throw new IOException("Error reading header " + lf);
@@ -356,9 +356,10 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         boolean changed = false;
         synchronized (this) {
             checkOpen(false);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Try to set fenced state in file info {} : state bits {}.", lf, stateBits);
-            }
+            log.debug()
+                    .attr("file", lf)
+                    .attr("stateBits", stateBits)
+                    .log("Try to set fenced state in file info");
             if ((stateBits & STATE_FENCED_BIT) != STATE_FENCED_BIT) {
                 // not fenced yet
                 stateBits |= STATE_FENCED_BIT;
@@ -538,13 +539,16 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         // delete old.idx
         fc.close();
         if (!delete()) {
-            LOG.error("Failed to delete the previous index file " + lf);
+            log.error().attr("file", lf).log("Failed to delete the previous index file");
             throw new IOException("Failed to delete the previous index file " + lf);
         }
 
         // rename new.idx.rloc to new.idx
         if (!rlocFile.renameTo(newFile)) {
-            LOG.error("Failed to rename " + rlocFile + " to " + newFile);
+            log.error()
+                    .attr("source", rlocFile)
+                    .attr("target", newFile)
+                    .log("Failed to rename file");
             throw new IOException("Failed to rename " + rlocFile + " to " + newFile);
         }
         fc = new RandomAccessFile(newFile, mode).getChannel();

@@ -19,12 +19,12 @@ package org.apache.distributedlog.common.util;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Scheduler related utils.
  */
-@Slf4j
+@CustomLog
 public class SchedulerUtils {
 
     public static void shutdownScheduler(ExecutorService service, long timeout, TimeUnit timeUnit) {
@@ -36,7 +36,7 @@ public class SchedulerUtils {
             service.awaitTermination(timeout, timeUnit);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.warn("Interrupted when shutting down scheduler : ", e);
+            log.warn().exception(e).log("Interrupted when shutting down scheduler");
         }
         service.shutdownNow();
     }

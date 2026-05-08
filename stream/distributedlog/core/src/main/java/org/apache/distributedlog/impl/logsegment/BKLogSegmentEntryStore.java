@@ -21,6 +21,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -48,20 +49,15 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryWriter;
 import org.apache.distributedlog.logsegment.LogSegmentRandomAccessEntryReader;
 import org.apache.distributedlog.metadata.LogMetadataForWriter;
 import org.apache.distributedlog.util.Allocator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * BookKeeper Based Entry Store.
  */
+@CustomLog
 public class BKLogSegmentEntryStore implements
         LogSegmentEntryStore,
         AsyncCallback.OpenCallback,
         AsyncCallback.DeleteCallback {
-
-    private static final Logger logger = LoggerFactory.getLogger(BKLogSegmentEntryReader.class);
 
     private static class OpenReaderRequest {
 
@@ -137,11 +133,16 @@ public class BKLogSegmentEntryStore implements
     public void deleteComplete(int rc, Object ctx) {
         DeleteLogSegmentRequest deleteRequest = (DeleteLogSegmentRequest) ctx;
         if (Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
-            logger.warn("No ledger {} found to delete for {}.",
-                    deleteRequest.segment.getLogSegmentId(), deleteRequest.segment);
+            log.warn()
+                    .attr("ledgerId", deleteRequest.segment.getLogSegmentId())
+                    .attr("segment", deleteRequest.segment)
+                    .log("No ledger found to delete.");
         } else if (BKException.Code.OK != rc) {
-            logger.error("Couldn't delete ledger {} from bookkeeper for {} : {}",
-                deleteRequest.segment.getLogSegmentId(), deleteRequest.segment, BKException.getMessage(rc));
+            log.error()
+                    .attr("ledgerId", deleteRequest.segment.getLogSegmentId())
+                    .attr("segment", deleteRequest.segment)
+                    .attr("error", BKException.getMessage(rc))
+                    .log("Couldn't delete ledger from bookkeeper");
             FutureUtils.completeExceptionally(deleteRequest.deletePromise,
                     new BKTransmitException("Couldn't delete log segment " + deleteRequest.segment, rc));
             return;

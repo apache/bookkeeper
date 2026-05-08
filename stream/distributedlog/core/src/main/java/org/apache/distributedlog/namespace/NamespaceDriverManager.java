@@ -27,21 +27,17 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * The basic service for managing a set of namespace drivers.
  */
+@CustomLog
 public class NamespaceDriverManager {
-
-    private static final Logger logger = LoggerFactory.getLogger(NamespaceDriverManager.class);
 
     static class NamespaceDriverInfo {
 
@@ -77,7 +73,7 @@ public class NamespaceDriverManager {
         }
         loadInitialDrivers();
         initialized = true;
-        logger.info("DistributedLog NamespaceDriverManager initialized");
+        log.info("DistributedLog NamespaceDriverManager initialized");
     }
 
     private static void loadInitialDrivers() {
@@ -98,7 +94,7 @@ public class NamespaceDriverManager {
                 NamespaceDriverInfo driverInfo = new NamespaceDriverInfo(driver.getClass());
                 drivers.put(driver.getScheme().toLowerCase(), driverInfo);
             } catch (Exception ex) {
-                logger.warn("Failed to load namespace driver {} : ", driverClsName, ex);
+                log.warn().attr("driverClass", driverClsName).exception(ex).log("Failed to load namespace driver");
             }
         }
     }
@@ -126,7 +122,7 @@ public class NamespaceDriverManager {
         NamespaceDriverInfo newDriverInfo = new NamespaceDriverInfo(driver);
         oldDriverInfo = drivers.putIfAbsent(scheme, newDriverInfo);
         if (null != oldDriverInfo) {
-            logger.debug("Driver for {} is already there.", scheme);
+            log.debug().attr("scheme", scheme).log("Driver is already there.");
         }
     }
 

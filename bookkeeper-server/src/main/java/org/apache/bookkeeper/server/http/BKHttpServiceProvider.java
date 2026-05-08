@@ -22,7 +22,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -74,7 +74,7 @@ import org.apache.zookeeper.KeeperException;
  * which provide bookkeeper services to handle http requests
  * from different http endpoints.
  */
-@Slf4j
+@CustomLog
 public class BKHttpServiceProvider implements HttpServiceProvider {
 
     private final StatsProvider statsProvider;
@@ -112,10 +112,10 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            log.error("Interruption while closing BKHttpServiceProvider", ie);
+            log.error().exception(ie).log("Interruption while closing BKHttpServiceProvider");
             throw new IOException("Interruption while closing BKHttpServiceProvider", ie);
         } catch (BKException e) {
-            log.error("Error while closing BKHttpServiceProvider", e);
+            log.error().exception(e).log("Error while closing BKHttpServiceProvider");
             throw new IOException("Error while closing BKHttpServiceProvider", e);
         }
     }

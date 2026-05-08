@@ -37,6 +37,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -61,15 +62,12 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provide a zookeeper client to handle session expire.
  */
+@CustomLog
 public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZooKeeperClient.class);
 
     private static final int DEFAULT_RETRY_EXECUTOR_THREAD_COUNT = 1;
 
@@ -115,20 +113,23 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
                     @Override
                     public ZooKeeper call() throws KeeperException, InterruptedException {
-                        logger.info("Reconnecting zookeeper {}.", connectString);
+                        log.info().attr("connectString", connectString).log("Reconnecting zookeeper");
                         // close the previous one
                         closeZkHandle();
                         ZooKeeper newZk;
                         try {
                             newZk = createZooKeeper();
                         } catch (IOException ie) {
-                            logger.error("Failed to create zookeeper instance to " + connectString, ie);
+                            log.error()
+                                    .attr("connectString", connectString)
+                                    .exception(ie)
+                                    .log("Failed to create zookeeper instance");
                             throw KeeperException.create(KeeperException.Code.CONNECTIONLOSS);
                         }
                         waitForConnection();
                         zk.set(newZk);
-                        logger.info("ZooKeeper session {} is created to {}.",
-                                Long.toHexString(newZk.getSessionId()), connectString);
+                        log.info().attr("sessionId", Long.toHexString(newZk.getSessionId()))
+                                .attr("connectString", connectString).log("ZooKeeper session is created");
                         return newZk;
                     }
 
@@ -139,7 +140,7 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
 
                 }, connectRetryPolicy, rateLimiter, createClientStats);
             } catch (Exception e) {
-                logger.error("Gave up reconnecting to ZooKeeper : ", e);
+                log.error().exception(e).log("Gave up reconnecting to ZooKeeper");
                 Runtime.getRuntime().exit(-1);
                 return null;
             }
@@ -355,16 +356,16 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
             return;
         }
 
-        logger.info("ZooKeeper session {} is expired from {}.",
-                Long.toHexString(getSessionId()), connectString);
+        log.info().attr("sessionId", Long.toHexString(getSessionId()))
+                .attr("connectString", connectString).log("ZooKeeper session is expired");
         try {
             connectExecutor.submit(clientCreator);
         } catch (RejectedExecutionException ree) {
             if (!closed.get()) {
-                logger.error("ZooKeeper reconnect task is rejected : ", ree);
+                log.error().exception(ree).log("ZooKeeper reconnect task is rejected");
             }
         } catch (Exception t) {
-            logger.error("Failed to submit zookeeper reconnect task due to runtime exception : ", t);
+            log.error().exception(t).log("Failed to submit zookeeper reconnect task due to runtime exception");
         }
     }
 
@@ -440,7 +441,10 @@ public class ZooKeeperClient extends ZooKeeper implements Watcher, AutoCloseable
             retryExecutor.schedule(r, nextRetryWaitTimeMs, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
             if (!closed.get()) {
-                logger.error("ZooKeeper Operation {} is rejected : ", r, ree);
+                log.error()
+                        .attr("operation", r)
+                        .exception(ree)
+                        .log("ZooKeeper Operation is rejected");
             }
         }
     }

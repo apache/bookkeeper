@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithLedgerMa
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
+import lombok.CustomLog;
 import lombok.Data;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -35,17 +36,15 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A bookie command to retrieve bookies cluster info.
  */
+@CustomLog
 public class ClusterInfoCommand extends BookieCommand<CliFlags> {
 
     private static final String NAME = "cluster-info";
     private static final String DESC = "Exposes the current info about the cluster of bookies";
-    private static final Logger LOG = LoggerFactory.getLogger(ClusterInfoCommand.class);
     private ClusterInfo info;
 
     public ClusterInfoCommand() {
@@ -81,14 +80,14 @@ public class ClusterInfoCommand extends BookieCommand<CliFlags> {
 
         ClientConfiguration clientConfiguration = new ClientConfiguration(conf);
         try (BookKeeperAdmin admin = new BookKeeperAdmin(clientConfiguration)) {
-            LOG.info("Starting fill cluster info.");
+            log.info("Starting fill cluster info.");
             info = new ClusterInfo();
             fillUReplicatedInfo(info, conf);
             fillAuditorInfo(info, admin);
             fillBookiesInfo(info, admin);
 
-            LOG.info("--------- Cluster Info ---------");
-            LOG.info("{}", JsonUtil.toJson(info));
+            log.info("--------- Cluster Info ---------");
+            log.info().attr("value", JsonUtil.toJson(info)).log("log entry");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -114,7 +113,7 @@ public class ClusterInfoCommand extends BookieCommand<CliFlags> {
             info.setAuditorElected(currentAuditor != null);
             info.setAuditorId(currentAuditor == null ? "" : currentAuditor.getId());
         } catch (Exception e) {
-            LOG.error("Could not get Auditor info", e);
+            log.error().exception(e).log("Could not get Auditor info");
             info.setAuditorElected(false);
             info.setAuditorId("");
         }

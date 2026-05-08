@@ -18,9 +18,8 @@
 
 package org.apache.bookkeeper.common.util;
 
+import io.github.merlimat.slog.Logger;
 import java.util.function.Consumer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A runnable that catches runtime exceptions.
@@ -28,14 +27,14 @@ import org.slf4j.LoggerFactory;
 @FunctionalInterface
 public interface SafeRunnable extends Runnable {
 
-    Logger LOGGER = LoggerFactory.getLogger(SafeRunnable.class);
+    Logger LOGGER = Logger.get(SafeRunnable.class);
 
     @Override
     default void run() {
         try {
             safeRun();
         } catch (Throwable t) {
-            LOGGER.error("Unexpected throwable caught ", t);
+            LOGGER.error().exception(t).log("Unexpected throwable caught");
         }
     }
 

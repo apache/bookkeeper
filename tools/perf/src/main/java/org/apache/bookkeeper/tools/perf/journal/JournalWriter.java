@@ -40,7 +40,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -62,7 +62,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * A perf writer to evaluate write performance.
  */
-@Slf4j
+@CustomLog
 public class JournalWriter implements Runnable {
 
     /**
@@ -205,21 +205,24 @@ public class JournalWriter implements Runnable {
         try {
             execute();
         } catch (Exception e) {
-            log.error("Encountered exception at running dlog perf writer", e);
+            log.error().exception(e).log("Encountered exception at running dlog perf writer");
         }
     }
 
     void execute() throws Exception {
         ObjectMapper m = new ObjectMapper();
         ObjectWriter w = m.writerWithDefaultPrettyPrinter();
-        log.info("Starting journal perf writer with config : {}", w.writeValueAsString(flags));
+        log.info()
+                .attr("config", w.writeValueAsString(flags))
+                .log("Starting journal perf writer");
 
         checkArgument(flags.journalDirs.size() > 0, "No journal dirs is provided");
 
         updateServerConf(conf, flags);
 
-        log.info("Benchmark the journal perf with server config : {}",
-            conf.asJson());
+        log.info()
+                .attr("serverConfig", conf.asJson())
+                .log("Benchmark the journal perf");
 
         Stats.loadStatsProvider(conf);
         Stats.get().start(conf);
@@ -276,7 +279,10 @@ public class JournalWriter implements Runnable {
                 try {
                     journal.checkpointComplete(cp, true);
                 } catch (IOException e) {
-                    log.error("Failed to complete checkpoint {}", cp, e);
+                    log.error()
+                            .attr("checkpoint", cp)
+                            .exception(e)
+                            .log("Failed to complete checkpoint");
                 }
             }
         }, 30L, 30L, TimeUnit.SECONDS);
@@ -302,11 +308,13 @@ public class JournalWriter implements Runnable {
                             numRecordsForThisThread,
                             numBytesForThisThread);
                     } catch (Throwable t) {
-                        log.error("Encountered error at writing records", t);
+                        log.error().exception(t).log("Encountered error at writing records");
                     }
                 });
             }
-            log.info("Started {} write threads", flags.numTestThreads);
+            log.info()
+                    .attr("numTestThreads", flags.numTestThreads)
+                    .log("Started write threads");
             reportStats();
         } finally {
             flushExecutor.shutdown();
@@ -324,13 +332,13 @@ public class JournalWriter implements Runnable {
                int maxOutstandingBytesForThisThread,
                long numRecordsForThisThread,
                long numBytesForThisThread) throws Exception {
-        log.info("Write thread {} started with : rate = {},"
-                + " num records = {}, num bytes = {}, max outstanding bytes = {}",
-            threadIdx,
-            writeRate,
-            numRecordsForThisThread,
-            numBytesForThisThread,
-            maxOutstandingBytesForThisThread);
+        log.info()
+                .attr("threadIdx", threadIdx)
+                .attr("rate", writeRate)
+                .attr("numRecords", numRecordsForThisThread)
+                .attr("numBytes", numBytesForThisThread)
+                .attr("maxOutstandingBytes", maxOutstandingBytesForThisThread)
+                .log("Write thread started");
 
         RateLimiter limiter;
         if (writeRate > 0) {
@@ -405,7 +413,9 @@ public class JournalWriter implements Runnable {
                             recorder.recordValue(latencyMicros);
                             cumulativeRecorder.recordValue(latencyMicros);
                         } else {
-                            log.warn("Error at writing records : ", BookieException.create(rc));
+                            log.warn()
+                                    .exception(BookieException.create(rc))
+                                    .log("Error at writing records");
                             Runtime.getRuntime().exit(-1);
                         }
                     },
@@ -449,17 +459,17 @@ public class JournalWriter implements Runnable {
 
             reportHistogram = recorder.getIntervalHistogram(reportHistogram);
 
-            log.info(
-                    "Throughput written : {}  records/s --- {} MB/s --- Latency: mean:"
-                        + " {} ms - med: {} - 95pct: {} - 99pct: {} - 99.9pct: {} - 99.99pct: {} - Max: {}",
-                    throughputFormat.format(rate), throughputFormat.format(throughput),
-                    dec.format(reportHistogram.getMean() / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                    dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                    dec.format(reportHistogram.getMaxValue() / 1000.0));
+            log.info()
+                    .attr("rate", throughputFormat.format(rate))
+                    .attr("throughputMBs", throughputFormat.format(throughput))
+                    .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                    .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                    .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                    .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                    .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                    .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                    .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                    .log("Throughput written");
 
             reportHistogram.reset();
 
@@ -481,7 +491,7 @@ public class JournalWriter implements Runnable {
         File[] currentDirs = BookieImpl.getCurrentDirectories(conf.getLedgerDirs());
         for (File dir : currentDirs) {
             if (dir.mkdirs()) {
-                log.info("Successfully created dir {}", dir);
+                log.info().attr("directory", dir).log("Successfully created dir");
             }
         }
     }
@@ -492,7 +502,7 @@ public class JournalWriter implements Runnable {
                 .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
                 .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
                 .outOfMemoryListener((ex) -> {
-                    log.error("Unable to allocate memory, exiting bookie", ex);
+                    log.error().exception(ex).log("Unable to allocate memory, exiting bookie");
                 })
                 .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
                 .exitOnOutOfMemory(conf.exitOnOutOfMemory())
@@ -505,16 +515,16 @@ public class JournalWriter implements Runnable {
     private static void printAggregatedStats(Recorder recorder) {
         Histogram reportHistogram = recorder.getIntervalHistogram();
 
-        log.info("Aggregated latency stats --- Latency: mean: {} ms - med: {} - 95pct: {} - 99pct: {}"
-                + " - 99.9pct: {} - 99.99pct: {} - 99.999pct: {} - Max: {}",
-                dec.format(reportHistogram.getMean() / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0),
-                dec.format(reportHistogram.getMaxValue() / 1000.0));
+        log.info()
+                .attr("latencyMeanMs", dec.format(reportHistogram.getMean() / 1000.0))
+                .attr("latencyMedMs", dec.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                .attr("latency95pctMs", dec.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                .attr("latency99pctMs", dec.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                .attr("latency999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                .attr("latency9999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                .attr("latency99999pctMs", dec.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0))
+                .attr("latencyMaxMs", dec.format(reportHistogram.getMaxValue() / 1000.0))
+                .log("Aggregated latency stats");
     }
 
 }

@@ -37,7 +37,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
@@ -59,7 +59,7 @@ import org.junit.Test;
 /**
  * Unit test {@link RoutingHeaderProxyInterceptor}.
  */
-@Slf4j
+@CustomLog
 public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     private final long streamId = 1234L;
@@ -74,7 +74,7 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
             @Override
             public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
-                log.info("Received range request : {}", request);
+                log.info().attr("request", request).log("Received range request");
                 receivedRequest.set(request);
                 responseObserver.onNext(RangeResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
@@ -87,7 +87,7 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
             @Override
             public void delete(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
-                log.info("Received delete range request : {}", request);
+                log.info().attr("request", request).log("Received delete range request");
                 receivedRequest.set(request);
                 responseObserver.onNext(DeleteRangeResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
@@ -100,7 +100,7 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
             @Override
             public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
-                log.info("Received txn request : {}", request);
+                log.info().attr("request", request).log("Received txn request");
                 receivedRequest.set(request);
                 responseObserver.onNext(TxnResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
@@ -113,7 +113,7 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
             @Override
             public void increment(IncrementRequest request, StreamObserver<IncrementResponse> responseObserver) {
-                log.info("Received incr request : {}", request);
+                log.info().attr("request", request).log("Received incr request");
                 receivedRequest.set(request);
                 responseObserver.onNext(IncrementResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
@@ -126,7 +126,7 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
             @Override
             public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
-                log.info("Received put request : {}", request);
+                log.info().attr("request", request).log("Received put request");
                 receivedRequest.set(request);
                 responseObserver.onNext(PutResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
@@ -153,8 +153,11 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
                     return new CheckedForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
                         @Override
                         protected void checkedStart(Listener<RespT> responseListener, Metadata headers) {
-                            log.info("Intercept the request with routing information : sid = {}, rid = {}, rk = {}",
-                                streamId, rangeId, new String(routingKey, UTF_8));
+                            log.info()
+                                .attr("streamId", streamId)
+                                .attr("rangeId", rangeId)
+                                .attr("routingKey", new String(routingKey, UTF_8))
+                                .log("Intercept the request with routing information");
                             headers.put(
                                 RID_METADATA_KEY,
                                 rangeId

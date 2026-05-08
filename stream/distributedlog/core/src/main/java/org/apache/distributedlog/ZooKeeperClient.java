@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
@@ -40,10 +41,6 @@ import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * ZooKeeper Client wrapper over {@link org.apache.bookkeeper.zookeeper.ZooKeeperClient}.
@@ -58,6 +55,7 @@ import org.slf4j.LoggerFactory;
  * <li> stats about {@link ZKWatcherManager} are exposed under scope <code>watcher_manager</code>
  * </ul>
  */
+@CustomLog
 public class ZooKeeperClient {
 
     /**
@@ -114,8 +112,6 @@ public class ZooKeeperClient {
             super(message, cause);
         }
     }
-
-    private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperClient.class.getName());
 
     private final String name;
     private final int sessionTimeoutMs;
@@ -260,15 +256,20 @@ public class ZooKeeperClient {
                         switch (event.getState()) {
                             case Expired:
                                 if (null == retryPolicy) {
-                                    LOG.info("ZooKeeper {}' session expired. Event: {}", name, event);
+                                    log.info()
+                                            .attr("name", name)
+                                            .attr("event", event)
+                                            .log("ZooKeeper' session expired. Event");
                                     closeInternal();
                                 }
                                 authenticated = false;
                                 break;
                             case Disconnected:
                                 if (null == retryPolicy) {
-                                    LOG.info("ZooKeeper {} is disconnected from zookeeper now,"
-                                            + " but it is OK unless we received EXPIRED event.", name);
+                                    log.info()
+                                            .attr("name", name)
+                                            .log("ZooKeeper is disconnected from zookeeper now, but it is OK unless"
+                                                    + " we received EXPIRED event.");
                                 }
                                 // Mark as not authenticated if expired or disconnected. In both cases
                                 // we lose any attached auth info. Relying on Expired/Disconnected is
@@ -287,11 +288,17 @@ public class ZooKeeperClient {
                         try {
                             watcher.process(event);
                         } catch (Throwable t) {
-                            LOG.warn("Encountered unexpected exception from watcher {} : ", watcher, t);
+                            log.warn()
+                                    .attr("watcher", watcher)
+                                    .exception(t)
+                                    .log("Encountered unexpected exception from watcher");
                         }
                     }
                 } catch (Throwable t) {
-                    LOG.warn("Encountered unexpected exception when firing watched event {} : ", event, t);
+                    log.warn()
+                            .attr("event", event)
+                            .exception(t)
+                            .log("Encountered unexpected exception when firing watched event");
                 }
             }
         };
@@ -380,12 +387,12 @@ public class ZooKeeperClient {
     public synchronized void closeInternal() {
         if (zooKeeper != null) {
             try {
-                LOG.info("Closing zookeeper client {}.", name);
+                log.info().attr("name", name).log("Closing zookeeper client.");
                 zooKeeper.close();
-                LOG.info("Closed zookeeper client {}.", name);
+                log.info().attr("name", name).log("Closed zookeeper client.");
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOG.warn("Interrupted trying to close zooKeeper {} : ", name, e);
+                log.warn().attr("name", name).exception(e).log("Interrupted trying to close zooKeeper");
             } finally {
                 zooKeeper = null;
             }
@@ -400,7 +407,7 @@ public class ZooKeeperClient {
         if (closed) {
             return;
         }
-        LOG.info("Close zookeeper client {}.", name);
+        log.info().attr("name", name).log("Close zookeeper client.");
         closeInternal();
         // unregister gauges to prevent GC spiral
         this.watcherManager.unregisterGauges();

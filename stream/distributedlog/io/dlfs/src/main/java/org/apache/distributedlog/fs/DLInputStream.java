@@ -22,7 +22,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.FSInputStream;
 /**
  * The input stream for a distributedlog stream.
  */
-@Slf4j
+@CustomLog
 class DLInputStream extends FSInputStream {
 
     private static final long REOPEN_READER_SKIP_BYTES = 4 * 1024 * 1024; // 4MB

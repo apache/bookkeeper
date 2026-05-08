@@ -21,22 +21,20 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.distributedlog.DLSN;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.LogRecordWithDLSN;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.logsegment.LogSegmentMetadataStore;
 import org.apache.distributedlog.util.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *The implementation is responsible
  * for updating the metadata.
  */
+@CustomLog
 public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
-
-    static final Logger LOG = LoggerFactory.getLogger(LogSegmentMetadataStoreUpdater.class);
 
     public static MetadataUpdater createMetadataUpdater(DistributedLogConfiguration conf,
                                                         LogSegmentMetadataStore metadataStore) {
@@ -164,7 +162,10 @@ public class LogSegmentMetadataStoreUpdater implements MetadataUpdater {
 
     protected CompletableFuture<LogSegmentMetadata> addNewSegmentAndDeleteOldSegment(
             final LogSegmentMetadata newSegment, LogSegmentMetadata oldSegment) {
-        LOG.info("old segment {} new segment {}", oldSegment, newSegment);
+        log.info()
+                .attr("oldSegment", oldSegment)
+                .attr("newSegment", newSegment)
+                .log("Changing log segment");
         Transaction<Object> txn = transaction();
         addNewSegmentAndDeleteOldSegment(txn, newSegment, oldSegment);
         return txn.execute().thenApply((value) -> newSegment);

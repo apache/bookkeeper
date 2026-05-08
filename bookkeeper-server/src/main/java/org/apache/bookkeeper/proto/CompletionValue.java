@@ -21,18 +21,18 @@
 
 package org.apache.bookkeeper.proto;
 
-import com.google.common.base.Joiner;
+import io.github.merlimat.slog.Event;
 import io.netty.channel.Channel;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+@CustomLog
 abstract class CompletionValue {
     private final String operationName;
     protected Object ctx;
@@ -43,8 +43,6 @@ abstract class CompletionValue {
     protected OpStatsLogger timeoutOpLogger;
     protected Map<String, String> mdcContextMap;
     protected PerChannelBookieClient perChannelBookieClient;
-
-    static final Logger LOG = LoggerFactory.getLogger(CompletionValue.class);
 
     public CompletionValue(String operationName,
                            Object ctx,
@@ -91,20 +89,26 @@ abstract class CompletionValue {
                 TimeUnit.NANOSECONDS);
         errorOut(BKException.Code.TimeoutException);
     }
-
-    protected void logResponse(BookkeeperProtocol.StatusCode status, Object... extraInfo) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got {} response from bookie:{} rc:{}, {}", operationName,
-                    perChannelBookieClient.bookieId, status, Joiner.on(":").join(extraInfo));
-        }
+    protected Event logEvent(BookkeeperProtocol.StatusCode status) {
+        return log.debug()
+                .attr("operation", operationName)
+                .attr("bookieId", perChannelBookieClient.bookieId)
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .attr("status", status);
     }
 
     protected int convertStatus(BookkeeperProtocol.StatusCode status, int defaultStatus) {
         // convert to BKException code
         int rcToRet = statusCodeToExceptionCode(status);
         if (rcToRet == BKException.Code.UNINITIALIZED) {
-            LOG.error("{} for failed on bookie {} code {}",
-                    operationName, perChannelBookieClient.bookieId, status);
+            log.error()
+                    .attr("operation", operationName)
+                    .attr("bookieId", perChannelBookieClient.bookieId)
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("statusCode", status)
+                    .log("Operation failed on bookie");
             return defaultStatus;
         } else {
             return rcToRet;
@@ -157,11 +161,11 @@ abstract class CompletionValue {
             if (c != null && c.remoteAddress() != null) {
                 bAddress = c.remoteAddress().toString();
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
-                        operationName, bAddress,
-                        ledgerId, entryId);
-            }
+            log.debug()
+                    .attr("operation", operationName)
+                    .attr("bookieAddress", bAddress)
+                    .attr("ledgerId", ledgerId).attr("entryId", entryId)
+                    .log("Could not write request to bookie");
             callback.run();
         });
     }
@@ -169,7 +173,7 @@ abstract class CompletionValue {
     public void handleV2Response(
             long ledgerId, long entryId, BookkeeperProtocol.StatusCode status,
             BookieProtocol.Response response) {
-        LOG.warn("Unhandled V2 response {}", response);
+        log.warn().attr("response", response).log("Unhandled V2 response");
     }
 
     public abstract void handleV3Response(

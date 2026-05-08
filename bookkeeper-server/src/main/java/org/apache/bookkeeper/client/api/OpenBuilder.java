@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import io.github.merlimat.slog.Logger;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Unstable;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -71,5 +72,23 @@ public interface OpenBuilder extends OpBuilder<ReadHandle> {
      * @return the builder itself
      */
     OpenBuilder withDigestType(DigestType digestType);
+
+    /**
+     * Inherit the context attributes of the given slog {@link Logger} on the logger bound to
+     * the resulting {@link ReadHandle}. Every log statement emitted by the handle (and by the open-time machinery
+     * that produces it) will carry the parent logger's context attributes, in addition to the {@code ledgerId}
+     * attribute that is always added by the client.
+     *
+     * <p>Useful for correlating bookkeeper-client log output with the application's own request / tenant / trace
+     * identifiers — typically the application has built a per-request logger via
+     * {@code Logger.get(...).with().attr(...)...build()} and passes it here.
+     *
+     * @param parentLogger logger whose context attributes to inherit; {@code null} is treated as no extra context
+     *
+     * @return the builder itself
+     */
+    default OpenBuilder withLoggerContext(Logger parentLogger) {
+        return this;
+    }
 
 }

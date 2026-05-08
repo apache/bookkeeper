@@ -32,15 +32,15 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import lombok.CustomLog;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.nativelib.NativeUtils;
 
 /**
  * Implementation of CPU Affinity functionality.
  */
 @UtilityClass
-@Slf4j
+@CustomLog
 public class CpuAffinityImpl {
 
     private static boolean isInitialized = false;
@@ -72,7 +72,10 @@ public class CpuAffinityImpl {
             int cpu = pickAvailableCpu();
             CpuAffinityJni.setAffinity(cpu);
 
-            log.info("Thread {} has successfully acquired ownership of cpu {}", Thread.currentThread().getName(), cpu);
+            log.info()
+                    .attr("thread", Thread.currentThread().getName())
+                    .attr("cpu", cpu)
+                    .log("Thread has successfully acquired ownership of cpu");
         } catch (IOException e) {
             throw new RuntimeException("Failed to acquire CPU core: " + e.getMessage());
         }
@@ -93,20 +96,14 @@ public class CpuAffinityImpl {
             isolatedProcessors = IsolatedProcessors.get();
         }
         for (int isolatedCpu : isolatedProcessors) {
-            if (log.isDebugEnabled()) {
-                log.debug("Checking CPU {}", isolatedCpu);
-            }
+            log.debug().attr("cpu", isolatedCpu).log("Checking CPU");
             if (acquiredProcessors.contains(isolatedCpu)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Ignoring CPU {} since it's already acquired", isolatedCpu);
-                }
+                log.debug().attr("cpu", isolatedCpu).log("Ignoring CPU since it's already acquired");
                 continue;
             }
 
             if (tryAcquireCpu(isolatedCpu)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Using CPU {}", isolatedCpu);
-                }
+                log.debug().attr("cpu", isolatedCpu).log("Using CPU");
                 return isolatedCpu;
             }
         }
@@ -127,9 +124,7 @@ public class CpuAffinityImpl {
         for (int cpu : cpusToAcquire) {
             Closeable lock = tryAcquireFileLock(cpu);
             if (lock == null) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Failed to acquire lock on CPU {}", cpu);
-                }
+                log.debug().attr("cpu", cpu).log("Failed to acquire lock on CPU");
 
                 // Failed to acquire one cpu, release the rest that were already locked
                 for (Closeable l : acquiredCpus) {
@@ -208,7 +203,7 @@ public class CpuAffinityImpl {
             NativeUtils.loadLibraryFromJar("/lib/libcpu-affinity.so");
             isSupported = CpuAffinityJni.isAvailable();
         } catch (final Exception | UnsatisfiedLinkError e) {
-            log.warn("Unable to load CPU affinity library: {}", e.getMessage(), e);
+            log.warn().exception(e).log("Unable to load CPU affinity library");
             isSupported = false;
         } finally {
             isInitialized = true;

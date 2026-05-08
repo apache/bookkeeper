@@ -31,7 +31,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.api.exceptions.StateStoreException;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
@@ -40,7 +40,7 @@ import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
 /**
  * CheckpointInfo encapsulated information and operation for a checkpoint.
  */
-@Slf4j
+@CustomLog
 public class CheckpointInfo implements Comparable<CheckpointInfo> {
 
     final String id;
@@ -96,8 +96,10 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
                 MoreFiles.deleteRecursively(checkpointPath, RecursiveDeleteOption.ALLOW_INSECURE);
             }
         } catch (IOException ioe) {
-            log.warn("Failed to remove unused checkpoint {} from {}",
-                id, getCheckpointBaseDir(dbPath), ioe);
+            log.warn().attr("checkpointId", id)
+                .attr("directory", getCheckpointBaseDir(dbPath))
+                .exception(ioe)
+                .log("Failed to remove unused checkpoint");
         }
     }
 
@@ -136,7 +138,9 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
 
         task.restore(id, metadata);
         updateCurrent(dbPath);
-        log.info("Successfully restore checkpoint {} to {}", id, getCheckpointPath(dbPath));
+        log.info().attr("checkpointId", id)
+            .attr("path", getCheckpointPath(dbPath))
+            .log("Successfully restore checkpoint");
         return metadata;
     }
     public CheckpointMetadata restore(String dbName, File dbPath, CheckpointStore store)
@@ -153,7 +157,7 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
             RocksdbRestoreTask task = new RocksdbRestoreTask(dbName, checkpointsDir, store, maxIdle);
             return restore(dbPath, task);
         } catch (IOException ioe) {
-            log.error("Failed to restore rocksdb {}", dbName, ioe);
+            log.error().attr("dbName", dbName).exception(ioe).log("Failed to restore rocksdb");
             throw new StateStoreException("Failed to restore rocksdb " + dbName, ioe);
         }
     }

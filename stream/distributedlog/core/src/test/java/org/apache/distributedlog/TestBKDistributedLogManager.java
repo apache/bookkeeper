@@ -37,7 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
@@ -75,15 +75,12 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for {@link DistributedLogManager}.
  */
-@Slf4j
+@CustomLog
 public class TestBKDistributedLogManager extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestBKDistributedLogManager.class);
 
     private static final Random RAND = new Random(System.currentTimeMillis());
 
@@ -306,7 +303,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             fail("Shouldn't be able to start another journal from " + txid
                 + " when one already exists");
         } catch (Exception ioe) {
-            LOG.info("Caught exception as expected", ioe);
+            log.info().exception(ioe).log("Caught exception as expected");
         } finally {
             out.close();
         }
@@ -319,7 +316,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             fail("Shouldn't be able to start another journal from " + txid
                 + " when one already exists");
         } catch (TransactionIdOutOfOrderException rste) {
-            LOG.info("Caught exception as expected", rste);
+            log.info().exception(rste).log("Caught exception as expected");
         } finally {
             out.close();
         }
@@ -719,7 +716,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
                 record = reader.readNext(false);
             }
         } catch (EndOfStreamException exc) {
-            LOG.info("Encountered EndOfStream on reading records after {}", record);
+            log.info().attr("record", record).log("Encountered EndOfStream on reading records after record");
             exceptionEncountered = true;
         }
         assertEquals((txid - 1), numTrans);
@@ -1004,17 +1001,17 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         });
         long txid = 1;
         for (int i = 0; i < numSegments; i++) {
-            LOG.info("Waiting for creating log segment {}.", i);
+            log.info().attr("segment", i).log("Waiting for creating log segment");
             latches[i].await();
-            LOG.info("Creating log segment {}.", i);
+            log.info().attr("segment", i).log("Creating log segment");
             BKSyncLogWriter out = (BKSyncLogWriter) dlm.startLogSegmentNonPartitioned();
-            LOG.info("Created log segment {}.", i);
+            log.info().attr("segment", i).log("Created log segment");
             for (long j = 1; j <= DEFAULT_SEGMENT_SIZE; j++) {
                 LogRecord op = DLMTestUtil.getLogRecordInstance(txid++);
                 out.write(op);
             }
             out.closeAndComplete();
-            LOG.info("Completed log segment {}.", i);
+            log.info().attr("segment", i).log("Completed log segment");
         }
         latches[numSegments].await();
         assertEquals(0, numFailures.get());
@@ -1043,13 +1040,13 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         BKAsyncLogWriter writer = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
         long txid = 1;
-        LOG.info("Writing 10 control records");
+        log.info("Writing 10 control records");
         for (int i = 0; i < 10; i++) {
             LogRecord record = DLMTestUtil.getLogRecordInstance(txid++);
             record.setControl();
             Utils.ioResult(writer.writeControlRecord(record));
         }
-        LOG.info("10 control records are written");
+        log.info("10 control records are written");
 
         try {
             dlm.getLastDLSN();
@@ -1059,13 +1056,13 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         }
 
         writer.closeAndComplete();
-        LOG.info("Completed first log segment");
+        log.info("Completed first log segment");
 
         writer = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();
         Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txid++)));
-        LOG.info("Completed second log segment");
+        log.info("Completed second log segment");
 
-        LOG.info("Writing another 10 control records");
+        log.info("Writing another 10 control records");
         for (int i = 1; i < 10; i++) {
             LogRecord record = DLMTestUtil.getLogRecordInstance(txid++);
             record.setControl();
@@ -1075,7 +1072,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         assertEquals(new DLSN(2, 0, 0), dlm.getLastDLSN());
 
         writer.closeAndComplete();
-        LOG.info("Completed third log segment");
+        log.info("Completed third log segment");
 
         assertEquals(new DLSN(2, 0, 0), dlm.getLastDLSN());
 
@@ -1177,7 +1174,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         Map<Long, LogSegmentMetadata> segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
                 LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
-        LOG.info("Read segments before truncating first segment : {}", segmentList);
+        log.info().attr("segments", segmentList).log("Read segments before truncating first segment");
 
         MetadataUpdater updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(
                 confLocal, metadataStore);
@@ -1186,7 +1183,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
                 LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
-        LOG.info("Read segments after truncated first segment : {}", segmentList);
+        log.info().attr("segments", segmentList).log("Read segments after truncated first segment");
 
         {
             LogReader reader = dlm.getInputStream(DLSN.InitialDLSN);
@@ -1209,7 +1206,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
                 LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
-        LOG.info("Read segments after marked first segment as active : {}", segmentList);
+        log.info().attr("segments", segmentList).log("Read segments after marked first segment as active");
 
         updater = LogSegmentMetadataStoreUpdater.createMetadataUpdater(confLocal, metadataStore);
         Utils.ioResult(updater.setLogSegmentTruncated(segmentList.get(2L)));
@@ -1217,7 +1214,7 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
         segmentList = DLMTestUtil.readLogSegments(zookeeperClient,
                 LogMetadata.getLogSegmentsPath(uri, name, confLocal.getUnpartitionedStreamName()));
 
-        LOG.info("Read segments after truncated second segment : {}", segmentList);
+        log.info().attr("segments", segmentList).log("Read segments after truncated second segment");
 
         {
             AsyncLogReader reader = dlm.getAsyncLogReader(DLSN.InitialDLSN);
@@ -1286,7 +1283,6 @@ public class TestBKDistributedLogManager extends TestDistributedLogBase {
             assertEquals(truncDLSN, record.getDlsn());
             Utils.close(reader);
         }
-
 
         {
             LogReader reader = dlm.getInputStream(beyondTruncDLSN);

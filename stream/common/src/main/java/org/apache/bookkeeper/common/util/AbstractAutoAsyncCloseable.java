@@ -20,13 +20,13 @@ package org.apache.bookkeeper.common.util;
 
 import java.util.concurrent.CompletableFuture;
 import javax.annotation.concurrent.GuardedBy;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * A common implementation for {@link AutoAsyncCloseable}.
  */
-@Slf4j
+@CustomLog
 public abstract class AbstractAutoAsyncCloseable implements AutoAsyncCloseable {
 
     @GuardedBy("this")

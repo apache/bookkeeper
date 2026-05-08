@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.Code;
@@ -46,10 +47,6 @@ import org.apache.distributedlog.exceptions.AlreadyClosedException;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.net.NetUtils;
 import org.apache.distributedlog.util.ConfUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * BookKeeper Client wrapper over {@link BookKeeper}.
@@ -59,8 +56,8 @@ import org.slf4j.LoggerFactory;
  * <li> bookkeeper operation stats are exposed under current scope by {@link BookKeeper}
  * </ul>
  */
+@CustomLog
 public class BookKeeperClient {
-    static final Logger LOG = LoggerFactory.getLogger(BookKeeperClient.class);
 
     // Parameters to build bookkeeper client
     private final DistributedLogConfiguration conf;
@@ -104,7 +101,7 @@ public class BookKeeperClient {
         try {
             dnsResolverCls = conf.getEnsemblePlacementDnsResolverClass();
         } catch (ConfigurationException e) {
-            LOG.error("Failed to load bk dns resolver : ", e);
+            log.error().exception(e).log("Failed to load bk dns resolver");
             throw new IOException("Failed to load bk dns resolver : ", e);
         }
         final DNSToSwitchMapping dnsResolver =
@@ -176,22 +173,27 @@ public class BookKeeperClient {
         }
 
         if (ownZK) {
-            LOG.info("BookKeeper Client created {} with its own ZK Client : ledgersPath = {}, numRetries = {}, "
-                            + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                name, ledgersPath,
-                conf.getBKClientZKNumRetries(), conf.getBKClientZKSessionTimeoutMilliSeconds(),
-                conf.getBKClientZKRetryBackoffStartMillis(), conf.getBKClientZKRetryBackoffMaxMillis(),
-                conf.getBkDNSResolverOverrides());
+            log.info()
+                    .attr("name", name)
+                    .attr("ledgersPath", ledgersPath)
+                    .attr("bKClientZKNumRetries", conf.getBKClientZKNumRetries())
+                    .attr("bKClientZKSessionTimeoutMilliSeconds", conf.getBKClientZKSessionTimeoutMilliSeconds())
+                    .attr("bKClientZKRetryBackoffStartMillis", conf.getBKClientZKRetryBackoffStartMillis())
+                    .attr("bKClientZKRetryBackoffMaxMillis", conf.getBKClientZKRetryBackoffMaxMillis())
+                    .attr("bkDNSResolverOverrides", conf.getBkDNSResolverOverrides())
+                    .log("BookKeeper Client created with its own ZK Client");
         } else {
-            LOG.info("BookKeeper Client created {} with shared zookeeper client : ledgersPath = {}, numRetries = {}, "
-                            + "sessionTimeout = {}, backoff = {}, maxBackoff = {}, dnsResolver = {}",
-                name, ledgersPath,
-                conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-                conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
-                conf.getBkDNSResolverOverrides());
+            log.info()
+                    .attr("name", name)
+                    .attr("ledgersPath", ledgersPath)
+                    .attr("zKNumRetries", conf.getZKNumRetries())
+                    .attr("zKSessionTimeoutMilliseconds", conf.getZKSessionTimeoutMilliseconds())
+                    .attr("zKRetryBackoffStartMillis", conf.getZKRetryBackoffStartMillis())
+                    .attr("zKRetryBackoffMaxMillis", conf.getZKRetryBackoffMaxMillis())
+                    .attr("bkDNSResolverOverrides", conf.getBkDNSResolverOverrides())
+                    .log("BookKeeper Client created with shared zookeeper client");
         }
     }
-
 
     public synchronized BookKeeper get() throws IOException {
         checkClosedOrInError();
@@ -267,16 +269,16 @@ public class BookKeeperClient {
             zkcToClose = zkc;
         }
 
-        LOG.info("BookKeeper Client closed {}", name);
+        log.info().attr("name", name).log("BookKeeper Client closed");
         if (null != bkcToClose) {
             try {
                 bkcToClose.close();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                LOG.warn("Interrupted on closing bookkeeper client {} : ", name, e);
+                log.warn().attr("name", name).exception(e).log("Interrupted on closing bookkeeper client");
                 Thread.currentThread().interrupt();
             } catch (BKException e) {
-                LOG.warn("Error on closing bookkeeper client {} : ", name, e);
+                log.warn().attr("name", name).exception(e).log("Error on closing bookkeeper client");
             }
         }
         if (null != zkcToClose) {
@@ -288,7 +290,7 @@ public class BookKeeperClient {
 
     public synchronized void checkClosedOrInError() throws AlreadyClosedException {
         if (closed) {
-            LOG.error("BookKeeper Client {} is already closed", name);
+            log.error().attr("name", name).log("BookKeeper Client is already closed");
             throw new AlreadyClosedException("BookKeeper Client " + name + " is already closed");
         }
     }

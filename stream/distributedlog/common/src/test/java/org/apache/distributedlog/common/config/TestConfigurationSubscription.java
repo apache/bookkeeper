@@ -28,20 +28,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.CompositeConfiguration;
 import org.apache.commons.configuration2.event.ConfigurationEvent;
 import org.jmock.lib.concurrent.DeterministicScheduler;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Notes:
  * 1. lastModified granularity is platform dependent, generally 1 sec, so we can't wait 1ms for things to
  * get picked up.
  */
+@CustomLog
 public class TestConfigurationSubscription {
-    static final Logger LOG = LoggerFactory.getLogger(TestConfigurationSubscription.class);
     public static final int RELOAD_PERIOD = 10;
 
     /**
@@ -135,7 +134,7 @@ public class TestConfigurationSubscription {
 
         final AtomicInteger count = new AtomicInteger(1);
         conf.addEventListener(ConfigurationEvent.ANY, event -> {
-                LOG.info("config changed {}", event);
+                log.info().attr("event", event).log("config changed");
                 // Throw after so we actually see the update anyway.
                 if (!event.isBeforeUpdate()) {
                     count.getAndIncrement();

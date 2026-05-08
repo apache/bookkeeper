@@ -25,6 +25,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader;
 import org.apache.bookkeeper.common.util.JsonUtil;
@@ -35,8 +36,6 @@ import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper list bookie info related http request.
@@ -50,9 +49,9 @@ import org.slf4j.LoggerFactory;
  *    "clusterInfo" : {total_free: xxx, total: xxx}"
  *  }
  */
+@CustomLog
 public class ListBookieInfoService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(ListBookieInfoService.class);
 
     protected ServerConfiguration conf;
 
@@ -117,9 +116,7 @@ public class ListBookieInfoService implements HttpEndpointService {
             bk.close();
 
             String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
+            log.debug().attr("body", jsonResponse).log("output body");
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

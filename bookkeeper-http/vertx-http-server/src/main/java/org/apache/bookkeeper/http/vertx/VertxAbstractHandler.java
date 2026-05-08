@@ -30,19 +30,17 @@ import io.vertx.ext.web.RoutingContext;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.service.HttpEndpointService;
 import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Http Handler for Vertx based Http Server.
  */
+@CustomLog
 public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(VertxAbstractHandler.class);
 
     /**
      * Process the request using the given httpEndpointService.
@@ -59,10 +57,11 @@ public abstract class VertxAbstractHandler implements Handler<RoutingContext> {
         try {
             response = httpEndpointService.handle(request);
         } catch (NullPointerException | IllegalArgumentException e) {
-            LOG.error("Vertx handler failed to process request {}, cause {}", request.toString(), e);
+            log.error().exception(e).attr("request", request.toString())
+                    .log("Vertx handler failed to process request");
             throw new RuntimeException(e);
         } catch (Exception e) {
-            LOG.error("Exception in vertx handler", e);
+            log.error().exception(e).log("Exception in vertx handler");
             throw new RuntimeException(e);
         }
         httpResponse.setStatusCode(response.getStatusCode());

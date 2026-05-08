@@ -25,14 +25,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.group.ChannelGroup;
 import java.nio.channels.ClosedChannelException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.processor.RequestProcessor;
 
 /**
  * Serverside handler for bookkeeper requests.
  */
-@Slf4j
+@CustomLog
 public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     private static final int DEFAULT_PENDING_RESPONSE_SIZE = 256;
@@ -56,7 +56,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("Channel connected {}", ctx.channel());
+        log.info().attr("channel", ctx.channel()).log("Channel connected");
         this.ctx = ctx;
         super.channelActive(ctx);
     }
@@ -68,16 +68,22 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.info("Channels disconnected: {}", ctx.channel());
+        log.info().attr("channel", ctx.channel()).log("Channels disconnected");
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         if (cause instanceof ClosedChannelException) {
-            log.info("Client died before request could be completed on {}", ctx.channel(), cause);
+            log.info()
+                    .exception(cause)
+                    .attr("channel", ctx.channel())
+                    .log("Client died before request could be completed");
             return;
         }
-        log.error("Unhandled exception occurred in I/O thread or handler on {}", ctx.channel(), cause);
+        log.error()
+                .exception(cause)
+                .attr("channel", ctx.channel())
+                .log("Unhandled exception occurred in I/O thread or handler");
         ctx.close();
     }
 

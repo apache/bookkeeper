@@ -32,13 +32,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.IOUtils;
 
-@Slf4j
+@CustomLog
 class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
 
     private volatile BufferedLogChannel activeLogChannel;
@@ -207,7 +207,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
             // leaking fds which cause the disk spaces could not be reclaimed.
             channel.close();
             recentlyCreatedEntryLogsStatus.flushRotatedEntryLog(channel.getLogId());
-            log.info("Synced entry logger {} to disk.", channel.getLogId());
+            log.info().attr("logId", channel.getLogId()).log("Synced entry logger to disk.");
         }
     }
 

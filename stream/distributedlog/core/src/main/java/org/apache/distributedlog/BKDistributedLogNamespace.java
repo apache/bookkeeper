@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.FeatureProvider;
@@ -47,8 +48,6 @@ import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * BKDistributedLogNamespace is the default implementation of {@link Namespace}. It uses
@@ -80,8 +79,8 @@ import org.slf4j.LoggerFactory;
  * <h4>DistributedLogManager</h4>
  * All the core stats about reader and writer are exposed under current scope via {@link BKDistributedLogManager}.
  */
+@CustomLog
 public class BKDistributedLogNamespace implements Namespace {
-    static final Logger LOG = LoggerFactory.getLogger(BKDistributedLogNamespace.class);
 
     private final String clientId;
     private final int regionId;
@@ -321,7 +320,7 @@ public class BKDistributedLogNamespace implements Namespace {
      */
     private void checkState() throws IOException {
         if (closed.get()) {
-            LOG.error("BK namespace {} is already closed", namespace);
+            log.error().attr("namespace", namespace).log("BK namespace is already closed");
             throw new AlreadyClosedException("BK namespace " + namespace + " is already closed");
         }
     }
@@ -342,6 +341,6 @@ public class BKDistributedLogNamespace implements Namespace {
         // Shutdown the schedulers
         SchedulerUtils.shutdownScheduler(scheduler, conf.getSchedulerShutdownTimeoutMs(),
                 TimeUnit.MILLISECONDS);
-        LOG.info("Executor Service Stopped.");
+        log.info("Executor Service Stopped.");
     }
 }

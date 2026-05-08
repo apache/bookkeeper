@@ -23,8 +23,8 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
 import org.apache.bookkeeper.net.BookieId;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * A default implementation of {@link ClusterControllerLeader}.
  */
-@Slf4j
+@CustomLog
 public class ClusterControllerLeaderImpl implements ClusterControllerLeader, RegistrationListener {
 
     // the metadata store for reading and writing cluster metadata.
@@ -117,7 +117,8 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         try {
             this.regClient.watchWritableBookies(this).get();
         } catch (Exception e) {
-            log.warn("Controller leader fails to watch servers : {}, giving up leadership", e.getMessage());
+            log.warn().attr("exceptionMessage", e.getMessage())
+                .log("Controller leader fails to watch servers, giving up leadership");
             throw e;
         }
 
@@ -165,7 +166,8 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
         long elapsedMs = System.currentTimeMillis() - lastSuccessfulAssignmentAt;
         long remainingMs = scheduleDuration.toMillis() - elapsedMs;
         if (remainingMs > 0) {
-            log.info("Waiting {} milliseconds for controller to assign containers", remainingMs);
+            log.info().attr("remainingMs", remainingMs)
+                .log("Waiting for controller to assign containers");
             TimeUnit.MILLISECONDS.sleep(remainingMs);
         }
 
@@ -199,9 +201,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
 
         if (newState.equals(currentState)) {
             // no assignment state is changed, so do nothing
-            if (log.isDebugEnabled()) {
-                log.debug("Assignment state is unchanged - {}", newState);
-            }
+            log.debug().attr("newState", newState).log("Assignment state is unchanged");
         } else {
             // update the assignment state
             lastSuccessfulAssignmentAt = System.currentTimeMillis();
@@ -211,7 +211,7 @@ public class ClusterControllerLeaderImpl implements ClusterControllerLeader, Reg
 
     @Override
     public void onBookiesChanged(Versioned<Set<BookieId>> bookies) {
-        log.info("Cluster topology is changed - new cluster : {}", bookies);
+        log.info().attr("bookies", bookies).log("Cluster topology is changed");
         // when bookies are changed, notify the leader to take actions
         this.availableServers = bookies.getValue();
         performServerChangesPermits.release();

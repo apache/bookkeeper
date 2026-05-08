@@ -36,7 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.impl.op.OpFactoryImpl;
 import org.apache.bookkeeper.api.kv.impl.result.DeleteResultImpl;
 import org.apache.bookkeeper.api.kv.impl.result.IncrementResultImpl;
@@ -91,7 +91,7 @@ import org.rocksdb.WriteBatch;
  * <p>The current implementation executes write operations in one single io thread.
  * It can be improved later to leverage the revision numbers to achieve mvcc.
  */
-@Slf4j
+@CustomLog
 class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V> {
 
     private static final Comparator<byte[]> COMPARATOR = UnsignedBytes.lexicographicalComparator();

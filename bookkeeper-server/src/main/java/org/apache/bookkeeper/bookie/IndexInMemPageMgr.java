@@ -43,18 +43,17 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.stats.IndexInMemPageMgrStats;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 // CHECKSTYLE.ON: IllegalImport
 
+@CustomLog
 class IndexInMemPageMgr {
-    private static final Logger LOG = LoggerFactory.getLogger(IndexInMemPageMgr.class);
     private static final ConcurrentHashMap<Long, LedgerEntryPage> EMPTY_PAGE_MAP =
             new ConcurrentHashMap<Long, LedgerEntryPage>();
 
@@ -181,9 +180,7 @@ class IndexInMemPageMgr {
                     if (!lep.inUse()) {
                         addToCleanPagesList(lep);
                     }
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("Page is clean " + lep);
-                    }
+                        log.trace().attr("page", lep).log("Page is clean");
                 } else {
                     firstEntryList.add(lep.getFirstEntry());
                 }
@@ -256,9 +253,7 @@ class IndexInMemPageMgr {
                     }
 
                     if (null == lep) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Did not find eligible page in the first pass");
-                        }
+                        log.debug("Did not find eligible page in the first pass");
                         return null;
                     }
                 }
@@ -360,8 +355,11 @@ class IndexInMemPageMgr {
         } else {
             this.pageLimit = conf.getPageLimit();
         }
-        LOG.info("maxDirectMemory = {}, pageSize = {}, pageLimit = {}",
-                maxDirectMemory, pageSize, pageLimit);
+        log.info()
+                .attr("maxDirectMemory", maxDirectMemory)
+                .attr("pageSize", pageSize)
+                .attr("pageLimit", pageLimit)
+                .log("Starting IndexInMemPageMgr");
         // Expose Stats
         this.ledgerCacheHitCounter = statsLogger.getCounter(LEDGER_CACHE_HIT);
         this.ledgerCacheMissCounter = statsLogger.getCounter(LEDGER_CACHE_MISS);
@@ -506,8 +504,10 @@ class IndexInMemPageMgr {
             if (null != lep) {
                 return lep;
             }
-            LOG.info("Could not grab a clean page for ledger {}, entry {}, force flushing dirty ledgers.",
-                    ledger, entry);
+            log.info()
+                    .attr("ledgerId", ledger)
+                    .attr("entryId", entry)
+                    .log("Could not grab a clean page, force flushing dirty ledgers");
             flushOneOrMoreLedgers(false);
         }
     }
@@ -539,9 +539,7 @@ class IndexInMemPageMgr {
         indexPersistenceManager.flushLedgerHeader(ledger);
 
         if (null == firstEntryList || firstEntryList.size() == 0) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Nothing to flush for ledger {}.", ledger);
-            }
+            log.debug().attr("ledgerId", ledger).log("Nothing to flush for ledger");
             // nothing to do
             return;
         }

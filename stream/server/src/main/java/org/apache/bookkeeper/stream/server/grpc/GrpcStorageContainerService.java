@@ -15,7 +15,7 @@
 package org.apache.bookkeeper.stream.server.grpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointResponse;
@@ -28,7 +28,7 @@ import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 /**
  * Grpc based storage container service.
  */
-@Slf4j
+@CustomLog
 class GrpcStorageContainerService extends StorageContainerServiceImplBase {
 
     private final StorageContainerStore storageContainerStore;

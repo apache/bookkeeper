@@ -178,6 +178,9 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     // NIO and Netty Parameters
     protected static final String SERVER_TCP_NODELAY = "serverTcpNoDelay";
     protected static final String SERVER_SOCK_KEEPALIVE = "serverSockKeepalive";
+    protected static final String SERVER_TCP_KEEPIDLE = "serverTcpKeepIdle";
+    protected static final String SERVER_TCP_KEEPINTVL = "serverTcpKeepIntvl";
+    protected static final String SERVER_TCP_KEEPCNT = "serverTcpKeepCnt";
     protected static final String SERVER_SOCK_LINGER = "serverTcpLinger";
     protected static final String SERVER_WRITEBUFFER_LOW_WATER_MARK = "serverWriteBufferLowWaterMark";
     protected static final String SERVER_WRITEBUFFER_HIGH_WATER_MARK = "serverWriteBufferHighWaterMark";
@@ -1625,6 +1628,69 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
     public ServerConfiguration setServerSockKeepalive(boolean keepalive) {
         setProperty(SERVER_SOCK_KEEPALIVE, Boolean.toString(keepalive));
         return this;
+    }
+
+    /**
+     * Set TCP_KEEPIDLE value for SO_KEEPALIVE.
+     *
+     * @param keepIdle
+     *            TCP_KEEPIDLE value in seconds
+     * @return server configuration
+     */
+    public ServerConfiguration setServerTcpKeepIdle(int keepIdle) {
+        setProperty(SERVER_TCP_KEEPIDLE, keepIdle);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPIDLE value for SO_KEEPALIVE.
+     *
+     * @return TCP_KEEPIDLE value in seconds, default -1
+     */
+    public int getServerTcpKeepIdle() {
+        return getInt(SERVER_TCP_KEEPIDLE, -1);
+    }
+
+    /**
+     * Set TCP_KEEPINTVL value for SO_KEEPALIVE.
+     *
+     * @param keepIntvl
+     *            TCP_KEEPINTVL value in seconds
+     * @return server configuration
+     */
+    public ServerConfiguration setServerTcpKeepIntvl(int keepIntvl) {
+        setProperty(SERVER_TCP_KEEPINTVL, keepIntvl);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPINTVL value for SO_KEEPALIVE.
+     *
+     * @return TCP_KEEPINTVL value in seconds, default -1
+     */
+    public int getServerTcpKeepIntvl() {
+        return getInt(SERVER_TCP_KEEPINTVL, -1);
+    }
+
+    /**
+     * Set TCP_KEEPCNT value for SO_KEEPALIVE.
+     *
+     * @param keepCnt
+     *            TCP_KEEPCNT value
+     * @return server configuration
+     */
+    public ServerConfiguration setServerTcpKeepCnt(int keepCnt) {
+        setProperty(SERVER_TCP_KEEPCNT, keepCnt);
+        return this;
+    }
+
+    /**
+     * Get TCP_KEEPCNT value for SO_KEEPALIVE.
+     *
+     * @return TCP_KEEPCNT value, default -1
+     */
+    public int getServerTcpKeepCnt() {
+        return getInt(SERVER_TCP_KEEPCNT, -1);
     }
 
     /**

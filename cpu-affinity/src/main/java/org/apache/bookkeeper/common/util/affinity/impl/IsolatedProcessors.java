@@ -31,12 +31,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import lombok.CustomLog;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 @UtilityClass
-@Slf4j
+@CustomLog
 class IsolatedProcessors {
 
     private static final Charset ENCODING = StandardCharsets.US_ASCII;
@@ -93,7 +93,10 @@ class IsolatedProcessors {
 
         if (currentState != enable) {
             Files.write(cpuPath, (enable ? "1\n" : "0\n").getBytes(ENCODING), StandardOpenOption.TRUNCATE_EXISTING);
-            log.info("{} CPU {}", enable ? "Enabled" : "Disabled", cpu);
+            log.info()
+                    .attr("status", enable ? "Enabled" : "Disabled")
+                    .attr("cpu", cpu)
+                    .log("Changed CPU status");
         }
     }
 }

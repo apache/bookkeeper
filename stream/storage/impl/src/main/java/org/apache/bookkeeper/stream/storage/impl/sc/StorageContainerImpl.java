@@ -27,7 +27,7 @@ import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainerService;
@@ -37,7 +37,7 @@ import org.apache.bookkeeper.stream.storage.impl.routing.RoutingHeaderProxyInter
 /**
  * The default implementation of {@link StorageContainer}.
  */
-@Slf4j
+@CustomLog
 class StorageContainerImpl implements StorageContainer {
 
     private final String containerName;
@@ -73,12 +73,12 @@ class StorageContainerImpl implements StorageContainer {
 
     @Override
     public CompletableFuture<StorageContainer> start() {
-        log.info("Starting storage container ({}) ...", getId());
+        log.info().attr("scId", getId()).log("Starting storage container");
 
         return service.start().thenCompose(ignored -> {
             try {
                 grpcServer.start();
-                log.info("Successfully started storage container ({}).", getId());
+                log.info().attr("scId", getId()).log("Successfully started storage container");
 
                 channel = InProcessChannelBuilder.forName(containerName)
                     .usePlaintext()
@@ -88,7 +88,8 @@ class StorageContainerImpl implements StorageContainer {
                     .build();
                 return FutureUtils.value(StorageContainerImpl.this);
             } catch (IOException e) {
-                log.error("Failed to start the grpc server for storage container ({})", getId(), e);
+                log.error().attr("scId", getId()).exception(e)
+                    .log("Failed to start the grpc server for storage container");
                 return FutureUtils.exception(e);
             }
         });
@@ -96,7 +97,7 @@ class StorageContainerImpl implements StorageContainer {
 
     @Override
     public CompletableFuture<Void> stop() {
-        log.info("Stopping storage container ({}) ...", getId());
+        log.info().attr("scId", getId()).log("Stopping storage container");
 
         Channel existingChannel = channel;
 
@@ -115,7 +116,7 @@ class StorageContainerImpl implements StorageContainer {
 
         return service.stop().thenApply(ignored -> {
 
-            log.info("Successfully stopped storage container ({}).", getId());
+            log.info().attr("scId", getId()).log("Successfully stopped storage container");
             return null;
         });
     }

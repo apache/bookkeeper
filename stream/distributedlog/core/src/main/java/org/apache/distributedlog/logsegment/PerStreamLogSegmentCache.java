@@ -28,14 +28,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.LogSegmentMetadata;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Managing log segments in local cache.
@@ -47,9 +44,8 @@ import org.slf4j.LoggerFactory;
  * to change if we change the behavior
  * </p>
  */
+@CustomLog
 public class PerStreamLogSegmentCache {
-
-    static final Logger LOG = LoggerFactory.getLogger(PerStreamLogSegmentCache.class);
 
     protected final String streamName;
     protected final boolean validateLogSegmentSequenceNumber;
@@ -101,8 +97,11 @@ public class PerStreamLogSegmentCache {
                         && segment.getVersion()
                         >= LogSegmentMetadata.LogSegmentMetadataVersion.VERSION_V2_LEDGER_SEQNO.value
                         && prevSegment.getLogSegmentSequenceNumber() + 1 != segment.getLogSegmentSequenceNumber()) {
-                    LOG.error("{} found ledger sequence number gap between log segment {} and {}",
-                        streamName, prevSegment, segment);
+                    log.error()
+                            .attr("stream", streamName)
+                            .attr("prevSegment", prevSegment)
+                            .attr("segment", segment)
+                            .log("found ledger sequence number gap between log segments");
                     throw new UnexpectedException(streamName + " found ledger sequence number gap between log segment "
                             + prevSegment.getLogSegmentSequenceNumber()
                             + " and " + segment.getLogSegmentSequenceNumber());
@@ -121,8 +120,11 @@ public class PerStreamLogSegmentCache {
                     startSequenceId = segment.getStartSequenceId() + segment.getRecordCount();
                     if (null != prevSegment && prevSegment.supportsSequenceId()
                             && prevSegment.getStartSequenceId() > segment.getStartSequenceId()) {
-                        LOG.warn("{} found decreasing start sequence id in log segment {}, previous is {}",
-                            streamName, segment, prevSegment);
+                        log.warn()
+                                .attr("stream", streamName)
+                                .attr("segment", segment)
+                                .attr("prevSegment", prevSegment)
+                                .log("found decreasing start sequence id in log segment");
                     }
                 } else {
                     startSequenceId = DistributedLogConstants.UNASSIGNED_SEQUENCE_ID;
@@ -158,8 +160,11 @@ public class PerStreamLogSegmentCache {
         synchronized (logSegments) {
             if (!logSegments.containsKey(name)) {
                 logSegments.put(name, metadata);
-                LOG.info("{} added log segment ({} : {}) to cache.",
-                    streamName, name, metadata);
+                log.info()
+                        .attr("stream", streamName)
+                        .attr("name", name)
+                        .attr("metadata", metadata)
+                        .log("added log segment to cache.");
             }
             LogSegmentMetadata oldMetadata = lid2LogSegments.remove(metadata.getLogSegmentId());
             if (null == oldMetadata) {
@@ -237,13 +242,13 @@ public class PerStreamLogSegmentCache {
             LogSegmentMetadata metadata = logSegments.remove(name);
             if (null != metadata) {
                 lid2LogSegments.remove(metadata.getLogSegmentId(), metadata);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Removed log segment ({} : {}) from cache.", name, metadata);
-                }
+                log.debug()
+                        .attr("name", name)
+                        .attr("metadata", metadata)
+                        .log("Removed log segment from cache.");
             }
             return metadata;
         }
     }
-
 
 }

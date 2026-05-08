@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -51,15 +52,13 @@ import org.apache.distributedlog.logsegment.LogSegmentEntryStore;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utility class for setting up bookkeeper ensembles
  * and bringing individual bookies up and down.
  */
+@CustomLog
 public class DLMTestUtil {
-    protected static final Logger LOG = LoggerFactory.getLogger(DLMTestUtil.class);
     private static final  byte[] payloadStatic = repeatString("abc", 512).getBytes();
 
     static String repeatString(String s, int n) {
@@ -73,13 +72,13 @@ public class DLMTestUtil {
     public static Map<Long, LogSegmentMetadata> readLogSegments(ZooKeeperClient zkc, String ledgerPath)
             throws Exception {
         List<String> children = zkc.get().getChildren(ledgerPath, false);
-        LOG.info("Children under {} : {}", ledgerPath, children);
+        log.info().attr("ledgerPath", ledgerPath).attr("children", children).log("Children under ledger path");
         Map<Long, LogSegmentMetadata> segments =
             new HashMap<Long, LogSegmentMetadata>(children.size());
         for (String child : children) {
             LogSegmentMetadata segment =
                     Utils.ioResult(LogSegmentMetadata.read(zkc, ledgerPath + "/" + child));
-            LOG.info("Read segment {} : {}", child, segment);
+            log.info().attr("child", child).attr("segment", segment).log("Read segment");
             segments.put(segment.getLogSegmentSequenceNumber(), segment);
         }
         return segments;
@@ -468,10 +467,10 @@ public class DLMTestUtil {
         try {
             if (null != confUrl) {
                 conf.loadConf(confUrl);
-                LOG.info("loaded bk_server.conf from resources");
+                log.info("loaded bk_server.conf from resources");
             }
         } catch (org.apache.commons.configuration2.ex.ConfigurationException ex) {
-            LOG.warn("loading conf failed", ex);
+            log.warn().exception(ex).log("loading conf failed");
         }
         conf.setAllowLoopback(true);
         return conf;
@@ -481,7 +480,8 @@ public class DLMTestUtil {
         try {
             Utils.ioResult(future);
         } catch (Exception ex) {
-            LOG.info("Expected: {} Actual: {}", exClass.getName(), ex.getClass().getName());
+            log.info().attr("expected", exClass.getName()).attr("actual", ex.getClass().getName())
+                    .log("Validating future exception");
             assertTrue("exceptions types equal", exClass.isInstance(ex));
         }
     }

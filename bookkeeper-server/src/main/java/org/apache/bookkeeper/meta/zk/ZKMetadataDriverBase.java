@@ -31,10 +31,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.AbstractZkLedgerManagerFactory;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
@@ -62,7 +62,7 @@ import org.apache.zookeeper.data.Stat;
 /**
  * This is a mixin class for supporting zookeeper based metadata driver.
  */
-@Slf4j
+@CustomLog
 public class ZKMetadataDriverBase implements AutoCloseable {
 
     protected static final String SCHEME = "zk";
@@ -178,8 +178,9 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             && optionalCtx.get() instanceof ZooKeeper) {
             this.ledgersRootPath = conf.getZkLedgersRootPath();
 
-            log.info("Initialize zookeeper metadata driver with external zookeeper client : ledgersRootPath = {}.",
-                ledgersRootPath);
+            log.info()
+                    .attr("ledgersRootPath", ledgersRootPath)
+                    .log("Initialize zookeeper metadata driver with external zookeeper client");
 
             // if an external zookeeper is added, use the zookeeper instance
             this.zk = (ZooKeeper) (optionalCtx.get());
@@ -190,7 +191,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             try {
                 metadataServiceUriStr = conf.getMetadataServiceUri();
             } catch (ConfigurationException e) {
-                log.error("Failed to retrieve metadata service uri from configuration", e);
+                log.error().exception(e).log("Failed to retrieve metadata service uri from configuration");
                 throw new MetadataException(
                     Code.INVALID_METADATA_SERVICE_URI, e);
             }
@@ -209,8 +210,11 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 throw new MetadataException(
                         Code.INVALID_METADATA_SERVICE_URI, ex);
             }
-            log.info("Initialize zookeeper metadata driver at metadata service uri {} :"
-                + " zkServers = {}, ledgersRootPath = {}.", metadataServiceUriStr, zkServers, ledgersRootPath);
+            log.info()
+                    .attr("metadataServiceUri", metadataServiceUriStr)
+                    .attr("zkServers", zkServers)
+                    .attr("ledgersRootPath", ledgersRootPath)
+                    .log("Initialize zookeeper metadata driver at metadata service uri");
 
             try {
                 this.zk = ZooKeeperClient.newBuilder()
@@ -219,9 +223,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     .operationRetryPolicy(zkRetryPolicy)
                     .requestRateLimit(conf.getZkRequestRateLimit())
                     .watchers(Collections.singleton(watchedEvent -> {
-                        if (log.isDebugEnabled()) {
-                            log.debug("Got ZK session watch event: {}", watchedEvent);
-                        }
+                        log.debug().attr("watchedEvent", watchedEvent).log("Got ZK session watch event");
                         handleState(watchedEvent.getState());
                     }))
                     .statsLogger(statsLogger)
@@ -240,7 +242,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                     }
                 }
             } catch (IOException | KeeperException e) {
-                log.error("Failed to create zookeeper client to {}", zkServers, e);
+                log.error().exception(e).attr("zkServers", zkServers).log("Failed to create zookeeper client");
                 MetadataException me = new MetadataException(
                     Code.METADATA_SERVICE_ERROR,
                     "Failed to create zookeeper client to " + zkServers,
@@ -302,9 +304,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 if (KeeperException.Code.OK.intValue() == rc) {
                     createResult.complete(null);
                 } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("health check already disabled!");
-                    }
+                    log.debug("health check already disabled");
                     createResult.complete(null);
                 } else {
                     createResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
@@ -324,9 +324,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 if (KeeperException.Code.OK.intValue() == rc) {
                     deleteResult.complete(null);
                 } else if (KeeperException.Code.NONODE.intValue() == rc) {
-                    if (log.isDebugEnabled()) {
-                        log.debug("health check already enabled!");
-                    }
+                    log.debug("health check already enabled");
                     deleteResult.complete(null);
                 } else {
                     deleteResult.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc), path));
@@ -359,7 +357,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
             try {
                 lmFactory.close();
             } catch (IOException e) {
-                log.warn("Failed to close zookeeper based ledger manager", e);
+                log.warn().exception(e).log("Failed to close zookeeper based ledger manager");
             }
             lmFactory = null;
         }
@@ -368,7 +366,7 @@ public class ZKMetadataDriverBase implements AutoCloseable {
                 zk.close(ZK_CLIENT_WAIT_FOR_SHUTDOWN_TIMEOUT_MS);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Interrupted on closing zookeeper client", e);
+                log.warn().exception(e).log("Interrupted on closing zookeeper client");
             }
             zk = null;
         }

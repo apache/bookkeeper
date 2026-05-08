@@ -22,23 +22,19 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.common.util.PermitManager;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Manager to control all the log segments rolling.
  */
+@CustomLog
 public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
-
-    static final Logger LOG = LoggerFactory.getLogger(LimitedPermitManager.class);
 
     enum PermitState {
         ALLOWED, DISALLOWED, DISABLED
@@ -127,8 +123,10 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
                 try {
                     executorService.schedule(this, period, timeUnit);
                 } catch (RejectedExecutionException ree) {
-                    LOG.warn("Failed on scheduling releasing permit in given period ({}ms)."
-                            + " Release it immediately : ", timeUnit.toMillis(period), ree);
+                    log.warn()
+                            .attr("periodMs", timeUnit.toMillis(period))
+                            .exception(ree)
+                            .log("Failed on scheduling releasing permit in given period (ms). Release it immediately");
                     semaphore.release();
                 }
             }
@@ -143,7 +141,7 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
         int epoch = epochUpdater.getAndIncrement(this);
         if (epoch == ((EpochPermit) permit).getEpoch()) {
             this.enablePermits = false;
-            LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch);
+            log.info().attr("enablePermits", this.enablePermits).attr("epoch", epoch).log("Permits disabled");
             return true;
         } else {
             return false;
@@ -164,7 +162,7 @@ public class LimitedPermitManager implements PermitManager, Runnable, Watcher {
     synchronized void forceSetAllowPermits(boolean allowPermits) {
         int epoch = epochUpdater.getAndIncrement(this);
         this.enablePermits = allowPermits;
-        LOG.info("EnablePermits = {}, Epoch = {}.", this.enablePermits, epoch);
+        log.info().attr("enablePermits", this.enablePermits).attr("epoch", epoch).log("Permits state updated");
     }
 
     @Override

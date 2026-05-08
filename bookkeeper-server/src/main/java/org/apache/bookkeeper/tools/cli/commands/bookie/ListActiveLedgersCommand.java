@@ -31,6 +31,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
@@ -47,15 +48,13 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  *  List active(exist in metadata storage) ledgers in a entry log file.
  *
  **/
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+@CustomLog
 public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
-    private static final Logger LOG = LoggerFactory.getLogger(ListActiveLedgersCommand.class);
     private static final String NAME = "active ledger";
     private static final String DESC = "Retrieve bookie active ledger info.";
     private static final long  DEFAULT_TIME_OUT = 1000;
@@ -135,20 +134,20 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
               EntryLogMetadata entryLogMetadata = entryLogger.getEntryLogMetadata(cmdFlags.logId);
               Map<Long, Long> ledgersOnEntryLog = entryLogMetadata.getLedgersMap().asMap();
               if (ledgersOnEntryLog.isEmpty()) {
-                LOG.info("Ledgers on log file {} is empty", cmdFlags.logId);
+                log.info().attr("file", cmdFlags.logId).log("Ledgers on log file is empty");
               }
 
               entryLogMetadata.removeLedgerIf(ledgerId -> !activeLedgersOnMetadata.contains(ledgerId));
               printActiveLedgerOnEntryLog(cmdFlags.logId, entryLogMetadata);
             } else {
-              LOG.info("Read active ledgers id from metadata store,fail code {}", resultCode.get());
+              log.info().attr("code", resultCode.get()).log("Read active ledgers id from metadata store,fail code");
               throw BKException.create(resultCode.get());
             }
           } else {
-            LOG.info("Read active ledgers id from metadata store timeout");
+            log.info("Read active ledgers id from metadata store timeout");
           }
         } catch (BKException | InterruptedException | IOException e){
-          LOG.error("Received Exception while processing ledgers", e);
+          log.error().exception(e).log("Received Exception while processing ledgers");
           throw new UncheckedExecutionException(e);
         }
         return null;
@@ -156,16 +155,25 @@ public class ListActiveLedgersCommand extends BookieCommand<ActiveLedgerFlags>{
     }
 
     private void printActiveLedgerOnEntryLog(long logId, EntryLogMetadata entryLogMetadata) {
-      LOG.info("Print active ledgers of entrylog {} ({}.log)", logId, Long.toHexString(logId));
+      log.info()
+              .attr("logId", logId)
+              .attr("value", Long.toHexString(logId))
+              .log("Print active ledgers of entrylog ( .log)");
       if (entryLogMetadata.getRemainingSize() == 0){
-        LOG.info("No active ledgers on log file {}", logId);
+        log.info().attr("logId", logId).log("No active ledgers on log file");
       } else {
-        LOG.info("entryLogId: {}, remaining size: {}, total size: {}, usage: {}", entryLogMetadata.getEntryLogId(),
-                entryLogMetadata.getRemainingSize(), entryLogMetadata.getTotalSize(), entryLogMetadata.getUsage());
+        log.info()
+                .attr("entryLogId", entryLogMetadata.getEntryLogId())
+                .attr("remainingSize", entryLogMetadata.getRemainingSize())
+                .attr("totalSize", entryLogMetadata.getTotalSize())
+                .attr("usage", entryLogMetadata.getUsage())
+                .log("Entry log usage");
       }
       entryLogMetadata.getLedgersMap().forEach((ledgerId, size) -> {
-        LOG.info("--------- Lid={}, TotalSizeOfEntriesOfLedger={}  ---------",
-                ledgerIdFormatter.formatLedgerId(ledgerId), size);
+        log.info()
+                .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId))
+                .attr("totalSize", size)
+                .log("Size for ledger's entries");
       });
     }
 }

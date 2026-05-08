@@ -31,6 +31,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.distributedlog.BookKeeperClient;
 import org.apache.distributedlog.BookKeeperClientBuilder;
@@ -47,18 +48,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * TestLedgerAllocatorPool.
  */
+@CustomLog
 public class TestLedgerAllocatorPool extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestLedgerAllocatorPool.class);
 
     private static final String ledgersPath = "/ledgers";
     private static final OpListener<LedgerHandle> NULL_LISTENER = new OpListener<LedgerHandle>() {
@@ -170,7 +165,7 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
             SimpleLedgerAllocator sla = pool.getLedgerAllocator(lh);
             String slaPath = sla.allocatePath;
 
-            logger.info("Allocated ledger {} from path {}", lh.getId(), slaPath);
+            log.info().attr("ledgerId", lh.getId()).attr("slaPath", slaPath).log("Allocated ledger from path");
 
             pendingTxns.add(txn);
             allocatePaths.add(slaPath);
@@ -199,7 +194,7 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
                 SimpleLedgerAllocator sla = pool.getLedgerAllocator(lh);
                 String slaPath = sla.allocatePath;
 
-                logger.info("Allocated ledger {} from path {}", lh.getId(), slaPath);
+                log.info().attr("ledgerId", lh.getId()).attr("slaPath", slaPath).log("Allocated ledger from path");
                 allocatedPathSet.add(slaPath);
 
                 Utils.ioResult(txn.execute());
@@ -289,7 +284,8 @@ public class TestLedgerAllocatorPool extends TestDistributedLogBase {
                             Utils.ioResult(txn.execute());
                             lh.close();
                             allocatedLedgers.putIfAbsent(lh.getId(), lh);
-                            logger.info("[thread {}] allocate {}th ledger {}", tid, i, lh.getId());
+                            log.info().attr("thread", tid).attr("ledgerIndex", i).attr("ledgerId", lh.getId())
+                                    .log("thread allocate ledger");
                         }
                     } catch (Exception ioe) {
                         numFailures.incrementAndGet();

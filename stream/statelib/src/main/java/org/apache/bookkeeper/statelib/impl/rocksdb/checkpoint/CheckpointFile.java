@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.impl.rocksdb.RocksUtils;
 import org.apache.bookkeeper.stream.proto.kv.store.CheckpointMetadata;
@@ -46,7 +46,7 @@ import org.apache.bookkeeper.stream.proto.kv.store.FileInfo;
 /**
  * CheckpointFile encapsulates the attributes and operations for a file in checkpoint.
  */
-@Slf4j
+@CustomLog
 @lombok.Builder
 @lombok.EqualsAndHashCode
 public class CheckpointFile {
@@ -84,7 +84,10 @@ public class CheckpointFile {
                 ckSum = Files.asByteSource(file).hash(Hashing.sha256()).toString();
                 return ckSum;
             } catch (IOException e) {
-                log.error("Failed to get checksum for file {} {}", file.getName(), e.getMessage(), e);
+                log.error().attr("fileName", file.getName())
+                    .exceptionMessage(e)
+                    .exception(e)
+                    .log("Failed to get checksum for file");
             }
             return ckSum;
         }
@@ -169,7 +172,10 @@ public class CheckpointFile {
                 return false;
             }
         } catch (IOException e) {
-            log.error("Failed fileExists {} {}", file.getName(), e.getMessage(), e);
+            log.error().attr("fileName", file.getName())
+                .exceptionMessage(e)
+                .exception(e)
+                .log("Failed fileExists");
         }
         return true;
     }
@@ -242,8 +248,11 @@ public class CheckpointFile {
                 // Check if we made any progress
                 long endMs = System.currentTimeMillis();
                 long newCount = cis.getCount();
-                log.info("Timeout waiting for copy: {} last-read {} current-read {} runtime(ms) {} ",
-                    remoteFilePath, lastCount, newCount, endMs - startMs);
+                log.info().attr("remoteFilePath", remoteFilePath)
+                    .attr("lastRead", lastCount)
+                    .attr("currentRead", newCount)
+                    .attr("runtimeMs", endMs - startMs)
+                    .log("Timeout waiting for copy");
                 if (lastCount == newCount) {
                     throw new TimeoutException("No progress reading: " + remoteFilePath
                         + " read " + lastCount + " runtime(ms) " + (endMs - startMs)

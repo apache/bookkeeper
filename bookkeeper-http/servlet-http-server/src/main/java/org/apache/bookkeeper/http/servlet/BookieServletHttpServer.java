@@ -20,17 +20,16 @@
  */
 package org.apache.bookkeeper.http.servlet;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.http.HttpServer;
 import org.apache.bookkeeper.http.HttpServerConfiguration;
 import org.apache.bookkeeper.http.HttpServiceProvider;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Only use for hold Http service provider,not a fully implement bookie http service server.
  **/
+@CustomLog
 public class BookieServletHttpServer implements HttpServer {
-  static final Logger LOG = LoggerFactory.getLogger(BookieServletHttpServer.class);
   private static HttpServiceProvider bookieHttpServiceProvider;
   private static int listenPort = -1;
   private static String listenHost = "0.0.0.0";
@@ -53,7 +52,7 @@ public class BookieServletHttpServer implements HttpServer {
   @Override
   public void initialize(HttpServiceProvider httpServiceProvider) {
      setHttpServiceProvider(httpServiceProvider);
-     LOG.info("Bookie HTTP Server initialized: {}", httpServiceProvider);
+     log.info().attr("httpServiceProvider", httpServiceProvider).log("Bookie HTTP Server initialized");
   }
 
   public static synchronized void setHttpServiceProvider(HttpServiceProvider httpServiceProvider){

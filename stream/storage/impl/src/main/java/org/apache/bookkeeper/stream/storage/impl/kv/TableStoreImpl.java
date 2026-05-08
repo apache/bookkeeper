@@ -28,7 +28,7 @@ import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.proce
 
 import com.google.protobuf.ByteString;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.Op;
@@ -62,7 +62,7 @@ import org.apache.bookkeeper.stream.storage.api.kv.TableStore;
 /**
  * A table store implementation based on {@link org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore}.
  */
-@Slf4j
+@CustomLog
 public class TableStoreImpl implements TableStore {
 
     private final MVCCAsyncStore<byte[], byte[]> store;
@@ -73,9 +73,7 @@ public class TableStoreImpl implements TableStore {
 
     @Override
     public CompletableFuture<RangeResponse> range(RangeRequest rangeReq) {
-        if (log.isTraceEnabled()) {
-            log.trace("Received range request {}", rangeReq);
-        }
+        log.trace().attr("request", rangeReq).log("Received range request");
         return doRange(rangeReq)
             .thenApply(result -> {
                 try {
@@ -88,7 +86,7 @@ public class TableStoreImpl implements TableStore {
                 }
             })
             .exceptionally(cause -> {
-                log.error("Failed to process range request {}", rangeReq, cause);
+                log.error().attr("request", rangeReq).exception(cause).log("Failed to process range request");
                 return RangeResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
                         .setCode(handleCause(cause))
@@ -152,7 +150,7 @@ public class TableStoreImpl implements TableStore {
                 }
             })
             .exceptionally(cause -> {
-                log.error("Failed to process put request {}", putReq, cause);
+                log.error().attr("request", putReq).exception(cause).log("Failed to process put request");
                 return PutResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
                         .setCode(handleCause(cause))
@@ -193,7 +191,7 @@ public class TableStoreImpl implements TableStore {
                 }
             })
             .exceptionally(cause -> {
-                log.error("Failed to process increment request {}", incrementReq, cause);
+                log.error().attr("request", incrementReq).exception(cause).log("Failed to process increment request");
                 return IncrementResponse.newBuilder()
                     .setHeader(ResponseHeader.newBuilder()
                         .setCode(handleCause(cause))
@@ -266,9 +264,7 @@ public class TableStoreImpl implements TableStore {
 
     @Override
     public CompletableFuture<TxnResponse> txn(TxnRequest txnReq) {
-        if (log.isTraceEnabled()) {
-            log.trace("Received txn request : {}", txnReq);
-        }
+        log.trace().attr("request", txnReq).log("Received txn request");
         return doTxn(txnReq)
             .thenApply(txnResult -> {
                 try {

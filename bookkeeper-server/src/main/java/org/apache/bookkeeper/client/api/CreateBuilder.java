@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import io.github.merlimat.slog.Logger;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
@@ -121,5 +122,23 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
      * @return a new {@link CreateAdvBuilder} builder
      */
     CreateAdvBuilder makeAdv();
+
+    /**
+     * Inherit the context attributes of the given slog {@link Logger} on the logger bound to
+     * the resulting {@link WriteHandle}. Every log statement emitted by the handle (and by the create-time machinery
+     * that produces it) will carry the parent logger's context attributes, in addition to the {@code ledgerId}
+     * attribute that is always added by the client.
+     *
+     * <p>Useful for correlating bookkeeper-client log output with the application's own request / tenant / trace
+     * identifiers — typically the application has built a per-request logger via
+     * {@code Logger.get(...).with().attr(...)...build()} and passes it here.
+     *
+     * @param parentLogger logger whose context attributes to inherit; {@code null} is treated as no extra context
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withLoggerContext(Logger parentLogger) {
+        return this;
+    }
 
 }

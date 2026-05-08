@@ -25,10 +25,9 @@ import io.netty.util.Recycler.Handle;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Map;
+import lombok.CustomLog;
 import lombok.Getter;
 import org.apache.bookkeeper.net.BookieId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A specific {@link DistributionSchedule} that places entries in round-robin
@@ -37,8 +36,8 @@ import org.slf4j.LoggerFactory;
  * on.
  *
  */
+@CustomLog
 public class RoundRobinDistributionSchedule implements DistributionSchedule {
-    private static final Logger LOG = LoggerFactory.getLogger(RoundRobinDistributionSchedule.class);
     @Getter
     private final int writeQuorumSize;
     private final int ackQuorumSize;
@@ -438,10 +437,12 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
     public BitSet getEntriesStripedToTheBookie(int bookieIndex, long startEntryId, long lastEntryId) {
         if ((startEntryId < 0) || (lastEntryId < 0) || (bookieIndex < 0) || (bookieIndex >= ensembleSize)
                 || (lastEntryId < startEntryId)) {
-            LOG.error(
-                    "Illegal arguments for getEntriesStripedToTheBookie, bookieIndex : {},"
-                            + " ensembleSize : {}, startEntryId : {}, lastEntryId : {}",
-                    bookieIndex, ensembleSize, startEntryId, lastEntryId);
+            log.error()
+                    .attr("bookieIndex", bookieIndex)
+                    .attr("ensembleSize", ensembleSize)
+                    .attr("startEntryId", startEntryId)
+                    .attr("entryId", lastEntryId)
+                    .log("Illegal arguments for getEntriesStripedToTheBookie");
             throw new IllegalArgumentException("Illegal arguments for getEntriesStripedToTheBookie");
         }
         BitSet entriesStripedToTheBookie = new BitSet((int) (lastEntryId - startEntryId + 1));

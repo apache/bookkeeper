@@ -29,7 +29,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterAssignmentData;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
@@ -50,7 +50,7 @@ import org.junit.rules.TestName;
 /**
  * Unit test {@link ZkClusterMetadataStore}.
  */
-@Slf4j
+@CustomLog
 public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
 
     private static final int NUM_STORAGE_CONTAINERS = 1024;
@@ -114,37 +114,27 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
     @Test
     public void testUpdateClusterMetadata() {
        int numStorageContainers = 4096;
-       ClusterMetadata metadata = ClusterMetadata.newBuilder()
-           .setNumStorageContainers(numStorageContainers)
-           .build();
+       ClusterMetadata metadata = new ClusterMetadata().setNumStorageContainers(numStorageContainers);
        store.updateClusterMetadata(metadata);
        assertEquals(metadata, store.getClusterMetadata());
     }
 
     @Test
     public void testUpdateClusterAssignmentData() {
-        ClusterAssignmentData assignmentData = ClusterAssignmentData.newBuilder()
-            .putServers(
-                "server-0",
-                ServerAssignmentData.newBuilder()
-                    .addContainers(1L)
-                    .addContainers(2L)
-                    .build())
-            .build();
+        ClusterAssignmentData assignmentData = new ClusterAssignmentData();
+        ServerAssignmentData server0 = assignmentData.putServers("server-0");
+        server0.addContainer(1L);
+        server0.addContainer(2L);
         store.updateClusterAssignmentData(assignmentData);
         assertEquals(assignmentData, store.getClusterAssignmentData());
     }
 
     @Test
     public void testWatchClusterAssignmentData() {
-        ClusterAssignmentData assignmentData = ClusterAssignmentData.newBuilder()
-            .putServers(
-                "server-0",
-                ServerAssignmentData.newBuilder()
-                    .addContainers(1L)
-                    .addContainers(2L)
-                    .build())
-            .build();
+        ClusterAssignmentData assignmentData = new ClusterAssignmentData();
+        ServerAssignmentData server0 = assignmentData.putServers("server-0");
+        server0.addContainer(1L);
+        server0.addContainer(2L);
 
         @Cleanup("shutdown")
         ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -162,14 +152,10 @@ public class ZkClusterMetadataStoreTest extends ZooKeeperClusterTestCase {
 
     @Test
     public void testUnwatchClusterAssignmentData() throws Exception {
-        ClusterAssignmentData assignmentData = ClusterAssignmentData.newBuilder()
-            .putServers(
-                "server-0",
-                ServerAssignmentData.newBuilder()
-                    .addContainers(1L)
-                    .addContainers(2L)
-                    .build())
-            .build();
+        ClusterAssignmentData assignmentData = new ClusterAssignmentData();
+        ServerAssignmentData server0 = assignmentData.putServers("server-0");
+        server0.addContainer(1L);
+        server0.addContainer(2L);
 
         @Cleanup("shutdown")
         ExecutorService executor = Executors.newSingleThreadExecutor();

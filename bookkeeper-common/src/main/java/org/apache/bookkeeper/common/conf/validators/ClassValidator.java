@@ -19,15 +19,15 @@
 
 package org.apache.bookkeeper.common.conf.validators;
 
+import lombok.CustomLog;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.conf.Validator;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 
 /**
  * Validator that validates a configuration setting is returning a given type of class.
  */
-@Slf4j
+@CustomLog
 @Data
 public class ClassValidator<T> implements Validator {
 
@@ -51,15 +51,22 @@ public class ClassValidator<T> implements Validator {
                 ReflectionUtils.forName((String) value, interfaceClass);
                 return true;
             } catch (RuntimeException re) {
-                log.warn("Setting value of '{}' is not '{}' : {}",
-                    name, interfaceClass.getName(), value, re);
+                log.warn()
+                        .exception(re)
+                        .attr("name", name)
+                        .attr("interfaceClass", interfaceClass.getName())
+                        .attr("value", value)
+                        .log("Setting value does not match expected interface");
                 return false;
             }
         } else if (value instanceof Class) {
             Class cls = (Class) value;
             if (!interfaceClass.isAssignableFrom(cls)) {
-                log.warn("Setting value of '{}' is not '{}' : {}",
-                    name, interfaceClass.getName(), cls.getName());
+                log.warn()
+                        .attr("name", name)
+                        .attr("interfaceClass", interfaceClass.getName())
+                        .attr("value", cls.getName())
+                        .log("Setting value does not match expected interface");
                 return false;
             } else {
                 return true;

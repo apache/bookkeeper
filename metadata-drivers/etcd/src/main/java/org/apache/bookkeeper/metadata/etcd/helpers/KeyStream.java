@@ -30,13 +30,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Read a range of key/value pairs in a streaming way.
  */
-@Slf4j
+@CustomLog
 public class KeyStream<T> {
 
     private final KV kvClient;
@@ -82,9 +82,9 @@ public class KeyStream<T> {
                 batchSize += 1;
             }
         }
-        if (log.isTraceEnabled()) {
-            log.trace("Read keys between {} and {}", beginKey.toString(UTF_8), endKey.toString(UTF_8));
-        }
+        log.trace(e -> e.attr("beginKey", beginKey.toString(UTF_8))
+                .attr("endKey", endKey.toString(UTF_8))
+                .log("Read keys"));
         return kvClient.get(
             beginKey,
             GetOption.newBuilder()

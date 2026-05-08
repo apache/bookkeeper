@@ -25,7 +25,7 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.StampedLock;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.ThreadSafe;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.internal.api.HashStreamRanges;
 import org.apache.bookkeeper.common.router.HashRouter;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
@@ -34,7 +34,7 @@ import org.apache.bookkeeper.stream.proto.RangeProperties;
  * A router that used to route the events to ranges.
  */
 @ThreadSafe
-@Slf4j
+@CustomLog
 public class RangeRouter<K> {
 
     private final HashRouter<K> keyRouter;

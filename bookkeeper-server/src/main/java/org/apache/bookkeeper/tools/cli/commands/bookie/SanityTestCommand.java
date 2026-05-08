@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
@@ -40,15 +41,12 @@ import org.apache.bookkeeper.tools.cli.commands.bookie.SanityTestCommand.SanityF
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A bookie command to sanity test for local bookie.
  */
+@CustomLog
 public class SanityTestCommand extends BookieCommand<SanityFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(SanityTestCommand.class);
     private static final String NAME = "sanitytest";
     private static final String DESC = "Sanity test for local bookie. "
                                            + "Create ledger and write/reads entries on local bookie.";
@@ -90,7 +88,7 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         try {
             return handleAsync(conf, cmdFlags).get();
         } catch (Exception e) {
-            LOG.warn("Error in bookie sanity test", e);
+            log.warn().exception(e).log("Error in bookie sanity test");
             return false;
         }
     }
@@ -107,14 +105,14 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         try {
             bk = new BookKeeper(clientConf);
         } catch (BKException | IOException | InterruptedException e) {
-            LOG.warn("Failed to initialize bookkeeper client", e);
+            log.warn().exception(e).log("Failed to initialize bookkeeper client");
             result.completeExceptionally(e);
             return result;
         }
 
         bk.asyncCreateLedger(1, 1, BookKeeper.DigestType.MAC, new byte[0], (rc, lh, ctx) -> {
             if (rc != BKException.Code.OK) {
-                LOG.warn("ledger creation failed for sanity command {}", rc);
+                log.warn().attr("rc", rc).log("ledger creation failed for sanity command");
                 result.completeExceptionally(BKException.create(rc));
                 return;
             }
@@ -125,7 +123,10 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
                 entriesFutures.add(entryFuture);
                 lh.asyncAddEntry(content.getBytes(UTF_8), (arc, alh, entryId, actx) -> {
                     if (arc != BKException.Code.OK) {
-                        LOG.warn("ledger add entry failed for {}-{}", alh.getId(), arc);
+                        log.warn()
+                                .attr("ledgerId", alh.getId())
+                                .attr("rc", arc)
+                                .log("Ledger add entry failed");
                         entryFuture.completeExceptionally(BKException.create(arc));
                         return;
                     }
@@ -137,7 +138,10 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
             FutureUtils.collect(entriesFutures).thenCompose(_r -> lh.closeAsync()).thenCompose(_r -> {
                 bk.asyncOpenLedger(lh.getId(), BookKeeper.DigestType.MAC, new byte[0], (orc, olh, octx) -> {
                     if (orc != BKException.Code.OK) {
-                        LOG.warn("open sanity ledger failed for {}-{}", lh.getId(), orc);
+                        log.warn()
+                                .attr("ledgerId", lh.getId())
+                                .attr("rc", orc)
+                                .log("Open sanity ledger failed");
                         lhFuture.completeExceptionally(BKException.create(orc));
                         return;
                     }
@@ -153,7 +157,10 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
             }).thenCompose(rlh -> {
                 rlh.asyncReadEntries(0, cmdFlags.entries - 1, (rrc, rlh2, entries, rctx) -> {
                     if (rrc != BKException.Code.OK) {
-                        LOG.warn("reading sanity ledger failed for {}-{}", lh.getId(), rrc);
+                        log.warn()
+                                .attr("ledgerId", lh.getId())
+                                .attr("rc", rrc)
+                                .log("Reading sanity ledger failed");
                         readEntryFuture.completeExceptionally(BKException.create(rrc));
                         return;
                     }
@@ -169,8 +176,11 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
                             return;
                         }
                     }
-                    LOG.info("Read {} entries from ledger {}", i, lh.getId());
-                    LOG.info("Bookie sanity test succeeded");
+                    log.info()
+                            .attr("entries", i)
+                            .attr("ledgerId", lh.getId())
+                            .log("Read entries from ledger");
+                    log.info("Bookie sanity test succeeded");
                     readEntryFuture.complete(null);
                 }, null);
                 return readEntryFuture;
@@ -190,7 +200,7 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         if (lh != null) {
             bk.asyncDeleteLedger(lh.getId(), (rc, ctx) -> {
                 if (rc != BKException.Code.OK) {
-                    LOG.info("Failed to delete ledger id {}", lh.getId());
+                    log.info().attr("ledgerId", lh.getId()).log("Failed to delete ledger");
                 }
                 close(bk);
             }, null);
@@ -203,7 +213,7 @@ public class SanityTestCommand extends BookieCommand<SanityFlags> {
         try {
             bk.close();
         } catch (Exception e) {
-            LOG.info("Failed to close bookkeeper client {}", e.getMessage(), e);
+            log.info().exception(e).log("Failed to close bookkeeper client");
         }
     }
 

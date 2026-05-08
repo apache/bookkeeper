@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -35,18 +36,13 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Watcher on watching a given namespace.
  */
+@CustomLog
 public class ZKNamespaceWatcher extends NamespaceWatcher
         implements Runnable, Watcher, AsyncCallback.Children2Callback {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZKNamespaceWatcher.class);
 
     private final DistributedLogConfiguration conf;
     private final URI uri;
@@ -68,7 +64,11 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         try {
             scheduler.schedule(r, ms, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.error("Task {} scheduled in {} ms is rejected : ", r, ms, ree);
+            log.error()
+                    .attr("task", r)
+                    .attr("delayMs", ms)
+                    .exception(ree)
+                    .log("Task scheduled is rejected");
         }
     }
 
@@ -77,7 +77,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
         try {
             doWatchNamespaceChanges();
         } catch (Exception e) {
-            logger.error("Encountered unknown exception on watching namespace {} ", uri, e);
+            log.error().attr("uri", uri).exception(e).log("Encountered unknown exception on watching namespace");
         }
     }
 
@@ -95,7 +95,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            logger.warn("Interrupted on watching namespace changes for {} : ", uri, e);
+            log.warn().attr("uri", uri).exception(e).log("Interrupted on watching namespace changes");
             scheduleTask(this, conf.getZKSessionTimeoutMilliseconds());
         }
     }
@@ -103,7 +103,7 @@ public class ZKNamespaceWatcher extends NamespaceWatcher
     @Override
     public void processResult(int rc, String path, Object ctx, List<String> children, Stat stat) {
         if (KeeperException.Code.OK.intValue() == rc) {
-            logger.info("Received updated logs under {} : {}", uri, children);
+            log.info().attr("uri", uri).attr("children", children).log("Received updated logs");
             List<String> result = new ArrayList<String>(children.size());
             for (String s : children) {
                 if (isReservedStreamName(s)) {

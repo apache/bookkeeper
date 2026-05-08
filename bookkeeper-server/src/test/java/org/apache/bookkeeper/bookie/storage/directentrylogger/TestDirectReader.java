@@ -25,6 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -40,7 +41,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOException;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
@@ -270,7 +270,7 @@ public class TestDirectReader {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), Logger.get(TestDirectReader.class))) {
             for (int i = 0; i < 1000; i++) {
                 ByteBuf bb = Unpooled.buffer(entrySize);
                 int pattern = 0xbeef + i;
@@ -317,7 +317,7 @@ public class TestDirectReader {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE);
+                                                 buffers, new NativeIOImpl(), Logger.get(TestDirectReader.class));
              LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
                                                  ByteBufAllocator.DEFAULT,
                                                  new NativeIOImpl(), Buffer.ALIGNMENT,
@@ -355,7 +355,7 @@ public class TestDirectReader {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                  1 << 20, MoreExecutors.newDirectExecutorService(),
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE);
+                                                 buffers, new NativeIOImpl(), Logger.get(TestDirectReader.class));
              LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
                                                  ByteBufAllocator.DEFAULT,
                                                  new NativeIOImpl(), Buffer.ALIGNMENT,
@@ -406,7 +406,7 @@ public class TestDirectReader {
             ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 10, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(),
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), Logger.get(TestDirectReader.class))) {
             ByteBuf b1 = Unpooled.buffer(entrySize);
             TestBuffer.fillByteBuf(b1, 0xfeedfeed);
             int offset1 = writer.writeDelimited(b1);
@@ -455,7 +455,7 @@ public class TestDirectReader {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT * 8, 8);
              LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234), 1 << 20,
                                                  MoreExecutors.newDirectExecutorService(), buffers, new NativeIOImpl(),
-                                                 Slogger.CONSOLE)) {
+                                                 Logger.get(TestDirectReader.class))) {
             ByteBuf b1 = Unpooled.buffer(entrySize);
             TestBuffer.fillByteBuf(b1, 0xfeedfeed);
             offset1 = writer.writeDelimited(b1);
@@ -499,7 +499,7 @@ public class TestDirectReader {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(logId, logFilename(directory, logId),
                                                  fileSize, MoreExecutors.newDirectExecutorService(),
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), Logger.get(TestDirectReader.class))) {
 
             for (int written = 0; written < fileSize; written += Buffer.ALIGNMENT) {
                 ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);

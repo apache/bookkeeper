@@ -68,7 +68,6 @@
     <module>bookkeeper-dist</module>
     <module>shaded</module>
     <module>microbenchmarks</module>
-    <module>bookkeeper-slogger</module>
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
@@ -180,10 +179,9 @@
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.130.Final</netty.version>
-    <netty-iouring.version>0.0.26.Final</netty-iouring.version>
+    <netty.version>4.2.13.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
-    <datasketches.version>0.8.3</datasketches.version>
+    <datasketches.version>7.0.1</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
     <protobuf.version>4.34.0</protobuf.version>
@@ -193,6 +191,7 @@
     <rocksdb.version>9.9.3</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
+    <slog.version>0.9.9</slog.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <spotless.version>2.43.0</spotless.version>
@@ -201,7 +200,7 @@
     <vertx.version>4.5.24</vertx.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <snappy.version>1.1.10.5</snappy.version>
-    <jctools.version>4.0.5</jctools.version>
+    <jctools.version>4.0.6</jctools.version>
     <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
@@ -221,16 +220,17 @@
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+    <lightproto-maven-plugin.version>0.7.0</lightproto-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
     <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.56.0</otel.version>
-    <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
-    <otel.semconv.version>1.37.0</otel.semconv.version>
-    <otel.contrib.version>1.52.0</otel.contrib.version>
+    <otel.version>1.61.0</otel.version>
+    <otel.instrumentation.version>2.27.0</otel.instrumentation.version>
+    <otel.semconv.version>1.41.0</otel.semconv.version>
+    <otel.contrib.version>1.56.0</otel.contrib.version>
     <okhttp3.version>5.3.1</okhttp3.version>
     <!-- use okio version that matches the okhttp3 version -->
     <okio.version>3.16.3</okio.version>
@@ -274,6 +274,11 @@
       </dependency>
 
       <!-- logging dependencies -->
+      <dependency>
+        <groupId>io.github.merlimat.slog</groupId>
+        <artifactId>slog</artifactId>
+        <version>${slog.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-bom</artifactId>
@@ -425,28 +430,6 @@
         <version>${netty.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-x86_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-aarch_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-classes-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
       </dependency>
 
       <!-- grpc dependencies -->
@@ -641,6 +624,11 @@
         <artifactId>jctools-core</artifactId>
         <version>${jctools.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.jctools</groupId>
+        <artifactId>jctools-core-jdk11</artifactId>
+        <version>${jctools.version}</version>
+      </dependency>
 
       <!-- dropwizard metrics, for stats and for ZooKeeper server -->
       <dependency>
@@ -683,8 +671,8 @@
       </dependency>
       <!-- data-sketches -->
       <dependency>
-        <groupId>com.yahoo.datasketches</groupId>
-        <artifactId>sketches-core</artifactId>
+        <groupId>org.apache.datasketches</groupId>
+        <artifactId>datasketches-java</artifactId>
         <version>${datasketches.version}</version>
       </dependency>
       <!-- opentelemetry -->
@@ -905,6 +893,10 @@
     </dependency>
 
     <!-- compilation dependencies (available at all classpaths) -->
+    <dependency>
+      <groupId>io.github.merlimat.slog</groupId>
+      <artifactId>slog</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
@@ -1234,6 +1226,9 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- zig -->
+            <exclude>**/.zig-cache/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>

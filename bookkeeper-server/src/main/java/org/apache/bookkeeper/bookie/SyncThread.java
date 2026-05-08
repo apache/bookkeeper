@@ -29,8 +29,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
@@ -57,7 +57,7 @@ import org.apache.bookkeeper.stats.ThreadRegistry;
  * for manual recovery in critical disaster.
  * </p>
  */
-@Slf4j
+@CustomLog
 class SyncThread implements Checkpointer {
 
     @Getter(AccessLevel.PACKAGE)
@@ -117,7 +117,7 @@ class SyncThread implements Checkpointer {
                     checkpoint(checkpoint);
                 }
             } catch (Throwable t) {
-                log.error("Exception in SyncThread", t);
+                log.error().exception(t).log("Exception in SyncThread");
                 dirsListener.fatalError();
             } finally {
                 syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -131,7 +131,7 @@ class SyncThread implements Checkpointer {
             try {
                 flush();
             } catch (Throwable t) {
-                log.error("Exception flushing ledgers ", t);
+                log.error().exception(t).log("Exception flushing ledgers");
             } finally {
                 syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
@@ -143,11 +143,11 @@ class SyncThread implements Checkpointer {
         try {
             ledgerStorage.flush();
         } catch (NoWritableLedgerDirException e) {
-            log.error("No writeable ledger directories", e);
+            log.error().exception(e).log("No writeable ledger directories");
             dirsListener.allDisksFull(true);
             return;
         } catch (IOException e) {
-            log.error("Exception flushing ledgers", e);
+            log.error().exception(e).log("Exception flushing ledgers");
             return;
         }
 
@@ -155,11 +155,11 @@ class SyncThread implements Checkpointer {
             return;
         }
 
-        log.info("Flush ledger storage at checkpoint {}.", checkpoint);
+        log.info().attr("checkpoint", checkpoint).log("Flush ledger storage at checkpoint");
         try {
             checkpointSource.checkpointComplete(checkpoint, false);
         } catch (IOException e) {
-            log.error("Exception marking checkpoint as complete", e);
+            log.error().exception(e).log("Exception marking checkpoint as complete");
             dirsListener.allDisksFull(true);
         }
     }
@@ -174,18 +174,18 @@ class SyncThread implements Checkpointer {
         try {
             ledgerStorage.checkpoint(checkpoint);
         } catch (NoWritableLedgerDirException e) {
-            log.error("No writeable ledger directories", e);
+            log.error().exception(e).log("No writeable ledger directories");
             dirsListener.allDisksFull(true);
             return;
         } catch (IOException e) {
-            log.error("Exception flushing ledgers", e);
+            log.error().exception(e).log("Exception flushing ledgers");
             return;
         }
 
         try {
             checkpointSource.checkpointComplete(checkpoint, true);
         } catch (IOException e) {
-            log.error("Exception marking checkpoint as complete", e);
+            log.error().exception(e).log("Exception marking checkpoint as complete");
             dirsListener.allDisksFull(true);
         }
     }
@@ -230,8 +230,8 @@ class SyncThread implements Checkpointer {
         long start = System.currentTimeMillis();
         while (!executor.awaitTermination(5, TimeUnit.MINUTES)) {
             long now = System.currentTimeMillis();
-            log.info("SyncThread taking a long time to shutdown. Has taken {}"
-                    + " milliseconds so far", now - start);
+            log.info().attr("elapsedMs", now - start)
+                .log("SyncThread taking a long time to shutdown");
         }
     }
 }

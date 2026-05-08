@@ -22,9 +22,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import io.netty.channel.DefaultEventLoopGroup;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.uring.IoUring;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.util.EventLoopUtil;
 import org.junit.Test;
 
 /**
@@ -117,14 +122,9 @@ public class TestPerChannelBookieClientTcpKeepalive {
      */
     @Test
     public void testEpollSupportDetection() {
-        // Test Epoll support detection
-        boolean isEpollSupported = false;
-        try {
-            Class.forName("io.netty.channel.epoll.EpollEventLoopGroup");
-            isEpollSupported = true;
-        } catch (ClassNotFoundException e) {
-            // Epoll not supported on this platform
-        }
+        // Test Epoll support detection: use Epoll.isAvailable() to verify that the native
+        // library can actually be loaded, not just that the class is on the classpath.
+        boolean isEpollSupported = Epoll.isAvailable();
 
         // Test NIO event loop group detection
         NioEventLoopGroup nioGroup = new NioEventLoopGroup(1);
@@ -137,5 +137,78 @@ public class TestPerChannelBookieClientTcpKeepalive {
         // The actual result depends on the platform
         System.out.println("Epoll support detected: " + isEpollSupported);
         System.out.println("Operating system: " + System.getProperty("os.name"));
+    }
+
+    /**
+     * Test IoUring support detection logic.
+     */
+    @Test
+    public void testIoUringSupportDetection() {
+        // Use runtime availability checks to avoid UnsatisfiedLinkError on non-Linux platforms.
+        boolean isIoUringSupported = IoUring.isAvailable();
+        boolean isEpollSupported = Epoll.isAvailable();
+
+        // Test NIO event loop group detection
+        NioEventLoopGroup nioGroup = new NioEventLoopGroup(1);
+        assertFalse("NIO event loop group should not be detected as IoUring",
+                EventLoopUtil.isIoUringGroup(nioGroup));
+
+        // Test DefaultEventLoopGroup detection
+        DefaultEventLoopGroup defaultGroup = new DefaultEventLoopGroup(1);
+        assertFalse("Default event loop group should not be detected as IoUring",
+                EventLoopUtil.isIoUringGroup(defaultGroup));
+
+        // Only instantiate EpollEventLoopGroup when the native library is available,
+        // otherwise the constructor will fail on non-Linux platforms.
+        if (isEpollSupported) {
+            EpollEventLoopGroup epollGroup = new EpollEventLoopGroup(1);
+            assertFalse("Epoll event loop group should not be detected as IoUring",
+                    EventLoopUtil.isIoUringGroup(epollGroup));
+            epollGroup.shutdownGracefully(0, 0, TimeUnit.MILLISECONDS);
+        }
+
+        nioGroup.shutdownGracefully(0, 0, TimeUnit.MILLISECONDS);
+        defaultGroup.shutdownGracefully(0, 0, TimeUnit.MILLISECONDS);
+
+        // The important thing is that the detection logic works correctly
+        // The actual result depends on the platform
+        System.out.println("IoUring support detected: " + isIoUringSupported);
+        System.out.println("Epoll support detected: " + isEpollSupported);
+        System.out.println("Operating system: " + System.getProperty("os.name"));
+    }
+
+    /**
+     * Test TCP keepalive parameter validation logic.
+     */
+    @Test
+    public void testTcpKeepaliveParameterValidation() {
+        ClientConfiguration conf = new ClientConfiguration();
+
+        // Test valid parameter ranges
+        conf.setTcpKeepIdle(1);
+        conf.setTcpKeepIntvl(1);
+        conf.setTcpKeepCnt(1);
+
+        assertTrue("Minimum TCP keep idle should be valid", conf.getTcpKeepIdle() > 0);
+        assertTrue("Minimum TCP keep interval should be valid", conf.getTcpKeepIntvl() > 0);
+        assertTrue("Minimum TCP keep count should be valid", conf.getTcpKeepCnt() > 0);
+
+        // Test typical production values
+        conf.setTcpKeepIdle(300);
+        conf.setTcpKeepIntvl(60);
+        conf.setTcpKeepCnt(3);
+
+        assertEquals("Production TCP keep idle should be 300", 300, conf.getTcpKeepIdle());
+        assertEquals("Production TCP keep interval should be 60", 60, conf.getTcpKeepIntvl());
+        assertEquals("Production TCP keep count should be 3", 3, conf.getTcpKeepCnt());
+
+        // Test boundary values
+        conf.setTcpKeepIdle(Integer.MAX_VALUE);
+        conf.setTcpKeepIntvl(Integer.MAX_VALUE);
+        conf.setTcpKeepCnt(Integer.MAX_VALUE);
+
+        assertTrue("Maximum TCP keep idle should be valid", conf.getTcpKeepIdle() > 0);
+        assertTrue("Maximum TCP keep interval should be valid", conf.getTcpKeepIntvl() > 0);
+        assertTrue("Maximum TCP keep count should be valid", conf.getTcpKeepCnt() > 0);
     }
 }

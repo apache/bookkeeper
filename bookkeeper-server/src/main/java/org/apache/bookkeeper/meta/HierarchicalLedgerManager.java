@@ -18,14 +18,13 @@
 package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HierarchicalLedgerManager makes use of both LongHierarchicalLedgerManager and LegacyHierarchicalLedgerManager
@@ -39,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * @see LongHierarchicalLedgerManager
  * @see LegacyHierarchicalLedgerManager
  */
+@CustomLog
 class HierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
-    static final Logger LOG = LoggerFactory.getLogger(HierarchicalLedgerManager.class);
 
     LegacyHierarchicalLedgerManager legacyLM;
     LongHierarchicalLedgerManager longLM;

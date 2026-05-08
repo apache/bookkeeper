@@ -25,6 +25,7 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
@@ -36,11 +37,9 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
-    private static final Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
     public WriteEntryProcessorV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
@@ -67,7 +66,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         if (requestProcessor.getBookie().isReadOnly()
             && !(RequestUtils.isHighPriority(request)
                     && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
-            logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
+            log.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
             return addResponse.build();
         }
@@ -128,25 +127,38 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
             // Avoid to log each occurrence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
-            if (logger.isDebugEnabled()) {
-                logger.debug("Operation rejected while writing {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Operation rejected while writing");
             status = StatusCode.ETOOMANYREQUESTS;
         } catch (IOException e) {
-            logger.error("Error writing entry:{} to ledger:{}",
-                    entryId, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Error writing entry to ledger");
             status = StatusCode.EIO;
         } catch (BookieException.LedgerFencedException | BookieException.LedgerFencedAndDeletedException e) {
-            logger.error("Ledger fenced/deleted while writing entry:{} to ledger:{}",
-                    entryId, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger fenced/deleted while writing entry to ledger");
             status = StatusCode.EFENCED;
         } catch (BookieException e) {
-            logger.error("Unauthorized access to ledger:{} while writing entry:{}",
-                    ledgerId, entryId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .log("Unauthorized access to ledger while writing entry");
             status = StatusCode.EUA;
         } catch (Throwable t) {
-            logger.error("Unexpected exception while writing {}@{} : ",
-                    entryId, ledgerId, t);
+            log.error()
+                    .exception(t)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Unexpected exception while writing");
             // some bad request which cause unexpected exception
             status = StatusCode.EBADREQ;
         }

@@ -22,6 +22,7 @@ import static org.apache.distributedlog.util.DLUtils.validateAndNormalizeName;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import io.github.merlimat.slog.Logger;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -73,15 +74,13 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Manager for ZooKeeper/BookKeeper based namespace.
  */
 public class BKNamespaceDriver implements NamespaceDriver {
 
-    private static Logger LOG = LoggerFactory.getLogger(BKNamespaceDriver.class);
+    private static Logger LOG = Logger.get(BKNamespaceDriver.class);
 
     // register itself
     static {
@@ -216,8 +215,11 @@ public class BKNamespaceDriver implements NamespaceDriver {
 
         initialized = true;
 
-        LOG.info("Initialized BK namespace driver: clientId = {}, regionId = {}, federated = {}.",
-            clientId, regionId, bkdlConfig.isFederatedNamespace());
+        LOG.info()
+                .attr("clientId", clientId)
+                .attr("regionId", regionId)
+                .attr("federatedNamespace", bkdlConfig.isFederatedNamespace())
+                .log("Initialized BK namespace driver");
         return this;
     }
 
@@ -256,7 +258,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
             try {
                 return new EpollEventLoopGroup(numThreads, threadFactory);
             } catch (Throwable t) {
-                LOG.warn("Could not use Netty Epoll event loop for bookie server:", t);
+                LOG.warn().exception(t).log("Could not use Netty Epoll event loop for bookie server");
                 return new NioEventLoopGroup(numThreads, threadFactory);
             }
         } else {
@@ -328,9 +330,11 @@ public class BKNamespaceDriver implements NamespaceDriver {
     public static String
     validateAndGetFullLedgerAllocatorPoolPath(DistributedLogConfiguration conf, URI uri) throws IOException {
         String poolPath = conf.getLedgerAllocatorPoolPath();
-        LOG.info("PoolPath is {}", poolPath);
+        LOG.info().attr("poolPath", poolPath).log("Validating ledger allocator pool path");
         if (null == poolPath || !poolPath.startsWith(".") || poolPath.endsWith("/")) {
-            LOG.error("Invalid ledger allocator pool path specified when enabling ledger allocator pool: {}", poolPath);
+            LOG.error()
+                .attr("poolPath", poolPath)
+                .log("Invalid ledger allocator pool path specified when enabling ledger allocator pool");
             throw new IOException("Invalid ledger allocator pool path specified : " + poolPath);
         }
         String poolName = conf.getLedgerAllocatorPoolName();
@@ -342,7 +346,9 @@ public class BKNamespaceDriver implements NamespaceDriver {
         try {
             PathUtils.validatePath(rootPath);
         } catch (IllegalArgumentException iae) {
-            LOG.error("Invalid ledger allocator pool path specified when enabling ledger allocator pool: {}", poolPath);
+            LOG.error()
+                .attr("poolPath", poolPath)
+                .log("Invalid ledger allocator pool path specified when enabling ledger allocator pool");
             throw new IOException("Invalid ledger allocator pool path specified : " + poolPath);
         }
         return rootPath;
@@ -362,8 +368,10 @@ public class BKNamespaceDriver implements NamespaceDriver {
             if (null != allocator) {
                 allocator.start();
             }
-            LOG.info("Created ledger allocator pool under {} with size {}.",
-                    allocatorPoolPath, conf.getLedgerAllocatorPoolCoreSize());
+            LOG.info()
+                .attr("allocatorPoolPath", allocatorPoolPath)
+                .attr("ledgerAllocatorPoolCoreSize", conf.getLedgerAllocatorPoolCoreSize())
+                .log("Created ledger allocator pool under with size.");
         } else {
             allocator = null;
         }
@@ -372,7 +380,7 @@ public class BKNamespaceDriver implements NamespaceDriver {
 
     private void checkState() throws IOException {
         if (closed.get()) {
-            LOG.error("BK namespace driver {} is already closed", namespace);
+            LOG.error().attr("namespace", namespace).log("BK namespace driver is already closed");
             throw new AlreadyClosedException("BK namespace driver " + namespace + " is already closed");
         }
     }
@@ -482,18 +490,22 @@ public class BKNamespaceDriver implements NamespaceDriver {
             // Build the access control manager
             if (aclRootPath == null) {
                 accessControlManager = DefaultAccessControlManager.INSTANCE;
-                LOG.info("Created default access control manager for {}", namespace);
+                LOG.info().attr("namespace", namespace).log("Created default access control manager");
             } else {
                 if (!isReservedStreamName(aclRootPath)) {
                     throw new IOException("Invalid Access Control List Root Path : " + aclRootPath);
                 }
                 String zkRootPath = namespace.getPath() + "/" + aclRootPath;
-                LOG.info("Creating zk based access control manager @ {} for {}",
-                        zkRootPath, namespace);
+                LOG.info()
+                .attr("zkRootPath", zkRootPath)
+                .attr("namespace", namespace)
+                .log("Creating zk based access control manager");
                 accessControlManager = new ZKAccessControlManager(conf, readerZKC,
                         zkRootPath, scheduler);
-                LOG.info("Created zk based access control manager @ {} for {}",
-                        zkRootPath, namespace);
+                LOG.info()
+                .attr("zkRootPath", zkRootPath)
+                .attr("namespace", namespace)
+                .log("Created zk based access control manager");
             }
         }
         return accessControlManager;
@@ -553,10 +565,16 @@ public class BKNamespaceDriver implements NamespaceDriver {
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while deleting " + namespaceRootPath, ie);
+            LOG.error()
+                    .attr("namespaceRootPath", namespaceRootPath)
+                    .exception(ie)
+                    .log("Interrupted while deleting");
             throw new IOException("Interrupted while reading " + namespaceRootPath, ie);
         } catch (KeeperException ke) {
-            LOG.error("Error reading" + namespaceRootPath + "entry in zookeeper", ke);
+            LOG.error()
+                    .attr("namespaceRootPath", namespaceRootPath)
+                    .exception(ke)
+                    .log("Error reading entry in zookeeper");
             throw new IOException("Error reading" + namespaceRootPath + "entry in zookeeper", ke);
         }
         return result;
@@ -585,11 +603,15 @@ public class BKNamespaceDriver implements NamespaceDriver {
             .retryPolicy(retryPolicy)
             .statsLogger(statsLogger)
             .zkAclId(conf.getZkAclId());
-        LOG.info("Created shared zooKeeper client builder {}: zkServers = {}, numRetries = {}, sessionTimeout = {},"
-                + " retryBackoff = {}, maxRetryBackoff = {}, zkAclId = {}.", zkcName, zkServers,
-            conf.getZKNumRetries(), conf.getZKSessionTimeoutMilliseconds(),
-            conf.getZKRetryBackoffStartMillis(), conf.getZKRetryBackoffMaxMillis(),
-            conf.getZkAclId());
+        LOG.info()
+                .attr("zkcName", zkcName)
+                .attr("zkServers", zkServers)
+                .attr("zKNumRetries", conf.getZKNumRetries())
+                .attr("zKSessionTimeoutMilliseconds", conf.getZKSessionTimeoutMilliseconds())
+                .attr("zKRetryBackoffStartMillis", conf.getZKRetryBackoffStartMillis())
+                .attr("zKRetryBackoffMaxMillis", conf.getZKRetryBackoffMaxMillis())
+                .attr("zkAclId", conf.getZkAclId())
+                .log("Created shared zooKeeper client builder");
         return builder;
     }
 
@@ -610,8 +632,12 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 .requestTimer(requestTimer)
                 .featureProvider(featureProviderOptional)
                 .statsLogger(statsLogger);
-        LOG.info("Created shared client builder {} : zkServers = {}, ledgersPath = {}, numIOThreads = {}",
-            bkcName, zkServers, ledgersPath, conf.getBKClientNumberIOThreads());
+        LOG.info()
+                .attr("bkcName", bkcName)
+                .attr("zkServers", zkServers)
+                .attr("ledgersPath", ledgersPath)
+                .attr("bKClientNumberIOThreads", conf.getBKClientNumberIOThreads())
+                .log("Created shared client builder");
         return builder;
     }
 

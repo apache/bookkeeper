@@ -33,6 +33,7 @@ import static org.apache.distributedlog.metadata.LogMetadata.VERSION_PATH;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.merlimat.slog.Logger;
 import java.io.IOException;
 import java.net.URI;
 import java.util.Collections;
@@ -91,15 +92,13 @@ import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * zookeeper based {@link LogStreamMetadataStore}.
  */
 public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
-    private static final  Logger LOG = LoggerFactory.getLogger(ZKLogStreamMetadataStore.class);
+    private static final  Logger LOG = Logger.get(ZKLogStreamMetadataStore.class);
 
     private final String clientId;
     private final DistributedLogConfiguration conf;
@@ -221,7 +220,7 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while reading {}", logSegmentsPath, ie);
+            LOG.error().attr("logSegmentsPath", logSegmentsPath).exception(ie).log("Interrupted while reading");
             promise.completeExceptionally(new DLInterruptedException("Interrupted while checking "
                     + logSegmentsPath, ie));
         } catch (ZooKeeperClient.ZooKeeperConnectionException e) {
@@ -269,10 +268,10 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                                             logMetadata.getFullyQualifiedName())));
                         } else if (KeeperException.Code.OK.intValue() == rc) {
                             FutureUtils.complete(promise, null);
-                            LOG.trace("Created path {}.", path);
+                            LOG.trace().attr("path", path).log("Created path.");
                         } else if (KeeperException.Code.NODEEXISTS.intValue() == rc) {
                             FutureUtils.complete(promise, null);
-                            LOG.trace("Path {} is already existed.", path);
+                            LOG.trace().attr("path", path).log("Path is already existed.");
                         } else if (DistributedLogConstants.ZK_CONNECTION_EXCEPTION_RESULT_CODE == rc) {
                             FutureUtils.completeExceptionally(promise,
                                     new ZooKeeperClient.ZooKeeperConnectionException(path));
@@ -512,19 +511,17 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
                     promise.completeExceptionally(new LogExistsException("Someone just created log "
                             + logRootPath));
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        StringBuilder builder = new StringBuilder();
-                        for (OpResult result : resultList) {
-                            if (result instanceof OpResult.ErrorResult) {
-                                OpResult.ErrorResult errorResult = (OpResult.ErrorResult) result;
-                                builder.append(errorResult.getErr()).append(",");
-                            } else {
-                                builder.append(0).append(",");
-                            }
+                    StringBuilder builder = new StringBuilder();
+                    for (OpResult result : resultList) {
+                        if (result instanceof OpResult.ErrorResult) {
+                            OpResult.ErrorResult errorResult = (OpResult.ErrorResult) result;
+                            builder.append(errorResult.getErr()).append(",");
+                        } else {
+                            builder.append(0).append(",");
                         }
-                        String resultCodeList = builder.substring(0, builder.length() - 1);
-                        LOG.debug("Failed to create log, full rc list = {}", resultCodeList);
                     }
+                    String resultCodeList = builder.substring(0, builder.length() - 1);
+                    LOG.debug().attr("resultCodeList", resultCodeList).log("Failed to create log");
 
                     promise.completeExceptionally(new ZKException("Failed to create log " + logRootPath,
                             KeeperException.Code.get(rc)));
@@ -587,7 +584,11 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         try {
             PathUtils.validatePath(logRootPath);
         } catch (IllegalArgumentException e) {
-            LOG.error("Illegal path value {} for stream {}", logRootPath, logName, e);
+            LOG.error()
+                .attr("logRootPath", logRootPath)
+                .attr("logName", logName)
+                .exception(e)
+                .log("Illegal path value for stream");
             return FutureUtils.exception(new InvalidStreamNameException(logName, "Log name is invalid"));
         }
 
@@ -852,17 +853,18 @@ public class ZKLogStreamMetadataStore implements LogStreamMetadataStore {
         zkOps.addAll(createOps);
         zkOps.addAll(deleteOps);
 
-        if (LOG.isDebugEnabled()) {
-            for (Op op : zkOps) {
-                if (op instanceof Create) {
-                    Create create = (Create) op;
-                    LOG.debug("op : create {}", create.getPath());
-                } else if (op instanceof Delete) {
-                    Delete delete = (Delete) op;
-                    LOG.debug("op : delete {}, record = {}", delete.getPath(), op.toRequestRecord());
-                } else {
-                    LOG.debug("op : {}", op);
-                }
+        for (Op op : zkOps) {
+            if (op instanceof Create) {
+                Create create = (Create) op;
+                LOG.debug().attr("path", create.getPath()).log("op create");
+            } else if (op instanceof Delete) {
+                Delete delete = (Delete) op;
+                LOG.debug()
+                        .attr("path", delete.getPath())
+                        .attr("requestRecord", op.toRequestRecord())
+                        .log("op delete");
+            } else {
+                LOG.debug().attr("op", op).log("other op");
             }
         }
 

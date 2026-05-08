@@ -26,6 +26,7 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.distributedlog.api.AsyncLogWriter;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -45,6 +46,7 @@ import org.junit.rules.TestName;
 /**
  * Test {@link BKLogWriteHandler}.
  */
+@CustomLog
 public class TestBKLogWriteHandler extends TestDistributedLogBase {
 
     @Rule
@@ -114,19 +116,19 @@ public class TestBKLogWriteHandler extends TestDistributedLogBase {
         BookKeeperAdmin admin = new BookKeeperAdmin(zkServers);
 
         Set<Long> s1 = getLedgers(admin);
-        LOG.info("Ledgers after init: " + s1);
+        log.info("Ledgers after init: " + s1);
 
         LogWriter writer = dlm.openLogWriter();
         writer.write(new LogRecord(1, "test-data".getBytes(StandardCharsets.UTF_8)));
         writer.close();
 
         Set<Long> s2 = getLedgers(admin);
-        LOG.info("Ledgers after write: " + s2);
+        log.info("Ledgers after write: " + s2);
         dlm.delete();
         assertEquals(1, s2.size() - s1.size()); // exact 1 ledger created only
 
         Set<Long> s3 = getLedgers(admin);
-        LOG.info("Ledgers after delete: " + s3);
+        log.info("Ledgers after delete: " + s3);
 
         assertEquals(s1.size(), s3.size());
 

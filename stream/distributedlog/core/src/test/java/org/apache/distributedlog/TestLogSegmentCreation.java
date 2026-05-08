@@ -22,6 +22,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.github.merlimat.slog.Logger;
 import java.net.URI;
 import java.util.List;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -29,8 +30,6 @@ import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 
@@ -39,7 +38,7 @@ import org.slf4j.LoggerFactory;
  */
 public class TestLogSegmentCreation extends TestDistributedLogBase {
 
-    static Logger LOG = LoggerFactory.getLogger(TestLogSegmentCreation.class);
+    static Logger LOG = Logger.get(TestLogSegmentCreation.class);
 
     @Test(timeout = 60000)
     public void testCreateLogSegmentAfterLoseLock() throws Exception {
@@ -62,7 +61,7 @@ public class TestLogSegmentCreation extends TestDistributedLogBase {
         }
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
-        LOG.info("Segments : {}", segments);
+        LOG.info().attr("segments", segments).log("Segments");
         assertEquals(3, segments.size());
 
         final DistributedLogManager dlm1 = namespace.openLog(name);
@@ -79,7 +78,7 @@ public class TestLogSegmentCreation extends TestDistributedLogBase {
             Utils.ioResult(writer1.write(DLMTestUtil.getLogRecordInstance(numSegments + 1)));
             fail("Should fail on writing new log records.");
         } catch (Throwable t) {
-            LOG.error("Failed to write entry : ", t);
+            LOG.error().exception(t).log("Failed to write entry");
         }
 
         segments = dlm.getLogSegments();
@@ -102,8 +101,8 @@ public class TestLogSegmentCreation extends TestDistributedLogBase {
         assertFalse(hasInprogress);
         assertFalse(hasDuplicatedSegment);
 
-        LOG.info("Segments : duplicated = {}, inprogress = {}, {}",
-            hasDuplicatedSegment, hasInprogress, segments);
+        LOG.info().attr("duplicated", hasDuplicatedSegment).attr("inprogress", hasInprogress)
+                .attr("segments", segments).log("Segments");
 
         dlm1.close();
         dlm2.close();

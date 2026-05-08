@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -66,8 +67,6 @@ import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.Transaction;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Log Handler for Writers.
@@ -81,8 +80,8 @@ import org.slf4j.LoggerFactory;
  * <li> `segments`/delete : opstats. latency characteristics on deleting a log segment.
  * </ul>
  */
+@CustomLog
 class BKLogWriteHandler extends BKLogHandler {
-    static final Logger LOG = LoggerFactory.getLogger(BKLogWriteHandler.class);
 
     private static Transaction.OpListener<LogSegmentEntryWriter> NULL_OP_LISTENER =
             new Transaction.OpListener<LogSegmentEntryWriter>() {
@@ -124,7 +123,10 @@ class BKLogWriteHandler extends BKLogHandler {
             new Function<List<LogSegmentMetadata>, CompletableFuture<Long>>() {
                 @Override
                 public CompletableFuture<Long> apply(List<LogSegmentMetadata> segmentList) {
-                    LOG.info("Initiating Recovery For {} : {}", getFullyQualifiedName(), segmentList);
+                    log.info()
+                            .attr("stream", getFullyQualifiedName())
+                            .attr("segmentList", segmentList)
+                            .log("Initiating Recovery For");
                     // if lastLedgerRollingTimeMillis is not updated, we set it to now.
                     synchronized (BKLogWriteHandler.this) {
                         if (lastLedgerRollingTimeMillis < 0) {
@@ -493,16 +495,20 @@ class BKLogWriteHandler extends BKLogHandler {
                 && (DistributedLogConstants.UNASSIGNED_LOGSEGMENT_SEQNO
                 == maxLogSegmentSequenceNo.getSequenceNumber())) {
             // no ledger seqno stored in /ledgers before
-            LOG.info("No max ledger sequence number found while creating log segment {} for {}.",
-                logSegmentSeqNo, getFullyQualifiedName());
+            log.info()
+                .attr("logSegmentSeqNo", logSegmentSeqNo)
+                .attr("stream", getFullyQualifiedName())
+                .log("No max ledger sequence number found while creating log segment");
         } else if (maxLogSegmentSequenceNo.getSequenceNumber() + 1 != logSegmentSeqNo // case 1
                    && maxLogSegmentSequenceNo.getSequenceNumber() != logSegmentSeqNo) { // case 2
             // case 1 is the common case, where the new log segment is 1 more than the previous
             // case 2 can occur when the writer crashes with an empty in progress ledger. This is then deleted
             //        on recovery, so the next new segment will have a matching sequence number
-            LOG.warn("Unexpected max log segment sequence number {} for {} : list of cached segments = {}",
-                maxLogSegmentSequenceNo.getSequenceNumber(), getFullyQualifiedName(),
-                getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR));
+            log.warn()
+                .attr("sequenceNumber", maxLogSegmentSequenceNo.getSequenceNumber())
+                .attr("stream", getFullyQualifiedName())
+                .attr("cachedLogSegments", getCachedLogSegments(LogSegmentMetadata.DESC_COMPARATOR))
+                .log("Unexpected max log segment sequence number");
             // there is max log segment number recorded there and it isn't match. throw exception.
             throw new DLIllegalStateException("Unexpected max log segment sequence number "
                 + maxLogSegmentSequenceNo.getSequenceNumber() + " for " + getFullyQualifiedName()
@@ -555,12 +561,15 @@ class BKLogWriteHandler extends BKLogHandler {
         long highestTxIdWritten = maxTxId.get();
         if (txId < highestTxIdWritten) {
             if (highestTxIdWritten == DistributedLogConstants.MAX_TXID) {
-                LOG.error("We've already marked the stream as ended and attempting to start a new log segment");
+                log.error("We've already marked the stream as ended and attempting to start a new log segment");
                 FutureUtils.completeExceptionally(promise,
                         new EndOfStreamException("Writing to a stream after it has been marked as completed"));
                 return;
             } else {
-                LOG.error("We've already seen TxId {} the max TXId is {}", txId, highestTxIdWritten);
+                log.error()
+                        .attr("txId", txId)
+                        .attr("highestTxIdWritten", highestTxIdWritten)
+                        .log("Already seen this TxId");
                 FutureUtils.completeExceptionally(promise,
                         new TransactionIdOutOfOrderException(txId, highestTxIdWritten));
                 return;
@@ -652,10 +661,10 @@ class BKLogWriteHandler extends BKLogHandler {
         writeLogSegment(txn, l);
 
         // Try storing max sequence number.
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Try storing max sequence number in startLogSegment {} : {}",
-                    inprogressZnodePath, logSegmentSeqNo);
-        }
+        log.debug()
+            .attr("inprogressZnodePath", inprogressZnodePath)
+            .attr("logSegmentSeqNo", logSegmentSeqNo)
+            .log("Try storing max sequence number in startLogSegment");
         storeMaxSequenceNumber(txn, maxLogSegmentSequenceNo, logSegmentSeqNo, true);
 
         txn.execute().whenCompleteAsync(new FutureEventListener<Void>() {
@@ -892,9 +901,7 @@ class BKLogWriteHandler extends BKLogHandler {
             return;
         }
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Completing and Closing Log Segment {} {}", firstTxId, lastTxId);
-        }
+        log.debug().attr("firstTxId", firstTxId).attr("lastTxId", lastTxId).log("Completing and Closing Log Segment");
         LogSegmentMetadata inprogressLogSegment = readLogSegmentFromCache(inprogressZnodeName);
 
         // validate log segment
@@ -943,11 +950,16 @@ class BKLogWriteHandler extends BKLogHandler {
                 || (maxLogSegmentSequenceNo.getSequenceNumber() == logSegmentSeqNo + 1)) {
             // ignore the case that a new inprogress log segment is pre-allocated
             // before completing current inprogress one
-            LOG.info("Try storing max sequence number {} in completing {}.",
-                    new Object[] { logSegmentSeqNo, inprogressLogSegment.getZkPath() });
+            log.info()
+                    .attr("logSegmentSeqNo", logSegmentSeqNo)
+                    .attr("zkPath", inprogressLogSegment.getZkPath())
+                    .log("Try storing max sequence number in completing.");
         } else {
-            LOG.warn("Unexpected max ledger sequence number {} found while completing log segment {} for {}",
-                maxLogSegmentSequenceNo.getSequenceNumber(), logSegmentSeqNo, getFullyQualifiedName());
+            log.warn()
+                .attr("sequenceNumber", maxLogSegmentSequenceNo.getSequenceNumber())
+                .attr("logSegmentSeqNo", logSegmentSeqNo)
+                .attr("stream", getFullyQualifiedName())
+                .log("Unexpected max ledger sequence number found while completing log segment");
             if (validateLogSegmentSequenceNumber) {
                 FutureUtils.completeExceptionally(promise,
                         new DLIllegalStateException("Unexpected max log segment sequence number "
@@ -987,18 +999,21 @@ class BKLogWriteHandler extends BKLogHandler {
         // store max sequence number
         storeMaxSequenceNumber(txn, maxLogSegmentSequenceNo, maxSeqNo, false);
         // update max txn id.
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Trying storing LastTxId in Finalize Path {} LastTxId {}",
-                    pathForCompletedLedger, lastTxId);
-        }
+        log.debug()
+            .attr("pathForCompletedLedger", pathForCompletedLedger)
+            .attr("lastTxId", lastTxId)
+            .log("Trying storing LastTxId in Finalize Path LastTxId");
         storeMaxTxId(txn, maxTxId, lastTxId);
 
         txn.execute().whenCompleteAsync(new FutureEventListener<Void>() {
             @Override
             public void onSuccess(Void value) {
-                LOG.info("Completed {} to {} for {} : {}",
-                    inprogressZnodeName, completedLogSegment.getSegmentName(),
-                    getFullyQualifiedName(), completedLogSegment);
+                log.info()
+                        .attr("inprogressZnodeName", inprogressZnodeName)
+                        .attr("segmentName", completedLogSegment.getSegmentName())
+                        .attr("stream", getFullyQualifiedName())
+                        .attr("completedLogSegment", completedLogSegment)
+                        .log("Completed");
                 FutureUtils.complete(promise, completedLogSegment);
             }
 
@@ -1027,14 +1042,20 @@ class BKLogWriteHandler extends BKLogHandler {
                 return FutureUtils.value(l);
             }
 
-            LOG.info("Recovering last record in log segment {} for {}.", l, getFullyQualifiedName());
+            log.info()
+                .attr("logSegment", l)
+                .attr("stream", getFullyQualifiedName())
+                .log("Recovering last record in log segment");
             return asyncReadLastRecord(l, true, true, true).thenCompose(
                 lastRecord -> completeLogSegment(l, lastRecord));
         }
 
         private CompletableFuture<LogSegmentMetadata> completeLogSegment(LogSegmentMetadata l,
                                                               LogRecordWithDLSN lastRecord) {
-            LOG.info("Recovered last record in log segment {} for {}.", l, getFullyQualifiedName());
+            log.info()
+                    .attr("logSegment", l)
+                    .attr("stream", getFullyQualifiedName())
+                    .log("Recovered last record in log segment");
 
             long endTxId = DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID;
             int recordCount = 0;
@@ -1049,13 +1070,13 @@ class BKLogWriteHandler extends BKLogHandler {
             }
 
             if (endTxId == DistributedLogConstants.INVALID_TXID) {
-                LOG.error("Unrecoverable corruption has occurred in segment "
+                log.error("Unrecoverable corruption has occurred in segment "
                     + l.toString() + " at path " + l.getZkPath()
                     + ". Unable to continue recovery.");
                 return FutureUtils.exception(new IOException("Unrecoverable corruption,"
                     + " please check logs."));
             } else if (endTxId == DistributedLogConstants.EMPTY_LOGSEGMENT_TX_ID) {
-                LOG.info("Inprogress segment {} is empty, deleting", l);
+                log.info().attr("logSegment", l).log("Inprogress segment is empty, deleting");
 
                 return deleteLogSegment(l).thenApply(
                         (result) -> {
@@ -1093,31 +1114,37 @@ class BKLogWriteHandler extends BKLogHandler {
 
     private CompletableFuture<List<LogSegmentMetadata>> setLogSegmentsOlderThanDLSNTruncated(
             List<LogSegmentMetadata> logSegments, final DLSN dlsn) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Setting truncation status on logs older than {} from {} for {}",
-                    dlsn, logSegments, getFullyQualifiedName());
-        }
+        log.debug()
+            .attr("dlsn", dlsn)
+            .attr("logSegments", logSegments)
+            .attr("stream", getFullyQualifiedName())
+            .log("Setting truncation status on logs older than threshold");
         List<LogSegmentMetadata> truncateList = new ArrayList<LogSegmentMetadata>(logSegments.size());
         LogSegmentMetadata partialTruncate = null;
-        LOG.info("{}: Truncating log segments older than {}", getFullyQualifiedName(), dlsn);
+        log.info()
+                .attr("stream", getFullyQualifiedName())
+                .attr("dlsn", dlsn)
+                .log("Truncating log segments older than threshold");
         for (int i = 0; i < logSegments.size(); i++) {
             LogSegmentMetadata l = logSegments.get(i);
             if (!l.isInProgress()) {
                 if (l.getLastDLSN().compareTo(dlsn) < 0) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("{}: Truncating log segment {} ", getFullyQualifiedName(), l);
-                    }
+                    log.debug().attr("stream", getFullyQualifiedName()).attr("logSegment", l)
+                            .log("Truncating log segment");
                     truncateList.add(l);
                 } else if (l.getFirstDLSN().compareTo(dlsn) < 0) {
                     // Can be satisfied by at most one segment
                     if (null != partialTruncate) {
                         String logMsg = String.format("Potential metadata inconsistency for stream %s at segment %s",
                                 getFullyQualifiedName(), l);
-                        LOG.error(logMsg);
+                        log.error(logMsg);
                         return FutureUtils.exception(new DLIllegalStateException(logMsg));
                     }
-                    LOG.info("{}: Partially truncating log segment {} older than {}.",
-                        getFullyQualifiedName(), l, dlsn);
+                    log.info()
+                            .attr("stream", getFullyQualifiedName())
+                            .attr("logSegment", l)
+                            .attr("dlsn", dlsn)
+                            .log("Partially truncating log segment");
                     partialTruncate = l;
                 } else {
                     break;
@@ -1173,8 +1200,11 @@ class BKLogWriteHandler extends BKLogHandler {
                         break;
                     }
                 }
-                LOG.info("Deleting log segments older than {} for {} : {}",
-                    minTimestampToKeep, getFullyQualifiedName(), purgeList);
+                log.info()
+                        .attr("minTimestampToKeep", minTimestampToKeep)
+                        .attr("stream", getFullyQualifiedName())
+                        .attr("purgeList", purgeList)
+                        .log("Deleting log segments older than threshold");
                 return deleteLogSegments(purgeList);
             }
         });
@@ -1244,16 +1274,17 @@ class BKLogWriteHandler extends BKLogHandler {
 
     private CompletableFuture<List<LogSegmentMetadata>> deleteLogSegments(
             final List<LogSegmentMetadata> logs) {
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Purging logs for {} : {}", getFullyQualifiedName(), logs);
-        }
+        log.trace().attr("stream", getFullyQualifiedName()).attr("logs", logs).log("Purging logs");
         return FutureUtils.processList(logs,
             segment -> deleteLogSegment(segment), scheduler);
     }
 
     private CompletableFuture<LogSegmentMetadata> deleteLogSegment(
             final LogSegmentMetadata ledgerMetadata) {
-        LOG.info("Deleting ledger {} for {}", ledgerMetadata, getFullyQualifiedName());
+        log.info()
+                .attr("ledgerMetadata", ledgerMetadata)
+                .attr("stream", getFullyQualifiedName())
+                .log("Deleting ledger");
         final CompletableFuture<LogSegmentMetadata> promise = new CompletableFuture<LogSegmentMetadata>();
         final Stopwatch stopwatch = Stopwatch.createStarted();
         promise.whenComplete(new FutureEventListener<LogSegmentMetadata>() {
@@ -1305,8 +1336,11 @@ class BKLogWriteHandler extends BKLogHandler {
                     promise.complete(segmentMetadata);
                     return;
                 } else {
-                    LOG.error("Couldn't purge {} for {}: with error {}",
-                        segmentMetadata, getFullyQualifiedName(), t);
+                    log.error()
+                            .attr("segmentMetadata", segmentMetadata)
+                            .attr("stream", getFullyQualifiedName())
+                            .exception(t)
+                            .log("Couldn't purge log segment");
                     promise.completeExceptionally(t);
                 }
             }

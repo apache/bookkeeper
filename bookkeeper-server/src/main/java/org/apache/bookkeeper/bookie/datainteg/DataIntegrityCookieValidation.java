@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.Cookie;
@@ -37,8 +38,6 @@ import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An implementation of the CookieValidation interface that allows for auto-stamping
@@ -46,8 +45,8 @@ import org.slf4j.LoggerFactory;
  * Because the data integrity service can heal a bookie with lost data due to a disk
  * failure, a bookie can auto stamp new cookies as part of the healing process.
  */
+@CustomLog
 public class DataIntegrityCookieValidation implements CookieValidation {
-    private static final Logger log = LoggerFactory.getLogger(DataIntegrityCookieValidation.class);
     private final ServerConfiguration conf;
     private final BookieId bookieId;
     private final RegistrationManager registrationManager;
@@ -93,10 +92,10 @@ public class DataIntegrityCookieValidation implements CookieValidation {
         masterCookie.writeToRegistrationManager(registrationManager, conf, expectedVersion);
         for (File d : directories) {
             try {
-                log.info("Stamping cookie to directory {}", d);
+                log.info().attr("directory", d).log("Stamping cookie to directory");
                 masterCookie.writeToDirectory(d);
             } catch (IOException ioe) {
-                log.error("Exception writing cookie", ioe);
+                log.error().exception(ioe).log("Exception writing cookie");
                 throw new BookieException.InvalidCookieException(ioe);
             }
         }
@@ -138,8 +137,11 @@ public class DataIntegrityCookieValidation implements CookieValidation {
         } else if (!regManagerCookie.get().getValue().equals(masterCookie)
                    || !directoryCookies.stream().allMatch(c -> c.map(masterCookie::equals).orElse(false))) {
             if (conf.isDataIntegrityStampMissingCookiesEnabled()) {
-                log.warn("ZK cookie({}) or directory cookies({}) do not match master cookie ({}), running check",
-                        regManagerCookie, directoryCookies, masterCookie);
+                log.warn()
+                        .attr("zkCookie", regManagerCookie)
+                        .attr("directoryCookies", directoryCookies)
+                        .attr("masterCookie", masterCookie)
+                        .log("ZK cookie or directory cookies do not match master cookie, running check");
                 try {
                     dataIntegCheck.runPreBootCheck("INVALID_COOKIE").get();
                 } catch (ExecutionException ee) {
@@ -156,7 +158,12 @@ public class DataIntegrityCookieValidation implements CookieValidation {
                         "ZK cookie({0}) or directory cookies({1}) do not match master cookie ({2})"
                                 + " and missing cookie stamping is disabled.",
                         regManagerCookie, directoryCookies, masterCookie);
-                log.error(errorMsg);
+                log.error()
+                        .attr("zkCookie", regManagerCookie)
+                        .attr("directoryCookies", directoryCookies)
+                        .attr("masterCookie", masterCookie)
+                        .log("ZK cookie or directory cookies do not match master cookie"
+                                + " and missing cookie stamping is disabled");
                 throw new BookieException.InvalidCookieException(errorMsg);
             }
         } // else all cookies match the masterCookie, meaning nothing has changed in the configuration

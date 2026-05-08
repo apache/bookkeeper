@@ -37,6 +37,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -53,8 +54,6 @@ import org.apache.bookkeeper.replication.ReplicationException.UnavailableExcepti
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Auditor is a single entity in the entire Bookie cluster and will be watching
@@ -65,8 +64,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>TODO: eliminate the direct usage of zookeeper here {@link https://github.com/apache/bookkeeper/issues/1332}
  */
+@CustomLog
 public class Auditor implements AutoCloseable {
-    private static final Logger LOG = LoggerFactory.getLogger(Auditor.class);
     private final ServerConfiguration conf;
     private final BookKeeper bkc;
     private final boolean ownBkc;
@@ -200,14 +199,16 @@ public class Auditor implements AutoCloseable {
 
             this.ledgerUnderreplicationManager = ledgerManagerFactory
                     .newLedgerUnderreplicationManager();
-            LOG.info("AuthProvider used by the Auditor is {}",
-                    admin.getConf().getClientAuthProviderFactoryClass());
+            log.info()
+                    .attr("authProvider", admin.getConf().getClientAuthProviderFactoryClass())
+                    .log("AuthProvider used by the Auditor");
             if (this.ledgerUnderreplicationManager
                     .initializeLostBookieRecoveryDelay(conf.getLostBookieRecoveryDelay())) {
-                LOG.info("Initializing lostBookieRecoveryDelay zNode to the conf value: {}",
-                        conf.getLostBookieRecoveryDelay());
+                log.info()
+                        .attr("lostBookieRecoveryDelay", conf.getLostBookieRecoveryDelay())
+                        .log("Initializing lostBookieRecoveryDelay zNode to the conf value");
             } else {
-                LOG.info("Valid lostBookieRecoveryDelay zNode is available, so not creating "
+                log.info("Valid lostBookieRecoveryDelay zNode is available, so not creating "
                         + "lostBookieRecoveryDelay zNode as part of Auditor initialization ");
             }
             lostBookieRecoveryDelayBeforeChange = this.ledgerUnderreplicationManager.getLostBookieRecoveryDelay();
@@ -223,14 +224,14 @@ public class Auditor implements AutoCloseable {
 
     private void submitShutdownTask() {
         synchronized (this) {
-            LOG.info("Executing submitShutdownTask");
+            log.info("Executing submitShutdownTask");
             if (executor.isShutdown()) {
-                LOG.info("executor is already shutdown");
+                log.info("executor is already shutdown");
                 return;
             }
             executor.submit(() -> {
                 synchronized (Auditor.this) {
-                    LOG.info("Shutting down Auditor's Executor");
+                    log.info("Shutting down Auditor's Executor");
                     executor.shutdown();
                 }
             });
@@ -284,10 +285,10 @@ public class Auditor implements AutoCloseable {
                 }
                 if (bookiesToBeAudited.size() > 1) {
                     // if more than one bookie is down, start the audit immediately;
-                    LOG.info("Multiple bookie failure; not delaying bookie audit. "
-                                    + "Bookies lost now: {}; All lost bookies: {}",
-                            CollectionUtils.subtract(knownBookies, availableBookies),
-                            bookiesToBeAudited);
+                    log.info()
+                            .attr("bookiesLostNow", CollectionUtils.subtract(knownBookies, availableBookies))
+                            .attr("allLostBookies", bookiesToBeAudited)
+                            .log("Multiple bookie failure; not delaying bookie audit");
                     if (auditTask != null && auditTask.cancel(false)) {
                         auditTask = null;
                         auditorStats.getNumDelayedBookieAuditsCancelled().inc();
@@ -304,16 +305,18 @@ public class Auditor implements AutoCloseable {
                         bookiesToBeAudited.clear();
                     }, lostBookieRecoveryDelay, TimeUnit.SECONDS);
                     auditorStats.getNumBookieAuditsDelayed().inc();
-                    LOG.info("Delaying bookie audit by {} secs for {}", lostBookieRecoveryDelay,
-                            bookiesToBeAudited);
+                    log.info()
+                            .attr("delaySecs", lostBookieRecoveryDelay)
+                            .attr("bookies", bookiesToBeAudited)
+                            .log("Delaying bookie audit");
                 }
             } catch (BKException bke) {
-                LOG.error("Exception getting bookie list", bke);
+                log.error().exception(bke).log("Exception getting bookie list");
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.error("Interrupted while watching available bookies ", ie);
+                log.error().exception(ie).log("Interrupted while watching available bookies");
             } catch (UnavailableException ue) {
-                LOG.error("Exception while watching available bookies", ue);
+                log.error().exception(ue).log("Exception while watching available bookies");
             }
         });
     }
@@ -333,7 +336,7 @@ public class Auditor implements AutoCloseable {
                 // if there is pending auditTask, cancel the task. So that it can be rescheduled
                 // after new lostBookieRecoveryDelay period
                 if (auditTask != null) {
-                    LOG.info("lostBookieRecoveryDelay period has been changed so canceling the pending AuditTask");
+                    log.info("lostBookieRecoveryDelay period has been changed so canceling the pending AuditTask");
                     auditTask.cancel(false);
                     auditorStats.getNumDelayedBookieAuditsCancelled().inc();
                 }
@@ -342,17 +345,19 @@ public class Auditor implements AutoCloseable {
                 // signal to trigger the Audit immediately.
                 if ((lostBookieRecoveryDelay == 0)
                         || (lostBookieRecoveryDelay == lostBookieRecoveryDelayBeforeChange)) {
-                    LOG.info(
-                            "lostBookieRecoveryDelay has been set to 0 or reset to its previous value, "
-                                    + "so starting AuditTask. Current lostBookieRecoveryDelay: {}, "
-                                    + "previous lostBookieRecoveryDelay: {}",
-                            lostBookieRecoveryDelay, lostBookieRecoveryDelayBeforeChange);
+                    log.info()
+                            .attr("currentDelay", lostBookieRecoveryDelay)
+                            .attr("previousDelay", lostBookieRecoveryDelayBeforeChange)
+                            .log("lostBookieRecoveryDelay has been set to 0"
+                                    + " or reset to its previous value,"
+                                    + " so starting AuditTask");
                     auditorBookieCheckTask.startAudit(false);
                     auditTask = null;
                     bookiesToBeAudited.clear();
                 } else if (auditTask != null) {
-                    LOG.info("lostBookieRecoveryDelay has been set to {}, so rescheduling AuditTask accordingly",
-                            lostBookieRecoveryDelay);
+                    log.info()
+                            .attr("lostBookieRecoveryDelay", lostBookieRecoveryDelay)
+                            .log("lostBookieRecoveryDelay changed, rescheduling AuditTask accordingly");
                     auditTask = executor.schedule(() -> {
                         auditorBookieCheckTask.startAudit(false);
                         auditTask = null;
@@ -362,12 +367,12 @@ public class Auditor implements AutoCloseable {
                 }
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.error("Interrupted while for LedgersReplication to be enabled ", ie);
+                log.error().exception(ie).log("Interrupted while waiting for LedgersReplication to be enabled");
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                 submitShutdownTask();
             } catch (UnavailableException ue) {
-                LOG.error("Exception while reading from ZK", ue);
+                log.error().exception(ue).log("Exception while reading from ZK");
             } finally {
                 if (lostBookieRecoveryDelay != -1) {
                     lostBookieRecoveryDelayBeforeChange = lostBookieRecoveryDelay;
@@ -377,7 +382,7 @@ public class Auditor implements AutoCloseable {
     }
 
     public void start() {
-        LOG.info("I'm starting as Auditor Bookie. ID: {}", bookieIdentifier);
+        log.info().attr("bookieId", bookieIdentifier).log("I'm starting as Auditor Bookie");
         // on startup watching available bookie and based on the
         // available bookies determining the bookie failures.
         synchronized (this) {
@@ -396,11 +401,11 @@ public class Auditor implements AutoCloseable {
                 this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(new LostBookieRecoveryDelayChangedCb());
             } catch (BKException bke) {
-                LOG.error("Couldn't get bookie list, so exiting", bke);
+                log.error().exception(bke).log("Couldn't get bookie list, so exiting");
                 submitShutdownTask();
                 return;
             } catch (UnavailableException ue) {
-                LOG.error("Exception while registering for change notification, so exiting", ue);
+                log.error().exception(ue).log("Exception while registering for change notification, so exiting");
                 submitShutdownTask();
                 return;
             }
@@ -418,11 +423,12 @@ public class Auditor implements AutoCloseable {
     private void scheduleBookieCheckTask() {
         long bookieCheckInterval = conf.getAuditorPeriodicBookieCheckInterval();
         if (bookieCheckInterval == 0) {
-            LOG.info("Auditor periodic bookie checking disabled, running once check now anyhow");
+            log.info("Auditor periodic bookie checking disabled, running once check now anyhow");
             submitBookieCheckTask();
         } else {
-            LOG.info("Auditor periodic bookie checking enabled" + " 'auditorPeriodicBookieCheckInterval' {} seconds",
-                    bookieCheckInterval);
+            log.info()
+                    .attr("auditorPeriodicBookieCheckInterval", bookieCheckInterval)
+                    .log("Auditor periodic bookie checking enabled");
             executor.scheduleAtFixedRate(auditorBookieCheckTask, 0, bookieCheckInterval, TimeUnit.SECONDS);
         }
     }
@@ -431,8 +437,7 @@ public class Auditor implements AutoCloseable {
         long interval = conf.getAuditorPeriodicCheckInterval();
 
         if (interval > 0) {
-            LOG.info("Auditor periodic ledger checking enabled" + " 'auditorPeriodicCheckInterval' {} seconds",
-                    interval);
+            log.info().attr("auditorPeriodicCheckInterval", interval).log("Auditor periodic ledger checking enabled");
 
             long checkAllLedgersLastExecutedCTime;
             long durationSinceLastExecutionInSecs;
@@ -440,11 +445,11 @@ public class Auditor implements AutoCloseable {
             try {
                 checkAllLedgersLastExecutedCTime = ledgerUnderreplicationManager.getCheckAllLedgersCTime();
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                 submitShutdownTask();
                 return;
             } catch (UnavailableException ue) {
-                LOG.error("Got UnavailableException while trying to get checkAllLedgersCTime", ue);
+                log.error().exception(ue).log("Got UnavailableException while trying to get checkAllLedgersCTime");
                 checkAllLedgersLastExecutedCTime = -1;
             }
             if (checkAllLedgersLastExecutedCTime == -1) {
@@ -460,14 +465,16 @@ public class Auditor implements AutoCloseable {
                 initialDelay = durationSinceLastExecutionInSecs > interval ? 0
                         : (interval - durationSinceLastExecutionInSecs);
             }
-            LOG.info(
-                    "checkAllLedgers scheduling info.  checkAllLedgersLastExecutedCTime: {} "
-                            + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
-                    checkAllLedgersLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+            log.info()
+                    .attr("checkAllLedgersLastExecutedCTime", checkAllLedgersLastExecutedCTime)
+                    .attr("durationSinceLastExecutionInSecs", durationSinceLastExecutionInSecs)
+                    .attr("initialDelay", initialDelay)
+                    .attr("interval", interval)
+                    .log("checkAllLedgers scheduling info");
 
             executor.scheduleAtFixedRate(auditorCheckAllLedgersTask, initialDelay, interval, TimeUnit.SECONDS);
         } else {
-            LOG.info("Periodic checking disabled");
+            log.info("Periodic checking disabled");
         }
     }
 
@@ -475,8 +482,9 @@ public class Auditor implements AutoCloseable {
         long interval = conf.getAuditorPeriodicPlacementPolicyCheckInterval();
 
         if (interval > 0) {
-            LOG.info("Auditor periodic placement policy check enabled"
-                    + " 'auditorPeriodicPlacementPolicyCheckInterval' {} seconds", interval);
+            log.info()
+                    .attr("auditorPeriodicPlacementPolicyCheckInterval", interval)
+                    .log("Auditor periodic placement policy check enabled");
 
             long placementPolicyCheckLastExecutedCTime;
             long durationSinceLastExecutionInSecs;
@@ -484,11 +492,11 @@ public class Auditor implements AutoCloseable {
             try {
                 placementPolicyCheckLastExecutedCTime = ledgerUnderreplicationManager.getPlacementPolicyCheckCTime();
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                 submitShutdownTask();
                 return;
             } catch (UnavailableException ue) {
-                LOG.error("Got UnavailableException while trying to get placementPolicyCheckCTime", ue);
+                log.error().exception(ue).log("Got UnavailableException while trying to get placementPolicyCheckCTime");
                 placementPolicyCheckLastExecutedCTime = -1;
             }
             if (placementPolicyCheckLastExecutedCTime == -1) {
@@ -504,14 +512,16 @@ public class Auditor implements AutoCloseable {
                 initialDelay = durationSinceLastExecutionInSecs > interval ? 0
                         : (interval - durationSinceLastExecutionInSecs);
             }
-            LOG.info(
-                    "placementPolicyCheck scheduling info.  placementPolicyCheckLastExecutedCTime: {} "
-                            + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
-                    placementPolicyCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+            log.info()
+                    .attr("placementPolicyCheckLastExecutedCTime", placementPolicyCheckLastExecutedCTime)
+                    .attr("durationSinceLastExecutionInSecs", durationSinceLastExecutionInSecs)
+                    .attr("initialDelay", initialDelay)
+                    .attr("interval", interval)
+                    .log("placementPolicyCheck scheduling info");
 
             executor.scheduleAtFixedRate(auditorPlacementPolicyCheckTask, initialDelay, interval, TimeUnit.SECONDS);
         } else {
-            LOG.info("Periodic placementPolicy check disabled");
+            log.info("Periodic placementPolicy check disabled");
         }
     }
 
@@ -519,22 +529,22 @@ public class Auditor implements AutoCloseable {
         long interval = conf.getAuditorPeriodicReplicasCheckInterval();
 
         if (interval <= 0) {
-            LOG.info("Periodic replicas check disabled");
+            log.info("Periodic replicas check disabled");
             return;
         }
 
-        LOG.info("Auditor periodic replicas check enabled" + " 'auditorReplicasCheckInterval' {} seconds", interval);
+        log.info().attr("auditorReplicasCheckInterval", interval).log("Auditor periodic replicas check enabled");
         long replicasCheckLastExecutedCTime;
         long durationSinceLastExecutionInSecs;
         long initialDelay;
         try {
             replicasCheckLastExecutedCTime = ledgerUnderreplicationManager.getReplicasCheckCTime();
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
             return;
         } catch (UnavailableException ue) {
-            LOG.error("Got UnavailableException while trying to get replicasCheckCTime", ue);
+            log.error().exception(ue).log("Got UnavailableException while trying to get replicasCheckCTime");
             replicasCheckLastExecutedCTime = -1;
         }
         if (replicasCheckLastExecutedCTime == -1) {
@@ -549,10 +559,12 @@ public class Auditor implements AutoCloseable {
             initialDelay = durationSinceLastExecutionInSecs > interval ? 0
                     : (interval - durationSinceLastExecutionInSecs);
         }
-        LOG.info(
-                "replicasCheck scheduling info. replicasCheckLastExecutedCTime: {} "
-                        + "durationSinceLastExecutionInSecs: {} initialDelay: {} interval: {}",
-                replicasCheckLastExecutedCTime, durationSinceLastExecutionInSecs, initialDelay, interval);
+        log.info()
+                .attr("replicasCheckLastExecutedCTime", replicasCheckLastExecutedCTime)
+                .attr("durationSinceLastExecutionInSecs", durationSinceLastExecutionInSecs)
+                .attr("initialDelay", initialDelay)
+                .attr("interval", interval)
+                .log("replicasCheck scheduling info");
 
         executor.scheduleAtFixedRate(auditorReplicasCheckTask, initialDelay, interval, TimeUnit.SECONDS);
     }
@@ -564,10 +576,10 @@ public class Auditor implements AutoCloseable {
                 Auditor.this.ledgerUnderreplicationManager
                         .notifyLostBookieRecoveryDelayChanged(LostBookieRecoveryDelayChangedCb.this);
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                 submitShutdownTask();
             } catch (UnavailableException ae) {
-                LOG.error("Exception while registering for a LostBookieRecoveryDelay notification", ae);
+                log.error().exception(ae).log("Exception while registering for a LostBookieRecoveryDelay notification");
             }
             Auditor.this.submitLostBookieRecoveryDelayChangedEvent();
         }
@@ -577,7 +589,7 @@ public class Auditor implements AutoCloseable {
             InterruptedException {
         if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
             ReplicationEnableCb cb = new ReplicationEnableCb();
-            LOG.info("LedgerReplication is disabled externally through Zookeeper, "
+            log.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting until it is enabled");
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);
             cb.await();
@@ -606,11 +618,11 @@ public class Auditor implements AutoCloseable {
      * Shutdown the auditor.
      */
     public void shutdown() {
-        LOG.info("Shutting down auditor");
+        log.info("Shutting down auditor");
         executor.shutdown();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
-                LOG.warn("Executor not shutting down, interrupting");
+                log.warn("Executor not shutting down, interrupting");
                 executor.shutdownNow();
             }
 
@@ -632,9 +644,9 @@ public class Auditor implements AutoCloseable {
             }
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted while shutting down auditor bookie", ie);
+            log.warn().exception(ie).log("Interrupted while shutting down auditor bookie");
         } catch (UnavailableException | IOException | BKException bke) {
-            LOG.warn("Exception while shutting down auditor bookie", bke);
+            log.warn().exception(bke).log("Exception while shutting down auditor bookie");
         }
     }
 

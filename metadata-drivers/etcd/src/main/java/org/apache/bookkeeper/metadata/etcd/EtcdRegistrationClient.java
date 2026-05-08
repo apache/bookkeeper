@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -38,7 +37,6 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * Etcd based registration client.
  */
-@Slf4j
 class EtcdRegistrationClient implements RegistrationClient {
 
     private static Function<ByteSequence, BookieId> newBookieSocketAddressFunc(String prefix) {

@@ -17,15 +17,14 @@
  */
 package org.apache.bookkeeper.tls;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A factory to manage security provider factories.
  */
+@CustomLog
 public abstract class SecurityProviderFactoryFactory {
-    private static final Logger LOG = LoggerFactory.getLogger(SecurityProviderFactoryFactory.class);
 
     public static SecurityHandlerFactory getSecurityProviderFactory(String securityHandler)
             throws SecurityException {
@@ -38,9 +37,12 @@ public abstract class SecurityProviderFactoryFactory {
             Class<? extends SecurityHandlerFactory> shFactoryClass =
                 ReflectionUtils.forName(securityHandler, SecurityHandlerFactory.class);
             shFactory = ReflectionUtils.newInstance(shFactoryClass);
-            LOG.info("Loaded security handler for {}", securityHandler);
+            log.info().attr("securityHandler", securityHandler).log("Loaded security handler");
         } catch (RuntimeException re) {
-            LOG.error("Unable to load security handler for {}: ", securityHandler, re.getCause());
+            log.error()
+                    .attr("securityHandler", securityHandler)
+                    .exception(re.getCause())
+                    .log("Unable to load security handler");
             throw new SecurityException(re.getCause());
         }
         return shFactory;

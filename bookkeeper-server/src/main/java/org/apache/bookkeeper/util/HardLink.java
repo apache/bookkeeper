@@ -32,8 +32,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Class for creating hardlinks.
@@ -47,8 +46,8 @@ import org.slf4j.LoggerFactory;
  * directory with a single command, which is up to 128 times more
  * efficient - and minimizes the impact of the extra buffer creations.
  */
+@CustomLog
 public class HardLink {
-  private static final Logger LOG = LoggerFactory.getLogger(HardLink.class);
   /**
    * OS Types.
    */
@@ -438,10 +437,10 @@ public class HardLink {
           return;
         }
       } catch (UnsupportedOperationException e) {
-        LOG.error("createLink not supported", e);
+        log.error().exception(e).log("createLink not supported");
         CREATE_LINK_SUPPORTED.set(false);
       } catch (IOException e) {
-        LOG.error("error when create hard link use createLink", e);
+        log.error().exception(e).log("error when create hard link use createLink");
         CREATE_LINK_SUPPORTED.set(false);
       }
     }

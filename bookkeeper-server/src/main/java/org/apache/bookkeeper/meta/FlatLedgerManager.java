@@ -21,6 +21,7 @@ package org.apache.bookkeeper.meta;
 import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
@@ -28,8 +29,6 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Manage all ledgers in a single zk node.
@@ -39,9 +38,9 @@ import org.slf4j.LoggerFactory;
  * Each ledger node is prefixed with 'L'.
  * </p>
  */
+@CustomLog
 class FlatLedgerManager extends AbstractZkLedgerManager {
 
-    static final Logger LOG = LoggerFactory.getLogger(FlatLedgerManager.class);
     // path prefix to store ledger znodes
     private final String ledgerPrefix;
 

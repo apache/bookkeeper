@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerEntry;
@@ -59,16 +60,13 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * TestLedgerAllocator.
  */
+@CustomLog
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class TestLedgerAllocator extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestLedgerAllocator.class);
 
     private static final String ledgersPath = "/ledgers";
     private static final OpListener<LedgerHandle> NULL_LISTENER = new OpListener<LedgerHandle>() {
@@ -138,7 +136,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
         allocator.allocate();
         ZKTransaction txn = newTxn();
         LedgerHandle lh = Utils.ioResult(allocator.tryObtain(txn, NULL_LISTENER));
-        logger.info("Try obtaining ledger handle {}", lh.getId());
+        log.info().attr("ledgerId", lh.getId()).log("Try obtaining ledger handle");
         byte[] data = zkc.get().getData(allocationPath, false, null);
         assertEquals((Long) lh.getId(), Long.valueOf(new String(data, UTF_8)));
         txn.addOp(DefaultZKOp.of(Op.setData("/unexistedpath", "data".getBytes(UTF_8), -1), null));
@@ -147,7 +145,7 @@ public class TestLedgerAllocator extends TestDistributedLogBase {
             fail("Should fail the transaction when setting unexisted path");
         } catch (ZKException ke) {
             // expected
-            logger.info("Should fail on executing transaction when setting unexisted path", ke);
+            log.info().exception(ke).log("Should fail on executing transaction when setting unexisted path");
         }
         data = zkc.get().getData(allocationPath, false, null);
         assertEquals((Long) lh.getId(), Long.valueOf(new String(data, UTF_8)));

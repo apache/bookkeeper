@@ -19,7 +19,7 @@ package org.apache.bookkeeper.metadata.etcd;
 
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.meta.MetadataClientDriver;
@@ -30,7 +30,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * Etcd based metadata client driver.
  */
-@Slf4j
+@CustomLog
 public class EtcdMetadataClientDriver extends EtcdMetadataDriverBase implements MetadataClientDriver {
 
     // register myself to driver manager

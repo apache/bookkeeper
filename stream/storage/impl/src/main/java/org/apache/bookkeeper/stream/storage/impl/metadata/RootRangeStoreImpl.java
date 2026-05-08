@@ -26,7 +26,7 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateStre
 import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
 import org.apache.bookkeeper.api.kv.op.TxnOp;
@@ -60,7 +60,7 @@ import org.apache.bookkeeper.stream.storage.api.metadata.RootRangeStore;
 /**
  * A statestore backed implementation of {@link RootRangeStore}.
  */
-@Slf4j
+@CustomLog
 public class RootRangeStoreImpl
     implements RootRangeStore {
 
@@ -179,9 +179,7 @@ public class RootRangeStoreImpl
 
     @Override
     public CompletableFuture<CreateNamespaceResponse> createNamespace(CreateNamespaceRequest request) {
-        if (log.isTraceEnabled()) {
-            log.trace("Received CreateNamespace request : {}", request);
-        }
+        log.trace().attr("request", request).log("Received CreateNamespace request");
 
         return CreateNamespaceProcessor.of().process(
             this,
@@ -193,7 +191,7 @@ public class RootRangeStoreImpl
         String colName = request.getName();
         StatusCode code = StatusCode.SUCCESS;
         if (!validateNamespaceName(colName)) {
-            log.error("Failed to create namespace due to invalid namespace name {}", colName);
+            log.error().attr("nsName", colName).log("Failed to create namespace due to invalid namespace name");
             code = StatusCode.INVALID_NAMESPACE_NAME;
         }
         return code;
@@ -278,7 +276,7 @@ public class RootRangeStoreImpl
         String colName = request.getName();
         StatusCode code = StatusCode.SUCCESS;
         if (!validateNamespaceName(colName)) {
-            log.error("Failed to delete namespace due to invalid namespace name {}", colName);
+            log.error().attr("nsName", colName).log("Failed to delete namespace due to invalid namespace name");
             code = StatusCode.INVALID_NAMESPACE_NAME;
         }
         return code;
@@ -336,7 +334,7 @@ public class RootRangeStoreImpl
     public CompletableFuture<GetNamespaceResponse> getNamespace(GetNamespaceRequest request) {
         String nsName = request.getName();
         if (!validateNamespaceName(nsName)) {
-            log.error("Failed to get namespace due to invalid namespace name {}", nsName);
+            log.error().attr("nsName", nsName).log("Failed to get namespace due to invalid namespace name");
             return FutureUtils.value(
                 GetNamespaceResponse.newBuilder()
                     .setCode(StatusCode.INVALID_NAMESPACE_NAME)
@@ -399,10 +397,10 @@ public class RootRangeStoreImpl
     StatusCode verifyStreamRequest(String nsName, String streamName) {
         StatusCode code = StatusCode.SUCCESS;
         if (!validateNamespaceName(nsName)) {
-            log.error("Invalid namespace name {}", nsName);
+            log.error().attr("nsName", nsName).log("Invalid namespace name");
             code = StatusCode.INVALID_NAMESPACE_NAME;
         } else if (!validateStreamName(streamName)) {
-            log.error("Invalid stream name {}", streamName);
+            log.error().attr("streamName", streamName).log("Invalid stream name");
             code = StatusCode.INVALID_STREAM_NAME;
         }
         return code;
@@ -450,8 +448,13 @@ public class RootRangeStoreImpl
     }
 
     private static void logStreamOp(String op, long nsId, long streamId, String streamName, StatusCode result) {
-        log.info("stream {} namespace_id={} stream_id={} stream_name={} result={}",
-                op, nsId, streamId, streamName, result);
+        log.info()
+            .attr("op", op)
+            .attr("namespaceId", nsId)
+            .attr("streamId", streamId)
+            .attr("streamName", streamName)
+            .attr("result", result)
+            .log("stream op");
     }
 
     private CompletableFuture<CreateStreamResponse> executeCreateStreamTxn(long nsId,

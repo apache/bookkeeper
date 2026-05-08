@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -37,15 +38,12 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to update ledger command.
  */
+@CustomLog
 public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipBookieIdFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(FlipBookieIdCommand.class);
 
     private static final String NAME = "flip-bookie-id";
     private static final String DESC = "Update bookie id in ledgers (this may take a long time).";
@@ -106,28 +104,30 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
         throws InterruptedException, BKException, IOException {
 
         if (!conf.getUseHostNameAsBookieID() && flags.hostname) {
-            LOG.error("Expects configuration useHostNameAsBookieID=true as the option value");
+            log.error("Expects configuration useHostNameAsBookieID=true as the option value");
             return false;
         } else if (conf.getUseHostNameAsBookieID() && !flags.hostname) {
-            LOG.error("Expects configuration useHostNameAsBookieID=false as the option value'");
+            log.error("Expects configuration useHostNameAsBookieID=false as the option value'");
             return false;
         }
 
         final int rate = flags.updatePerSec;
         if (rate <= 0) {
-            LOG.error("Invalid updatespersec {}, should be > 0", rate);
+            log.error().attr("rate", rate).log("Invalid updatespersec, should be > 0");
             return false;
         }
 
         final int maxOutstandingReads = flags.maxOutstandingReads;
         if (maxOutstandingReads <= 0) {
-            LOG.error("Invalid maxOutstandingReads {}, should be > 0", maxOutstandingReads);
+            log.error()
+                    .attr("maxOutstandingReads", maxOutstandingReads)
+                    .log("Invalid maxOutstandingReads, should be > 0");
             return false;
         }
 
         final int limit = flags.limit;
         if (limit <= 0 && limit != Integer.MIN_VALUE) {
-            LOG.error("Invalid limit {}, should be > 0", limit);
+            log.error().attr("limit", limit).log("Invalid limit, should be > 0");
             return false;
         }
 
@@ -157,7 +157,10 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
                     return; // disabled
                 }
                 if (TimeUnit.MILLISECONDS.toSeconds(MathUtils.elapsedMSec(lastReport)) >= printProgress) {
-                    LOG.info("Number of ledgers issued={}, updated={}", issued, updated);
+                    log.info()
+                            .attr("issued", issued)
+                            .attr("updated", updated)
+                            .log("Number of ledgers");
                     lastReport = MathUtils.nowInNano();
                 }
             }
@@ -167,7 +170,7 @@ public class FlipBookieIdCommand extends BookieCommand<FlipBookieIdCommand.FlipB
             updateLedgerOp.updateBookieIdInLedgers(oldBookieId, newBookieId, rate, maxOutstandingReads, limit,
                     progressable);
         } catch (IOException e) {
-            LOG.error("Failed to update ledger metadata", e);
+            log.error().exception(e).log("Failed to update ledger metadata");
             return false;
         }
 

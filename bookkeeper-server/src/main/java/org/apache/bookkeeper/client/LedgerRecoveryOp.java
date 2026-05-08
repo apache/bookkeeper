@@ -20,12 +20,11 @@ package org.apache.bookkeeper.client;
 import com.google.common.annotations.VisibleForTesting;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryListener;
 import org.apache.bookkeeper.proto.checksum.DigestManager.RecoveryData;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class encapsulated the ledger recovery operation. It first does a read
@@ -33,9 +32,8 @@ import org.slf4j.LoggerFactory;
  * starting from the last confirmed entry (from hints in the ledger entries),
  * it reads forward until it is not able to find a particular entry.
  */
+@CustomLog
 class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
-
-    static final Logger LOG = LoggerFactory.getLogger(LedgerRecoveryOp.class);
 
     final LedgerHandle lh;
     final ClientContext clientCtx;
@@ -195,8 +193,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                 lh.length.set(entry.getLength() - (long) data.length);
                 // check whether entry id is expected, so we won't overwritten any entries by mistake
                 if (entry.getEntryId() != lh.lastAddPushed + 1) {
-                    LOG.error("Unexpected to recovery add entry {} as entry {} for ledger {}.",
-                            entry.getEntryId(), (lh.lastAddPushed + 1), lh.getId());
+                    log.error()
+                            .ctx(lh.log)
+                            .attr("entryId", entry.getEntryId())
+                            .attr("expectedEntryId", (lh.lastAddPushed + 1))
+                            .log("Unexpected entryId during recovery add");
                     rc = BKException.Code.UnexpectedConditionException;
                 }
             }
@@ -221,14 +222,21 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
 
         // otherwise, some other error, we can't handle
         if (BKException.Code.OK != rc && !promise.isDone()) {
-            LOG.error("Failure {} while reading entries: ({} - {}), ledger: {} while recovering ledger",
-                      BKException.getMessage(rc), startEntryToRead, endEntryToRead, lh.getId());
+            log.error()
+                    .ctx(lh.log)
+                    .attr("getMessage", BKException.getMessage(rc))
+                    .attr("startEntryId", startEntryToRead)
+                    .attr("endEntryId", endEntryToRead)
+                    .log("Failure while reading entries: ( - ), ledger: while recovering ledger");
             submitCallback(rc);
         } else if (BKException.Code.OK == rc) {
             // we are here is because we successfully read an entry but readDone was already set to true.
             // this would happen on recovery a ledger than has gaps in the tail.
-            LOG.warn("Successfully read entry {} for ledger {}, but readDone is already {}",
-                    entry.getEntryId(), lh.getId(), readDone);
+            log.warn()
+                    .ctx(lh.log)
+                    .attr("entryId", entry.getEntryId())
+                    .attr("readDone", readDone)
+                    .log("Successfully read entry, but readDone is already set");
         }
         return;
     }
@@ -236,8 +244,11 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
     @Override
     public void addComplete(int rc, LedgerHandle lh, long entryId, Object ctx) {
         if (rc != BKException.Code.OK) {
-            LOG.error("Failure {} while writing entry: {} while recovering ledger: {}",
-                    BKException.codeLogger(rc), entryId + 1, lh.ledgerId);
+            log.error()
+                    .ctx(lh.log)
+                    .attr("codeLogger", BKException.codeLogger(rc))
+                    .attr("entryId", entryId + 1)
+                    .log("Failure while writing entry while recovering ledger");
             submitCallback(rc);
             return;
         }

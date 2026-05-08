@@ -22,13 +22,13 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 
 import java.time.Duration;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 
 /**
  * Test Container for Bookies.
  */
-@Slf4j
+@CustomLog
 public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> extends ChaosContainer<SelfT> {
 
     private static final int ZK_PORT = 2181;
@@ -81,7 +81,9 @@ public class BKStandaloneContainer<SelfT extends BKStandaloneContainer<SelfT>> e
         });
 
         super.start();
-        log.info("Start a standalone bookkeeper cluster at container {}", this.getContainerName());
+        log.info()
+                .attr("container", this.getContainerName())
+                .log("Start a standalone bookkeeper cluster at container");
     }
 
     @Override

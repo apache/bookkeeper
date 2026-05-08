@@ -70,7 +70,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCall
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperProtocol;
-import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -381,7 +381,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -443,7 +443,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -509,7 +509,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -560,7 +560,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {
@@ -627,7 +627,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {
@@ -697,7 +697,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {

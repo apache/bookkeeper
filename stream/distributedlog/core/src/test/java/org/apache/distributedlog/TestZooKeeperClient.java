@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.zookeeper.BoundExponentialBackoffRetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
@@ -48,16 +49,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test Cases for {@link org.apache.distributedlog.ZooKeeperClient}.
  */
+@CustomLog
 public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
-    static final Logger LOG = LoggerFactory.getLogger(TestZooKeeperClient.class);
 
     private static final int sessionTimeoutMs = 2000;
 
@@ -118,7 +115,7 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
             zkcNoAuth.get().create("/test/key2/key1", new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             fail("create should fail on acl protected key");
         } catch (KeeperException.NoAuthException ex) {
-            LOG.info("caught exception writing to protected key", ex);
+            log.info().exception(ex).log("caught exception writing to protected key");
         }
 
         rmAll(zkcAuth, "/test");
@@ -134,7 +131,7 @@ public class TestZooKeeperClient extends ZooKeeperClusterTestCase {
                     DistributedLogConstants.EVERYONE_READ_CREATOR_ALL, CreateMode.PERSISTENT);
             fail("create should fail because we're not authenticated");
         } catch (KeeperException.InvalidACLException ex) {
-            LOG.info("caught exception writing to protected key", ex);
+            log.info().exception(ex).log("caught exception writing to protected key");
         }
 
         rmAll(zkcAuth, "/test");

@@ -15,7 +15,7 @@
 package org.apache.bookkeeper.metadata.etcd;
 
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
@@ -26,7 +26,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 /**
  * Etcd based metadata bookie driver.
  */
-@Slf4j
+@CustomLog
 public class EtcdMetadataBookieDriver extends EtcdMetadataDriverBase implements MetadataBookieDriver {
 
     // register myself

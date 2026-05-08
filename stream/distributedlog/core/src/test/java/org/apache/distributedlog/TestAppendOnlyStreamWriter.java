@@ -26,6 +26,7 @@ import java.io.ByteArrayInputStream;
 import java.net.URI;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.BKTransmitException;
 import org.apache.distributedlog.exceptions.EndOfStreamException;
@@ -35,16 +36,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test Case for {@link AppendOnlyStreamWriter}.
  */
+@CustomLog
 public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestAppendOnlyStreamWriter.class);
 
     @Rule
     public TestName testNames = new TestName();
@@ -332,7 +329,7 @@ public class TestAppendOnlyStreamWriter extends TestDistributedLogBase {
                 offset += read;
             }
         } catch (EndOfStreamException ex) {
-            LOG.info("Caught ex", ex);
+            log.info().exception(ex).log("Caught ex");
         } finally {
             reader.close();
         }

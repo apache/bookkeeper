@@ -24,6 +24,7 @@ import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
@@ -32,12 +33,10 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
+@CustomLog
 class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(WriteLacProcessorV3.class);
 
     public WriteLacProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
@@ -59,7 +58,7 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
 
         if (requestProcessor.bookie.isReadOnly()) {
-            logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
+            log.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             writeLacResponse.setStatus(StatusCode.EREADONLY);
             return writeLacResponse.build();
         }
@@ -106,25 +105,40 @@ class WriteLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     writeCallback, requestHandler, masterKey);
             status = StatusCode.EOK;
         } catch (BookieException.LedgerFencedAndDeletedException e) {
-            logger.error("Error saving lac {} for ledger:{}, which has been deleted",
-                    lac, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("lastAddConfirmed", lac)
+                    .attr("ledgerId", ledgerId)
+                    .log("Error saving lac for ledger, which has been deleted");
             status = StatusCode.ENOLEDGER;
         } catch (IOException e) {
-            logger.error("Error saving lac {} for ledger:{}",
-                    lac, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("lastAddConfirmed", lac)
+                    .attr("ledgerId", ledgerId)
+                    .log("Error saving lac for ledger");
             status = StatusCode.EIO;
         } catch (InterruptedException  e) {
             Thread.currentThread().interrupt();
-            logger.error("Interrupted while saving lac {} for ledger:{}",
-                    lac, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("lastAddConfirmed", lac)
+                    .attr("ledgerId", ledgerId)
+                    .log("Interrupted while saving lac for ledger");
             status = StatusCode.EIO;
         } catch (BookieException e) {
-            logger.error("Unauthorized access to ledger:{} while adding lac:{}",
-                    ledgerId, lac, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .attr("lastAddConfirmed", lac)
+                    .log("Unauthorized access to ledger while adding lac");
             status = StatusCode.EUA;
         } catch (Throwable t) {
-            logger.error("Unexpected exception while writing lac {} for ledger:{}",
-                    lac, ledgerId, t);
+            log.error()
+                    .exception(t)
+                    .attr("lastAddConfirmed", lac)
+                    .attr("ledgerId", ledgerId)
+                    .log("Unexpected exception while writing lac for ledger");
             // some bad request which cause unexpected exception
             status = StatusCode.EBADREQ;
         }

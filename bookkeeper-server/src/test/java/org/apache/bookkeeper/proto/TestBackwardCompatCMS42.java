@@ -49,11 +49,15 @@ import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Test backward compatibility.
  */
 public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
+
+    private static final Logger LOG = LoggerFactory.getLogger(TestBackwardCompatCMS42.class);
 
     private static final byte[] SUCCESS_RESPONSE = {1};
     private static final byte[] FAILURE_RESPONSE = {2};

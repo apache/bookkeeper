@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.client;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.github.merlimat.slog.Logger;
 import java.security.GeneralSecurityException;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.CreateCallback;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
@@ -47,16 +49,13 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates asynchronous ledger create operation.
  *
  */
+@CustomLog
 class LedgerCreateOp {
-
-    static final Logger LOG = LoggerFactory.getLogger(LedgerCreateOp.class);
 
     final CreateCallback cb;
     LedgerMetadata metadata;
@@ -75,6 +74,7 @@ class LedgerCreateOp {
     final long startTime;
     final OpStatsLogger createOpLogger;
     final BookKeeperClientStats clientStats;
+    final Logger parentLogger;
     boolean adv = false;
     boolean generateLedgerId = true;
 
@@ -106,6 +106,16 @@ class LedgerCreateOp {
             byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats) {
+        this(bk, ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
+                customMetadata, writeFlags, clientStats, null);
+    }
+
+    LedgerCreateOp(
+            BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
+            byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
+            EnumSet<WriteFlag> writeFlags,
+            BookKeeperClientStats clientStats,
+            Logger parentLogger) {
         this.bk = bk;
         this.metadataFormatVersion = bk.getConf().getLedgerMetadataFormatVersion();
         this.ensembleSize = ensembleSize;
@@ -120,6 +130,7 @@ class LedgerCreateOp {
         this.startTime = MathUtils.nowInNano();
         this.createOpLogger = clientStats.getCreateOpLogger();
         this.clientStats = clientStats;
+        this.parentLogger = parentLogger;
     }
 
     /**
@@ -141,18 +152,22 @@ class LedgerCreateOp {
                     break;
                 } catch (BKNotEnoughBookiesException e) {
                     if (actualEnsembleSize >= writeQuorumSize + 1) {
-                        LOG.info("Not enough bookies to create ledger with ensembleSize={},"
-                                + " writeQuorumSize={} and ackQuorumSize={}, opportusticStriping enabled, try again",
-                                    actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                        log.info()
+                                .attr("ensembleSize", actualEnsembleSize)
+                                .attr("writeQuorumSize", writeQuorumSize)
+                                .attr("ackQuorumSize", ackQuorumSize)
+                                .log("Not enough bookies to create ledger with opportusticStriping enabled, try again");
                     }
                     lastError = e;
                     actualEnsembleSize--;
                 }
             }
             if (lastError != null) {
-                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
-                        + " writeQuorumSize={} and ackQuorumSize={}",
-                        actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                log.error()
+                        .attr("ensembleSize", actualEnsembleSize)
+                        .attr("writeQuorumSize", writeQuorumSize)
+                        .attr("ackQuorumSize", ackQuorumSize)
+                        .log("Not enough bookies to create ledger");
                 createComplete(lastError.getCode(), null);
                 return;
             }
@@ -161,9 +176,11 @@ class LedgerCreateOp {
                 ensemble = bk.getBookieWatcher()
                         .newEnsemble(actualEnsembleSize, writeQuorumSize, ackQuorumSize, customMetadata);
             } catch (BKNotEnoughBookiesException e) {
-                LOG.error("Not enough bookies to create ledger with ensembleSize={},"
-                        + " writeQuorumSize={} and ackQuorumSize={}",
-                            actualEnsembleSize, writeQuorumSize, ackQuorumSize);
+                log.error()
+                        .attr("ensembleSize", actualEnsembleSize)
+                        .attr("writeQuorumSize", writeQuorumSize)
+                        .attr("ackQuorumSize", ackQuorumSize)
+                        .log("Not enough bookies to create ledger");
                 createComplete(e.getCode(), null);
                 return;
             }
@@ -238,22 +255,32 @@ class LedgerCreateOp {
             try {
                 if (adv) {
                     lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata,
-                                             digestType, passwd, writeFlags);
+                                             digestType, passwd, writeFlags, parentLogger);
                 } else {
-                    lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags);
+                    lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags,
+                                          parentLogger);
                 }
             } catch (GeneralSecurityException e) {
-                LOG.error("Security exception while creating ledger: " + ledgerId, e);
+                log.error()
+                        .attr("ledgerId", ledgerId)
+                        .exception(e)
+                        .log("Security exception while creating ledger");
                 createComplete(BKException.Code.DigestNotInitializedException, null);
                 return;
             } catch (NumberFormatException e) {
-                LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
+                log.error()
+                        .exception(e)
+                        .attr("throttle", bk.getConf().getThrottleValue())
+                        .log("Incorrectly entered parameter throttle");
                 createComplete(BKException.Code.IncorrectParameterException, null);
                 return;
             }
 
             List<BookieId> curEns = lh.getLedgerMetadata().getEnsembleAt(0L);
-            LOG.info("Ensemble: {} for ledger: {}", curEns, lh.getId());
+            log.info()
+                    .attr("ensemble", curEns)
+                    .attr("ledgerId", lh.getId())
+                    .log("New ledger");
 
             for (BookieId bsa : curEns) {
                 clientStats.getEnsembleBookieDistributionCounter(bsa.toString()).inc();
@@ -289,6 +316,7 @@ class LedgerCreateOp {
         private org.apache.bookkeeper.client.api.DigestType builderDigestType =
             org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
+        private Logger builderParentLogger;
 
         CreateBuilderImpl(BookKeeper bk) {
             this.bk = bk;
@@ -338,44 +366,55 @@ class LedgerCreateOp {
         }
 
         @Override
+        public CreateBuilder withLoggerContext(Logger parentLogger) {
+            this.builderParentLogger = parentLogger;
+            return this;
+        }
+
+        @Override
         public CreateAdvBuilder makeAdv() {
             return new CreateAdvBuilderImpl(this);
         }
 
         private boolean validate() {
             if (builderWriteFlags == null) {
-                LOG.error("invalid null writeFlags");
+                log.error("invalid null writeFlags");
                 return false;
             }
 
             if (builderWriteQuorumSize > builderEnsembleSize) {
-                LOG.error("invalid writeQuorumSize {} > ensembleSize {}", builderWriteQuorumSize, builderEnsembleSize);
+                log.error()
+                        .attr("writeQuorumSize", builderWriteQuorumSize)
+                        .attr("ensembleSize", builderEnsembleSize)
+                        .log("invalid writeQuorumSize > ensembleSize");
                 return false;
             }
 
             if (builderAckQuorumSize > builderWriteQuorumSize) {
-                LOG.error("invalid ackQuorumSize {} > writeQuorumSize {}", builderAckQuorumSize,
-                        builderWriteQuorumSize);
+                log.error()
+                        .attr("ackQuorumSize", builderAckQuorumSize)
+                        .attr("writeQuorumSize", builderWriteQuorumSize)
+                        .log("invalid ackQuorumSize > writeQuorumSize");
                 return false;
             }
 
             if (builderAckQuorumSize <= 0) {
-                LOG.error("invalid ackQuorumSize {} <= 0", builderAckQuorumSize);
+                log.error().attr("ackQuorumSize", builderAckQuorumSize).log("invalid ackQuorumSize <= 0");
                 return false;
             }
 
             if (builderPassword == null) {
-                LOG.error("invalid null password");
+                log.error("invalid null password");
                 return false;
             }
 
             if (builderDigestType == null) {
-                LOG.error("invalid null digestType");
+                log.error("invalid null digestType");
                 return false;
             }
 
             if (builderCustomMetadata == null) {
-                LOG.error("invalid null customMetadata");
+                log.error("invalid null customMetadata");
                 return false;
             }
 
@@ -398,7 +437,7 @@ class LedgerCreateOp {
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, null, builderCustomMetadata, builderWriteFlags,
-                bk.getClientCtx().getClientStats());
+                bk.getClientCtx().getClientStats(), builderParentLogger);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -441,8 +480,9 @@ class LedgerCreateOp {
                 return false;
             }
             if (builderLedgerId != null && builderLedgerId < 0) {
-                LOG.error("invalid ledgerId {} < 0. Do not set en explicit value if you want automatic generation",
-                        builderLedgerId);
+                log.error()
+                        .attr("ledgerId", builderLedgerId)
+                        .log("invalid ledgerId < 0. Do not set en explicit value if you want automatic generation");
                 return false;
             }
             return true;
@@ -458,7 +498,8 @@ class LedgerCreateOp {
                     DigestType.fromApiDigestType(parent.builderDigestType),
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
                     parent.builderWriteFlags,
-                    parent.bk.getClientCtx().getClientStats());
+                    parent.bk.getClientCtx().getClientStats(),
+                    parent.builderParentLogger);
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

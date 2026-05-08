@@ -23,6 +23,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.io.IOException;
 import java.util.function.Consumer;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieImpl;
@@ -37,15 +38,12 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.commons.lang3.mutable.MutableLong;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to dump ledger index entries into readable format.
  */
+@CustomLog
 public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(LedgerCommand.class);
 
     private static final String NAME = "ledger";
     private static final String DESC = "Dump ledger index entries into readable format";
@@ -118,7 +116,7 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
                     }
                 }
             } catch (IOException e) {
-                LOG.error("Failed to read index page");
+                log.error("Failed to read index page");
                 return true;
             }
 
@@ -193,7 +191,6 @@ public class LedgerCommand extends BookieCommand<LedgerCommand.LedgerFlags> {
 
         return false;
     }
-
 
     private void printInfoLine(String mes) {
         System.out.println(mes);

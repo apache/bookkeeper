@@ -23,7 +23,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.commons.configuration2.CompositeConfiguration;
@@ -32,7 +32,7 @@ import org.apache.commons.configuration2.PropertiesConfiguration;
 /**
  * A starter to start a standalone cluster.
  */
-@Slf4j
+@CustomLog
 public class StandaloneStarter {
 
     /**
@@ -182,7 +182,7 @@ public class StandaloneStarter {
         try {
             liveLatch.await();
         } catch (InterruptedException e) {
-            log.error("The standalone cluster is interrupted : ", e);
+            log.error().exception(e).log("The standalone cluster is interrupted");
         }
         return 0;
     }

@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.ZooKeeperClient;
@@ -35,16 +36,12 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TJSONProtocol;
 import org.apache.thrift.transport.TMemoryBuffer;
 import org.apache.thrift.transport.TMemoryInputTransport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Configurations for BookKeeper based DL.
  */
+@CustomLog
 public class BKDLConfig implements DLConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BKDLConfig.class);
 
     private static final int BUFFER_SIZE = 4096;
     private static final ConcurrentMap<URI, DLConfig> cachedDLConfigs =
@@ -55,13 +52,14 @@ public class BKDLConfig implements DLConfig {
         dlConf.setFirstLogSegmentSequenceNumber(bkdlConfig.getFirstLogSegmentSeqNo());
         if (bkdlConfig.isFederatedNamespace()) {
             dlConf.setCreateStreamIfNotExists(false);
-            LOG.info("Disabled createIfNotExists for federated namespace.");
+            log.info("Disabled createIfNotExists for federated namespace.");
         }
-        LOG.info("Propagate BKDLConfig to DLConfig : encodeRegionID = {},"
-                        + " firstLogSegmentSequenceNumber = {}, createStreamIfNotExists = {}, isFederated = {}.",
-            dlConf.getEncodeRegionIDInLogSegmentMetadata(),
-            dlConf.getFirstLogSegmentSequenceNumber(), dlConf.getCreateStreamIfNotExists(),
-            bkdlConfig.isFederatedNamespace());
+        log.info()
+                .attr("encodeRegionIDInLogSegmentMetadata", dlConf.getEncodeRegionIDInLogSegmentMetadata())
+                .attr("firstLogSegmentSequenceNumber", dlConf.getFirstLogSegmentSequenceNumber())
+                .attr("createStreamIfNotExists", dlConf.getCreateStreamIfNotExists())
+                .attr("federatedNamespace", bkdlConfig.isFederatedNamespace())
+                .log("Propagate BKDLConfig to DLConfig");
     }
 
     public static BKDLConfig resolveDLConfig(ZooKeeperClient zkc, URI uri) throws IOException {

@@ -31,8 +31,8 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.annotation.Nullable;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.stats.OpStatsListener;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -40,7 +40,7 @@ import org.apache.bookkeeper.stats.OpStatsLogger;
 /**
  * Future related utils.
  */
-@Slf4j
+@CustomLog
 public final class FutureUtils {
 
     private FutureUtils() {}
@@ -234,9 +234,7 @@ public final class FutureUtils {
         @Override
         public void run() {
             if (done) {
-                if (log.isDebugEnabled()) {
-                    log.debug("ListFutureProcessor is interrupted.");
-                }
+                log.debug("ListFutureProcessor is interrupted");
                 return;
             }
             if (!itemsIter.hasNext()) {
@@ -294,12 +292,12 @@ public final class FutureUtils {
         // schedule a timeout to raise timeout exception
         final java.util.concurrent.ScheduledFuture<?> task = scheduler.scheduleOrdered(key, () -> {
             if (!promise.isDone() && promise.completeExceptionally(cause)) {
-                log.info("Raise exception", cause);
+                log.info().exception(cause).log("Raise exception");
             }
         }, timeout, unit);
         // when the promise is satisfied, cancel the timeout task
         promise.whenComplete((value, throwable) -> {
-                if (!task.cancel(true) && log.isDebugEnabled()) {
+                if (!task.cancel(true)) {
                     log.debug("Failed to cancel the timeout task");
                 }
             }
@@ -336,7 +334,7 @@ public final class FutureUtils {
             @Override
             public void onFailure(Throwable cause) {
                 if (null != errorMsg) {
-                    log.error(errorMsg, cause);
+                    log.error().exception(cause).log(errorMsg);
                 }
                 promise.complete(null);
             }

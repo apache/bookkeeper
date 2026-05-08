@@ -21,16 +21,15 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.io.InputStream;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * AppendOnlyStreamReader.
  */
+@CustomLog
 public class AppendOnlyStreamReader extends InputStream {
-    static final Logger LOG = LoggerFactory.getLogger(AppendOnlyStreamReader.class);
 
     private LogRecordWithInputStream currentLogRecord = null;
     private final DistributedLogManager dlm;
@@ -46,10 +45,11 @@ public class AppendOnlyStreamReader extends InputStream {
         LogRecordWithInputStream(LogRecordWithDLSN logRecord) {
             checkNotNull(logRecord);
 
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Got record dlsn = {}, txid = {}, len = {}",
-                        logRecord.getDlsn(), logRecord.getTransactionId(), logRecord.getPayload().length);
-            }
+            log.debug()
+                    .attr("dlsn", logRecord.getDlsn())
+                    .attr("transactionId", logRecord.getTransactionId())
+                    .attr("length", logRecord.getPayload().length)
+                    .log("Got record");
 
             this.logRecord = logRecord;
             this.payloadStream = logRecord.getPayLoadInputStream();
@@ -102,9 +102,7 @@ public class AppendOnlyStreamReader extends InputStream {
             if (null != record) {
                 return new LogRecordWithInputStream(record);
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("No record");
-                }
+                log.debug("No record");
                 return null;
             }
         }
@@ -138,10 +136,10 @@ public class AppendOnlyStreamReader extends InputStream {
                     return read;
                 }
             } else {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Offset saved = {}, persisted = {}",
-                            currentPosition, currentLogRecord.getLogRecord().getTransactionId());
-                }
+                log.debug()
+                        .attr("currentPosition", currentPosition)
+                        .attr("transactionId", currentLogRecord.getLogRecord().getTransactionId())
+                        .log("Offset saved");
                 currentPosition += thisread;
                 read += thisread;
             }

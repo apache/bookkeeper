@@ -32,19 +32,18 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class manages ledger directories used by the bookie.
  */
+@CustomLog
 public class LedgerDirsManager {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerDirsManager.class);
 
     private volatile List<File> filledDirs;
     private final List<File> ledgerDirectories;
@@ -210,8 +209,10 @@ public class LedgerDirsManager {
 
         if (!fullLedgerDirsToAccommodate.isEmpty()) {
             if (loggingNoWritable) {
-                LOG.info("No writable ledger dirs below diskUsageThreshold. "
-                    + "But Dirs that can accommodate {} are: {}", thresholdSize, fullLedgerDirsToAccommodate);
+                log.info()
+                        .attr("thresholdSize", thresholdSize)
+                        .attr("fullLedgerDirsToAccommodate", fullLedgerDirsToAccommodate)
+                        .log("No writable ledger dirs below diskUsageThreshold. But Dirs that can accommodate are");
             }
             return fullLedgerDirsToAccommodate;
         }
@@ -221,7 +222,7 @@ public class LedgerDirsManager {
         String errMsg = "All ledger directories are non writable and no reserved space (" + thresholdSize + ") left.";
         NoWritableLedgerDirException e = new NoWritableLedgerDirException(errMsg);
         if (loggingNoWritable) {
-            LOG.error(errMsg, e);
+            log.error().exception(e).log(errMsg);
         }
         throw e;
     }
@@ -246,7 +247,9 @@ public class LedgerDirsManager {
     @VisibleForTesting
     public void addToFilledDirs(File dir) {
         if (!filledDirs.contains(dir)) {
-            LOG.warn(dir + " is out of space. Adding it to filled dirs list");
+            log.warn()
+                    .attr("directory", dir)
+                    .log("Directory is out of space. Adding it to filled dirs list");
             // Update filled dirs list
             List<File> updatedFilledDirs = new ArrayList<File>(filledDirs);
             updatedFilledDirs.add(dir);
@@ -271,7 +274,7 @@ public class LedgerDirsManager {
         if (writableLedgerDirectories.contains(dir)) {
             return;
         }
-        LOG.info("{} becomes writable. Adding it to writable dirs list.", dir);
+        log.info().attr("directory", dir).log("becomes writable. Adding it to writable dirs list.");
         // Update writable dirs list
         List<File> updatedWritableDirs = new ArrayList<File>(writableLedgerDirectories);
         updatedWritableDirs.add(dir);

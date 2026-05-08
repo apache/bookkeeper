@@ -46,6 +46,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthProviderFactoryFactory;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
@@ -70,15 +71,13 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements the client-side part of the BookKeeper protocol.
  *
  */
+@CustomLog
 public class BookieClientImpl implements BookieClient, PerChannelBookieClientFactory {
-    static final Logger LOG = LoggerFactory.getLogger(BookieClientImpl.class);
 
     private final OrderedExecutor executor;
     private final ScheduledExecutorService scheduler;
@@ -217,7 +216,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
                     newClientPool.close(false);
                 }
             } catch (SecurityException e) {
-                LOG.error("Security Exception in creating new default PCBC pool: ", e);
+                log.error().exception(e).log("Security Exception in creating new default PCBC pool");
                 return null;
             } finally {
                 closeLock.readLock().unlock();

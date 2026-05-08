@@ -17,7 +17,6 @@
  */
 package org.apache.distributedlog;
 
-
 import static org.apache.distributedlog.NonBlockingReadsTestUtil.DEFAULT_SEGMENT_SIZE;
 import static org.apache.distributedlog.NonBlockingReadsTestUtil.readNonBlocking;
 import static org.apache.distributedlog.NonBlockingReadsTestUtil.writeRecordsForNonBlockingReads;
@@ -28,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.IdleReaderException;
@@ -35,15 +35,13 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * {@link https://issues.apache.org/jira/browse/DL-12}.
  */
+@CustomLog
 @Ignore
 public class TestNonBlockingReads extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestNonBlockingReads.class);
 
     static {
         conf.setOutputBufferSize(0);
@@ -113,7 +111,6 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
 
                         }
                     }, 100, TimeUnit.MILLISECONDS);
-
 
             readNonBlocking(dlm, false);
             assertFalse(currentThread.isInterrupted());
@@ -205,7 +202,7 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
             try {
                 readNonBlocking(dlm, false, 3, false);
             } catch (IdleReaderException exc) {
-                LOG.info("Exception encountered", exc);
+                log.info().exception(exc).log("Exception encountered");
                 exceptionEncountered = true;
             }
             assertFalse(exceptionEncountered);
@@ -251,7 +248,6 @@ public class TestNonBlockingReads extends TestDistributedLogBase {
         metadataToChange.write(zkClient);
 
         txid += 100;
-
 
         for (long i = 0; i < 3; i++) {
             BKAsyncLogWriter out = (BKAsyncLogWriter) dlm.startAsyncLogSegmentNonPartitioned();

@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.exceptions.ClientException;
 import org.apache.bookkeeper.clients.exceptions.StorageContainerException;
@@ -58,7 +58,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link LocationClientImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestLocationClientImpl extends GrpcClientTestBase {
 
     private static StorageContainerEndpoint createEndpoint(int groupId) {

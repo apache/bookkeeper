@@ -24,7 +24,7 @@ import com.google.common.base.Strings;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Objects;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.tests.containers.wait.HttpWaitStrategy;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
@@ -32,7 +32,7 @@ import org.testcontainers.containers.wait.strategy.HostPortWaitStrategy;
 /**
  * Test Container for Bookies.
  */
-@Slf4j
+@CustomLog
 public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends ChaosContainer<SelfT> {
 
     private static final int BOOKIE_PORT = 3181;
@@ -107,7 +107,10 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
         });
 
         super.start();
-        log.info("Started bookie {} at cluster {}", hostname, clusterName);
+        log.info()
+                .attr("hostname", hostname)
+                .attr("cluster", clusterName)
+                .log("Started bookie at cluster");
     }
 
     @Override
@@ -125,7 +128,10 @@ public class BookieContainer<SelfT extends BookieContainer<SelfT>> extends Chaos
     @Override
     public void stop() {
         super.stop();
-        log.info("Stopped bookie {} at cluster {}", hostname, clusterName);
+        log.info()
+                .attr("hostname", hostname)
+                .attr("cluster", clusterName)
+                .log("Stopped bookie at cluster");
     }
 
     @Override

@@ -19,7 +19,7 @@ import com.google.common.collect.Maps;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
 import org.apache.bookkeeper.stream.storage.api.sc.StorageContainer;
@@ -30,7 +30,7 @@ import org.apache.bookkeeper.stream.storage.exceptions.StorageException;
 /**
  * The default implementation of {@link StorageContainerRegistry}.
  */
-@Slf4j
+@CustomLog
 public class StorageContainerRegistryImpl implements StorageContainerRegistry {
 
     private static final String COMPONENT_NAME = StorageContainerRegistry.class.getSimpleName();
@@ -92,22 +92,25 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
             return FutureUtils.exception(new StorageException("StorageContainer " + scId + " already registered"));
         }
 
-        log.info("Registered StorageContainer ('{}').", scId);
+        log.info().attr("scId", scId).log("Registered StorageContainer");
         return newStorageContainer.start()
             .whenComplete((container, cause) -> {
                 if (null != cause) {
                     if (containers.remove(scId, newStorageContainer)) {
-                        log.warn("De-registered StorageContainer ('{}') when failed to start", scId, cause);
+                        log.warn().attr("scId", scId).exception(cause)
+                            .log("De-registered StorageContainer when failed to start");
                     } else {
-                        log.warn("Fail to de-register StorageContainer ('{}') when failed to start", scId, cause);
+                        log.warn().attr("scId", scId).exception(cause)
+                            .log("Fail to de-register StorageContainer when failed to start");
                     }
-                    log.info("Release resources hold by StorageContainer ('{}') during de-register", scId);
+                    log.info().attr("scId", scId)
+                        .log("Release resources hold by StorageContainer during de-register");
                     newStorageContainer.stop().exceptionally(throwable -> {
-                        log.error("Stop StorageContainer ('{}') fail during de-register", scId);
+                        log.error().attr("scId", scId).log("Stop StorageContainer fail during de-register");
                         return null;
                     });
                 } else {
-                    log.info("Successfully started registered StorageContainer ('{}').", scId);
+                    log.info().attr("scId", scId).log("Successfully started registered StorageContainer");
                 }
             });
     }
@@ -130,7 +133,7 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
         if (null == container) {
             StorageContainer existingContainer = containers.remove(scId);
             if (null != existingContainer) {
-                log.info("Unregistered StorageContainer ('{}').", scId);
+                log.info().attr("scId", scId).log("Unregistered StorageContainer");
                 return existingContainer.stop();
             } else {
                 return FutureUtils.Void();
@@ -139,7 +142,7 @@ public class StorageContainerRegistryImpl implements StorageContainerRegistry {
             boolean removed = containers.remove(scId, container);
 
             if (removed) {
-                log.info("Unregistered StorageContainer ('{}').", scId);
+                log.info().attr("scId", scId).log("Unregistered StorageContainer");
             }
 
             // no matter we successfully removed the containers or not, we need to close the current container.

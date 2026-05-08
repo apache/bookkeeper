@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.api.LogWriter;
@@ -55,20 +56,15 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test Cases for {@link Namespace}.
  */
+@CustomLog
 public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
 
     @Rule
     public TestName runtime = new TestName();
-
-    static final Logger LOG = LoggerFactory.getLogger(TestBKDistributedLogNamespace.class);
 
     protected static DistributedLogConfiguration conf =
             new DistributedLogConfiguration().setLockTimeout(10)
@@ -307,14 +303,14 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
                 new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
             fail("write should have failed due to perms");
         } catch (KeeperException.NoAuthException ex) {
-            LOG.info("caught exception trying to write with no perms", ex);
+            log.info().exception(ex).log("caught exception trying to write with no perms");
         }
 
         try {
             zkc.get().setData(uri.getPath() + "/test-stream", new byte[0], 0);
             fail("write should have failed due to perms");
         } catch (KeeperException.NoAuthException ex) {
-            LOG.info("caught exception trying to write with no perms", ex);
+            log.info().exception(ex).log("caught exception trying to write with no perms");
         }
     }
 
@@ -346,10 +342,10 @@ public class TestBKDistributedLogNamespace extends TestDistributedLogBase {
             initDlogMeta("/" + runtime.getMethodName(), "not-test-un", streamName);
             fail("Write should have failed due to perms");
         } catch (ZKException ex) {
-            LOG.info("Caught exception trying to write with no perms", ex);
+            log.info().exception(ex).log("Caught exception trying to write with no perms");
             assertEquals(KeeperException.Code.NOAUTH, ex.getKeeperExceptionCode());
         } catch (Exception ex) {
-            LOG.info("Caught wrong exception trying to write with no perms", ex);
+            log.info().exception(ex).log("Caught wrong exception trying to write with no perms");
             fail("Wrong exception " + ex.getClass().getName() + " expected " + LockingException.class.getName());
         }
 

@@ -26,18 +26,16 @@ import java.nio.ByteBuffer;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.ZeroBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This is a page in the LedgerCache. It holds the locations
  * (entrylogfile, offset) for entry ids.
  */
+@CustomLog
 public class LedgerEntryPage implements AutoCloseable {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerEntryPage.class);
 
     private static final int indexEntrySize = 8;
     private final int pageSize;
@@ -199,14 +197,20 @@ public class LedgerEntryPage implements AutoCloseable {
                     + " tried to get " + page.capacity() + " from position "
                     + getFirstEntryPosition() + " still need " + page.remaining(), sre);
         } catch (IllegalArgumentException iae) {
-            LOG.error("IllegalArgumentException when trying to read ledger {} from position {}",
-                    getLedger(), getFirstEntryPosition(), iae);
+            log.error()
+                    .exception(iae)
+                    .attr("ledgerId", getLedger())
+                    .attr("position", getFirstEntryPosition())
+                .log("IllegalArgumentException when trying to read ledger from position");
             throw iae;
         }
         // make sure we don't include partial index entry
         if (page.remaining() != 0) {
-            LOG.info("Short page read of ledger {} : tried to read {} bytes from position {}, but only {} bytes read.",
-                    getLedger(), page.capacity(), getFirstEntryPosition(), page.position());
+            log.info()
+                    .attr("ledgerId", getLedger())
+                    .attr("capacity", page.capacity())
+                .attr("position", getFirstEntryPosition()).attr("bytesRead", page.position())
+                .log("Short page read of ledger");
             if (page.position() % indexEntrySize != 0) {
                 int partialIndexEntryStart = page.position() - page.position() % indexEntrySize;
                 page.putLong(partialIndexEntryStart, 0L);

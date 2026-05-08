@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.feature.Feature;
@@ -42,8 +43,6 @@ import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.feature.CoreFeatureKeys;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * BookKeeper based {@link AsyncLogWriter} implementation.
@@ -64,9 +63,8 @@ import org.slf4j.LoggerFactory;
  * </ul>
  * See {@link BKLogSegmentWriter} for segment writer stats.
  */
+@CustomLog
 class BKAsyncLogWriter extends BKAbstractLogWriter implements AsyncLogWriter {
-
-    static final Logger LOG = LoggerFactory.getLogger(BKAsyncLogWriter.class);
 
     static Function<List<LogSegmentMetadata>, Boolean> truncationResultConverter =
         segments -> true;

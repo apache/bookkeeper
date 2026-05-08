@@ -40,9 +40,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.CustomLog;
 import lombok.Data;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.hamcrest.MatcherAssert;
 import org.mockito.stubbing.Answer;
@@ -51,7 +51,7 @@ import org.mockito.stubbing.Answer;
  * A mocked scheduled executor that records scheduled tasks and executes them when the clock is
  * advanced past their execution time.
  */
-@Slf4j
+@CustomLog
 public class MockExecutorController {
     public static final String THREAD_NAME_PREFIX = "realWriteExecutor-";
 
@@ -139,7 +139,7 @@ public class MockExecutorController {
         } catch (AssertionError  ae) {
             throw ae;
         } catch (Throwable t) {
-            log.error("Got unexpected exception while submitting a Runnable", t);
+            log.error().exception(t).log("Got unexpected exception while submitting a Runnable");
             fail("Got unexpected exception while submitting a Runnable " + t.getMessage());
         }
     }

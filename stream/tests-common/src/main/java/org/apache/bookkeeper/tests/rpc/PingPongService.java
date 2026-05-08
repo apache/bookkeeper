@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.tests.rpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.bookkeeper.tests.proto.rpc.PingPongServiceGrpc.PingPongServiceImplBase;
 import org.bookkeeper.tests.proto.rpc.PingRequest;
 import org.bookkeeper.tests.proto.rpc.PongResponse;
@@ -27,7 +27,7 @@ import org.bookkeeper.tests.proto.rpc.PongResponse;
 /**
  * An implementation of the ping pong service used for testing.
  */
-@Slf4j
+@CustomLog
 public class PingPongService extends PingPongServiceImplBase {
 
     private final int streamPongSize;
@@ -61,7 +61,7 @@ public class PingPongService extends PingPongServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                log.error("Failed on receiving stream of pings", t);
+                log.error().exception(t).log("Failed on receiving stream of pings");
             }
 
             @Override

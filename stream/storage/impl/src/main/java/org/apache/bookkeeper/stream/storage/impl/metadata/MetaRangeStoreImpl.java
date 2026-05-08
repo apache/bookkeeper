@@ -22,7 +22,7 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
@@ -41,7 +41,7 @@ import org.apache.bookkeeper.stream.storage.impl.metadata.stream.MetaRangeImpl;
 /**
  * The default implementation of {@link MetaRangeStore}.
  */
-@Slf4j
+@CustomLog
 public class MetaRangeStoreImpl
     implements MetaRangeStore {
 

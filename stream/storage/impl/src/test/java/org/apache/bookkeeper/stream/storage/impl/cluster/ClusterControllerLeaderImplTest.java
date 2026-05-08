@@ -40,7 +40,7 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.RegistrationClient.RegistrationListener;
@@ -61,7 +61,7 @@ import org.mockito.internal.util.collections.Sets;
 /**
  * Unit test {@link ClusterControllerLeaderImpl}.
  */
-@Slf4j
+@CustomLog
 public class ClusterControllerLeaderImplTest {
 
     private static final int NUM_STORAGE_CONTAINERS = 32;
@@ -168,7 +168,7 @@ public class ClusterControllerLeaderImplTest {
             try {
                 clusterController.processAsLeader();
             } catch (Exception e) {
-                log.info("Encountered exception when cluster controller processes as a leader", e);
+                log.info().exception(e).log("Encountered exception when cluster controller processes as a leader");
             }
         });
 

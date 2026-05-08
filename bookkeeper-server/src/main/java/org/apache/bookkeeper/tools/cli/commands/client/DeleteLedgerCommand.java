@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.client;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -32,18 +33,16 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to delete a given ledger.
  */
+@CustomLog
 public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.DeleteLedgerFlags> {
 
     private static final String NAME = "delete";
     private static final String DESC = "Delete a ledger.";
     private static final String DEFAULT = "";
-    private static final Logger LOG = LoggerFactory.getLogger(DeleteLedgerCommand.class);
 
     private LedgerIdFormatter ledgerIdFormatter;
 
@@ -104,7 +103,7 @@ public class DeleteLedgerCommand extends BookieCommand<DeleteLedgerCommand.Delet
         throws IOException, BKException, InterruptedException {
 
         if (flags.ledgerId < 0) {
-            LOG.error("Ledger id error.");
+            log.error("Ledger id error.");
             return false;
         }
 

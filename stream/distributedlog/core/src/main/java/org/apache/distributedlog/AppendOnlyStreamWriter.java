@@ -20,17 +20,16 @@ package org.apache.distributedlog;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.UnexpectedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * AppendOnlyStreamWriter.
  */
+@CustomLog
 public class AppendOnlyStreamWriter implements Closeable {
-    static final Logger LOG = LoggerFactory.getLogger(AppendOnlyStreamWriter.class);
 
     // Use a 1-length array to satisfy Java's inner class reference rules. Use primitive
     // type because synchronized block is needed anyway.
@@ -39,9 +38,7 @@ public class AppendOnlyStreamWriter implements Closeable {
     long requestPos = 0;
 
     public AppendOnlyStreamWriter(BKAsyncLogWriter logWriter, long pos) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("initialize at position {}", pos);
-        }
+        log.debug().attr("pos", pos).log("initialize at position");
         this.logWriter = logWriter;
         this.syncPos[0] = pos;
         this.requestPos = pos;
@@ -60,7 +57,7 @@ public class AppendOnlyStreamWriter implements Closeable {
         } catch (IOException ioe) {
             throw ioe;
         } catch (Exception ex) {
-            LOG.error("unexpected exception in AppendOnlyStreamWriter.force ", ex);
+            log.error().exception(ex).log("unexpected exception in AppendOnlyStreamWriter.force");
             throw new UnexpectedException("unexpected exception in AppendOnlyStreamWriter.force", ex);
         }
         synchronized (syncPos) {

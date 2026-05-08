@@ -24,7 +24,7 @@ import static org.apache.bookkeeper.stream.storage.StorageConstants.getSegmentsR
 import com.google.common.base.Strings;
 import java.net.URI;
 import java.util.Optional;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.stream.proto.cluster.ClusterMetadata;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterInitializer;
@@ -37,7 +37,7 @@ import org.apache.zookeeper.KeeperException;
 /**
  * ZooKeeper Based Cluster Initializer.
  */
-@Slf4j
+@CustomLog
 public class ZkClusterInitializer implements ClusterInitializer  {
 
     private final String zkExternalConnectString;
@@ -70,7 +70,7 @@ public class ZkClusterInitializer implements ClusterInitializer  {
             ClusterMetadata metadata;
             try {
                 metadata = store.getClusterMetadata();
-                log.info("Loaded cluster metadata : \n{}", metadata);
+                log.info().attr("metadata", metadata).log("Loaded cluster metadata");
                 return false;
             } catch (StorageRuntimeException sre) {
                 if (sre.getCause() instanceof KeeperException.NoNodeException) {
@@ -83,11 +83,15 @@ public class ZkClusterInitializer implements ClusterInitializer  {
                         segmentStorePath = Optional.of(ledgersPath);
                     }
 
-                    log.info("Initializing the stream cluster with {} storage containers with segment store path {}.",
-                            numStorageContainers, segmentStorePath.orElse(getSegmentsRootPath(ZK_METADATA_ROOT_PATH)));
+                    log.info()
+                        .attr("numStorageContainers", numStorageContainers)
+                        .attr("segmentStorePath",
+                            segmentStorePath.orElse(getSegmentsRootPath(ZK_METADATA_ROOT_PATH)))
+                        .log("Initializing the stream cluster");
 
                     boolean initialized = store.initializeCluster(numStorageContainers, segmentStorePath);
-                    log.info("Successfully initialized the stream cluster : \n{}", store.getClusterMetadata());
+                    log.info().attr("metadata", store.getClusterMetadata())
+                        .log("Successfully initialized the stream cluster");
                     return initialized;
                 } else {
                     throw sre;

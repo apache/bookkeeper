@@ -29,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie.NoLedgerException;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.stats.EntryMemTableStats;
@@ -36,8 +37,6 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IteratorUtility;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The EntryMemTable holds in-memory representation to the entries not-yet flushed.
@@ -45,8 +44,8 @@ import org.slf4j.LoggerFactory;
  * We continue to serve edits out of new EntrySkipList and backing snapshot until
  * flusher reports in that the flush succeeded. At that point we let the snapshot go.
  */
+@CustomLog
 public class EntryMemTable implements AutoCloseable{
-    private static Logger logger = LoggerFactory.getLogger(EntryMemTable.class);
     /**
      * Entry skip list.
      */
@@ -144,10 +143,10 @@ public class EntryMemTable implements AutoCloseable{
 
     void dump() {
         for (EntryKey key: this.kvmap.keySet()) {
-            logger.info(key.toString());
+            log.info(key.toString());
         }
         for (EntryKey key: this.snapshot.keySet()) {
-            logger.info(key.toString());
+            log.info(key.toString());
         }
     }
 

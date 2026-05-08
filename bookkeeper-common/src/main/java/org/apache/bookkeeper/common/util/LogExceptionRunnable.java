@@ -21,13 +21,13 @@ package org.apache.bookkeeper.common.util;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import com.google.common.base.Throwables;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * A simple wrapper for a {@link Runnable} that logs any exception thrown by it, before
  * re-throwing it.
  */
-@Slf4j
+@CustomLog
 public final class LogExceptionRunnable implements Runnable {
 
   private final Runnable task;
@@ -41,7 +41,10 @@ public final class LogExceptionRunnable implements Runnable {
     try {
       task.run();
     } catch (Throwable t) {
-      log.error("Exception while executing runnable " + task, t);
+      log.error()
+              .exception(t)
+              .attr("task", task)
+              .log("Exception while executing runnable");
       Throwables.throwIfUnchecked(t);
       throw new AssertionError(t);
     }

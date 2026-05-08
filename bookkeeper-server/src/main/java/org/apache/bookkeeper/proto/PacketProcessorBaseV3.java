@@ -24,7 +24,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
 import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
@@ -36,7 +36,7 @@ import org.apache.bookkeeper.util.StringUtils;
 /**
  * A base class for bookkeeper protocol v3 packet processors.
  */
-@Slf4j
+@CustomLog
 public abstract class PacketProcessorBaseV3 implements Runnable {
 
     final Request request;
@@ -78,8 +78,10 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
             }
 
             if (!channel.isWritable()) {
-                log.warn("cannot write response to non-writable channel {} for request {}", channel,
-                        StringUtils.requestToString(request));
+                log.warn()
+                        .attr("channel", channel)
+                        .attr("request", StringUtils.requestToString(request))
+                        .log("cannot write response to non-writable channel");
                 requestProcessor.getRequestStats().getChannelWriteStats()
                         .registerFailedEvent(MathUtils.elapsedNanos(writeNanos), TimeUnit.NANOSECONDS);
                 statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
@@ -108,8 +110,8 @@ public abstract class PacketProcessorBaseV3 implements Runnable {
                 }
             });
         } else {
-            log.debug("Netty channel {} is inactive, "
-                    + "hence bypassing netty channel writeAndFlush during sendResponse", channel);
+            log.debug().attr("channel", channel)
+                    .log("Netty channel is inactive, hence bypassing netty channel writeAndFlush during sendResponse");
         }
     }
 

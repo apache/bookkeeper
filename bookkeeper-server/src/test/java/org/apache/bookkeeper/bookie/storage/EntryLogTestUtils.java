@@ -24,6 +24,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -35,7 +36,6 @@ import org.apache.bookkeeper.bookie.storage.directentrylogger.DirectEntryLogger;
 import org.apache.bookkeeper.bookie.storage.directentrylogger.EntryLogIdsImpl;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.util.DiskChecker;
  * EntryLogTestUtils.
  */
 public class EntryLogTestUtils {
-    private static final Slogger slog = Slogger.CONSOLE;
+    private static final Logger LOG = Logger.get(EntryLogTestUtils.class);
 
     public static LedgerDirsManager newDirsManager(File... ledgerDir) throws Exception {
         return new LedgerDirsManager(
@@ -62,7 +62,7 @@ public class EntryLogTestUtils {
         curDir.mkdirs();
 
         return new DirectEntryLogger(
-                curDir, new EntryLogIdsImpl(newDirsManager(ledgerDir), slog),
+                curDir, new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG),
                 new NativeIOImpl(),
                 ByteBufAllocator.DEFAULT,
                 MoreExecutors.newDirectExecutorService(),
@@ -74,7 +74,7 @@ public class EntryLogTestUtils {
                 64 * 1024, // read buffer size
                 1, // numReadThreads
                 300, // max fd cache time in seconds
-                slog, NullStatsLogger.INSTANCE);
+                LOG, NullStatsLogger.INSTANCE);
     }
 
     public static int logIdFromLocation(long location) {

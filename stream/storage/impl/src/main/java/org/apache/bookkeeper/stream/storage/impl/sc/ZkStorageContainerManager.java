@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -33,10 +34,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.utils.NetUtils;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -54,10 +54,12 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 /**
  * A zookeeper based implementation of {@link StorageContainerManager}.
  */
-@Slf4j
+@CustomLog
 public class ZkStorageContainerManager
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements StorageContainerManager, Consumer<Void> {
+
+    private static final ServerAssignmentData EMPTY_SERVER_ASSIGNMENT = new ServerAssignmentData();
 
     private final Endpoint endpoint;
     private final ClusterMetadataStore metadataStore;
@@ -108,7 +110,8 @@ public class ZkStorageContainerManager
         // schedule the container probe task
         containerProbeTask = executor.scheduleAtFixedRate(
             this::probeContainers, 0, probeInterval.toMillis(), TimeUnit.MILLISECONDS);
-        log.info("Scheduled storage container probe task at every {} ms", probeInterval.toMillis());
+        log.info().attr("probeIntervalMs", probeInterval.toMillis())
+            .log("Scheduled storage container probe task");
     }
 
     @Override
@@ -160,11 +163,9 @@ public class ZkStorageContainerManager
             return false;
         }
 
-        Map<Endpoint, ServerAssignmentData> newAssignmentMap = clusterAssignmentData.getServersMap().entrySet()
-            .stream()
-            .collect(Collectors.toMap(
-                e -> NetUtils.parseEndpoint(e.getKey()),
-                e -> e.getValue()));
+        Map<Endpoint, ServerAssignmentData> newAssignmentMap = new HashMap<>();
+        clusterAssignmentData.forEachServers(
+            (server, assignment) -> newAssignmentMap.put(NetUtils.parseEndpoint(server), assignment));
 
         Set<Endpoint> oldAssignedServers = clusterAssignmentMap.keySet();
         Set<Endpoint> newAssignedServers = newAssignmentMap.keySet();
@@ -185,12 +186,14 @@ public class ZkStorageContainerManager
     private void processServersJoined(Set<Endpoint> serversJoined,
                                       Map<Endpoint, ServerAssignmentData> newAssignmentMap) {
         if (!serversJoined.isEmpty()) {
-            log.info("Servers joined : {}", serversJoined);
+            log.info().attr("servers", serversJoined).log("Servers joined");
         }
         serversJoined.forEach(ep -> {
             ServerAssignmentData sad = newAssignmentMap.get(ep);
             if (null != sad) {
-                sad.getContainersList().forEach(container -> containerAssignmentMap.put(container, ep));
+                for (int i = 0; i < sad.getContainersCount(); i++) {
+                    containerAssignmentMap.put(sad.getContainerAt(i), ep);
+                }
             }
         });
     }
@@ -198,12 +201,14 @@ public class ZkStorageContainerManager
     private void processServersLeft(Set<Endpoint> serversLeft,
                                     Map<Endpoint, ServerAssignmentData> oldAssignmentMap) {
         if (!serversLeft.isEmpty()) {
-            log.info("Servers left : {}", serversLeft);
+            log.info().attr("servers", serversLeft).log("Servers left");
         }
         serversLeft.forEach(ep -> {
             ServerAssignmentData sad = oldAssignmentMap.get(ep);
             if (null != sad) {
-                sad.getContainersList().forEach(container -> containerAssignmentMap.remove(container, ep));
+                for (int i = 0; i < sad.getContainersCount(); i++) {
+                    containerAssignmentMap.remove(sad.getContainerAt(i), ep);
+                }
             }
         });
     }
@@ -213,16 +218,23 @@ public class ZkStorageContainerManager
                                                  Map<Endpoint, ServerAssignmentData> newAssignmentMap) {
         commonServers.forEach(ep -> {
 
-            ServerAssignmentData oldSad = oldAssignmentMap.getOrDefault(ep, ServerAssignmentData.getDefaultInstance());
-            ServerAssignmentData newSad = newAssignmentMap.getOrDefault(ep, ServerAssignmentData.getDefaultInstance());
+            ServerAssignmentData oldSad = oldAssignmentMap.getOrDefault(ep, EMPTY_SERVER_ASSIGNMENT);
+            ServerAssignmentData newSad = newAssignmentMap.getOrDefault(ep, EMPTY_SERVER_ASSIGNMENT);
 
             if (oldSad.equals(newSad)) {
                 return;
             } else {
-                log.info("Server assignment is change for {}:\nold assignment: {}\nnew assignment: {}",
-                    NetUtils.endpointToString(ep), oldSad, newSad);
-                oldSad.getContainersList().forEach(container -> containerAssignmentMap.remove(container, ep));
-                newSad.getContainersList().forEach(container -> containerAssignmentMap.put(container, ep));
+                log.info()
+                    .attr("server", NetUtils.endpointToString(ep))
+                    .attr("oldAssignment", oldSad)
+                    .attr("newAssignment", newSad)
+                    .log("Server assignment is changed");
+                for (int i = 0; i < oldSad.getContainersCount(); i++) {
+                    containerAssignmentMap.remove(oldSad.getContainerAt(i), ep);
+                }
+                for (int i = 0; i < newSad.getContainersCount(); i++) {
+                    containerAssignmentMap.put(newSad.getContainerAt(i), ep);
+                }
             }
 
         });
@@ -235,7 +247,10 @@ public class ZkStorageContainerManager
     }
 
     private void processMyAssignment(ServerAssignmentData myAssignment) {
-        Set<Long> assignedContainerSet = myAssignment.getContainersList().stream().collect(Collectors.toSet());
+        Set<Long> assignedContainerSet = Sets.newHashSet();
+        for (int i = 0; i < myAssignment.getContainersCount(); i++) {
+            assignedContainerSet.add(myAssignment.getContainerAt(i));
+        }
         Set<Long> liveContainerSet = Sets.newHashSet(liveContainers.keySet());
 
         Set<Long> containersToStart =
@@ -251,13 +266,13 @@ public class ZkStorageContainerManager
             Sets.filter(containersToStop, container -> !pendingStartStopContainers.contains(container));
 
         if (!containersToStart.isEmpty() || !containersToStop.isEmpty()) {
-            log.info("Process container changes:\n\tIdeal = {}\n\tLive = {}\n\t"
-                    + "Pending = {}\n\tToStart = {}\n\tToStop = {}",
-                assignedContainerSet,
-                liveContainerSet,
-                pendingStartStopContainers,
-                containersToStart,
-                containersToStop);
+            log.info()
+                .attr("ideal", assignedContainerSet)
+                .attr("live", liveContainerSet)
+                .attr("pending", pendingStartStopContainers)
+                .attr("toStart", containersToStart)
+                .attr("toStop", containersToStop)
+                .log("Process container changes");
         }
 
         containersToStart.forEach(this::startStorageContainer);
@@ -265,10 +280,10 @@ public class ZkStorageContainerManager
     }
 
     private CompletableFuture<StorageContainer> startStorageContainer(long scId) {
-        log.info("Starting storage container ({})", scId);
+        log.info().attr("scId", scId).log("Starting storage container");
         StorageContainer sc = liveContainers.get(scId);
         if (null != sc) {
-            log.warn("Storage container ({}) is already started", scId);
+            log.warn().attr("scId", scId).log("Storage container is already started");
             return FutureUtils.value(sc);
         } else {
             // register the container to pending list
@@ -278,9 +293,10 @@ public class ZkStorageContainerManager
                 .whenComplete((container, cause) -> {
                     try {
                         if (null != cause) {
-                            log.warn("Failed to start storage container ({})", scId, cause);
+                            log.warn().attr("scId", scId).exception(cause)
+                                .log("Failed to start storage container");
                         } else {
-                            log.info("Successfully started storage container ({})", scId);
+                            log.info().attr("scId", scId).log("Successfully started storage container");
                             addStorageContainer(scId, container);
                         }
                     } finally {
@@ -291,10 +307,10 @@ public class ZkStorageContainerManager
     }
 
     private CompletableFuture<Void> stopStorageContainer(long scId) {
-        log.info("Stopping storage container ({})", scId);
+        log.info().attr("scId", scId).log("Stopping storage container");
         StorageContainer sc = liveContainers.get(scId);
         if (null == sc) {
-            log.warn("Storage container ({}) is not alive anymore", scId);
+            log.warn().attr("scId", scId).log("Storage container is not alive anymore");
             return FutureUtils.Void();
         } else {
             // register the container to pending list
@@ -304,9 +320,10 @@ public class ZkStorageContainerManager
                 .whenComplete((container, cause) -> {
                     try {
                         if (cause != null) {
-                            log.warn("Failed to stop storage container ({})", scId, cause);
+                            log.warn().attr("scId", scId).exception(cause)
+                                .log("Failed to stop storage container");
                         } else {
-                            log.info("Successfully stopped storage container ({})", scId);
+                            log.info().attr("scId", scId).log("Successfully stopped storage container");
                             removeStorageContainer(scId, sc);
                         }
 
@@ -320,10 +337,10 @@ public class ZkStorageContainerManager
     private StorageContainer addStorageContainer(long scId, StorageContainer sc) {
         StorageContainer oldSc = liveContainers.putIfAbsent(scId, sc);
         if (null == oldSc) {
-            log.info("Storage container ({}) is added to live set.", sc);
+            log.info().attr("storageContainer", sc).log("Storage container is added to live set");
             return sc;
         } else {
-            log.warn("Storage container ({}) has already been added to live set", sc);
+            log.warn().attr("storageContainer", sc).log("Storage container has already been added to live set");
             sc.stop();
             return oldSc;
         }
@@ -331,9 +348,9 @@ public class ZkStorageContainerManager
 
     private void removeStorageContainer(long scId, StorageContainer sc) {
         if (liveContainers.remove(scId, sc)) {
-            log.info("Storage container ({}) is removed from live set.", scId);
+            log.info().attr("scId", scId).log("Storage container is removed from live set");
         } else {
-            log.warn("Storage container ({}) can't be removed from live set.", scId);
+            log.warn().attr("scId", scId).log("Storage container can't be removed from live set");
         }
     }
 

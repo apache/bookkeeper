@@ -22,14 +22,14 @@ package org.apache.bookkeeper.zookeeper;
 
 import java.util.Arrays;
 import java.util.Random;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Backoff time determined based as a multiple of baseBackoffTime.
  * The multiple value depends on retryCount.
  * If the retry schedule exceeds the deadline, we schedule a final attempt exactly at the deadline.
  */
-@Slf4j
+@CustomLog
 public class ExponentialBackOffWithDeadlinePolicy implements RetryPolicy {
 
     static final int [] RETRY_BACKOFF = {0, 1, 2, 3, 5, 5, 5, 10, 10, 10, 20, 40, 100};
@@ -63,8 +63,11 @@ public class ExponentialBackOffWithDeadlinePolicy implements RetryPolicy {
         long jitter = (random.nextInt(JITTER_PERCENT) * waitTime / 100);
 
         if (elapsedRetryTime + waitTime + jitter > deadline) {
-            log.warn("Final retry attempt: {}, timeleft: {}, stacktrace: {}",
-                    retryCount, (deadline - elapsedRetryTime), Arrays.toString(Thread.currentThread().getStackTrace()));
+            log.warn()
+                    .attr("retryCount", retryCount)
+                    .attr("timeLeft", deadline - elapsedRetryTime)
+                    .attr("stacktrace", Arrays.toString(Thread.currentThread().getStackTrace()))
+                    .log("Final retry attempt");
             return deadline - elapsedRetryTime;
         }
 

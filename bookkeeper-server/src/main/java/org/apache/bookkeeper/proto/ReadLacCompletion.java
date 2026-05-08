@@ -76,9 +76,7 @@ class ReadLacCompletion extends CompletionValue {
             lastEntryBuffer = Unpooled.wrappedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
         }
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledgerId", ledgerId);
-        }
+        logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
         cb.readLacComplete(rc, ledgerId, lacBuffer.slice(),

@@ -17,12 +17,12 @@
  */
 package org.apache.bookkeeper.common.allocator;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Define the policy for the Netty leak detector.
  */
-@Slf4j
+@CustomLog
 public enum LeakDetectionPolicy {
 
     /**
@@ -55,8 +55,10 @@ public enum LeakDetectionPolicy {
                 return policy;
             }
         }
-        log.warn("Parse leak detection policy level {} failed. Use the default level: {}", levelStr,
-                LeakDetectionPolicy.Disabled.name());
+        log.warn()
+                .attr("levelStr", levelStr)
+                .attr("defaultLevel", LeakDetectionPolicy.Disabled.name())
+                .log("Parse leak detection policy level failed. Using the default level");
         return LeakDetectionPolicy.Disabled;
     }
 }

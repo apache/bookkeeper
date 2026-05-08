@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LedgerStorage.StorageState;
@@ -54,7 +54,7 @@ import org.apache.bookkeeper.net.BookieId;
 /**
  * An implementation of the DataIntegrityCheck interface.
  */
-@Slf4j
+@CustomLog
 public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     private static final int MAX_INFLIGHT = 300;
     private static final int MAX_ENTRIES_INFLIGHT = 3000;
@@ -95,11 +95,19 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
 
     private CompletableFuture<Void> runPreBootSequence(String reason) {
         String runId = UUID.randomUUID().toString();
-        log.info("Event: {}, RunId: {}, Reason: {}", Events.PREBOOT_START, runId, reason);
+        log.info()
+                .attr("event", Events.PREBOOT_START)
+                .attr("runId", runId)
+                .attr("reason", reason)
+                .log("Preboot start");
         try {
             this.ledgerStorage.setStorageStateFlag(StorageState.NEEDS_INTEGRITY_CHECK);
         } catch (IOException ioe) {
-            log.error("Event: {}, RunId: {}", Events.PREBOOT_ERROR, runId, ioe);
+            log.error()
+                    .exception(ioe)
+                    .attr("event", Events.PREBOOT_ERROR)
+                    .attr("runId", runId)
+                    .log("Preboot error");
             return FutureUtils.exception(ioe);
         }
 
@@ -116,8 +124,12 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                             ledgerStorage.setMasterKey(ledgerId, new byte[0]);
                         }
                     } catch (IOException ioe) {
-                        log.error("Event: {}, RunId: {}, LedgerId: {}",
-                                Events.ENSURE_LEDGER_ERROR, runId, ledgerId, ioe);
+                        log.error()
+                                .exception(ioe)
+                                .attr("event", Events.ENSURE_LEDGER_ERROR)
+                                .attr("runId", runId)
+                                .attr("ledgerId", ledgerId)
+                                .log("Ensure ledger error");
                         return FutureUtils.exception(ioe);
                     }
                 }
@@ -125,7 +137,11 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
             })
             .whenComplete((ignore, exception) -> {
                     if (exception != null) {
-                        log.error("Event: {}, runId: {}", Events.PREBOOT_ERROR, runId, exception);
+                        log.error()
+                                .exception(exception)
+                                .attr("event", Events.PREBOOT_ERROR)
+                                .attr("runId", runId)
+                                .log("Preboot error");
                         promise.completeExceptionally(exception);
                     } else {
                         try {
@@ -133,11 +149,18 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
 
                             updateMetadataCache(ledgersCache);
 
-                            log.info("Event: {}, runId: {}, processed: {}",
-                                    Events.PREBOOT_END, runId, ledgersCache.size());
+                            log.info()
+                                    .attr("event", Events.PREBOOT_END)
+                                    .attr("runId", runId)
+                                    .attr("processed", ledgersCache.size())
+                                    .log("Preboot end");
                             promise.complete(null);
                         } catch (Throwable t) {
-                            log.error("Event: {}, runId: {}", Events.PREBOOT_ERROR, runId, t);
+                            log.error()
+                                    .exception(t)
+                                    .attr("event", Events.PREBOOT_ERROR)
+                                    .attr("runId", runId)
+                                    .log("Preboot error");
                             promise.completeExceptionally(t);
                         }
                     }
@@ -155,12 +178,18 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     public CompletableFuture<Void> runFullCheck() {
         String runId = UUID.randomUUID().toString();
 
-        log.info("Event: {}, runId: {}", Events.FULL_CHECK_INIT, runId);
+        log.info()
+                .attr("event", Events.FULL_CHECK_INIT)
+                .attr("runId", runId)
+                .log("Full check init");
         return getCachedOrReadMetadata(runId)
             .thenCompose(
                     (ledgers) -> {
-                        log.info("Event: {}, runId: {}, ledgerCount: {}",
-                                Events.FULL_CHECK_START, runId, ledgers.size());
+                        log.info()
+                                .attr("event", Events.FULL_CHECK_START)
+                                .attr("runId", runId)
+                                .attr("ledgerCount", ledgers.size())
+                                .log("Full check start");
                         return checkAndRecoverLedgers(ledgers, runId).thenApply((resolved) -> {
                                 for (LedgerResult r : resolved) {
                                     if (r.isMissing() || r.isOK()) {
@@ -175,19 +204,24 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                                     .map(r -> r.getThrowable()).findFirst();
 
                                 if (firstError.isPresent()) {
-                                    log.error("Event: {}, runId: {}, ok: {}"
-                                            + ", error: {}, missing: {}, ledgersToRetry: {}",
-                                            Events.FULL_CHECK_END, runId,
-                                            resolved.stream().filter(r -> r.isOK()).count(),
-                                            resolved.stream().filter(r -> r.isError()).count(),
-                                            resolved.stream().filter(r -> r.isMissing()).count(),
-                                            ledgers.size(), firstError.get());
+                                    log.error()
+                                            .exception(firstError.get())
+                                            .attr("event", Events.FULL_CHECK_END)
+                                            .attr("runId", runId)
+                                            .attr("ok", resolved.stream().filter(r -> r.isOK()).count())
+                                            .attr("error", resolved.stream().filter(r -> r.isError()).count())
+                                            .attr("missing", resolved.stream().filter(r -> r.isMissing()).count())
+                                            .attr("ledgersToRetry", ledgers.size())
+                                            .log("Full check end with errors");
                                 } else {
-                                    log.info("Event: {}, runId: {}, ok: {}, error: 0, missing: {}, ledgersToRetry: {}",
-                                            Events.FULL_CHECK_END, runId,
-                                            resolved.stream().filter(r -> r.isOK()).count(),
-                                            resolved.stream().filter(r -> r.isMissing()).count(),
-                                            ledgers.size());
+                                    log.info()
+                                            .attr("event", Events.FULL_CHECK_END)
+                                            .attr("runId", runId)
+                                            .attr("ok", resolved.stream().filter(r -> r.isOK()).count())
+                                            .attr("error", 0)
+                                            .attr("missing", resolved.stream().filter(r -> r.isMissing()).count())
+                                            .attr("ledgersToRetry", ledgers.size())
+                                            .log("Full check end");
                                 }
                                 return ledgers;
                             });
@@ -198,16 +232,26 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                         try {
                             this.ledgerStorage.flush();
                             if (ledgers.isEmpty()) {
-                                log.info("Event: {}, runId: {}", Events.CLEAR_INTEGCHECK_FLAG, runId);
+                                log.info()
+                                        .attr("event", Events.CLEAR_INTEGCHECK_FLAG)
+                                        .attr("runId", runId)
+                                        .log("Clearing integrity check flag");
                                 this.ledgerStorage.clearStorageStateFlag(
                                         StorageState.NEEDS_INTEGRITY_CHECK);
                             }
                             // not really needed as we are modifying the map in place
                             updateMetadataCache(ledgers);
-                            log.info("Event: {}, runId: {}", Events.FULL_CHECK_COMPLETE, runId);
+                            log.info()
+                                    .attr("event", Events.FULL_CHECK_COMPLETE)
+                                    .attr("runId", runId)
+                                    .log("Full check complete");
                             promise.complete(null);
                         } catch (IOException ioe) {
-                            log.error("Event: {}, runId: {}", Events.FULL_CHECK_ERROR, runId, ioe);
+                            log.error()
+                                    .exception(ioe)
+                                    .attr("event", Events.FULL_CHECK_ERROR)
+                                    .attr("runId", runId)
+                                    .log("Full check error");
                             promise.completeExceptionally(ioe);
                         }
                         return promise;
@@ -221,11 +265,17 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
     CompletableFuture<Map<Long, LedgerMetadata>> getCachedOrReadMetadata(String runId) {
         Map<Long, LedgerMetadata> map = ledgersCacheRef.get();
         if (map != null) {
-            log.info("Event: {}, runId: {}, ledgerCount: {}", Events.USE_CACHED_METADATA, runId,
-                    map.size());
+            log.info()
+                    .attr("event", Events.USE_CACHED_METADATA)
+                    .attr("runId", runId)
+                    .attr("ledgerCount", map.size())
+                    .log("Using cached metadata");
             return CompletableFuture.completedFuture(map);
         } else {
-            log.info("Event: {}, runId: {}", Events.REFRESH_METADATA, runId);
+            log.info()
+                    .attr("event", Events.REFRESH_METADATA)
+                    .attr("runId", runId)
+                    .log("Refreshing metadata");
             MetadataAsyncIterator iter = new MetadataAsyncIterator(scheduler,
                     ledgerManager, MAX_INFLIGHT, ZK_TIMEOUT_S, TimeUnit.SECONDS);
             Map<Long, LedgerMetadata> ledgersCache =
@@ -265,8 +315,12 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
         Map.Entry<Long, ? extends List<BookieId>> lastEnsemble = metadata.getAllEnsembles().lastEntry();
         CompletableFuture<Void> promise = new CompletableFuture<>();
         if (lastEnsemble == null) {
-            log.error("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                    Events.INVALID_METADATA, runId, metadata, ledgerId);
+            log.error()
+                    .attr("event", Events.INVALID_METADATA)
+                    .attr("runId", runId)
+                    .attr("metadata", metadata)
+                    .attr("ledgerId", ledgerId)
+                    .log("Invalid metadata");
             promise.completeExceptionally(
                     new IllegalStateException(
                             String.format("All metadata must have at least one ensemble, %d does not", ledgerId)));
@@ -276,14 +330,23 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
 
         if (!metadata.isClosed() && lastEnsemble.getValue().contains(bookieId)) {
             try {
-                log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                        Events.MARK_LIMBO, runId, metadata, ledgerId);
+                log.info()
+                        .attr("event", Events.MARK_LIMBO)
+                        .attr("runId", runId)
+                        .attr("metadata", metadata)
+                        .attr("ledgerId", ledgerId)
+                        .log("Marking ledger as limbo");
                 ledgerStorage.setLimboState(ledgerId);
                 ledgerStorage.setFenced(ledgerId);
                 promise.complete(null);
             } catch (IOException ioe) {
-                log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                        Events.LIMBO_OR_FENCE_ERROR, runId, metadata, ledgerId, ioe);
+                log.info()
+                        .exception(ioe)
+                        .attr("event", Events.LIMBO_OR_FENCE_ERROR)
+                        .attr("runId", runId)
+                        .attr("metadata", metadata)
+                        .attr("ledgerId", ledgerId)
+                        .log("Limbo or fence error");
                 promise.completeExceptionally(ioe);
             }
         } else {
@@ -409,18 +472,30 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                 this.ledgerStorage.setMasterKey(ledgerId, new byte[0]);
             }
             if (this.ledgerStorage.hasLimboState(ledgerId)) {
-                log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                        Events.RECOVER_LIMBO_LEDGER, runId, origMetadata, ledgerId);
+                log.info()
+                        .attr("event", Events.RECOVER_LIMBO_LEDGER)
+                        .attr("runId", runId)
+                        .attr("metadata", origMetadata)
+                        .attr("ledgerId", ledgerId)
+                        .log("Recovering limbo ledger");
                 return recoverLedger(ledgerId, runId)
                     .toMaybe()
                     .onErrorResumeNext(t -> {
                             if (t instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException) {
-                                log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                                        Events.RECOVER_LIMBO_LEDGER_MISSING, runId, origMetadata, ledgerId);
+                                log.info()
+                                        .attr("event", Events.RECOVER_LIMBO_LEDGER_MISSING)
+                                        .attr("runId", runId)
+                                        .attr("metadata", origMetadata)
+                                        .attr("ledgerId", ledgerId)
+                                        .log("Recover limbo ledger missing");
                                 return Maybe.empty();
                             } else {
-                                log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                                        Events.RECOVER_LIMBO_LEDGER_ERROR, runId, origMetadata, ledgerId);
+                                log.info()
+                                        .attr("event", Events.RECOVER_LIMBO_LEDGER_ERROR)
+                                        .attr("runId", runId)
+                                        .attr("metadata", origMetadata)
+                                        .attr("ledgerId", ledgerId)
+                                        .log("Recover limbo ledger error");
                                 return Maybe.error(t);
                             }
                         });
@@ -441,8 +516,12 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
                             LedgerMetadata metadata = handle.getLedgerMetadata();
                             handle.closeAsync().whenComplete((ignore, exception) -> {
                                     if (exception != null) {
-                                        log.warn("Event: {}, runId: {}, ledger: {}",
-                                                Events.RECOVER_LIMBO_LEDGER_CLOSE_ERROR, runId, ledgerId, exception);
+                                        log.warn()
+                                                .exception(exception)
+                                                .attr("event", Events.RECOVER_LIMBO_LEDGER_CLOSE_ERROR)
+                                                .attr("runId", runId)
+                                                .attr("ledgerId", ledgerId)
+                                                .log("Recover limbo ledger close error");
                                     }
                                 });
                             emitter.onSuccess(metadata);
@@ -491,8 +570,12 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
         AtomicInteger count = new AtomicInteger(0);
         AtomicInteger errorCount = new AtomicInteger(0);
         AtomicReference<Throwable> firstError = new AtomicReference<>(null);
-        log.info("Event: {}, runId: {}, metadata: {}, ledger: {}",
-                Events.LEDGER_CHECK_AND_COPY_START, runId, metadata, ledgerId);
+        log.info()
+                .attr("event", Events.LEDGER_CHECK_AND_COPY_START)
+                .attr("runId", runId)
+                .attr("metadata", metadata)
+                .attr("ledgerId", ledgerId)
+                .log("Ledger check and copy start");
         return Flowable.rangeLong(0, lastKnownEntry + 1)
             .subscribeOn(scheduler, false)
             .flatMapMaybe((entryId) -> {
@@ -509,13 +592,25 @@ public class DataIntegrityCheckImpl implements DataIntegrityCheck {
             .count() // do nothing with result, but gives a single even if empty
             .doOnTerminate(() -> {
                     if (firstError.get() != null) {
-                        log.warn("Event: {}, runId: {}, metadata: {}, ledger: {}, entries: {}, bytes: {}, errors: {}",
-                                Events.LEDGER_CHECK_AND_COPY_END, runId,
-                                metadata, ledgerId, count.get(), byteCount.get(), firstError.get());
+                        log.warn()
+                                .exception(firstError.get())
+                                .attr("event", Events.LEDGER_CHECK_AND_COPY_END)
+                                .attr("runId", runId)
+                                .attr("metadata", metadata)
+                                .attr("ledgerId", ledgerId)
+                                .attr("entries", count.get())
+                                .attr("bytes", byteCount.get())
+                                .log("Ledger check and copy end with errors");
                     } else {
-                        log.info("Event: {}, runId: {}, metadata: {}, ledger: {}, entries: {}, bytes: {}, errors: 0",
-                                Events.LEDGER_CHECK_AND_COPY_END, runId,
-                                metadata, ledgerId, count.get(), byteCount.get());
+                        log.info()
+                                .attr("event", Events.LEDGER_CHECK_AND_COPY_END)
+                                .attr("runId", runId)
+                                .attr("metadata", metadata)
+                                .attr("ledgerId", ledgerId)
+                                .attr("entries", count.get())
+                                .attr("bytes", byteCount.get())
+                                .attr("errors", 0)
+                                .log("Ledger check and copy end");
                     }
                 })
             .map(ignore -> ledgerId);

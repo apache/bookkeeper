@@ -24,7 +24,7 @@ import io.grpc.NameResolver;
 import io.grpc.NameResolverProvider;
 import java.net.URI;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.resolver.NameResolverFactoryProvider;
 import org.apache.bookkeeper.common.resolver.NameResolverProviderFactory;
@@ -42,7 +42,7 @@ import org.apache.bookkeeper.meta.MetadataDrivers;
 // https://github.com/grpc/grpc-java/issues/7133#issuecomment-680981331
 // Skipping the migration for now, will have to deal with this later when GRPC team
 // finalizes their API.
-@Slf4j
+@CustomLog
 public class BKRegistrationNameResolverProvider extends NameResolverFactoryProvider {
 
     @Override
@@ -63,8 +63,10 @@ public class BKRegistrationNameResolverProvider extends NameResolverFactoryProvi
             serviceURI = ServiceURI.create(targetUri);
         } catch (NullPointerException | IllegalArgumentException e) {
             // invalid uri here, so return null to allow grpc to use other name resolvers
-            log.info("BKRegistrationNameResolverProvider doesn't know how to resolve {} : cause {}",
-                targetUri, e.getMessage());
+            log.info()
+                .attr("targetUri", targetUri)
+                .exceptionMessage(e)
+                .log("BKRegistrationNameResolverProvider doesn't know how to resolve target URI");
             return null;
         }
 
@@ -73,7 +75,10 @@ public class BKRegistrationNameResolverProvider extends NameResolverFactoryProvi
             clientDriver = MetadataDrivers.getClientDriver(serviceURI.getUri());
             return new BKRegistrationNameResolver(clientDriver, serviceURI.getUri());
         } catch (IllegalArgumentException iae) {
-            log.error("Unknown service uri : {}", serviceURI, iae);
+            log.error()
+                .attr("serviceURI", serviceURI)
+                .exception(iae)
+                .log("Unknown service uri");
             return null;
         }
     }

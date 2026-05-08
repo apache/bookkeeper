@@ -28,23 +28,19 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test Sync Log Reader.
  */
+@CustomLog
 public class TestBKSyncLogReader extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestBKSyncLogReader.class);
 
     @Rule
     public TestName testName = new TestName();
@@ -162,7 +158,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         out.flush();
         out.commit();
 
-        logger.info("Write first 10 records");
+        log.info("Write first 10 records");
 
         // all 10 records are added to the stream
         // then open a reader to read
@@ -173,7 +169,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
             TimeUnit.MILLISECONDS.sleep(20);
         }
 
-        logger.info("ReadAhead is caught up with first 10 records");
+        log.info("ReadAhead is caught up with first 10 records");
 
         for (long i = 11L; i <= 20L; i++) {
             LogRecord record = DLMTestUtil.getLogRecordInstance(i);
@@ -182,7 +178,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         out.flush();
         out.commit();
 
-        logger.info("Write another 10 records");
+        log.info("Write another 10 records");
 
         // resume reading from sync reader util it consumes 20 records
         long expectedTxId = 1L;
@@ -223,7 +219,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         out.flush();
         out.commit();
 
-        logger.info("Write first 10 records");
+        log.info("Write first 10 records");
 
         // open a reader to read
         BKSyncLogReader reader = (BKSyncLogReader) dlm.getInputStream(1L);
@@ -265,7 +261,7 @@ public class TestBKSyncLogReader extends TestDistributedLogBase {
         out.commit();
         final AtomicLong nextTxId = new AtomicLong(11L);
 
-        logger.info("Write first 10 records");
+        log.info("Write first 10 records");
 
         ScheduledExecutorService executorService =
                 Executors.newSingleThreadScheduledExecutor();

@@ -31,16 +31,14 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.List;
+import lombok.CustomLog;
 import lombok.Getter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The status object represents the current status of a bookie instance.
  */
+@CustomLog
 public class BookieStatus {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BookieStatus.class);
 
     static final int CURRENT_STATUS_LAYOUT_VERSION = 1;
 
@@ -109,14 +107,14 @@ public class BookieStatus {
                 writeToFile(statusFile, toString());
                 success = true;
             } catch (IOException e) {
-                LOG.warn("IOException while trying to write bookie status to directory {}."
-                    + " This is fine if not all directories are failed.", dir);
+                log.warn().attr("directory", dir).log("IOException while trying to write bookie status to directory."
+                    + " This is fine if not all directories are failed.");
             }
         }
         if (success) {
-            LOG.info("Successfully persist bookie status {}", this.bookieMode);
+            log.info().attr("bookieMode", this.bookieMode).log("Successfully persist bookie status");
         } else {
-            LOG.warn("Failed to persist bookie status {}", this.bookieMode);
+            log.warn().attr("bookieMode", this.bookieMode).log("Failed to persist bookie status");
         }
     }
 
@@ -158,18 +156,18 @@ public class BookieStatus {
                     }
                 }
             } catch (IOException e) {
-                LOG.warn("IOException while trying to read bookie status from directory {}."
-                    + " This is fine if not all directories failed.", dir);
+                log.warn().attr("directory", dir).log("IOException while trying to read bookie status from directory."
+                    + " This is fine if not all directories failed.");
             } catch (IllegalArgumentException e) {
-                LOG.warn("IllegalArgumentException while trying to read bookie status from directory {}."
-                    + " This is fine if not all directories failed.", dir);
+                log.warn().attr("directory", dir).log("IllegalArgumentException while trying to read bookie status"
+                    + " from directory. This is fine if not all directories failed.");
             }
         }
         if (success) {
-            LOG.info("Successfully retrieve bookie status {} from disks.", getBookieMode());
+            log.info().attr("bookieMode", getBookieMode()).log("Successfully retrieve bookie status from disks.");
         } else {
-            LOG.warn("Failed to retrieve bookie status from disks."
-                    + " Fall back to current or default bookie status: {}", getBookieMode());
+            log.warn().attr("bookieMode", getBookieMode()).log("Failed to retrieve bookie status from disks."
+                    + " Fall back to current or default bookie status");
         }
     }
 
@@ -205,16 +203,12 @@ public class BookieStatus {
         BookieStatus status = new BookieStatus();
         String line = reader.readLine();
         if (line == null || line.trim().isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Empty line when parsing bookie status");
-            }
+            log.debug("Empty line when parsing bookie status");
             return null;
         }
         String[] parts = line.split(",");
         if (parts.length == 0) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error in parsing bookie status: {}", line);
-            }
+            log.debug().attr("line", line).log("Error in parsing bookie status");
             return null;
         }
         synchronized (status) {

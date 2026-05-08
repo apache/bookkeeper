@@ -19,17 +19,16 @@ package org.apache.distributedlog.limiter;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.distributedlog.exceptions.OverCapacityException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Collect rate limiter implementation, cost(RequestT), overlimit, etc. behavior.
  */
+@CustomLog
 public class ComposableRequestLimiter<RequestT> implements RequestLimiter<RequestT> {
-    protected static final Logger LOG = LoggerFactory.getLogger(ComposableRequestLimiter.class);
 
     private final RateLimiter limiter;
     private final OverlimitFunction<RequestT> overlimitFunction;

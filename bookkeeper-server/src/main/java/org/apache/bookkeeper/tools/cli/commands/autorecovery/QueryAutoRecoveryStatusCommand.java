@@ -25,6 +25,7 @@ import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -35,17 +36,14 @@ import org.apache.bookkeeper.replication.ReplicationException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
  * Command to Query current auto recovery status.
  */
+@CustomLog
 public class QueryAutoRecoveryStatusCommand
         extends BookieCommand<QueryAutoRecoveryStatusCommand.QFlags> {
-    static final Logger LOG = LoggerFactory.
-            getLogger(QueryAutoRecoveryStatusCommand.class);
     private static final String NAME = "queryautorecoverystatus";
     private static final String DESC = "Query autorecovery status.";
 
@@ -116,25 +114,30 @@ public class QueryAutoRecoveryStatusCommand
                         ledgerList.add(new LedgerRecoverInfo(urLedgerId, replicationWorkerId));
                     }
                 } catch (ReplicationException.UnavailableException e) {
-                    LOG.error("Failed to get ReplicationWorkerId rereplicating ledger {} -- {}", urLedgerId,
-                            e.getMessage());
+                    log.error()
+                            .attr("ledgerId", urLedgerId)
+                            .exceptionMessage(e)
+                            .log("Failed to get ReplicationWorkerId rereplicating ledger");
                 }
             }
 
-            LOG.info("CurrentRecoverLedgerInfo:");
+            log.info("CurrentRecoverLedgerInfo:");
             if (!flag.verbose) {
                 for (int i = 0; i < ledgerList.size(); i++) {
-                    LOG.info("\tLedgerId:{}\tBookieId:{}", ledgerList.get(i).ledgerId, ledgerList.get(i).bookieId);
+                    log.info().attr("ledgerId", ledgerList.get(i).ledgerId)
+                            .attr("bookieId", ledgerList.get(i).bookieId).log("Recovering ledger");
                 }
             } else {
                 for (int i = 0; i < ledgerList.size(); i++) {
                     LedgerRecoverInfo info = ledgerList.get(i);
                     ledgerManager.readLedgerMetadata(info.ledgerId).whenComplete((metadata, exception) -> {
                         if (exception == null) {
-                            LOG.info("\tLedgerId:{}\tBookieId:{}\tLedgerSize:{}",
-                                    info.ledgerId, info.bookieId, metadata.getValue().getLength());
+                            log.info()
+                                    .attr("ledgerId", info.ledgerId)
+                                    .attr("bookieId", info.bookieId)
+                                    .attr("ledgerSize", metadata.getValue().getLength()).log("Recovering ledger");
                         } else {
-                            LOG.error("Unable to read the ledger: {} information", info.ledgerId);
+                            log.error().attr("ledgerId", info.ledgerId).log("Unable to read the ledger information");
                             throw new UncheckedExecutionException(exception);
                         }
                     });
@@ -142,7 +145,7 @@ public class QueryAutoRecoveryStatusCommand
             }
             if (ledgerList.size() == 0) {
                 // NO ledger is being auto recovering
-                LOG.info("\t No Ledger is being recovered.");
+                log.info("No Ledger is being recovered");
             }
             return null;
         });

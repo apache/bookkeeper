@@ -29,6 +29,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -41,7 +42,6 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.MockEntryLogIds;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.apache.bookkeeper.util.DiskChecker;
@@ -55,7 +55,7 @@ import org.junit.jupiter.api.condition.OS;
  */
 @DisabledOnOs(OS.WINDOWS)
 public class TestDirectEntryLoggerCompat {
-    private final Slogger slog = Slogger.CONSOLE;
+    private final Logger log = Logger.get(TestDirectEntryLoggerCompat.class);
 
     private static final long ledgerId1 = 1234;
     private static final long ledgerId2 = 4567;
@@ -92,7 +92,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             loc1 = elog.addEntry(ledgerId1, e1.slice());
             loc2 = elog.addEntry(ledgerId1, e2.slice());
             loc3 = elog.addEntry(ledgerId1, e3.slice());
@@ -134,7 +134,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                  300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             assertEntryEquals(elog.readEntry(ledgerId1, 1L, loc1), e1);
             assertEntryEquals(elog.readEntry(ledgerId1, 2L, loc2), e2);
             assertEntryEquals(elog.readEntry(ledgerId1, 3L, loc3), e3);
@@ -165,7 +165,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             loc1 = elog.addEntry(ledgerId1, e1.slice());
             loc2 = elog.addEntry(ledgerId1, e2.slice());
             loc3 = elog.addEntry(ledgerId1, e3.slice());
@@ -204,7 +204,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
              loc1 = elog.addEntry(ledgerId1, e1);
              loc2 = elog.addEntry(ledgerId2, e2);
              loc3 = elog.addEntry(ledgerId1, e3);
@@ -255,7 +255,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             loc1 = elog.addEntry(ledgerId1, e1);
             loc2 = elog.addEntry(ledgerId2, e2);
             loc3 = elog.addEntry(ledgerId1, e3);
@@ -312,7 +312,7 @@ public class TestDirectEntryLoggerCompat {
                      64 * 1024, // read buffer size
                      1, // numReadThreads
                      300, // max fd cache time in seconds
-                     slog, NullStatsLogger.INSTANCE)) {
+                     log, NullStatsLogger.INSTANCE)) {
             int logId = logIdFromLocation(loc1);
             assertThat(logId, equalTo(logIdFromLocation(loc2)));
             assertThat(logId, equalTo(logIdFromLocation(loc3)));
@@ -371,7 +371,7 @@ public class TestDirectEntryLoggerCompat {
             64 * 1024, // read buffer size
             1, // numReadThreads
             300, // max fd cache time in seconds
-            slog, NullStatsLogger.INSTANCE)) {
+            log, NullStatsLogger.INSTANCE)) {
             loc1 = elog.addEntry(ledgerId1, e1.slice());
             loc2 = elog.addEntry(ledgerId1, e2.slice());
             loc3 = elog.addEntry(ledgerId1, e3.slice());
@@ -436,7 +436,7 @@ public class TestDirectEntryLoggerCompat {
             64 * 1024, // read buffer size
             1, // numReadThreads
             300, // max fd cache time in seconds
-            slog, NullStatsLogger.INSTANCE)) {
+            log, NullStatsLogger.INSTANCE)) {
             loc6 = elog.addEntry(ledgerId1, e6.slice());
             loc7 = elog.addEntry(ledgerId1, e7.slice());
             elog.flush();
@@ -534,7 +534,7 @@ public class TestDirectEntryLoggerCompat {
             64 * 1024, // read buffer size
             1, // numReadThreads
             300, // max fd cache time in seconds
-            slog, NullStatsLogger.INSTANCE)) {
+            log, NullStatsLogger.INSTANCE)) {
             loc3 = elog.addEntry(ledgerId1, e3.slice());
             loc4 = elog.addEntry(ledgerId1, e4.slice());
             loc5 = elog.addEntry(ledgerId1, e5.slice());
@@ -604,7 +604,7 @@ public class TestDirectEntryLoggerCompat {
             64 * 1024, // read buffer size
             1, // numReadThreads
             300, // max fd cache time in seconds
-            slog, NullStatsLogger.INSTANCE)) {
+            log, NullStatsLogger.INSTANCE)) {
             loc8 = elog.addEntry(ledgerId1, e8.slice());
             loc9 = elog.addEntry(ledgerId1, e9.slice());
             elog.flush();

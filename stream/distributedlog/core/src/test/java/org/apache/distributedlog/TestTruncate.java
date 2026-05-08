@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
@@ -36,14 +37,12 @@ import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.api.LogReader;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for truncation.
  */
+@CustomLog
 public class TestTruncate extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestTruncate.class);
 
     protected static DistributedLogConfiguration conf =
             new DistributedLogConfiguration()
@@ -78,7 +77,7 @@ public class TestTruncate extends TestDistributedLogBase {
         DistributedLogManager distributedLogManager = createNewDLM(conf, name);
 
         List<LogSegmentMetadata> segments = distributedLogManager.getLogSegments();
-        LOG.info("Segments before modifying completion time : {}", segments);
+        log.info().attr("segments", segments).log("Segments before modifying completion time");
 
         ZooKeeperClient zkc = TestZooKeeperClientBuilder.newBuilder(conf)
                 .uri(uri)
@@ -93,7 +92,7 @@ public class TestTruncate extends TestDistributedLogBase {
         zkc.close();
 
         segments = distributedLogManager.getLogSegments();
-        LOG.info("Segments after modifying completion time : {}", segments);
+        log.info().attr("segments", segments).log("Segments after modifying completion time");
 
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(conf);
@@ -207,7 +206,7 @@ public class TestTruncate extends TestDistributedLogBase {
 
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
-        LOG.info("Segments before modifying segment status : {}", segments);
+        log.info().attr("segments", segments).log("Segments before modifying segment status");
 
         ZooKeeperClient zkc = TestZooKeeperClientBuilder.newBuilder(conf)
                 .uri(uri)
@@ -221,7 +220,7 @@ public class TestTruncate extends TestDistributedLogBase {
 
         dlm.purgeLogsOlderThan(999999);
         List<LogSegmentMetadata> newSegments = dlm.getLogSegments();
-        LOG.info("Segments after purge segments older than 999999 : {}", newSegments);
+        log.info().attr("newSegments", newSegments).log("Segments after purge segments older than 999999");
         assertArrayEquals(segmentsAfterTruncated.toArray(new LogSegmentMetadata[segmentsAfterTruncated.size()]),
                           newSegments.toArray(new LogSegmentMetadata[newSegments.size()]));
 
@@ -247,7 +246,7 @@ public class TestTruncate extends TestDistributedLogBase {
 
         // to make sure the truncation task is executed
         DLSN lastDLSN = Utils.ioResult(newDLM.getLastDLSNAsync());
-        LOG.info("Get last dlsn of stream {} : {}", name, lastDLSN);
+        log.info().attr("stream", name).attr("lastDLSN", lastDLSN).log("Get last dlsn of stream");
 
         assertEquals(5, newDLM.getLogSegments().size());
 
@@ -272,7 +271,7 @@ public class TestTruncate extends TestDistributedLogBase {
 
         DistributedLogManager dlm = createNewDLM(confLocal, name);
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
-        LOG.info("Segments before modifying segment status : {}", segments);
+        log.info().attr("segments", segments).log("Segments before modifying segment status");
 
         ZooKeeperClient zkc = TestZooKeeperClientBuilder.newBuilder(conf)
                 .uri(uri)
@@ -283,7 +282,7 @@ public class TestTruncate extends TestDistributedLogBase {
         }
 
         List<LogSegmentMetadata> newSegments = dlm.getLogSegments();
-        LOG.info("Segments after changing truncation status : {}", newSegments);
+        log.info().attr("newSegments", newSegments).log("Segments after changing truncation status");
 
         dlm.close();
 
@@ -306,7 +305,7 @@ public class TestTruncate extends TestDistributedLogBase {
             boolean createInprogressLogSegment) throws Exception {
         long txid = 1;
         for (long i = 1; i <= numLogSegments; i++) {
-            LOG.info("Writing Log Segment {}.", i);
+            log.info().attr("segment", i).log("Writing Log Segment");
             DistributedLogManager dlm = createNewDLM(confLocal, name);
             AsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned();
             for (int j = 1; j <= numEntriesPerLogSegment; j++) {

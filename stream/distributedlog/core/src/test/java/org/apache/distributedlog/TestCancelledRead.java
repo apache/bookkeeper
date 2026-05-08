@@ -20,16 +20,15 @@ package org.apache.distributedlog;
 import static org.junit.Assert.assertNotNull;
 
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.LogWriter;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for RollLogSegments.
  */
+@CustomLog
 public class TestCancelledRead extends TestDistributedLogBase {
-    private static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
 
     @Test(timeout = 600000)
     public void testWritingAndTailing() throws Exception {

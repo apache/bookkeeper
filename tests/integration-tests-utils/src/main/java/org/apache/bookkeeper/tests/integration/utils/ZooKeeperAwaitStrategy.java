@@ -17,20 +17,20 @@
  */
 package org.apache.bookkeeper.tests.integration.utils;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.util.concurrent.TimeUnit;
 import org.arquillian.cube.docker.impl.docker.DockerClientExecutor;
 import org.arquillian.cube.docker.impl.util.Ping;
 import org.arquillian.cube.docker.impl.util.PingCommand;
 import org.arquillian.cube.spi.Cube;
 import org.arquillian.cube.spi.await.AwaitStrategy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * An arquillian await strategy that waits until zookeeper is up running.
  */
+// `cube` and `dockerClientExecutor` are injected by Arquillian via reflection.
+@SuppressFBWarnings({"UWF_UNWRITTEN_FIELD", "NP_UNWRITTEN_FIELD"})
 public class ZooKeeperAwaitStrategy implements AwaitStrategy {
-    private static final Logger LOG = LoggerFactory.getLogger(ZooKeeperAwaitStrategy.class);
 
     private static final int DEFAULT_POLL_ITERATIONS = 10;
     private static final int DEFAULT_SLEEP_TIME = 1;

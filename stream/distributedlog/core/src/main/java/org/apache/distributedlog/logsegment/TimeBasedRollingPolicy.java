@@ -17,17 +17,15 @@
  */
 package org.apache.distributedlog.logsegment;
 
+import lombok.CustomLog;
 import org.apache.distributedlog.common.util.Sizable;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 /**
  * TimeBased Policy for rolling.
  *
  */
+@CustomLog
 public class TimeBasedRollingPolicy implements RollingPolicy {
-
-    static final  Logger LOG = LoggerFactory.getLogger(TimeBasedRollingPolicy.class);
 
     final long rollingIntervalMs;
 
@@ -39,9 +37,11 @@ public class TimeBasedRollingPolicy implements RollingPolicy {
     public boolean shouldRollover(Sizable sizable, long lastRolloverTimeMs) {
         long elapsedMs = Utils.elapsedMSec(lastRolloverTimeMs);
         boolean shouldSwitch = elapsedMs > rollingIntervalMs;
-        if (shouldSwitch && LOG.isDebugEnabled()) {
-            LOG.debug("Last Finalize Time: {} elapsed time (MSec): {}", lastRolloverTimeMs,
-                      elapsedMs);
+        if (shouldSwitch) {
+            log.debug()
+                    .attr("lastRolloverTimeMs", lastRolloverTimeMs)
+                    .attr("elapsedMs", elapsedMs)
+                    .log("Last Finalize Time");
         }
         return shouldSwitch;
     }

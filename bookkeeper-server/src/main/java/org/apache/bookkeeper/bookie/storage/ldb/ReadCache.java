@@ -31,10 +31,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongPairHashMap.LongPair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Read cache implementation.
@@ -46,8 +45,8 @@ import org.slf4j.LoggerFactory;
  * is cleared and rotated to make space for new entries to be added to
  * the read cache.
  */
+@CustomLog
 public class ReadCache implements Closeable {
-    private static final Logger log = LoggerFactory.getLogger(ReadCache.class);
 
     private static final int DEFAULT_MAX_SEGMENT_SIZE = 1 * 1024 * 1024 * 1024;
 
@@ -97,7 +96,10 @@ public class ReadCache implements Closeable {
 
         try {
             if (entrySize > segmentSize) {
-                log.warn("entrySize {} > segmentSize {}, skip update read cache!", entrySize, segmentSize);
+                log.warn()
+                        .attr("entrySize", entrySize)
+                        .attr("segmentSize", segmentSize)
+                        .log("entrySize > segmentSize, skip update read cache!");
                 return;
             }
             int offset = currentSegmentOffset.getAndAdd(alignedSize);

@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
 /**
  * The gRPC protocol based k/v service.
  */
-@Slf4j
+@CustomLog
 public class GrpcTableService extends TableServiceImplBase {
 
     private final RangeStoreService rangeStore;

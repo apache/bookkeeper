@@ -41,8 +41,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
+import lombok.CustomLog;
 import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -60,7 +60,7 @@ import org.yaml.snakeyaml.Yaml;
 /**
  * Generator stats documentation.
  */
-@Slf4j
+@CustomLog
 public class StatsDocGenerator {
 
     enum StatsType {
@@ -118,18 +118,18 @@ public class StatsDocGenerator {
     }
 
     public void generate(String filename) throws Exception {
-        log.info("Processing classes under package {}", packagePrefix);
+        log.info().attr("packagePrefix", packagePrefix).log("Processing classes under package");
         // get all classes annotated with `StatsDoc`
         Set<Class<?>> annotatedClasses = reflections.getTypesAnnotatedWith(StatsDoc.class);
-        log.info("Retrieve all `StatsDoc` annotated classes : {}", annotatedClasses);
+        log.info().attr("annotatedClasses", annotatedClasses).log("Retrieve all `StatsDoc` annotated classes");
 
         for (Class<?> annotatedClass : annotatedClasses) {
             generateDocForAnnotatedClass(annotatedClass);
         }
-        log.info("Successfully processed classes under package {}", packagePrefix);
-        log.info("Writing stats doc to file {}", filename);
+        log.info().attr("packagePrefix", packagePrefix).log("Successfully processed classes under package");
+        log.info().attr("filename", filename).log("Writing stats doc to file");
         writeDoc(filename);
-        log.info("Successfully wrote stats doc to file {}", filename);
+        log.info().attr("filename", filename).log("Successfully wrote stats doc to file");
     }
 
     private void generateDocForAnnotatedClass(Class<?> annotatedClass) {
@@ -138,7 +138,10 @@ public class StatsDocGenerator {
             return;
         }
 
-        log.info("Processing StatsDoc annotated class {} : {}", annotatedClass, scopeStatsDoc);
+        log.info()
+                .attr("annotatedClass", annotatedClass)
+                .attr("scopeStatsDoc", scopeStatsDoc)
+                .log("Processing StatsDoc annotated class");
 
         Field[] fields = annotatedClass.getDeclaredFields();
         for (Field field : fields) {
@@ -150,7 +153,7 @@ public class StatsDocGenerator {
             generateDocForAnnotatedField(scopeStatsDoc, fieldStatsDoc, field);
         }
 
-        log.info("Successfully processed StatsDoc annotated class {}.", annotatedClass);
+        log.info().attr("annotatedClass", annotatedClass).log("Successfully processed StatsDoc annotated class");
     }
 
     private NavigableMap<String, StatsDocEntry> getCategoryMap(String category) {

@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
@@ -53,7 +53,7 @@ import org.junit.Test;
 /**
  * Unit test for {@link RootRangeStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
     private final NamespaceConfiguration namespaceConf =
