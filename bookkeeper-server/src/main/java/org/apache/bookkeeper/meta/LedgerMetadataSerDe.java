@@ -21,11 +21,12 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.TextFormat;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -35,10 +36,10 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
 import org.apache.bookkeeper.client.LedgerMetadataUtils;
@@ -46,7 +47,7 @@ import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.LedgerMetadata.State;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 
 /**
  * Serialization and deserialization for LedgerMetadata.
@@ -152,61 +153,8 @@ public class LedgerMetadataSerDe {
     private static byte[] serializeVersion3(LedgerMetadata metadata) throws IOException {
         try (ByteArrayOutputStream os = new ByteArrayOutputStream()) {
             writeHeader(os, METADATA_FORMAT_VERSION_3);
-            LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
-            builder.setQuorumSize(metadata.getWriteQuorumSize())
-                .setAckQuorumSize(metadata.getAckQuorumSize())
-                .setEnsembleSize(metadata.getEnsembleSize())
-                .setLength(metadata.getLength())
-                .setLastEntryId(metadata.getLastEntryId());
-
-            switch (metadata.getState()) {
-            case CLOSED:
-                builder.setState(LedgerMetadataFormat.State.CLOSED);
-                break;
-            case IN_RECOVERY:
-                builder.setState(LedgerMetadataFormat.State.IN_RECOVERY);
-                break;
-            case OPEN:
-                builder.setState(LedgerMetadataFormat.State.OPEN);
-                break;
-            default:
-                checkArgument(false,
-                              String.format("Unknown state %s for protobuf serialization", metadata.getState()));
-                break;
-            }
-
-            /** Hack to get around fact that ctime was never versioned correctly */
-            if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
-                builder.setCtime(metadata.getCtime());
-            }
-
-
-            builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
-
-            serializePassword(metadata.getPassword(), builder);
-
-            Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
-            if (customMetadata.size() > 0) {
-                LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
-                    LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-                for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
-                    cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
-                    builder.addCustomMetadata(cMetadataBuilder.build());
-                }
-            }
-
-            for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
-                LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
-                segmentBuilder.setFirstEntryId(entry.getKey());
-                for (BookieId addr : entry.getValue()) {
-                    segmentBuilder.addEnsembleMember(addr.toString());
-                }
-                builder.addSegment(segmentBuilder.build());
-            }
-
-            builder.setCToken(metadata.getCToken());
-
-            builder.build().writeDelimitedTo(os);
+            LedgerMetadataFormat fmt = buildLedgerMetadataFormat(metadata, true);
+            writeDelimited(fmt, os);
             return os.toByteArray();
         }
     }
@@ -221,62 +169,62 @@ public class LedgerMetadataSerDe {
                  * fields, and if this code was shared with version 3, it would be easy to
                  * accidently add new fields and create BC issues.
                  **********************************************************************/
-                LedgerMetadataFormat.Builder builder = LedgerMetadataFormat.newBuilder();
-                builder.setQuorumSize(metadata.getWriteQuorumSize())
-                    .setAckQuorumSize(metadata.getAckQuorumSize())
-                    .setEnsembleSize(metadata.getEnsembleSize())
-                    .setLength(metadata.getLength())
-                    .setLastEntryId(metadata.getLastEntryId());
-
-                switch (metadata.getState()) {
-                case CLOSED:
-                    builder.setState(LedgerMetadataFormat.State.CLOSED);
-                    break;
-                case IN_RECOVERY:
-                    builder.setState(LedgerMetadataFormat.State.IN_RECOVERY);
-                    break;
-                case OPEN:
-                    builder.setState(LedgerMetadataFormat.State.OPEN);
-                    break;
-                default:
-                    checkArgument(false,
-                                  String.format("Unknown state %s for protobuf serialization", metadata.getState()));
-                    break;
-                }
-
-                /** Hack to get around fact that ctime was never versioned correctly */
-                if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
-                    builder.setCtime(metadata.getCtime());
-                }
-
-                builder.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
-                serializePassword(metadata.getPassword(), builder);
-
-                Map<String, byte[]> customMetadata = metadata.getCustomMetadata();
-                if (customMetadata.size() > 0) {
-                    LedgerMetadataFormat.cMetadataMapEntry.Builder cMetadataBuilder =
-                        LedgerMetadataFormat.cMetadataMapEntry.newBuilder();
-                    for (Map.Entry<String, byte[]> entry : customMetadata.entrySet()) {
-                        cMetadataBuilder.setKey(entry.getKey()).setValue(ByteString.copyFrom(entry.getValue()));
-                        builder.addCustomMetadata(cMetadataBuilder.build());
-                    }
-                }
-
-                for (Map.Entry<Long, ? extends List<BookieId>> entry :
-                         metadata.getAllEnsembles().entrySet()) {
-                    LedgerMetadataFormat.Segment.Builder segmentBuilder = LedgerMetadataFormat.Segment.newBuilder();
-                    segmentBuilder.setFirstEntryId(entry.getKey());
-                    for (BookieId addr : entry.getValue()) {
-                        segmentBuilder.addEnsembleMember(addr.toString());
-                    }
-                    builder.addSegment(segmentBuilder.build());
-                }
-
-                TextFormat.printer().print(builder.build(), writer);
+                LedgerMetadataFormat fmt = buildLedgerMetadataFormat(metadata, false);
+                writer.print(fmt.toTextFormat());
                 writer.flush();
             }
             return os.toByteArray();
         }
+    }
+
+    private static LedgerMetadataFormat buildLedgerMetadataFormat(LedgerMetadata metadata, boolean includeCToken) {
+        LedgerMetadataFormat fmt = new LedgerMetadataFormat()
+                .setQuorumSize(metadata.getWriteQuorumSize())
+                .setAckQuorumSize(metadata.getAckQuorumSize())
+                .setEnsembleSize(metadata.getEnsembleSize())
+                .setLength(metadata.getLength())
+                .setLastEntryId(metadata.getLastEntryId());
+
+        switch (metadata.getState()) {
+        case CLOSED:
+            fmt.setState(LedgerMetadataFormat.State.CLOSED);
+            break;
+        case IN_RECOVERY:
+            fmt.setState(LedgerMetadataFormat.State.IN_RECOVERY);
+            break;
+        case OPEN:
+            fmt.setState(LedgerMetadataFormat.State.OPEN);
+            break;
+        default:
+            checkArgument(false,
+                          String.format("Unknown state %s for protobuf serialization", metadata.getState()));
+            break;
+        }
+
+        /** Hack to get around fact that ctime was never versioned correctly */
+        if (LedgerMetadataUtils.shouldStoreCtime(metadata)) {
+            fmt.setCtime(metadata.getCtime());
+        }
+
+        fmt.setDigestType(apiToProtoDigestType(metadata.getDigestType()));
+        serializePassword(metadata.getPassword(), fmt);
+
+        for (Map.Entry<String, byte[]> entry : metadata.getCustomMetadata().entrySet()) {
+            fmt.addCustomMetadata().setKey(entry.getKey()).setValue(entry.getValue());
+        }
+
+        for (Map.Entry<Long, ? extends List<BookieId>> entry : metadata.getAllEnsembles().entrySet()) {
+            LedgerMetadataFormat.Segment seg = fmt.addSegment();
+            seg.setFirstEntryId(entry.getKey());
+            for (BookieId addr : entry.getValue()) {
+                seg.addEnsembleMember(addr.toString());
+            }
+        }
+
+        if (includeCToken) {
+            fmt.setCToken(metadata.getCToken());
+        }
+        return fmt;
     }
 
     private static byte[] serializeVersion1(LedgerMetadata metadata) throws IOException {
@@ -314,11 +262,11 @@ public class LedgerMetadataSerDe {
         }
     }
 
-    private static void serializePassword(byte[] password, LedgerMetadataFormat.Builder builder) {
+    private static void serializePassword(byte[] password, LedgerMetadataFormat fmt) {
         if (password == null || password.length == 0) {
-            builder.setPassword(ByteString.EMPTY);
+            fmt.setPassword(new byte[0]);
         } else {
-            builder.setPassword(ByteString.copyFrom(password));
+            fmt.setPassword(password);
         }
     }
 
@@ -368,9 +316,8 @@ public class LedgerMetadataSerDe {
         LedgerMetadataBuilder builder = LedgerMetadataBuilder.create()
                 .withId(ledgerId)
                 .withMetadataFormatVersion(METADATA_FORMAT_VERSION_3);
-        LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
-        formatBuilder.mergeDelimitedFrom(is);
-        LedgerMetadataFormat data = formatBuilder.build();
+        LedgerMetadataFormat data = new LedgerMetadataFormat();
+        readDelimited(is, data);
         decodeFormat(data, builder);
         if (data.hasCtime()) {
             builder.storingCreationTime(true);
@@ -386,11 +333,8 @@ public class LedgerMetadataSerDe {
             .withId(ledgerId)
             .withMetadataFormatVersion(METADATA_FORMAT_VERSION_2);
 
-        LedgerMetadataFormat.Builder formatBuilder = LedgerMetadataFormat.newBuilder();
-        try (InputStreamReader reader = new InputStreamReader(is, UTF_8.name())) {
-            TextFormat.merge(reader, formatBuilder);
-        }
-        LedgerMetadataFormat data = formatBuilder.build();
+        LedgerMetadataFormat data = new LedgerMetadataFormat();
+        data.parseFromTextFormat(is.readAllBytes());
         decodeFormat(data, builder);
         if (data.hasCtime()) {
             // 'storingCreationTime' is only ever taken into account for serializing version 2
@@ -421,22 +365,26 @@ public class LedgerMetadataSerDe {
         }
 
         if (data.hasPassword()) {
-            builder.withPassword(data.getPassword().toByteArray())
+            builder.withPassword(data.getPassword())
                 .withDigestType(protoToApiDigestType(data.getDigestType()));
         }
 
-        for (LedgerMetadataFormat.Segment s : data.getSegmentList()) {
-            List<BookieId> addrs = new ArrayList<>();
-            for (String addr : s.getEnsembleMemberList()) {
-                addrs.add(BookieId.parse(addr));
+        for (int i = 0; i < data.getSegmentsCount(); i++) {
+            LedgerMetadataFormat.Segment s = data.getSegmentAt(i);
+            List<BookieId> addrs = new ArrayList<>(s.getEnsembleMembersCount());
+            for (int j = 0; j < s.getEnsembleMembersCount(); j++) {
+                addrs.add(BookieId.parse(s.getEnsembleMemberAt(j)));
             }
             builder.newEnsembleEntry(s.getFirstEntryId(), addrs);
         }
 
-        if (data.getCustomMetadataCount() > 0) {
-            builder.withCustomMetadata(data.getCustomMetadataList().stream().collect(
-                                               Collectors.toMap(e -> e.getKey(),
-                                                                e -> e.getValue().toByteArray())));
+        if (data.getCustomMetadatasCount() > 0) {
+            Map<String, byte[]> customMetadata = new HashMap<>();
+            for (int i = 0; i < data.getCustomMetadatasCount(); i++) {
+                LedgerMetadataFormat.cMetadataMapEntry e = data.getCustomMetadataAt(i);
+                customMetadata.put(e.getKey(), e.getValue());
+            }
+            builder.withCustomMetadata(customMetadata);
         }
 
         if (data.hasCToken()) {
@@ -511,5 +459,61 @@ public class LedgerMetadataSerDe {
         default:
             throw new IllegalArgumentException("Unable to convert digest type " + digestType);
         }
+    }
+
+    /** Write a length-prefixed message in protobuf-compatible delimited format. */
+    private static void writeDelimited(LedgerMetadataFormat msg, OutputStream os) throws IOException {
+        int size = msg.getSerializedSize();
+        writeRawVarint32(size, os);
+        ByteBuf buf = Unpooled.buffer(size);
+        try {
+            msg.writeTo(buf);
+            os.write(buf.array(), buf.arrayOffset() + buf.readerIndex(), buf.readableBytes());
+        } finally {
+            buf.release();
+        }
+    }
+
+    /** Read a length-prefixed message in protobuf-compatible delimited format. */
+    private static void readDelimited(InputStream is, LedgerMetadataFormat msg) throws IOException {
+        int size = readRawVarint32(is);
+        byte[] data = new byte[size];
+        int read = 0;
+        while (read < size) {
+            int n = is.read(data, read, size - read);
+            if (n < 0) {
+                throw new EOFException("Unexpected EOF reading delimited message");
+            }
+            read += n;
+        }
+        msg.parseFrom(data);
+    }
+
+    private static void writeRawVarint32(int value, OutputStream os) throws IOException {
+        while (true) {
+            if ((value & ~0x7F) == 0) {
+                os.write(value);
+                return;
+            }
+            os.write((value & 0x7F) | 0x80);
+            value >>>= 7;
+        }
+    }
+
+    private static int readRawVarint32(InputStream is) throws IOException {
+        int result = 0;
+        int shift = 0;
+        while (shift < 32) {
+            int b = is.read();
+            if (b == -1) {
+                throw new EOFException("Unexpected EOF reading varint");
+            }
+            result |= (b & 0x7F) << shift;
+            if ((b & 0x80) == 0) {
+                return result;
+            }
+            shift += 7;
+        }
+        throw new IOException("Malformed varint32");
     }
 }

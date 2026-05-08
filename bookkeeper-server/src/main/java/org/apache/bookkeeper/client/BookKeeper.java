@@ -85,7 +85,7 @@ import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
-import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.EventLoopUtil;
@@ -738,16 +738,16 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }
         }
-        public static DataFormats.LedgerMetadataFormat.DigestType toProtoDigestType(DigestType digestType) {
+        public static LedgerMetadataFormat.DigestType toProtoDigestType(DigestType digestType) {
             switch (digestType) {
                 case MAC:
-                    return DataFormats.LedgerMetadataFormat.DigestType.HMAC;
+                    return LedgerMetadataFormat.DigestType.HMAC;
                 case CRC32:
-                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32;
+                    return LedgerMetadataFormat.DigestType.CRC32;
                 case CRC32C:
-                    return DataFormats.LedgerMetadataFormat.DigestType.CRC32C;
+                    return LedgerMetadataFormat.DigestType.CRC32C;
                 case DUMMY:
-                    return DataFormats.LedgerMetadataFormat.DigestType.DUMMY;
+                    return LedgerMetadataFormat.DigestType.DUMMY;
                 default:
                     throw new IllegalArgumentException("Unable to convert digest type " + digestType);
             }

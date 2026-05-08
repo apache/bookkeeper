@@ -29,6 +29,10 @@
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -37,10 +41,9 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <!-- exclude generated file //-->
-            <exclude>**/DataFormats.java</exclude>
+            <!-- exclude generated files //-->
             <exclude>**/BookkeeperProtocol.java</exclude>
-            <exclude>**/DbLedgerStorageDataFormats.java</exclude>
+            <exclude>target/generated-sources/lightproto/**</exclude>
             <exclude>**/.checkstyle</exclude>
           </excludes>
         </configuration>
@@ -52,11 +55,34 @@
         <configuration>
           <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
           <checkStaleness>true</checkStaleness>
+          <includes>
+            <include>BookkeeperProtocol.proto</include>
+          </includes>
         </configuration>
         <executions>
           <execution>
             <goals>
               <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>io.streamnative.lightproto</groupId>
+        <artifactId>lightproto-maven-plugin</artifactId>
+        <version>${lightproto-maven-plugin.version}</version>
+        <configuration>
+          <sources>
+            <source>${project.basedir}/src/main/proto/DataFormats.proto</source>
+            <source>${project.basedir}/src/main/proto/DbLedgerStorageDataFormats.proto</source>
+          </sources>
+          <targetSourcesSubDir>generated-sources/lightproto/java</targetSourcesSubDir>
+          <generateTextFormat>true</generateTextFormat>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>generate</goal>
             </goals>
           </execution>
         </executions>

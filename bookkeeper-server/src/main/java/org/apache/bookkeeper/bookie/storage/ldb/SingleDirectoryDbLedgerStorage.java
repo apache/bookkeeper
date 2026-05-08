@@ -26,7 +26,6 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
@@ -68,7 +67,6 @@ import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerEntryPage;
 import org.apache.bookkeeper.bookie.StateManager;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
-import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.Batch;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
@@ -372,9 +370,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             LedgerData ledgerData = ledgerIndex.get(ledgerId);
             log.debug()
                     .attr("ledgerId", ledgerId)
-                    .attr("exists", () -> ledgerData.getExists())
+                    .attr("exists", () -> ledgerData.isExists())
                     .log("Ledger exists");
-            return ledgerData.getExists();
+            return ledgerData.isExists();
         } catch (Bookie.NoLedgerException nle) {
             // ledger does not exist
             return false;
@@ -426,7 +424,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public boolean isFenced(long ledgerId) throws IOException, BookieException {
-        boolean isFenced = ledgerIndex.get(ledgerId).getFenced();
+        boolean isFenced = ledgerIndex.get(ledgerId).isFenced();
 
         log.debug()
                 .attr("ledgerId", ledgerId)
@@ -464,7 +462,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public byte[] readMasterKey(long ledgerId) throws IOException, BookieException {
         log.debug().attr("ledgerId", ledgerId).log("Read master key");
-        return ledgerIndex.get(ledgerId).getMasterKey().toByteArray();
+        return ledgerIndex.get(ledgerId).getMasterKey();
     }
 
     @Override
@@ -1037,8 +1035,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
             return null;
         }
         log.debug().attr("ledgerId", ledgerId).log("getExplicitLac returned from LedgerData");
-        ByteString persistedLac = ledgerData.getExplicitLac();
-        ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(persistedLac.toByteArray()));
+        ledgerInfo.setExplicitLac(Unpooled.wrappedBuffer(ledgerData.getExplicitLac()));
         return ledgerInfo.getExplicitLac();
     }
 
@@ -1074,8 +1071,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public long addLedgerToIndex(long ledgerId, boolean isFenced, byte[] masterKey,
             LedgerCache.PageEntriesIterable pages) throws Exception {
-        LedgerData ledgerData = LedgerData.newBuilder().setExists(true).setFenced(isFenced)
-                .setMasterKey(ByteString.copyFrom(masterKey)).build();
+        LedgerData ledgerData = new LedgerData().setExists(true).setFenced(isFenced)
+                .setMasterKey(masterKey);
         ledgerIndex.set(ledgerId, ledgerData);
         MutableLong numberOfEntries = new MutableLong();
 
@@ -1217,7 +1214,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public boolean hasLimboState(long ledgerId) throws IOException {
         log.debug().attr("ledgerId", ledgerId).log("hasLimboState");
-        return ledgerIndex.get(ledgerId).getLimbo();
+        return ledgerIndex.get(ledgerId).isLimbo();
     }
 
     @Override

@@ -26,8 +26,10 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -36,7 +38,6 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.Getter;
@@ -44,7 +45,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BKException.ZKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.DataFormats.BookieServiceInfoFormat;
+import org.apache.bookkeeper.proto.BookieServiceInfoFormat;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Version.Occurred;
@@ -322,23 +323,26 @@ public class ZKRegistrationClient implements RegistrationClient {
             return BookieServiceInfoUtils.buildLegacyBookieServiceInfo(bookieId.toString());
         }
 
-        BookieServiceInfoFormat builder = BookieServiceInfoFormat.parseFrom(bookieServiceInfo);
+        BookieServiceInfoFormat fmt = new BookieServiceInfoFormat();
+        fmt.parseFrom(bookieServiceInfo);
         BookieServiceInfo bsi = new BookieServiceInfo();
-        List<BookieServiceInfo.Endpoint> endpoints = builder.getEndpointsList().stream()
-                .map(e -> {
-                    BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
-                    endpoint.setId(e.getId());
-                    endpoint.setPort(e.getPort());
-                    endpoint.setHost(e.getHost());
-                    endpoint.setProtocol(e.getProtocol());
-                    endpoint.setAuth(e.getAuthList());
-                    endpoint.setExtensions(e.getExtensionsList());
-                    return endpoint;
-                })
-                .collect(Collectors.toList());
+        List<BookieServiceInfo.Endpoint> endpoints = new ArrayList<>(fmt.getEndpointsCount());
+        for (int i = 0; i < fmt.getEndpointsCount(); i++) {
+            BookieServiceInfoFormat.Endpoint e = fmt.getEndpointAt(i);
+            BookieServiceInfo.Endpoint endpoint = new BookieServiceInfo.Endpoint();
+            endpoint.setId(e.getId());
+            endpoint.setPort(e.getPort());
+            endpoint.setHost(e.getHost());
+            endpoint.setProtocol(e.getProtocol());
+            endpoint.setAuth(e.getAuthsList());
+            endpoint.setExtensions(e.getExtensionsList());
+            endpoints.add(endpoint);
+        }
 
         bsi.setEndpoints(endpoints);
-        bsi.setProperties(builder.getPropertiesMap());
+        Map<String, String> properties = new HashMap<>();
+        fmt.forEachProperties(properties::put);
+        bsi.setProperties(properties);
 
         return bsi;
     }

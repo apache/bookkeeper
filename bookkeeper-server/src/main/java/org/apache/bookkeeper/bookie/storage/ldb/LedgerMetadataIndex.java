@@ -23,8 +23,8 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Sets;
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
@@ -37,7 +37,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
-import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorageDataFormats.LedgerData;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorage.CloseableIterator;
 import org.apache.bookkeeper.bookie.storage.ldb.KeyValueStorageFactory.DbConfigType;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -82,7 +81,8 @@ public class LedgerMetadataIndex implements Closeable {
                 Entry<byte[], byte[]> entry = iterator.next();
                 long ledgerId = ArrayUtil.getLong(entry.getKey(), 0);
                 if (ledgerId >= 0) {
-                    LedgerData ledgerData = LedgerData.parseFrom(entry.getValue());
+                    LedgerData ledgerData = new LedgerData();
+                    ledgerData.parseFrom(entry.getValue());
                     ledgers.put(ledgerId, ledgerData);
                     ledgersCount.incrementAndGet();
                 }
@@ -119,7 +119,7 @@ public class LedgerMetadataIndex implements Closeable {
     }
 
     public void set(long ledgerId, LedgerData ledgerData) throws IOException {
-        ledgerData = LedgerData.newBuilder(ledgerData).setExists(true).build();
+        ledgerData = new LedgerData().copyFrom(ledgerData).setExists(true);
 
         ReentrantLock lock = lockForLedger(ledgerId);
         lock.lock();
@@ -170,11 +170,11 @@ public class LedgerMetadataIndex implements Closeable {
         lock.lock();
         try {
             LedgerData ledgerData = get(ledgerId);
-            if (ledgerData.getFenced()) {
+            if (ledgerData.isFenced()) {
                 return false;
             }
 
-            LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setFenced(true).build();
+            LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData).setFenced(true);
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted
@@ -197,11 +197,11 @@ public class LedgerMetadataIndex implements Closeable {
         lock.lock();
         try {
             LedgerData ledgerData = get(ledgerId);
-            if (ledgerData.getLimbo()) {
+            if (ledgerData.isLimbo()) {
                 return false;
             }
 
-            LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setLimbo(true).build();
+            LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData).setLimbo(true);
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted
@@ -227,8 +227,8 @@ public class LedgerMetadataIndex implements Closeable {
             if (ledgerData == null) {
                 throw new Bookie.NoLedgerException(ledgerId);
             }
-            final boolean oldValue = ledgerData.getLimbo();
-            LedgerData newLedgerData = LedgerData.newBuilder(ledgerData).setLimbo(false).build();
+            final boolean oldValue = ledgerData.isLimbo();
+            LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData).setLimbo(false);
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted
@@ -254,14 +254,13 @@ public class LedgerMetadataIndex implements Closeable {
             LedgerData ledgerData = ledgers.get(ledgerId);
             if (ledgerData == null) {
                 // New ledger inserted
-                ledgerData = LedgerData.newBuilder().setExists(true).setFenced(false)
-                    .setMasterKey(ByteString.copyFrom(masterKey)).build();
+                ledgerData = new LedgerData().setExists(true).setFenced(false).setMasterKey(masterKey);
                 log.debug().attr("ledgerId", ledgerId).log("Inserting new ledger");
             } else {
-                byte[] storedMasterKey = ledgerData.getMasterKey().toByteArray();
+                byte[] storedMasterKey = ledgerData.getMasterKey();
                 if (ArrayUtil.isArrayAllZeros(storedMasterKey)) {
                     // update master key of the ledger
-                    ledgerData = LedgerData.newBuilder(ledgerData).setMasterKey(ByteString.copyFrom(masterKey)).build();
+                    ledgerData = new LedgerData().copyFrom(ledgerData).setMasterKey(masterKey);
                     log.debug()
                             .attr("storedMasterKey", storedMasterKey)
                             .attr("newMasterKey", masterKey)
@@ -388,8 +387,8 @@ public class LedgerMetadataIndex implements Closeable {
     void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
         LedgerData ledgerData = ledgers.get(ledgerId);
         if (ledgerData != null) {
-            LedgerData newLedgerData = LedgerData.newBuilder(ledgerData)
-                    .setExplicitLac(ByteString.copyFrom(lac.nioBuffer())).build();
+            LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData)
+                    .setExplicitLac(ByteBufUtil.getBytes(lac));
 
             if (ledgers.put(ledgerId, newLedgerData) == null) {
                 // Ledger had been deleted

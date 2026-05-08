@@ -18,10 +18,8 @@
 package org.apache.bookkeeper.meta;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.apache.bookkeeper.proto.DataFormats.AuditorVoteFormat;
 import static org.apache.bookkeeper.replication.ReplicationStats.ELECTION_ATTEMPTS;
 
-import com.google.protobuf.TextFormat;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collections;
@@ -33,6 +31,7 @@ import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
+import org.apache.bookkeeper.proto.AuditorVoteFormat;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
@@ -112,11 +111,11 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                     // We have been elected as the auditor
                     // update the auditor bookie id in the election path. This is
                     // done for debugging purpose
-                    AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
+                    AuditorVoteFormat fmt = new AuditorVoteFormat()
                             .setBookieId(bookieId);
 
                     zkc.setData(getVotePath(""),
-                            builder.build().toString().getBytes(UTF_8), -1);
+                            fmt.toTextFormat().getBytes(UTF_8), -1);
                     return;
                  } else {
                     // If not an auditor, will be watching to my predecessor and
@@ -162,9 +161,8 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
             String ledger = electionRoot + "/" + children.get(AUDITOR_INDEX);
             byte[] data = zkc.getData(ledger, false, null);
 
-            AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder();
-            TextFormat.merge(new String(data, UTF_8), builder);
-            AuditorVoteFormat v = builder.build();
+            AuditorVoteFormat v = new AuditorVoteFormat();
+            v.parseFromTextFormat(data);
             return BookieId.parse(v.getBookieId());
         } catch (KeeperException e) {
             throw new IOException(e);
@@ -191,13 +189,13 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 
     private void createMyVote(String bookieId) throws IOException, InterruptedException {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
-        AuditorVoteFormat.Builder builder = AuditorVoteFormat.newBuilder()
+        AuditorVoteFormat fmt = new AuditorVoteFormat()
                 .setBookieId(bookieId);
 
         try {
             if (null == myVote || null == zkc.exists(myVote, false)) {
                 myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                        builder.build().toString().getBytes(UTF_8), zkAcls,
+                        fmt.toTextFormat().getBytes(UTF_8), zkAcls,
                         CreateMode.EPHEMERAL_SEQUENTIAL);
             }
         } catch (KeeperException e) {

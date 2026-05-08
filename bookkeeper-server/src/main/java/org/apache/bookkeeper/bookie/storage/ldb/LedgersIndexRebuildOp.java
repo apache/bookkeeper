@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -109,11 +108,10 @@ public class LedgersIndexRebuildOp {
                     log.info().attr("tempPath", indexTempPath).log("Created ledgers index at temp location");
 
                     for (Long ledgerId : ledgers) {
-                        DbLedgerStorageDataFormats.LedgerData ledgerData =
-                                DbLedgerStorageDataFormats.LedgerData.newBuilder()
-                                        .setExists(true)
-                                        .setFenced(true)
-                                        .setMasterKey(ByteString.EMPTY).build();
+                        LedgerData ledgerData = new LedgerData()
+                                .setExists(true)
+                                .setFenced(true)
+                                .setMasterKey(new byte[0]);
 
                         byte[] ledgerArray = new byte[16];
                         ArrayUtil.setLong(ledgerArray, 0, ledgerId);

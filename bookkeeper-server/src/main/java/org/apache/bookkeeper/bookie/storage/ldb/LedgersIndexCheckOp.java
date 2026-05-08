@@ -77,17 +77,17 @@ public class LedgersIndexCheckOp {
                         ctr++;
                         Map.Entry<byte[], byte[]> entry = iterator.next();
                         long ledgerId = ArrayUtil.getLong(entry.getKey(), 0);
-                        DbLedgerStorageDataFormats.LedgerData ledgerData =
-                                DbLedgerStorageDataFormats.LedgerData.parseFrom(entry.getValue());
+                        LedgerData ledgerData = new LedgerData();
+                        ledgerData.parseFrom(entry.getValue());
                         if (verbose) {
                             log.info()
                                     .attr("scanned", ctr)
                                     .attr("ledgerId", ledgerId)
-                                    .attr("exists", (ledgerData.hasExists() ? ledgerData.getExists() : "-"))
-                                    .attr("isFenced", (ledgerData.hasFenced() ? ledgerData.getFenced() : "-"))
+                                    .attr("exists", (ledgerData.hasExists() ? ledgerData.isExists() : "-"))
+                                    .attr("isFenced", (ledgerData.hasFenced() ? ledgerData.isFenced() : "-"))
                                     .attr("masterKey", (ledgerData.hasMasterKey()
                                             ? Base64.getEncoder()
-                                            .encodeToString(ledgerData.getMasterKey().toByteArray())
+                                            .encodeToString(ledgerData.getMasterKey())
                                             : "-"))
                                     .attr("explicitLAC", (ledgerData.hasExplicitLac()
                                             ? ledgerData.getExplicitLac() : "-"))
