@@ -23,6 +23,7 @@ import io.github.merlimat.slog.Logger;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -695,7 +696,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
-        ByteBuf body = ByteBufList.coalesce(toSend);
+        ByteBuf body = toSend.toByteBuf(PooledByteBufAllocator.DEFAULT);
         Runnable releaseBody = body::release;
         writeLacRequest.setWriteLacRequest()
                 .setLedgerId(ledgerId)
@@ -794,7 +795,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             }
 
             ByteBufList bufToSend = (ByteBufList) toSend;
-            ByteBuf body = ByteBufList.coalesce(bufToSend);
+            ByteBuf body = bufToSend.toByteBuf(PooledByteBufAllocator.DEFAULT);
             cleanupActionFailedBeforeWrite = body::release;
             cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
             AddRequest addRequestMsg = addEntryRequest.setAddRequest()

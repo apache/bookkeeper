@@ -22,6 +22,8 @@ package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -244,6 +246,50 @@ public class ByteBufList extends AbstractReferenceCounted {
         }
 
         return res;
+    }
+
+    /**
+     * Returns a coalesced {@link ByteBuf} containing all buffers in this list, and
+     * decrements this {@code ByteBufList}'s reference count.
+     *
+     * <p>Ownership semantics: the returned {@link ByteBuf} owns a reference to the
+     * underlying buffer data. The caller is responsible for releasing the returned
+     * {@link ByteBuf} when it is no longer needed. This {@code ByteBufList} is
+     * released as part of this call.
+     *
+     * <p>If this list is empty, {@link Unpooled#EMPTY_BUFFER} is returned.
+     * If it contains exactly one buffer, that buffer is returned directly (with its
+     * reference count transferred to the caller) to avoid the overhead of wrapping
+     * it in a {@link CompositeByteBuf}.
+     *
+     * @param allocator the {@link ByteBufAllocator} used to allocate the
+     *                  {@link CompositeByteBuf} when more than one buffer is present
+     * @return a {@link ByteBuf} containing the coalesced contents of this list
+     */
+    public ByteBuf toByteBuf(ByteBufAllocator allocator) {
+        final int size = buffers.size();
+        if (size == 0) {
+            release();
+            return Unpooled.EMPTY_BUFFER;
+        }
+        if (size == 1) {
+            // Fast path: avoid wrapping a single buffer in a CompositeByteBuf.
+            // Retain so the buffer survives our release() below; ownership is
+            // transferred to the caller.
+            ByteBuf single = buffers.get(0).retain();
+            release();
+            return single;
+        }
+
+        CompositeByteBuf composite = allocator.compositeBuffer(size);
+        for (int i = 0; i < size; i++) {
+            // Buffers need to be retained because ownership is handed over to
+            // the CompositeByteBuf, while this ByteBufList continues to hold
+            // its own references until release() below.
+            composite.addComponent(true, buffers.get(i).retain());
+        }
+        release();
+        return composite;
     }
 
     @Override
