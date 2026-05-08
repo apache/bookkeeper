@@ -202,6 +202,46 @@ public class ReadEntryProcessorTest {
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
     }
 
+    @Test
+    public void testNoReadAheadFlagIsPassedToBookie() throws Exception {
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+                1, BookieProtocol.FLAG_NO_READ_AHEAD, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
+        processor.run();
+
+        latch.await();
+        verify(bookie, times(1)).readEntry(ledgerId, 1, true);
+    }
+
+    @Test
+    public void testDefaultReadDoesNotPassNoReadAheadToBookie() throws Exception {
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = System.currentTimeMillis();
+        ReadRequest request = ReadRequest.create(BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId,
+                1, BookieProtocol.FLAG_NONE, new byte[]{});
+        ReadEntryProcessor processor = ReadEntryProcessor.create(request, requestHandler, requestProcessor, null, true);
+        processor.run();
+
+        latch.await();
+        verify(bookie, times(1)).readEntry(ledgerId, 1, false);
+    }
+
     /**
      * Test that when throttleReadResponses=true and the caller is not in the Netty event loop,
      * the read thread is not blocked by the write. onReadRequestFinish() should only be called

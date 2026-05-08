@@ -78,6 +78,10 @@ public abstract class LedgerDescriptor {
     abstract long addEntry(ByteBuf entry) throws IOException, BookieException;
     abstract ByteBuf readEntry(long entryId) throws IOException, BookieException;
 
+    ByteBuf readEntry(long entryId, boolean noReadAhead) throws IOException, BookieException {
+        return readEntry(entryId);
+    }
+
     abstract long getLastAddConfirmed() throws IOException, BookieException;
     abstract boolean waitForLastAddConfirmedUpdate(long previousLAC,
                                                    Watcher<LastAddConfirmedUpdateNotification> watcher)

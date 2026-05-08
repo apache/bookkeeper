@@ -964,6 +964,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId);
 
+            if (((short) flags & BookieProtocol.FLAG_NO_READ_AHEAD) == BookieProtocol.FLAG_NO_READ_AHEAD) {
+                readBuilder = readBuilder.setReadFlags(BookieProtocol.FLAG_NO_READ_AHEAD);
+            }
+
             if (null != previousLAC) {
                 readBuilder = readBuilder.setPreviousLAC(previousLAC);
             }

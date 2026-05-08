@@ -137,7 +137,8 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
     }
 
     protected ReferenceCounted readData() throws Exception {
-        return requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId());
+        return requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId(),
+                request.isNoReadAhead());
     }
 
     private void sendResponse(ReferenceCounted data, int errorCode, long startTimeNanos) {

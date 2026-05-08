@@ -566,9 +566,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException {
+        return getEntry(ledgerId, entryId, false);
+    }
+
+    @Override
+    public ByteBuf getEntry(long ledgerId, long entryId, boolean noReadAhead) throws IOException, BookieException {
         long startTime = MathUtils.nowInNano();
         try {
-            ByteBuf entry = doGetEntry(ledgerId, entryId);
+            ByteBuf entry = doGetEntry(ledgerId, entryId, noReadAhead);
             recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
             return entry;
         } catch (IOException e) {
@@ -577,7 +582,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
     }
 
-    private ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException, BookieException {
+    private ByteBuf doGetEntry(long ledgerId, long entryId, boolean noReadAhead) throws IOException, BookieException {
         log.debug()
                 .attr("ledgerId", ledgerId)
                 .attr("entryId", entryId)
@@ -656,8 +661,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         readCache.put(ledgerId, entryId, entry);
 
         // Try to read more entries
-        long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
-        fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        if (!noReadAhead) {
+            long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
+            fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
+        }
 
         return entry;
     }

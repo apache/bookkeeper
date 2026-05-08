@@ -145,6 +145,15 @@ public interface LedgerStorage {
     ByteBuf getEntry(long ledgerId, long entryId) throws IOException, BookieException;
 
     /**
+     * Read an entry from storage with options that apply to this request.
+     *
+     * @param noReadAhead whether this request should avoid triggering read-ahead
+     */
+    default ByteBuf getEntry(long ledgerId, long entryId, boolean noReadAhead) throws IOException, BookieException {
+        return getEntry(ledgerId, entryId);
+    }
+
+    /**
      * Get last add confirmed.
      *
      * @param ledgerId ledger id.

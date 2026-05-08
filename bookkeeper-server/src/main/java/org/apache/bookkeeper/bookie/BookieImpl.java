@@ -1158,6 +1158,12 @@ public class BookieImpl implements Bookie {
 
     public ByteBuf readEntry(long ledgerId, long entryId)
             throws IOException, NoLedgerException, BookieException {
+        return readEntry(ledgerId, entryId, false);
+    }
+
+    @Override
+    public ByteBuf readEntry(long ledgerId, long entryId, boolean noReadAhead)
+            throws IOException, NoLedgerException, BookieException {
         long requestNanos = MathUtils.nowInNano();
         boolean success = false;
         int entrySize = 0;
@@ -1167,7 +1173,7 @@ public class BookieImpl implements Bookie {
                     .attr("entryId", entryId)
                     .attr("ledgerId", ledgerId)
                     .log("Reading entry");
-            ByteBuf entry = handle.readEntry(entryId);
+            ByteBuf entry = handle.readEntry(entryId, noReadAhead);
             entrySize = entry.readableBytes();
             bookieStats.getReadBytes().addCount(entrySize);
             success = true;

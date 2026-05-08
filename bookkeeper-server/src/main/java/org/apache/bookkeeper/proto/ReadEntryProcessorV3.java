@@ -174,7 +174,8 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                      boolean readLACPiggyBack,
                                      Stopwatch startTimeSw)
         throws IOException, BookieException {
-        ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId);
+        ByteBuf entryBody = requestProcessor.getBookie().readEntry(ledgerId, entryId,
+                RequestUtils.isNoReadAhead(readRequest));
         if (null != fenceResult) {
             handleReadResultForFenceRead(entryBody, readResponseBuilder, entryId, startTimeSw);
             return null;
@@ -382,4 +383,3 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         return RequestUtils.toSafeString(request);
     }
 }
-

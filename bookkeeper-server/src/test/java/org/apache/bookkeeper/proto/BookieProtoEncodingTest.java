@@ -19,8 +19,11 @@
 package org.apache.bookkeeper.proto;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_HIGH_PRIORITY;
 import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NONE;
+import static org.apache.bookkeeper.proto.BookieProtocol.FLAG_NO_READ_AHEAD;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -131,6 +134,22 @@ public class BookieProtoEncodingTest {
 
 
         v2ReqEncoder.decode((ByteBuf) v3ReqEncoder.encode(v3Req, UnpooledByteBufAllocator.DEFAULT));
+    }
+
+    @Test
+    public void testV2ReadRequestPreservesNoReadAheadFlag() throws Exception {
+        RequestEnDeCoderPreV3 v2ReqEncoder = new RequestEnDeCoderPreV3(registry);
+        short flags = FLAG_HIGH_PRIORITY | FLAG_NO_READ_AHEAD;
+        BookieProtocol.ReadRequest req = BookieProtocol.ReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, 1L, 2L, flags, null);
+        ByteBuf buf = (ByteBuf) v2ReqEncoder.encode(req, UnpooledByteBufAllocator.DEFAULT);
+        buf.readInt(); // Skip the frame size.
+
+        BookieProtocol.ReadRequest reqDecoded = (BookieProtocol.ReadRequest) v2ReqEncoder.decode(buf);
+        assertEquals(flags, reqDecoded.getFlags());
+        assertTrue(reqDecoded.isHighPriority());
+        assertTrue(reqDecoded.isNoReadAhead());
+        reqDecoded.recycle();
     }
 
     @Test

@@ -190,6 +190,7 @@ public interface BookieProtocol {
     short FLAG_DO_FENCING = 0x0001;
     short FLAG_RECOVERY_ADD = 0x0002;
     short FLAG_HIGH_PRIORITY = 0x0004;
+    short FLAG_NO_READ_AHEAD = 0x0008;
 
     /**
      * A Bookie request object.
@@ -243,6 +244,10 @@ public interface BookieProtocol {
 
         boolean isHighPriority() {
             return (flags & FLAG_HIGH_PRIORITY) == FLAG_HIGH_PRIORITY;
+        }
+
+        boolean isNoReadAhead() {
+            return (flags & FLAG_NO_READ_AHEAD) == FLAG_NO_READ_AHEAD;
         }
 
         @Override

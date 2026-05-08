@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
@@ -99,7 +100,7 @@ public class LongPollReadEntryProcessorV3Test {
 
         when(bookie.waitForLastAddConfirmedUpdate(anyLong(), anyLong(), any()))
             .thenReturn(true);
-        when(bookie.readEntry(anyLong(), anyLong())).thenReturn(Unpooled.buffer());
+        when(bookie.readEntry(anyLong(), anyLong(), anyBoolean())).thenReturn(Unpooled.buffer());
         when(bookie.readLastAddConfirmed(anyLong())).thenReturn(Long.valueOf(1));
 
         CompletableFuture<Void> cancelFuture = new CompletableFuture<>();
