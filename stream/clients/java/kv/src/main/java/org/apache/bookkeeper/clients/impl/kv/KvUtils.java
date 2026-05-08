@@ -79,8 +79,12 @@ public final class KvUtils {
     }
 
     public static RangeRequest newRangeRequest(ByteBuf key, RangeOption<ByteBuf> option) {
+        // Always slice() ByteBufs before passing to lightproto setters: the
+        // generated serializer calls dst.writeBytes(src) which consumes src's
+        // readerIndex, so reusing the same buffer for another request (or having
+        // two fields alias the same buffer) silently produces empty fields.
         RangeRequest request = new RangeRequest()
-            .setKey(key)
+            .setKey(key.slice())
             .setCountOnly(option.countOnly())
             .setKeysOnly(option.keysOnly())
             .setLimit(option.limit())
@@ -89,7 +93,7 @@ public final class KvUtils {
             .setMinModRevision(option.minModRev())
             .setMaxModRevision(option.maxModRev());
         if (null != option.endKey()) {
-            request.setRangeEnd(option.endKey());
+            request.setRangeEnd(option.endKey().slice());
         }
         return request;
     }
@@ -108,8 +112,8 @@ public final class KvUtils {
                                            ByteBuf value,
                                            PutOption<ByteBuf> option) {
         return new PutRequest()
-            .setKey(key)
-            .setValue(value)
+            .setKey(key.slice())
+            .setValue(value.slice())
             .setPrevKv(option.prevKv());
     }
 
@@ -128,7 +132,7 @@ public final class KvUtils {
                                                        long amount,
                                                        IncrementOption<ByteBuf> option) {
         return new IncrementRequest()
-            .setKey(key)
+            .setKey(key.slice())
             .setAmount(amount)
             .setGetTotal(option.getTotal());
     }
@@ -144,10 +148,10 @@ public final class KvUtils {
 
     public static DeleteRangeRequest newDeleteRequest(ByteBuf key, DeleteOption<ByteBuf> option) {
         DeleteRangeRequest request = new DeleteRangeRequest()
-            .setKey(key)
+            .setKey(key.slice())
             .setPrevKv(option.prevKv());
         if (null != option.endKey()) {
-            request.setRangeEnd(option.endKey());
+            request.setRangeEnd(option.endKey().slice());
         }
         return request;
     }
@@ -197,7 +201,7 @@ public final class KvUtils {
     public static void populateProtoCompare(Compare compare, CompareOp<ByteBuf, ByteBuf> cmp) {
         compare.setTarget(toProtoTarget(cmp.target()));
         compare.setResult(toProtoResult(cmp.result()));
-        compare.setKey(cmp.key());
+        compare.setKey(cmp.key().slice());
         switch (cmp.target()) {
             case VERSION:
                 compare.setVersion(cmp.revision());
@@ -213,7 +217,7 @@ public final class KvUtils {
                 if (null == value) {
                     value = Unpooled.wrappedBuffer(new byte[0]);
                 }
-                compare.setValue(value);
+                compare.setValue(value.slice());
                 break;
             default:
                 break;
@@ -225,18 +229,18 @@ public final class KvUtils {
      */
     public static void populateProtoPutRequest(PutRequest put, PutOp<ByteBuf, ByteBuf> op) {
         put.setPrevKv(op.option().prevKv());
-        put.setKey(op.key());
-        put.setValue(op.value());
+        put.setKey(op.key().slice());
+        put.setValue(op.value().slice());
     }
 
     /**
      * Populate {@code req} from a {@link DeleteOp}.
      */
     public static void populateProtoDeleteRequest(DeleteRangeRequest req, DeleteOp<ByteBuf, ByteBuf> op) {
-        req.setKey(op.key());
+        req.setKey(op.key().slice());
         req.setPrevKv(op.option().prevKv());
         if (null != op.option().endKey()) {
-            req.setRangeEnd(op.option().endKey());
+            req.setRangeEnd(op.option().endKey().slice());
         }
     }
 
@@ -244,12 +248,12 @@ public final class KvUtils {
      * Populate {@code req} from a {@link RangeOp}.
      */
     public static void populateProtoRangeRequest(RangeRequest req, RangeOp<ByteBuf, ByteBuf> op) {
-        req.setKey(op.key());
+        req.setKey(op.key().slice());
         req.setCountOnly(op.option().countOnly());
         req.setKeysOnly(op.option().keysOnly());
         req.setLimit(op.option().limit());
         if (null != op.option().endKey()) {
-            req.setRangeEnd(op.option().endKey());
+            req.setRangeEnd(op.option().endKey().slice());
         }
     }
 
