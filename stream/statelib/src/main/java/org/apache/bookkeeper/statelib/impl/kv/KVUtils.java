@@ -18,22 +18,14 @@
  */
 package org.apache.bookkeeper.statelib.impl.kv;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
-import java.io.IOException;
 import lombok.AccessLevel;
 import lombok.CustomLog;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.common.coder.Coder;
 import org.apache.bookkeeper.proto.statestore.kv.Command;
-import org.apache.bookkeeper.proto.statestore.kv.DeleteRequest;
-import org.apache.bookkeeper.proto.statestore.kv.NopRequest;
-import org.apache.bookkeeper.proto.statestore.kv.PutIfAbsentRequest;
-import org.apache.bookkeeper.proto.statestore.kv.PutRequest;
 
 /**
  * Utils for kv stores.
@@ -42,9 +34,13 @@ import org.apache.bookkeeper.proto.statestore.kv.PutRequest;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class KVUtils {
 
-    static final Command NOP_CMD = Command.newBuilder()
-        .setNopReq(NopRequest.newBuilder().build())
-        .build();
+    static final Command NOP_CMD = newNopCommand();
+
+    private static Command newNopCommand() {
+        Command cmd = new Command();
+        cmd.setNopReq();
+        return cmd;
+    }
 
     static ByteBuf serialize(ByteBuf valBuf, long revision) {
         int serializedSize = valBuf.readableBytes() + Long.BYTES;
@@ -68,41 +64,21 @@ final class KVUtils {
         return valCoder.decode(valBuf);
     }
 
-    static Command newCommand(ByteBuf cmdBuf) throws InvalidProtocolBufferException {
-        return Command.parseFrom(cmdBuf.nioBuffer());
+    static Command newCommand(ByteBuf cmdBuf) {
+        Command cmd = new Command();
+        cmd.parseFrom(cmdBuf, cmdBuf.readableBytes());
+        return cmd;
     }
 
-    static ByteBuf newCommandBuf(Command cmd) throws IOException {
+    static ByteBuf newCommandBuf(Command cmd) {
         ByteBuf buf = PooledByteBufAllocator.DEFAULT.buffer(cmd.getSerializedSize());
         try {
-            cmd.writeTo(new ByteBufOutputStream(buf));
-        } catch (IOException e) {
+            cmd.writeTo(buf);
+        } catch (RuntimeException e) {
             ReferenceCountUtil.release(buf);
             throw e;
         }
         return buf;
-    }
-
-    static PutRequest newPutRequest(byte[] keyBytes,
-                                    byte[] valBytes) {
-        return PutRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(keyBytes))
-            .setValue(UnsafeByteOperations.unsafeWrap(valBytes))
-            .build();
-    }
-
-    static PutIfAbsentRequest newPutIfAbsentRequest(byte[] keyBytes,
-                                                    byte[] valBytes) {
-        return PutIfAbsentRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(keyBytes))
-            .setValue(UnsafeByteOperations.unsafeWrap(valBytes))
-            .build();
-    }
-
-    static DeleteRequest newDeleteRequest(byte[] keyBytes) {
-        return DeleteRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(keyBytes))
-            .build();
     }
 
 }

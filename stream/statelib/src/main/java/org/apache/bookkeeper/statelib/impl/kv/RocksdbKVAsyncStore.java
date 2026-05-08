@@ -22,7 +22,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
-import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 import org.apache.bookkeeper.common.coder.Coder;
@@ -91,9 +90,8 @@ public class RocksdbKVAsyncStore<K, V>
         byte[] keyBytes = keyCoder.encode(key);
         byte[] valBytes = valCoder.encode(value);
 
-        Command command = Command.newBuilder()
-            .setPutReq(KVUtils.newPutRequest(keyBytes, valBytes))
-            .build();
+        Command command = new Command();
+        command.setPutReq().setKey(keyBytes).setValue(valBytes);
         return writeCommandReturnTxId(command).thenApplyAsync((revision) -> {
             ByteBuf serializedBuf = KVUtils.serialize(valBytes, revision);
             try {
@@ -112,9 +110,8 @@ public class RocksdbKVAsyncStore<K, V>
         byte[] keyBytes = keyCoder.encode(key);
         byte[] valBytes = valCoder.encode(value);
 
-        Command command = Command.newBuilder()
-            .setPutIfAbsentReq(KVUtils.newPutIfAbsentRequest(keyBytes, valBytes))
-            .build();
+        Command command = new Command();
+        command.setPutIfAbsentReq().setKey(keyBytes).setValue(valBytes);
         return writeCommandReturnTxId(command).thenApplyAsync((revision) -> {
             ByteBuf serializedBuf = KVUtils.serialize(valBytes, revision);
             try {
@@ -135,9 +132,8 @@ public class RocksdbKVAsyncStore<K, V>
     public CompletableFuture<V> delete(K key) {
         byte[] keyBytes = keyCoder.encode(key);
 
-        Command command = Command.newBuilder()
-            .setDelReq(KVUtils.newDeleteRequest(keyBytes))
-            .build();
+        Command command = new Command();
+        command.setDelReq().setKey(keyBytes);
         return writeCommandReturnTxId(command).thenApplyAsync((revision) -> {
             byte[] prevValue = localStore.delete(keyBytes, revision);
             if (null == prevValue) {
@@ -171,7 +167,7 @@ public class RocksdbKVAsyncStore<K, V>
         try {
             ByteBuf cmdBuf = KVUtils.newCommandBuf(command);
             return writeCommandBufReturnTxId(cmdBuf);
-        } catch (IOException e) {
+        } catch (RuntimeException e) {
             return FutureUtils.exception(e);
         }
     }

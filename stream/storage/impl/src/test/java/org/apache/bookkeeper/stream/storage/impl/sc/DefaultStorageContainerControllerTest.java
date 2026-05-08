@@ -57,16 +57,26 @@ public class DefaultStorageContainerControllerTest {
 
     public DefaultStorageContainerControllerTest() {
         this.controller = new DefaultStorageContainerController();
-        this.clusterMetadata = ClusterMetadata.newBuilder()
-            .setNumStorageContainers(NUM_STORAGE_CONTAINERS)
-            .build();
-        this.currentAssignment = ClusterAssignmentData.newBuilder()
-            .putServers("default-server", ServerAssignmentData.newBuilder()
-                .addContainers(0L)
-                .addContainers(1L)
-                .addContainers(3L)
-                .build())
-            .build();
+        this.clusterMetadata = new ClusterMetadata().setNumStorageContainers(NUM_STORAGE_CONTAINERS);
+        this.currentAssignment = new ClusterAssignmentData();
+        ServerAssignmentData defaultServer = currentAssignment.putServers("default-server");
+        defaultServer.addContainer(0L);
+        defaultServer.addContainer(1L);
+        defaultServer.addContainer(3L);
+    }
+
+    private static List<Long> containersOf(ServerAssignmentData serverData) {
+        List<Long> containers = Lists.newArrayListWithCapacity(serverData.getContainersCount());
+        for (int i = 0; i < serverData.getContainersCount(); i++) {
+            containers.add(serverData.getContainerAt(i));
+        }
+        return containers;
+    }
+
+    private static Map<String, ServerAssignmentData> serversMap(ClusterAssignmentData assignment) {
+        Map<String, ServerAssignmentData> map = new java.util.LinkedHashMap<>();
+        assignment.forEachServers(map::put);
+        return map;
     }
 
     @Test
@@ -129,7 +139,7 @@ public class DefaultStorageContainerControllerTest {
 
         int numContainersPerServer = NUM_STORAGE_CONTAINERS / numServers;
         int serverIdx = 0;
-        for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
+        for (Map.Entry<String, ServerAssignmentData> entry : serversMap(newAssignment).entrySet()) {
             log.info().attr("server", entry.getKey()).attr("assignment", entry.getValue())
                 .log("Check assignment for server");
 
@@ -139,7 +149,7 @@ public class DefaultStorageContainerControllerTest {
 
             ServerAssignmentData serverData = entry.getValue();
             assertEquals(numContainersPerServer, serverData.getContainersCount());
-            List<Long> containers = Lists.newArrayList(serverData.getContainersList());
+            List<Long> containers = containersOf(serverData);
             Collections.sort(containers);
             assignedContainers.addAll(containers);
 
@@ -173,7 +183,7 @@ public class DefaultStorageContainerControllerTest {
         int numEmptyServers = 0;
         int numAssignedServers = 0;
         int serverIdx = 0;
-        for (Map.Entry<String, ServerAssignmentData> entry : newAssignment.getServersMap().entrySet()) {
+        for (Map.Entry<String, ServerAssignmentData> entry : serversMap(newAssignment).entrySet()) {
             log.info().attr("server", entry.getKey()).attr("assignment", entry.getValue())
                 .log("Check assignment for server");
 
@@ -188,7 +198,7 @@ public class DefaultStorageContainerControllerTest {
             } else {
                 ++numEmptyServers;
             }
-            List<Long> containers = Lists.newArrayList(serverData.getContainersList());
+            List<Long> containers = containersOf(serverData);
             Collections.sort(containers);
             assignedContainers.addAll(containers);
 
@@ -209,7 +219,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateFromEmptyAssignment() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 8;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -224,7 +234,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateIfClusterUnchanged() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 8;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -245,7 +255,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateWhenHostsRemoved() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 8;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -268,7 +278,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateWhenHostsAdded() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 4;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -291,7 +301,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateWhenHostsRemovedAdded() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 4;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -318,7 +328,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateWhenHasMoreServers() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 2 * NUM_STORAGE_CONTAINERS;
         Set<BookieId> currentCluster = newCluster(numServers);
@@ -332,7 +342,7 @@ public class DefaultStorageContainerControllerTest {
 
     @Test
     public void testComputeIdealStateWhenScaleToMoreServers() throws Exception {
-        ClusterAssignmentData emptyAssignment = ClusterAssignmentData.newBuilder().build();
+        ClusterAssignmentData emptyAssignment = new ClusterAssignmentData();
 
         int numServers = 4;
         Set<BookieId> currentCluster = newCluster(numServers);
