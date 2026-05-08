@@ -264,9 +264,8 @@ public class CheckpointFile {
 
 
     public FileInfo getFileInfo() {
-        return FileInfo.newBuilder()
+        return new FileInfo()
             .setName(file.getName())
-            .setChecksum(checksum)
-            .build();
+            .setChecksum(checksum);
     }
 }

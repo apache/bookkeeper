@@ -273,12 +273,10 @@ public class StreamCluster
                         .attr("namespace", namespaceName)
                         .log("Creating namespace ...");
                     try {
+                        NamespaceConfiguration nsConf = new NamespaceConfiguration();
+                        nsConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
                         NamespaceProperties nsProps = result(
-                            admin.createNamespace(
-                                namespaceName,
-                                NamespaceConfiguration.newBuilder()
-                                    .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-                                    .build()));
+                            admin.createNamespace(namespaceName, nsConf));
                         log.info()
                             .attr("namespace", namespaceName)
                             .log("Successfully created namespace");

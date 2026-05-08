@@ -56,12 +56,31 @@ public class StorageClientImplTest extends GrpcClientTestBase {
 
     private static final String NAMESPACE = "test-namespace";
     private static final String STREAM_NAME = "test-stream-name";
-    private static final StreamProperties STREAM_PROPERTIES = StreamProperties.newBuilder()
-        .setStreamId(1234L)
-        .setStreamConf(DEFAULT_STREAM_CONF)
-        .setStreamName(STREAM_NAME)
-        .setStorageContainerId(16)
-        .build();
+    private static final StreamProperties STREAM_PROPERTIES = newStreamProperties();
+
+    private static StreamProperties newStreamProperties() {
+        StreamProperties props = new StreamProperties()
+            .setStreamId(1234L)
+            .setStreamName(STREAM_NAME)
+            .setStorageContainerId(16);
+        props.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return props;
+    }
+
+    private static StreamProperties newStreamPropsForTable(String name) {
+        StreamProperties props = new StreamProperties().copyFrom(STREAM_PROPERTIES);
+        props.setStreamName(name);
+        StreamConfiguration conf = props.setStreamConf();
+        conf.copyFrom(DEFAULT_STREAM_CONF).setStorageType(StorageType.TABLE);
+        return props;
+    }
+
+    private static StreamProperties newStreamPropsAsTable() {
+        StreamProperties props = new StreamProperties().copyFrom(STREAM_PROPERTIES);
+        StreamConfiguration conf = props.setStreamConf();
+        conf.copyFrom(DEFAULT_STREAM_CONF).setStorageType(StorageType.TABLE);
+        return props;
+    }
 
     private StorageClientImpl client;
 
@@ -82,11 +101,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testOpenPTable() throws Exception {
-        StreamProperties streamProps = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties streamProps = newStreamPropsAsTable();
         when(client.getStreamProperties(anyString(), anyString()))
             .thenReturn(FutureUtils.value(streamProps));
 
@@ -105,21 +120,11 @@ public class StorageClientImplTest extends GrpcClientTestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testOpenPTableDifferentNamespace() throws Exception {
-        StreamProperties tableProps1 = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamName("table1")
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties tableProps1 = newStreamPropsForTable("table1");
         when(client.getStreamProperties(eq(NAMESPACE), eq("table1")))
             .thenReturn(FutureUtils.value(tableProps1));
 
-        StreamProperties tableProps2 = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamName("table2")
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties tableProps2 = newStreamPropsForTable("table2");
         when(client.getStreamProperties(eq(NAMESPACE), eq("table2")))
             .thenReturn(FutureUtils.value(tableProps2));
 
@@ -146,11 +151,7 @@ public class StorageClientImplTest extends GrpcClientTestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testOpenTable() throws Exception {
-        StreamProperties streamProps = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties streamProps = newStreamPropsAsTable();
         when(client.getStreamProperties(anyString(), anyString()))
             .thenReturn(FutureUtils.value(streamProps));
 
@@ -171,21 +172,11 @@ public class StorageClientImplTest extends GrpcClientTestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testOpenTableWithDifferentNamespace() throws Exception {
-        StreamProperties tableProps1 = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamName("table1")
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties tableProps1 = newStreamPropsForTable("table1");
         when(client.getStreamProperties(eq(NAMESPACE), eq("table1")))
             .thenReturn(FutureUtils.value(tableProps1));
 
-        StreamProperties tableProps2 = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamName("table2")
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.TABLE)
-                .build())
-            .build();
+        StreamProperties tableProps2 = newStreamPropsForTable("table2");
         when(client.getStreamProperties(eq(NAMESPACE), eq("table2")))
             .thenReturn(FutureUtils.value(tableProps2));
 
@@ -216,11 +207,8 @@ public class StorageClientImplTest extends GrpcClientTestBase {
     @SuppressWarnings("unchecked")
     @Test
     public void testOpenPTableIllegalOp() throws Exception {
-        StreamProperties streamProps = StreamProperties.newBuilder(STREAM_PROPERTIES)
-            .setStreamConf(StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-                .setStorageType(StorageType.STREAM)
-                .build())
-            .build();
+        StreamProperties streamProps = new StreamProperties().copyFrom(STREAM_PROPERTIES);
+        streamProps.setStreamConf().copyFrom(DEFAULT_STREAM_CONF).setStorageType(StorageType.STREAM);
         when(client.getStreamProperties(anyString(), anyString()))
             .thenReturn(FutureUtils.value(streamProps));
 

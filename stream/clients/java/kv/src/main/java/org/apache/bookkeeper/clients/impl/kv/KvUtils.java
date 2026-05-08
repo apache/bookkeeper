@@ -15,8 +15,6 @@
 package org.apache.bookkeeper.clients.impl.kv;
 
 import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.List;
@@ -62,17 +60,13 @@ public final class KvUtils {
     private KvUtils() {
     }
 
-    public static ByteString toProtoKey(ByteBuf key) {
-        return UnsafeByteOperations.unsafeWrap(key.nioBuffer());
-    }
-
     public static org.apache.bookkeeper.api.kv.result.KeyValue<ByteBuf, ByteBuf> fromProtoKeyValue(
         KeyValue kv,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
         return kvFactory.newKv()
-            .key(Unpooled.wrappedBuffer(kv.getKey().asReadOnlyByteBuffer()))
-            .value(Unpooled.wrappedBuffer(kv.getValue().asReadOnlyByteBuffer()))
-            .isNumber(kv.getIsNumber())
+            .key(Unpooled.wrappedBuffer(kv.getKey()))
+            .value(Unpooled.wrappedBuffer(kv.getValue()))
+            .isNumber(kv.isIsNumber())
             .numberValue(kv.getNumberValue())
             .createRevision(kv.getCreateRevision())
             .modifiedRevision(kv.getModRevision())
@@ -84,9 +78,9 @@ public final class KvUtils {
         return Lists.transform(kvs, kv -> fromProtoKeyValue(kv, kvFactory));
     }
 
-    public static RangeRequest.Builder newRangeRequest(ByteBuf key, RangeOption<ByteBuf> option) {
-        RangeRequest.Builder builder = RangeRequest.newBuilder()
-            .setKey(toProtoKey(key))
+    public static RangeRequest newRangeRequest(ByteBuf key, RangeOption<ByteBuf> option) {
+        RangeRequest request = new RangeRequest()
+            .setKey(key)
             .setCountOnly(option.countOnly())
             .setKeysOnly(option.keysOnly())
             .setLimit(option.limit())
@@ -95,9 +89,9 @@ public final class KvUtils {
             .setMinModRevision(option.minModRev())
             .setMaxModRevision(option.maxModRev());
         if (null != option.endKey()) {
-            builder = builder.setRangeEnd(toProtoKey(option.endKey()));
+            request.setRangeEnd(option.endKey());
         }
-        return builder;
+        return request;
     }
 
     public static RangeResult<ByteBuf, ByteBuf> newRangeResult(
@@ -106,16 +100,16 @@ public final class KvUtils {
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
         return resultFactory.newRangeResult(-1L)
             .count(response.getCount())
-            .more(response.getMore())
+            .more(response.isMore())
             .kvs(fromProtoKeyValues(response.getKvsList(), kvFactory));
     }
 
-    public static PutRequest.Builder newPutRequest(ByteBuf key,
-                                                   ByteBuf value,
-                                                   PutOption<ByteBuf> option) {
-        return PutRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
-            .setValue(UnsafeByteOperations.unsafeWrap(value.nioBuffer()))
+    public static PutRequest newPutRequest(ByteBuf key,
+                                           ByteBuf value,
+                                           PutOption<ByteBuf> option) {
+        return new PutRequest()
+            .setKey(key)
+            .setValue(value)
             .setPrevKv(option.prevKv());
     }
 
@@ -130,11 +124,11 @@ public final class KvUtils {
         return result;
     }
 
-    public static IncrementRequest.Builder newIncrementRequest(ByteBuf key,
-                                                               long amount,
-                                                               IncrementOption<ByteBuf> option) {
-        return IncrementRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
+    public static IncrementRequest newIncrementRequest(ByteBuf key,
+                                                       long amount,
+                                                       IncrementOption<ByteBuf> option) {
+        return new IncrementRequest()
+            .setKey(key)
             .setAmount(amount)
             .setGetTotal(option.getTotal());
     }
@@ -148,14 +142,14 @@ public final class KvUtils {
         return result;
     }
 
-    public static DeleteRangeRequest.Builder newDeleteRequest(ByteBuf key, DeleteOption<ByteBuf> option) {
-        DeleteRangeRequest.Builder builder = DeleteRangeRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(key.nioBuffer()))
+    public static DeleteRangeRequest newDeleteRequest(ByteBuf key, DeleteOption<ByteBuf> option) {
+        DeleteRangeRequest request = new DeleteRangeRequest()
+            .setKey(key)
             .setPrevKv(option.prevKv());
         if (null != option.endKey()) {
-            builder = builder.setRangeEnd(UnsafeByteOperations.unsafeWrap(option.endKey().nioBuffer()));
+            request.setRangeEnd(option.endKey());
         }
-        return builder;
+        return request;
     }
 
     public static DeleteResult<ByteBuf, ByteBuf> newDeleteResult(
@@ -178,7 +172,7 @@ public final class KvUtils {
             case VERSION:
                 return CompareTarget.VERSION;
             default:
-                return CompareTarget.UNRECOGNIZED;
+                throw new IllegalArgumentException("Unknown compare target: " + target);
         }
     }
 
@@ -193,83 +187,89 @@ public final class KvUtils {
             case NOT_EQUAL:
                 return CompareResult.NOT_EQUAL;
             default:
-                return CompareResult.UNRECOGNIZED;
+                throw new IllegalArgumentException("Unknown compare result: " + result);
         }
     }
 
-    public static Compare.Builder toProtoCompare(CompareOp<ByteBuf, ByteBuf> cmp) {
-        Compare.Builder builder = Compare.newBuilder()
-            .setTarget(toProtoTarget(cmp.target()))
-            .setResult(toProtoResult(cmp.result()))
-            .setKey(toProtoKey(cmp.key()));
+    /**
+     * Populate {@code compare} from a {@link CompareOp}.
+     */
+    public static void populateProtoCompare(Compare compare, CompareOp<ByteBuf, ByteBuf> cmp) {
+        compare.setTarget(toProtoTarget(cmp.target()));
+        compare.setResult(toProtoResult(cmp.result()));
+        compare.setKey(cmp.key());
         switch (cmp.target()) {
             case VERSION:
-                builder.setVersion(cmp.revision());
+                compare.setVersion(cmp.revision());
                 break;
             case MOD:
-                builder.setModRevision(cmp.revision());
+                compare.setModRevision(cmp.revision());
                 break;
             case CREATE:
-                builder.setCreateRevision(cmp.revision());
+                compare.setCreateRevision(cmp.revision());
                 break;
             case VALUE:
                 ByteBuf value = cmp.value();
                 if (null == value) {
                     value = Unpooled.wrappedBuffer(new byte[0]);
                 }
-                builder.setValue(toProtoKey(value));
+                compare.setValue(value);
                 break;
             default:
                 break;
         }
-        return builder;
     }
 
-    public static PutRequest.Builder toProtoPutRequest(PutOp<ByteBuf, ByteBuf> op) {
-        return PutRequest.newBuilder()
-            .setPrevKv(op.option().prevKv())
-            .setKey(toProtoKey(op.key()))
-            .setValue(toProtoKey(op.value()));
+    /**
+     * Populate {@code put} from a {@link PutOp}.
+     */
+    public static void populateProtoPutRequest(PutRequest put, PutOp<ByteBuf, ByteBuf> op) {
+        put.setPrevKv(op.option().prevKv());
+        put.setKey(op.key());
+        put.setValue(op.value());
     }
 
-    public static DeleteRangeRequest.Builder toProtoDeleteRequest(DeleteOp<ByteBuf, ByteBuf> op) {
-        DeleteRangeRequest.Builder builder = DeleteRangeRequest.newBuilder()
-            .setKey(toProtoKey(op.key()))
-            .setPrevKv(op.option().prevKv());
+    /**
+     * Populate {@code req} from a {@link DeleteOp}.
+     */
+    public static void populateProtoDeleteRequest(DeleteRangeRequest req, DeleteOp<ByteBuf, ByteBuf> op) {
+        req.setKey(op.key());
+        req.setPrevKv(op.option().prevKv());
         if (null != op.option().endKey()) {
-            builder.setRangeEnd(toProtoKey(op.option().endKey()));
+            req.setRangeEnd(op.option().endKey());
         }
-        return builder;
     }
 
-    public static RangeRequest.Builder toProtoRangeRequest(RangeOp<ByteBuf, ByteBuf> op) {
-        RangeRequest.Builder builder = RangeRequest.newBuilder()
-            .setKey(toProtoKey(op.key()))
-            .setCountOnly(op.option().countOnly())
-            .setKeysOnly(op.option().keysOnly())
-            .setLimit(op.option().limit());
+    /**
+     * Populate {@code req} from a {@link RangeOp}.
+     */
+    public static void populateProtoRangeRequest(RangeRequest req, RangeOp<ByteBuf, ByteBuf> op) {
+        req.setKey(op.key());
+        req.setCountOnly(op.option().countOnly());
+        req.setKeysOnly(op.option().keysOnly());
+        req.setLimit(op.option().limit());
         if (null != op.option().endKey()) {
-            builder.setRangeEnd(toProtoKey(op.option().endKey()));
+            req.setRangeEnd(op.option().endKey());
         }
-        return builder;
     }
 
-    public static RequestOp.Builder toProtoRequest(Op<ByteBuf, ByteBuf> op) {
-        RequestOp.Builder reqBuilder = RequestOp.newBuilder();
+    /**
+     * Populate the inner request inside {@code reqOp} from {@code op}.
+     */
+    public static void populateProtoRequest(RequestOp reqOp, Op<ByteBuf, ByteBuf> op) {
         switch (op.type()) {
             case DELETE:
-                reqBuilder.setRequestDeleteRange(toProtoDeleteRequest((DeleteOp<ByteBuf, ByteBuf>) op));
+                populateProtoDeleteRequest(reqOp.setRequestDeleteRange(), (DeleteOp<ByteBuf, ByteBuf>) op);
                 break;
             case RANGE:
-                reqBuilder.setRequestRange(toProtoRangeRequest((RangeOp<ByteBuf, ByteBuf>) op));
+                populateProtoRangeRequest(reqOp.setRequestRange(), (RangeOp<ByteBuf, ByteBuf>) op);
                 break;
             case PUT:
-                reqBuilder.setRequestPut(toProtoPutRequest((PutOp<ByteBuf, ByteBuf>) op));
+                populateProtoPutRequest(reqOp.setRequestPut(), (PutOp<ByteBuf, ByteBuf>) op);
                 break;
             default:
                 throw new IllegalArgumentException("Type '" + op.type() + "' is not supported in a txn yet.");
         }
-        return reqBuilder;
     }
 
     public static TxnResult<ByteBuf, ByteBuf> newKvTxnResult(
@@ -277,7 +277,7 @@ public final class KvUtils {
         ResultFactory<ByteBuf, ByteBuf> resultFactory,
         KeyValueFactory<ByteBuf, ByteBuf> kvFactory) {
         TxnResultImpl<ByteBuf, ByteBuf> result = resultFactory.newTxnResult(-1L);
-        result.isSuccess(txnResponse.getSucceeded());
+        result.isSuccess(txnResponse.isSucceeded());
         result.results(Lists.transform(txnResponse.getResponsesList(), op -> {
             switch (op.getResponseCase()) {
                 case RESPONSE_PUT:

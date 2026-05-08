@@ -59,9 +59,9 @@ public class TestRootRangeClientDeleteStreamRpc extends RootRangeClientImplTestB
             @Override
             public void deleteStream(DeleteStreamRequest request,
                                      StreamObserver<DeleteStreamResponse> responseObserver) {
-                responseObserver.onNext(DeleteStreamResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .build());
+                DeleteStreamResponse resp = new DeleteStreamResponse();
+                resp.setCode(StatusCode.SUCCESS);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };
@@ -78,9 +78,9 @@ public class TestRootRangeClientDeleteStreamRpc extends RootRangeClientImplTestB
             @Override
             public void deleteStream(DeleteStreamRequest request,
                                      StreamObserver<DeleteStreamResponse> responseObserver) {
-                responseObserver.onNext(DeleteStreamResponse.newBuilder()
-                    .setCode(StatusCode.STREAM_NOT_FOUND)
-                    .build());
+                DeleteStreamResponse resp = new DeleteStreamResponse();
+                resp.setCode(StatusCode.STREAM_NOT_FOUND);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

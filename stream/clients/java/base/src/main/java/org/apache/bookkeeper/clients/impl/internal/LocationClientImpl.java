@@ -34,6 +34,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 import lombok.CustomLog;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.grpc.StorageContainerServiceFutureStub;
 import org.apache.bookkeeper.clients.impl.internal.api.LocationClient;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.clients.utils.GrpcChannels;
@@ -44,8 +45,6 @@ import org.apache.bookkeeper.common.util.Retries;
 import org.apache.bookkeeper.common.util.Revisioned;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointRequest;
 import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointResponse;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
 
 /**
  * Default Implementation of {@link LocationClient}.
@@ -67,7 +66,7 @@ public class LocationClientImpl implements LocationClient {
             settings.serviceUri(), settings
         ).build();
         this.locationService = GrpcUtils.configureGrpcStub(
-            StorageContainerServiceGrpc.newFutureStub(channel),
+            StorageContainerServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 

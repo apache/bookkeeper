@@ -29,7 +29,6 @@ import org.apache.bookkeeper.stream.proto.RangeProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamMetadata.LifecycleState;
 import org.apache.bookkeeper.stream.proto.StreamMetadata.ServingState;
-import org.apache.bookkeeper.stream.proto.StreamName;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
 import org.apache.bookkeeper.stream.proto.storage.CreateNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.CreateStreamRequest;
@@ -40,7 +39,6 @@ import org.apache.bookkeeper.stream.proto.storage.GetNamespaceRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointResponse;
 import org.apache.bookkeeper.stream.proto.storage.GetStreamRequest;
-import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointRequest;
 import org.apache.bookkeeper.stream.proto.storage.OneStorageContainerEndpointResponse;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.apache.bookkeeper.stream.proto.storage.StorageContainerEndpoint;
@@ -142,12 +140,11 @@ public class ProtoUtils {
                 endKey = Long.MAX_VALUE;
             }
             long rangeId = nextRangeId++;
-            RangeProperties props = RangeProperties.newBuilder()
+            RangeProperties props = new RangeProperties()
                 .setStartHashKey(startKey)
                 .setEndHashKey(endKey)
                 .setStorageContainerId(placementPolicy.placeStreamRange(streamId, rangeId))
-                .setRangeId(rangeId)
-                .build();
+                .setRangeId(rangeId);
             startKey = endKey;
 
             ranges.add(props);
@@ -162,7 +159,7 @@ public class ProtoUtils {
      * @return true if the stream is in created state. otherwise, false.
      */
     public static boolean isStreamCreated(LifecycleState state) {
-        checkArgument(state != LifecycleState.UNRECOGNIZED);
+        checkArgument(state != null);
         return LifecycleState.UNINIT != state
             && LifecycleState.CREATING != state;
     }
@@ -174,7 +171,7 @@ public class ProtoUtils {
      * @return true if the stream is writable. otherwise, false.
      */
     public static boolean isStreamWritable(ServingState state) {
-        checkArgument(state != ServingState.UNRECOGNIZED);
+        checkArgument(state != null);
         return ServingState.WRITABLE == state;
     }
 
@@ -190,14 +187,13 @@ public class ProtoUtils {
      */
     public static GetStorageContainerEndpointRequest createGetStorageContainerEndpointRequest(
         List<Revisioned<Long>> storageContainers) {
-        GetStorageContainerEndpointRequest.Builder builder = GetStorageContainerEndpointRequest.newBuilder();
+        GetStorageContainerEndpointRequest request = new GetStorageContainerEndpointRequest();
         for (Revisioned<Long> storageContainer : storageContainers) {
-            builder.addRequests(
-                OneStorageContainerEndpointRequest.newBuilder()
-                    .setStorageContainer(storageContainer.getValue())
-                    .setRevision(storageContainer.getRevision()));
+            request.addRequest()
+                .setStorageContainer(storageContainer.getValue())
+                .setRevision(storageContainer.getRevision());
         }
-        return builder.build();
+        return request;
     }
 
     /**
@@ -208,15 +204,14 @@ public class ProtoUtils {
      */
     public static GetStorageContainerEndpointResponse createGetStorageContainerEndpointResponse(
         List<StorageContainerEndpoint> endpoints) {
-        GetStorageContainerEndpointResponse.Builder builder = GetStorageContainerEndpointResponse.newBuilder();
-        builder.setStatusCode(StatusCode.SUCCESS);
+        GetStorageContainerEndpointResponse response = new GetStorageContainerEndpointResponse();
+        response.setStatusCode(StatusCode.SUCCESS);
         for (StorageContainerEndpoint endpoint : endpoints) {
-            builder.addResponses(
-                OneStorageContainerEndpointResponse.newBuilder()
-                    .setStatusCode(StatusCode.SUCCESS)
-                    .setEndpoint(endpoint));
+            OneStorageContainerEndpointResponse one = response.addResponse();
+            one.setStatusCode(StatusCode.SUCCESS);
+            one.setEndpoint().copyFrom(endpoint);
         }
-        return builder.build();
+        return response;
     }
 
 
@@ -225,16 +220,14 @@ public class ProtoUtils {
     //
 
     public static GetActiveRangesRequest createGetActiveRangesRequest(long streamId) {
-        return GetActiveRangesRequest.newBuilder()
-                .setStreamId(streamId)
-                .build();
+        return new GetActiveRangesRequest().setStreamId(streamId);
     }
 
     public static GetActiveRangesRequest createGetActiveRangesRequest(StreamProperties streamProps) {
-        return GetActiveRangesRequest.newBuilder()
-                .setStreamId(streamProps.getStreamId())
-                .setStreamProps(streamProps)
-                .build();
+        GetActiveRangesRequest request = new GetActiveRangesRequest()
+                .setStreamId(streamProps.getStreamId());
+        request.setStreamProps().copyFrom(streamProps);
+        return request;
     }
 
     //
@@ -250,10 +243,9 @@ public class ProtoUtils {
      */
     public static CreateNamespaceRequest createCreateNamespaceRequest(String nsName,
                                                                       NamespaceConfiguration nsConf) {
-        return CreateNamespaceRequest.newBuilder()
-            .setName(nsName)
-            .setNsConf(nsConf)
-            .build();
+        CreateNamespaceRequest request = new CreateNamespaceRequest().setName(nsName);
+        request.setNsConf().copyFrom(nsConf);
+        return request;
     }
 
     /**
@@ -263,9 +255,7 @@ public class ProtoUtils {
      * @return a delete namespace request.
      */
     public static DeleteNamespaceRequest createDeleteNamespaceRequest(String colName) {
-        return DeleteNamespaceRequest.newBuilder()
-            .setName(colName)
-            .build();
+        return new DeleteNamespaceRequest().setName(colName);
     }
 
     /**
@@ -275,9 +265,7 @@ public class ProtoUtils {
      * @return a get namespace request.
      */
     public static GetNamespaceRequest createGetNamespaceRequest(String colName) {
-        return GetNamespaceRequest.newBuilder()
-            .setName(colName)
-            .build();
+        return new GetNamespaceRequest().setName(colName);
     }
 
     //
@@ -295,11 +283,11 @@ public class ProtoUtils {
     public static CreateStreamRequest createCreateStreamRequest(String nsName,
                                                                 String streamName,
                                                                 StreamConfiguration streamConf) {
-        return CreateStreamRequest.newBuilder()
+        CreateStreamRequest request = new CreateStreamRequest()
             .setNsName(nsName)
-            .setName(streamName)
-            .setStreamConf(streamConf)
-            .build();
+            .setName(streamName);
+        request.setStreamConf().copyFrom(streamConf);
+        return request;
     }
 
     /**
@@ -311,11 +299,11 @@ public class ProtoUtils {
      */
     public static GetStreamRequest createGetStreamRequest(String nsName,
                                                           String streamName) {
-        return GetStreamRequest.newBuilder()
-            .setStreamName(StreamName.newBuilder()
-                .setNamespaceName(nsName)
-                .setStreamName(streamName))
-            .build();
+        GetStreamRequest request = new GetStreamRequest();
+        request.setStreamName()
+            .setNamespaceName(nsName)
+            .setStreamName(streamName);
+        return request;
     }
 
     /**
@@ -325,9 +313,7 @@ public class ProtoUtils {
      * @return a create stream request.
      */
     public static GetStreamRequest createGetStreamRequest(long streamId) {
-        return GetStreamRequest.newBuilder()
-            .setStreamId(streamId)
-            .build();
+        return new GetStreamRequest().setStreamId(streamId);
     }
 
     /**
@@ -339,10 +325,7 @@ public class ProtoUtils {
      */
     public static DeleteStreamRequest createDeleteStreamRequest(String nsName,
                                                                 String streamName) {
-        return DeleteStreamRequest.newBuilder()
-            .setName(streamName)
-            .setNsName(nsName)
-            .build();
+        return new DeleteStreamRequest().setName(streamName).setNsName(nsName);
     }
 
 }

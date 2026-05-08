@@ -61,12 +61,16 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
 
     private static final long streamId = 1234L;
     private static final long groupId = 456L;
-    private static final StreamProperties streamProps = StreamProperties.newBuilder()
-        .setStreamId(streamId)
-        .setStorageContainerId(groupId)
-        .setStreamName("test-meta-range-client")
-        .setStreamConf(StreamConfiguration.newBuilder().build())
-        .build();
+    private static final StreamProperties streamProps = newStreamProperties();
+
+    private static StreamProperties newStreamProperties() {
+        StreamProperties props = new StreamProperties();
+        props.setStreamId(streamId);
+        props.setStorageContainerId(groupId);
+        props.setStreamName("test-meta-range-client");
+        props.setStreamConf().copyFrom(new StreamConfiguration());
+        return props;
+    }
     private final LocationClient locationClient = mock(LocationClient.class);
     private MetaRangeClientImpl metaRangeClient;
     private final StorageServerChannel rsChannel = mock(StorageServerChannel.class);
@@ -96,30 +100,22 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
     }
 
 
-    private RelatedRanges buildRelatedRange(long startKey,
-                                            long endKey,
-                                            long rangeId,
-                                            long groupId,
-                                            List<Long> parentRanges) {
-        return RelatedRanges.newBuilder()
-            .setProps(buildRangeMeta(
-                startKey, endKey, rangeId, groupId))
-            .setType(RelationType.PARENTS)
-            .addAllRelatedRanges(parentRanges)
-            .build();
-    }
-
-
-    private RangeProperties buildRangeMeta(long startKey,
-                                           long endKey,
-                                           long rangeId,
-                                           long groupId) {
-        return RangeProperties.newBuilder()
-            .setStartHashKey(startKey)
-            .setEndHashKey(endKey)
-            .setRangeId(rangeId)
-            .setStorageContainerId(groupId)
-            .build();
+    private void addRelatedRange(GetActiveRangesResponse response,
+                                 long startKey,
+                                 long endKey,
+                                 long rangeId,
+                                 long groupId,
+                                 List<Long> parentRanges) {
+        RelatedRanges related = response.addRange();
+        RangeProperties props = related.setProps();
+        props.setStartHashKey(startKey);
+        props.setEndHashKey(endKey);
+        props.setRangeId(rangeId);
+        props.setStorageContainerId(groupId);
+        related.setType(RelationType.PARENTS);
+        for (Long parent : parentRanges) {
+            related.addRelatedRange(parent);
+        }
     }
 
     @Test
@@ -128,13 +124,10 @@ public class TestMetaRangeClientImpl extends GrpcClientTestBase {
         metaRangeClient.getStorageContainerClient().setStorageServerChannelFuture(serviceFuture);
 
         // create response
-        GetActiveRangesResponse getActiveRangesResponse = GetActiveRangesResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .addRanges(
-                buildRelatedRange(Long.MIN_VALUE, 0L, 123L, 1L, Lists.newArrayList(113L))
-            ).addRanges(
-                buildRelatedRange(0L, Long.MAX_VALUE, 124L, 2L, Lists.newArrayList(114L))
-            ).build();
+        GetActiveRangesResponse getActiveRangesResponse = new GetActiveRangesResponse();
+        getActiveRangesResponse.setCode(StatusCode.SUCCESS);
+        addRelatedRange(getActiveRangesResponse, Long.MIN_VALUE, 0L, 123L, 1L, Lists.newArrayList(113L));
+        addRelatedRange(getActiveRangesResponse, 0L, Long.MAX_VALUE, 124L, 2L, Lists.newArrayList(114L));
 
         MetaRangeServiceImplBase metaRangeService = new MetaRangeServiceImplBase() {
             @Override

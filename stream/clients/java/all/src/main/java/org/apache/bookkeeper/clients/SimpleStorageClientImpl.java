@@ -34,6 +34,7 @@ import org.apache.bookkeeper.api.exceptions.ApiException;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.grpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.clients.impl.kv.ByteBufTableImpl;
 import org.apache.bookkeeper.clients.impl.kv.PByteBufSimpleTableImpl;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
@@ -43,8 +44,6 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stream.proto.StorageType;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 
 /**
@@ -63,7 +62,7 @@ public class SimpleStorageClientImpl extends SimpleClientBase implements Storage
         super(settings);
         this.defaultNamespace = namespaceName;
         this.rootRangeService = GrpcUtils.configureGrpcStub(
-            RootRangeServiceGrpc.newFutureStub(channel),
+            RootRangeServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 
@@ -74,7 +73,7 @@ public class SimpleStorageClientImpl extends SimpleClientBase implements Storage
         super(settings, schedulerResource, channel, false);
         this.defaultNamespace = namespaceName;
         this.rootRangeService = GrpcUtils.configureGrpcStub(
-            RootRangeServiceGrpc.newFutureStub(channel),
+            RootRangeServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 

@@ -145,9 +145,8 @@ public abstract class PingPongServiceTestBase {
         PingPongServiceBlockingStub clientBlocking = PingPongServiceGrpc.newBlockingStub(clientChannel);
 
         long sequence = ThreadLocalRandom.current().nextLong();
-        PingRequest request = PingRequest.newBuilder()
-            .setSequence(sequence)
-            .build();
+        PingRequest request = new PingRequest()
+            .setSequence(sequence);
         PongResponse response = clientBlocking.pingPong(request);
         assertEquals(sequence, response.getLastSequence());
         assertEquals(1, response.getNumPingReceived());
@@ -159,9 +158,8 @@ public abstract class PingPongServiceTestBase {
         PingPongServiceBlockingStub clientBlocking = PingPongServiceGrpc.newBlockingStub(clientChannel);
 
         long sequence = ThreadLocalRandom.current().nextLong(100000);
-        PingRequest request = PingRequest.newBuilder()
-            .setSequence(sequence)
-            .build();
+        PingRequest request = new PingRequest()
+            .setSequence(sequence);
         Iterator<PongResponse> respIter = clientBlocking.lotsOfPongs(request);
         int count = 0;
         while (respIter.hasNext()) {
@@ -197,9 +195,8 @@ public abstract class PingPongServiceTestBase {
         });
 
         for (int i = 0; i < numPings; i++) {
-            PingRequest request = PingRequest.newBuilder()
-                .setSequence(sequence + i)
-                .build();
+            PingRequest request = new PingRequest()
+                .setSequence(sequence + i);
             pinger.onNext(request);
         }
         pinger.onCompleted();
@@ -241,9 +238,8 @@ public abstract class PingPongServiceTestBase {
         final LinkedBlockingQueue<PingRequest> reqQueue = new LinkedBlockingQueue<>();
         for (int i = 0; i < numPings; i++) {
             final long sequence = ThreadLocalRandom.current().nextLong(100000);
-            PingRequest request = PingRequest.newBuilder()
-                .setSequence(sequence)
-                .build();
+            PingRequest request = new PingRequest()
+                .setSequence(sequence);
             reqQueue.put(request);
             pinger.onNext(request);
         }

@@ -128,10 +128,9 @@ public class StorageServer {
         log.warn()
             .attr("hostname", hostname)
             .log("Decided to use hostname");
-        return Endpoint.newBuilder()
+        return new Endpoint()
             .setHostname(hostname)
-            .setPort(port)
-            .build();
+            .setPort(port);
     }
 
     public static void main(String[] args) {

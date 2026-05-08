@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.clients.impl.kv;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +34,6 @@ import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceImplBase;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
@@ -56,16 +54,13 @@ public class TxnRequestProcessorTest extends GrpcClientTestBase {
     }
 
     protected TxnResponse newSuccessResponse() {
-        return TxnResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .build())
-            .build();
+        TxnResponse resp = new TxnResponse();
+        resp.setHeader().setCode(StatusCode.SUCCESS);
+        return resp;
     }
 
     protected TxnRequest newRequest() {
-        return TxnRequest.newBuilder()
-            .build();
+        return new TxnRequest();
     }
 
     @Test
@@ -109,7 +104,7 @@ public class TxnRequestProcessorTest extends GrpcClientTestBase {
             scheduler,
             ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         assertEquals("test", FutureUtils.result(processor.process()));
-        assertSame(request, receivedRequest.get());
+        assertEquals(request, receivedRequest.get());
     }
 
 }

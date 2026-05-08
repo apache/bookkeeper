@@ -18,13 +18,9 @@
 
 package org.apache.bookkeeper.statelib.impl.mvcc;
 
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.InvalidProtocolBufferException;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.bookkeeper.common.coder.Coder;
@@ -44,15 +40,18 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
     private static final MVCCRecordCoder INSTANCE = new MVCCRecordCoder();
 
 
-    @Override
-    public byte[] encode(MVCCRecord record) {
-        KeyMeta meta = KeyMeta.newBuilder()
+    private static KeyMeta toKeyMeta(MVCCRecord record) {
+        return new KeyMeta()
             .setCreateRevision(record.getCreateRev())
             .setModRevision(record.getModRev())
             .setVersion(record.getVersion())
             .setValueType(record.getValueType())
-            .setExpireTime(record.getExpireTime())
-            .build();
+            .setExpireTime(record.getExpireTime());
+    }
+
+    @Override
+    public byte[] encode(MVCCRecord record) {
+        KeyMeta meta = toKeyMeta(record);
         int metaLen = meta.getSerializedSize();
         int valLen = record.getValue().readableBytes();
 
@@ -68,13 +67,12 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         ByteBuf buf = Unpooled.wrappedBuffer(data);
         buf.writerIndex(0);
         buf.writeInt(metaLen);
-        CodedOutputStream out = CodedOutputStream.newInstance(data, Integer.BYTES, metaLen);
         try {
-            meta.writeTo(out);
-        } catch (IOException e) {
+            meta.writeTo(buf);
+        } catch (RuntimeException e) {
+            ReferenceCountUtil.release(buf);
             throw new StateStoreRuntimeException("Failed to serialize key metadata", e);
         }
-        buf.writerIndex(buf.writerIndex() + metaLen);
         buf.writeInt(valLen);
         buf.writeBytes(record.getValue().slice());
         ReferenceCountUtil.release(buf);
@@ -89,14 +87,7 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
 
     @Override
     public int getSerializedSize(MVCCRecord record) {
-        KeyMeta meta = KeyMeta.newBuilder()
-            .setCreateRevision(record.getCreateRev())
-            .setModRevision(record.getModRev())
-            .setVersion(record.getVersion())
-            .setValueType(record.getValueType())
-            .setExpireTime(record.getExpireTime())
-            .build();
-        int metaLen = meta.getSerializedSize();
+        int metaLen = toKeyMeta(record).getSerializedSize();
         int valLen = record.getValue().readableBytes();
 
         return Integer.BYTES    // meta len
@@ -110,14 +101,12 @@ final class MVCCRecordCoder implements Coder<MVCCRecord> {
         ByteBuf copy = data.slice();
 
         int metaLen = copy.readInt();
-        ByteBuffer metaBuf = copy.slice(copy.readerIndex(), metaLen).nioBuffer();
-        KeyMeta meta;
+        KeyMeta meta = new KeyMeta();
         try {
-            meta = KeyMeta.parseFrom(metaBuf);
-        } catch (InvalidProtocolBufferException e) {
+            meta.parseFrom(copy, metaLen);
+        } catch (RuntimeException e) {
             throw new StateStoreRuntimeException("Failed to deserialize key metadata", e);
         }
-        copy.skipBytes(metaLen);
         int valLen = copy.readInt();
         ByteBuf valBuf = copy.retainedSlice(copy.readerIndex(), valLen);
 

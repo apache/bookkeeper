@@ -66,26 +66,76 @@ public class TestGrpcRootRangeService {
 
     private static final long colId = 12345L;
     private static final String nsName = "test-namespace-name";
-    private static final NamespaceConfiguration namespaceConf =
-        NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
-    private static final NamespaceProperties namespaceProps =
-        NamespaceProperties.newBuilder()
+    private static final NamespaceConfiguration namespaceConf = createNamespaceConf();
+
+    private static NamespaceConfiguration createNamespaceConf() {
+        NamespaceConfiguration conf = new NamespaceConfiguration();
+        conf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
+
+    private static final NamespaceProperties namespaceProps = createNamespaceProps();
+
+    private static NamespaceProperties createNamespaceProps() {
+        NamespaceProperties props = new NamespaceProperties()
             .setNamespaceId(colId)
-            .setNamespaceName(nsName)
-            .setDefaultStreamConf(namespaceConf.getDefaultStreamConf())
-            .build();
+            .setNamespaceName(nsName);
+        props.setDefaultStreamConf().copyFrom(namespaceConf.getDefaultStreamConf());
+        return props;
+    }
+
     private static final String streamName = "test-stream-name";
-    private static final StreamProperties streamProps =
-        StreamProperties.newBuilder()
+    private static final StreamProperties streamProps = createStreamProps();
+
+    private static StreamProperties createStreamProps() {
+        StreamProperties props = new StreamProperties()
             .setStorageContainerId(1234L)
-            .setStreamConf(DEFAULT_STREAM_CONF)
             .setStreamName(streamName)
-            .setStreamId(1234L)
-            .build();
+            .setStreamId(1234L);
+        props.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return props;
+    }
 
     private static final Throwable CAUSE = new StorageException("test-grpc-root-range-service");
+
+    private static CreateNamespaceRequest createNsRequest() {
+        CreateNamespaceRequest req = new CreateNamespaceRequest()
+            .setName(nsName);
+        req.setNsConf().copyFrom(namespaceConf);
+        return req;
+    }
+
+    private static DeleteNamespaceRequest deleteNsRequest() {
+        return new DeleteNamespaceRequest()
+            .setName(nsName);
+    }
+
+    private static GetNamespaceRequest getNsRequest() {
+        return new GetNamespaceRequest()
+            .setName(nsName);
+    }
+
+    private static CreateStreamRequest createStreamRequest() {
+        CreateStreamRequest req = new CreateStreamRequest()
+            .setNsName(nsName)
+            .setName(streamName);
+        req.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return req;
+    }
+
+    private static DeleteStreamRequest deleteStreamRequest() {
+        return new DeleteStreamRequest()
+            .setNsName(nsName)
+            .setName(streamName);
+    }
+
+    private static GetStreamRequest getStreamRequest() {
+        GetStreamRequest req = new GetStreamRequest();
+        StreamName sn = req.setStreamName();
+        sn.setNamespaceName(nsName);
+        sn.setStreamName(streamName);
+        return req;
+    }
 
     //
     // Test Namespace API
@@ -95,10 +145,9 @@ public class TestGrpcRootRangeService {
     public void testCreateNamespaceSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .setNsProps(namespaceProps)
-            .build();
+        CreateNamespaceResponse createResp = new CreateNamespaceResponse()
+            .setCode(StatusCode.SUCCESS);
+        createResp.setNsProps().copyFrom(namespaceProps);
         CreateNamespaceRequest createReq = createCreateNamespaceRequest(nsName, namespaceConf);
         when(rangeService.createNamespace(createReq)).thenReturn(
             CompletableFuture.completedFuture(createResp));
@@ -123,10 +172,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.createNamespace(
-            CreateNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .setNsConf(namespaceConf)
-                .build(),
+            createNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -139,9 +185,8 @@ public class TestGrpcRootRangeService {
     public void testCreateNamespaceFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        CreateNamespaceResponse createResp = CreateNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        CreateNamespaceResponse createResp = new CreateNamespaceResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         CreateNamespaceRequest createReq = createCreateNamespaceRequest(nsName, namespaceConf);
         when(rangeService.createNamespace(createReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -166,10 +211,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.createNamespace(
-            CreateNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .setNsConf(namespaceConf)
-                .build(),
+            createNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -182,9 +224,8 @@ public class TestGrpcRootRangeService {
     public void testDeleteNamespaceSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .build();
+        DeleteNamespaceResponse deleteResp = new DeleteNamespaceResponse()
+            .setCode(StatusCode.SUCCESS);
         DeleteNamespaceRequest deleteReq = createDeleteNamespaceRequest(nsName);
         when(rangeService.deleteNamespace(deleteReq)).thenReturn(
             CompletableFuture.completedFuture(deleteResp));
@@ -209,9 +250,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.deleteNamespace(
-            DeleteNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .build(),
+            deleteNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -224,9 +263,8 @@ public class TestGrpcRootRangeService {
     public void testDeleteNamespaceFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        DeleteNamespaceResponse deleteResp = DeleteNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        DeleteNamespaceResponse deleteResp = new DeleteNamespaceResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         DeleteNamespaceRequest deleteReq = createDeleteNamespaceRequest(nsName);
         when(rangeService.deleteNamespace(deleteReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -251,9 +289,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.deleteNamespace(
-            DeleteNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .build(),
+            deleteNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -266,10 +302,9 @@ public class TestGrpcRootRangeService {
     public void testGetNamespaceSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .setNsProps(namespaceProps)
-            .build();
+        GetNamespaceResponse getResp = new GetNamespaceResponse()
+            .setCode(StatusCode.SUCCESS);
+        getResp.setNsProps().copyFrom(namespaceProps);
         GetNamespaceRequest getReq = createGetNamespaceRequest(nsName);
         when(rangeService.getNamespace(getReq)).thenReturn(
             CompletableFuture.completedFuture(getResp));
@@ -294,9 +329,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.getNamespace(
-            GetNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .build(),
+            getNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -309,9 +342,8 @@ public class TestGrpcRootRangeService {
     public void testGetNamespaceFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        GetNamespaceResponse getResp = GetNamespaceResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        GetNamespaceResponse getResp = new GetNamespaceResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         GetNamespaceRequest getReq = createGetNamespaceRequest(nsName);
         when(rangeService.getNamespace(getReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -336,9 +368,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.getNamespace(
-            GetNamespaceRequest.newBuilder()
-                .setName(nsName)
-                .build(),
+            getNsRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -355,10 +385,9 @@ public class TestGrpcRootRangeService {
     public void testCreateStreamSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .setStreamProps(streamProps)
-            .build();
+        CreateStreamResponse createResp = new CreateStreamResponse()
+            .setCode(StatusCode.SUCCESS);
+        createResp.setStreamProps().copyFrom(streamProps);
         CreateStreamRequest createReq = createCreateStreamRequest(nsName, streamName, DEFAULT_STREAM_CONF);
         when(rangeService.createStream(createReq)).thenReturn(
             CompletableFuture.completedFuture(createResp));
@@ -383,11 +412,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.createStream(
-            CreateStreamRequest.newBuilder()
-                .setNsName(nsName)
-                .setName(streamName)
-                .setStreamConf(DEFAULT_STREAM_CONF)
-                .build(),
+            createStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -400,9 +425,8 @@ public class TestGrpcRootRangeService {
     public void testCreateStreamFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        CreateStreamResponse createResp = CreateStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        CreateStreamResponse createResp = new CreateStreamResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         CreateStreamRequest createReq = createCreateStreamRequest(nsName, streamName, DEFAULT_STREAM_CONF);
         when(rangeService.createStream(createReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -427,11 +451,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.createStream(
-            CreateStreamRequest.newBuilder()
-                .setNsName(nsName)
-                .setName(streamName)
-                .setStreamConf(DEFAULT_STREAM_CONF)
-                .build(),
+            createStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -444,9 +464,8 @@ public class TestGrpcRootRangeService {
     public void testDeleteStreamSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .build();
+        DeleteStreamResponse deleteResp = new DeleteStreamResponse()
+            .setCode(StatusCode.SUCCESS);
         DeleteStreamRequest deleteReq = createDeleteStreamRequest(nsName, streamName);
         when(rangeService.deleteStream(deleteReq)).thenReturn(
             CompletableFuture.completedFuture(deleteResp));
@@ -471,10 +490,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.deleteStream(
-            DeleteStreamRequest.newBuilder()
-                .setNsName(nsName)
-                .setName(streamName)
-                .build(),
+            deleteStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -487,9 +503,8 @@ public class TestGrpcRootRangeService {
     public void testDeleteStreamFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        DeleteStreamResponse deleteResp = DeleteStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        DeleteStreamResponse deleteResp = new DeleteStreamResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         DeleteStreamRequest deleteReq = createDeleteStreamRequest(nsName, streamName);
         when(rangeService.deleteStream(deleteReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -514,10 +529,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.deleteStream(
-            DeleteStreamRequest.newBuilder()
-                .setNsName(nsName)
-                .setName(streamName)
-                .build(),
+            deleteStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -530,10 +542,9 @@ public class TestGrpcRootRangeService {
     public void testGetStreamSuccess() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        GetStreamResponse getResp = GetStreamResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .setStreamProps(streamProps)
-            .build();
+        GetStreamResponse getResp = new GetStreamResponse()
+            .setCode(StatusCode.SUCCESS);
+        getResp.setStreamProps().copyFrom(streamProps);
         GetStreamRequest getReq = createGetStreamRequest(nsName, streamName);
         when(rangeService.getStream(getReq)).thenReturn(
             CompletableFuture.completedFuture(getResp));
@@ -558,11 +569,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.getStream(
-            GetStreamRequest.newBuilder()
-                .setStreamName(StreamName.newBuilder()
-                    .setNamespaceName(nsName)
-                    .setStreamName(streamName))
-                .build(),
+            getStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());
@@ -575,9 +582,8 @@ public class TestGrpcRootRangeService {
     public void testGetStreamFailure() throws Exception {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcRootRangeService grpcService = new GrpcRootRangeService(rangeService);
-        GetStreamResponse getResp = GetStreamResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        GetStreamResponse getResp = new GetStreamResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
         GetStreamRequest getReq = createGetStreamRequest(nsName, streamName);
         when(rangeService.getStream(getReq)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -602,11 +608,7 @@ public class TestGrpcRootRangeService {
             }
         };
         grpcService.getStream(
-            GetStreamRequest.newBuilder()
-                .setStreamName(StreamName.newBuilder()
-                    .setNamespaceName(nsName)
-                    .setStreamName(streamName))
-                .build(),
+            getStreamRequest(),
             streamObserver);
         latch.await();
         assertNull(exceptionHolder.get());

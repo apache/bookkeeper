@@ -38,11 +38,10 @@ public class PingPongService extends PingPongServiceImplBase {
 
     @Override
     public void pingPong(PingRequest request, StreamObserver<PongResponse> responseObserver) {
-        responseObserver.onNext(PongResponse.newBuilder()
+        responseObserver.onNext(new PongResponse()
             .setLastSequence(request.getSequence())
             .setNumPingReceived(1)
-            .setSlotId(0)
-            .build());
+            .setSlotId(0));
         responseObserver.onCompleted();
     }
 
@@ -66,11 +65,10 @@ public class PingPongService extends PingPongServiceImplBase {
 
             @Override
             public void onCompleted() {
-                responseObserver.onNext(PongResponse.newBuilder()
+                responseObserver.onNext(new PongResponse()
                     .setNumPingReceived(pingCount)
                     .setLastSequence(lastSequence)
-                    .setSlotId(0)
-                    .build());
+                    .setSlotId(0));
                 responseObserver.onCompleted();
             }
         };
@@ -80,11 +78,10 @@ public class PingPongService extends PingPongServiceImplBase {
     public void lotsOfPongs(PingRequest request, StreamObserver<PongResponse> responseObserver) {
         long sequence = request.getSequence();
         for (int i = 0; i < streamPongSize; i++) {
-            responseObserver.onNext(PongResponse.newBuilder()
+            responseObserver.onNext(new PongResponse()
                 .setLastSequence(sequence)
                 .setNumPingReceived(1)
-                .setSlotId(i)
-                .build());
+                .setSlotId(i));
         }
         responseObserver.onCompleted();
     }
@@ -98,11 +95,10 @@ public class PingPongService extends PingPongServiceImplBase {
             @Override
             public void onNext(PingRequest ping) {
                 pingCount++;
-                responseObserver.onNext(PongResponse.newBuilder()
+                responseObserver.onNext(new PongResponse()
                     .setLastSequence(ping.getSequence())
                     .setNumPingReceived(pingCount)
-                    .setSlotId(0)
-                    .build());
+                    .setSlotId(0));
             }
 
             @Override

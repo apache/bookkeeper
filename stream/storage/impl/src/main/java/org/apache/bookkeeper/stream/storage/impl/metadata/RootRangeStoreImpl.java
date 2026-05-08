@@ -23,7 +23,6 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.MIN_DATA_S
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateNamespaceName;
 import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.validateStreamName;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.CustomLog;
@@ -221,12 +220,11 @@ public class RootRangeStoreImpl
         long namespaceId = currentNsId + 1;
         String nsName = request.getName();
 
-        NamespaceMetadata metadata = NamespaceMetadata.newBuilder()
-            .setProps(NamespaceProperties.newBuilder()
-                .setNamespaceId(namespaceId)
-                .setNamespaceName(nsName)
-                .setDefaultStreamConf(request.getNsConf().getDefaultStreamConf()))
-            .build();
+        NamespaceMetadata metadata = new NamespaceMetadata();
+        NamespaceProperties props = metadata.setProps();
+        props.setNamespaceId(namespaceId);
+        props.setNamespaceName(nsName);
+        props.setDefaultStreamConf().copyFrom(request.getNsConf().getDefaultStreamConf());
 
         byte[] nsNameKey = getNamespaceNameKey(nsName);
         byte[] nsNameVal = Bytes.toBytes(namespaceId);
@@ -248,15 +246,15 @@ public class RootRangeStoreImpl
         return store.txn(txn)
             .thenApply(txnResult -> {
                 try {
-                    CreateNamespaceResponse.Builder respBuilder = CreateNamespaceResponse.newBuilder();
+                    CreateNamespaceResponse resp = new CreateNamespaceResponse();
                     if (txnResult.isSuccess()) {
-                        respBuilder.setCode(StatusCode.SUCCESS);
-                        respBuilder.setNsProps(metadata.getProps());
+                        resp.setCode(StatusCode.SUCCESS);
+                        resp.setNsProps().copyFrom(metadata.getProps());
                     } else {
                         // TODO: differentiate the error code
-                        respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                        resp.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                     }
-                    return respBuilder.build();
+                    return resp;
                 } finally {
                     txnResult.close();
                 }
@@ -293,9 +291,8 @@ public class RootRangeStoreImpl
     CompletableFuture<DeleteNamespaceResponse> deleteNamespace(String nsName, NamespaceMetadata nsMetadata) {
         if (null == nsMetadata) {
             return FutureUtils.value(
-                DeleteNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-                    .build());
+                new DeleteNamespaceResponse()
+                    .setCode(StatusCode.NAMESPACE_NOT_FOUND));
         }
 
         byte[] nsNameKey = getNamespaceNameKey(nsName);
@@ -316,14 +313,14 @@ public class RootRangeStoreImpl
 
         return store.txn(txnOp).thenApply(txnResult -> {
             try {
-                DeleteNamespaceResponse.Builder respBuilder = DeleteNamespaceResponse.newBuilder();
+                DeleteNamespaceResponse resp = new DeleteNamespaceResponse();
                 if (txnResult.isSuccess()) {
-                    respBuilder.setCode(StatusCode.SUCCESS);
+                    resp.setCode(StatusCode.SUCCESS);
                 } else {
                     // TODO: differentiate the error code
-                    respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    resp.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
-                return respBuilder.build();
+                return resp;
             } finally {
                 txnResult.close();
             }
@@ -336,19 +333,18 @@ public class RootRangeStoreImpl
         if (!validateNamespaceName(nsName)) {
             log.error().attr("nsName", nsName).log("Failed to get namespace due to invalid namespace name");
             return FutureUtils.value(
-                GetNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.INVALID_NAMESPACE_NAME)
-                    .build());
+                new GetNamespaceResponse()
+                    .setCode(StatusCode.INVALID_NAMESPACE_NAME));
         } else {
             return getNamespace(request.getName()).thenApply(nsMetadata -> {
-                GetNamespaceResponse.Builder nsRespBuilder = GetNamespaceResponse.newBuilder();
+                GetNamespaceResponse nsResp = new GetNamespaceResponse();
                 if (null == nsMetadata) {
-                    nsRespBuilder.setCode(StatusCode.NAMESPACE_NOT_FOUND);
+                    nsResp.setCode(StatusCode.NAMESPACE_NOT_FOUND);
                 } else {
-                    nsRespBuilder.setCode(StatusCode.SUCCESS);
-                    nsRespBuilder.setNsProps(nsMetadata.getProps());
+                    nsResp.setCode(StatusCode.SUCCESS);
+                    nsResp.setNsProps().copyFrom(nsMetadata.getProps());
                 }
-                return nsRespBuilder.build();
+                return nsResp;
             });
         }
     }
@@ -357,8 +353,13 @@ public class RootRangeStoreImpl
         byte[] nsIdKey = getNamespaceIdKey(nsId);
         return store.get(nsIdKey).thenCompose(nsIdVal -> {
             try {
-                return FutureUtils.value(null != nsIdVal ? NamespaceMetadata.parseFrom(nsIdVal) : null);
-            } catch (InvalidProtocolBufferException e) {
+                if (null == nsIdVal) {
+                    return FutureUtils.value(null);
+                }
+                NamespaceMetadata nsMetadata = new NamespaceMetadata();
+                nsMetadata.parseFrom(nsIdVal);
+                return FutureUtils.value(nsMetadata);
+            } catch (RuntimeException e) {
                 return FutureUtils.exception(e);
             }
         });
@@ -388,7 +389,7 @@ public class RootRangeStoreImpl
 
         StatusCode code = verifyStreamRequest(nsName, streamName);
         if (StatusCode.SUCCESS != code) {
-            return FutureUtils.value(CreateStreamResponse.newBuilder().setCode(code).build());
+            return FutureUtils.value(new CreateStreamResponse().setCode(code));
         }
 
         return createStream(nsName, streamName, request.getStreamConf());
@@ -416,14 +417,14 @@ public class RootRangeStoreImpl
                 streamConf
             ))
             .exceptionally(cause ->
-                CreateStreamResponse.newBuilder().setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
+                new CreateStreamResponse().setCode(StatusCode.INTERNAL_SERVER_ERROR));
     }
 
     private CompletableFuture<CreateStreamResponse> createStream(NamespaceMetadata nsMetadata,
                                                                  String streamName,
                                                                  StreamConfiguration streamConf) {
         if (null == nsMetadata) {
-            return FutureUtils.value(CreateStreamResponse.newBuilder().setCode(StatusCode.NAMESPACE_NOT_FOUND).build());
+            return FutureUtils.value(new CreateStreamResponse().setCode(StatusCode.NAMESPACE_NOT_FOUND));
         }
 
         return getValue(STREAM_ID_KEY)
@@ -471,12 +472,11 @@ public class RootRangeStoreImpl
 
         long scId = placementPolicy.placeStreamRange(streamId, 0L);
 
-        StreamProperties streamProps = StreamProperties.newBuilder()
+        StreamProperties streamProps = new StreamProperties()
             .setStreamId(streamId)
             .setStreamName(streamName)
-            .setStorageContainerId(scId)
-            .setStreamConf(streamConf)
-            .build();
+            .setStorageContainerId(scId);
+        streamProps.setStreamConf().copyFrom(streamConf);
 
         byte[] nsIdKey = getNamespaceIdKey(nsId);
         byte[] streamNameKey = getStreamNameKey(nsId, streamName);
@@ -505,16 +505,16 @@ public class RootRangeStoreImpl
         return store.txn(txn)
             .thenApply(txnResult -> {
                 try {
-                    CreateStreamResponse.Builder respBuilder = CreateStreamResponse.newBuilder();
+                    CreateStreamResponse resp = new CreateStreamResponse();
                     if (txnResult.isSuccess()) {
-                        respBuilder.setCode(StatusCode.SUCCESS);
-                        respBuilder.setStreamProps(streamProps);
+                        resp.setCode(StatusCode.SUCCESS);
+                        resp.setStreamProps().copyFrom(streamProps);
                     } else {
                         // TODO: differentiate the error codes
-                        respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                        resp.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                     }
-                    logStreamOp("create", nsId, streamId, streamName, respBuilder.getCode());
-                    return respBuilder.build();
+                    logStreamOp("create", nsId, streamId, streamName, resp.getCode());
+                    return resp;
                 } finally {
                     txnResult.close();
                     txn.close();
@@ -522,7 +522,7 @@ public class RootRangeStoreImpl
             })
             .exceptionally(cause -> {
                 txn.close();
-                return CreateStreamResponse.newBuilder().setCode(StatusCode.INTERNAL_SERVER_ERROR).build();
+                return new CreateStreamResponse().setCode(StatusCode.INTERNAL_SERVER_ERROR);
             });
     }
 
@@ -533,7 +533,7 @@ public class RootRangeStoreImpl
 
         StatusCode code = verifyStreamRequest(nsName, streamName);
         if (StatusCode.SUCCESS != code) {
-            return FutureUtils.value(DeleteStreamResponse.newBuilder().setCode(code).build());
+            return FutureUtils.value(new DeleteStreamResponse().setCode(code));
         }
 
         return deleteStream(nsName, streamName);
@@ -549,7 +549,7 @@ public class RootRangeStoreImpl
                                                                  String streamName) {
 
         if (null == nsMetadata) {
-            return FutureUtils.value(DeleteStreamResponse.newBuilder().setCode(StatusCode.NAMESPACE_NOT_FOUND).build());
+            return FutureUtils.value(new DeleteStreamResponse().setCode(StatusCode.NAMESPACE_NOT_FOUND));
         }
 
         long nsId = nsMetadata.getProps().getNamespaceId();
@@ -558,9 +558,8 @@ public class RootRangeStoreImpl
         return store.get(streamNameKey).thenCompose(streamIdBytes -> {
             if (null == streamIdBytes) {
                 return FutureUtils.value(
-                    DeleteStreamResponse.newBuilder()
-                        .setCode(StatusCode.STREAM_NOT_FOUND)
-                        .build());
+                    new DeleteStreamResponse()
+                        .setCode(StatusCode.STREAM_NOT_FOUND));
             }
 
             long streamId = Bytes.toLong(streamIdBytes, 0);
@@ -595,14 +594,14 @@ public class RootRangeStoreImpl
 
         return store.txn(txnOp).thenApply(txnResult -> {
             try {
-                DeleteStreamResponse.Builder respBuilder = DeleteStreamResponse.newBuilder();
+                DeleteStreamResponse resp = new DeleteStreamResponse();
                 if (txnResult.isSuccess()) {
-                    respBuilder.setCode(StatusCode.SUCCESS);
+                    resp.setCode(StatusCode.SUCCESS);
                 } else {
-                    respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    resp.setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
-                logStreamOp("delete", nsId, streamId, streamName, respBuilder.getCode());
-                return respBuilder.build();
+                logStreamOp("delete", nsId, streamId, streamName, resp.getCode());
+                return resp;
             } finally {
                 txnResult.close();
             }
@@ -612,20 +611,18 @@ public class RootRangeStoreImpl
     private CompletableFuture<GetStreamResponse> streamPropertiesToResponse(
         CompletableFuture<StreamProperties> propsFuture
     ) {
-        GetStreamResponse.Builder respBuilder = GetStreamResponse.newBuilder();
         return propsFuture.thenCompose(streamProps -> {
+            GetStreamResponse resp = new GetStreamResponse();
             if (null == streamProps) {
-                return FutureUtils.value(respBuilder.setCode(StatusCode.STREAM_NOT_FOUND).build());
+                return FutureUtils.value(resp.setCode(StatusCode.STREAM_NOT_FOUND));
             } else {
-                return FutureUtils.value(respBuilder
-                    .setCode(StatusCode.SUCCESS)
-                    .setStreamProps(streamProps)
-                    .build());
+                resp.setCode(StatusCode.SUCCESS);
+                resp.setStreamProps().copyFrom(streamProps);
+                return FutureUtils.value(resp);
             }
         }).exceptionally(cause ->
-            respBuilder
+            new GetStreamResponse()
                 .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                .build()
         );
     }
 
@@ -637,9 +634,8 @@ public class RootRangeStoreImpl
         } else if (IdCase.STREAM_NAME == request.getIdCase()) {
             return getStreamProps(request.getStreamName());
         } else {
-            return FutureUtils.value(GetStreamResponse.newBuilder()
-                .setCode(StatusCode.ILLEGAL_OP)
-                .build());
+            return FutureUtils.value(new GetStreamResponse()
+                .setCode(StatusCode.ILLEGAL_OP));
         }
     }
 
@@ -661,8 +657,8 @@ public class RootRangeStoreImpl
                 streamName.getNamespaceName(),
                 streamName.getStreamName());
         if (StatusCode.SUCCESS != code) {
-            return FutureUtils.value(GetStreamResponse.newBuilder()
-                .setCode(code).build());
+            return FutureUtils.value(new GetStreamResponse()
+                .setCode(code));
         }
 
         byte[] nsNameKey = getNamespaceNameKey(streamName.getNamespaceName());
@@ -671,8 +667,8 @@ public class RootRangeStoreImpl
         return store.get(nsNameKey)
             .thenCompose(nsIdBytes -> {
                 if (null == nsIdBytes) {
-                    return FutureUtils.value(GetStreamResponse.newBuilder()
-                        .setCode(StatusCode.NAMESPACE_NOT_FOUND).build());
+                    return FutureUtils.value(new GetStreamResponse()
+                        .setCode(StatusCode.NAMESPACE_NOT_FOUND));
                 }
                 long nsId = Bytes.toLong(nsIdBytes, 0);
                 return streamPropertiesToResponse(
@@ -701,8 +697,10 @@ public class RootRangeStoreImpl
                 return FutureUtils.value(null);
             } else {
                 try {
-                    return FutureUtils.value(StreamProperties.parseFrom(streamPropBytes));
-                } catch (InvalidProtocolBufferException e) {
+                    StreamProperties props = new StreamProperties();
+                    props.parseFrom(streamPropBytes);
+                    return FutureUtils.value(props);
+                } catch (RuntimeException e) {
                     return FutureUtils.exception(e);
                 }
             }

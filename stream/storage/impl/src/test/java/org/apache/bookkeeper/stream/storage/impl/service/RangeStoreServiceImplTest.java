@@ -165,7 +165,7 @@ public class RangeStoreServiceImplTest {
         when(tableStoreFactory.createStore(eq(trMvccStore)))
             .thenReturn(trStore);
         when(clientManager.getStreamProperties(eq(STREAM_ID)))
-            .thenReturn(FutureUtils.value(StreamProperties.getDefaultInstance()));
+            .thenReturn(FutureUtils.value(new StreamProperties()));
     }
 
     @Test
@@ -235,11 +235,11 @@ public class RangeStoreServiceImplTest {
     public void testCreateNamespace() throws Exception {
         mockStorageContainer(SCID);
 
-        CreateNamespaceResponse expectedResp = CreateNamespaceResponse.getDefaultInstance();
+        CreateNamespaceResponse expectedResp = new CreateNamespaceResponse();
         when(rrStore.createNamespace(any(CreateNamespaceRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        CreateNamespaceRequest expectedReq = CreateNamespaceRequest.getDefaultInstance();
+        CreateNamespaceRequest expectedReq = new CreateNamespaceRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.createNamespace(expectedReq)));
@@ -251,11 +251,11 @@ public class RangeStoreServiceImplTest {
     public void testDeleteNamespace() throws Exception {
         mockStorageContainer(SCID);
 
-        DeleteNamespaceResponse expectedResp = DeleteNamespaceResponse.getDefaultInstance();
+        DeleteNamespaceResponse expectedResp = new DeleteNamespaceResponse();
         when(rrStore.deleteNamespace(any(DeleteNamespaceRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        DeleteNamespaceRequest expectedReq = DeleteNamespaceRequest.getDefaultInstance();
+        DeleteNamespaceRequest expectedReq = new DeleteNamespaceRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.deleteNamespace(expectedReq)));
@@ -267,11 +267,11 @@ public class RangeStoreServiceImplTest {
     public void testGetNamespace() throws Exception {
         mockStorageContainer(SCID);
 
-        GetNamespaceResponse expectedResp = GetNamespaceResponse.getDefaultInstance();
+        GetNamespaceResponse expectedResp = new GetNamespaceResponse();
         when(rrStore.getNamespace(any(GetNamespaceRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        GetNamespaceRequest expectedReq = GetNamespaceRequest.getDefaultInstance();
+        GetNamespaceRequest expectedReq = new GetNamespaceRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.getNamespace(expectedReq)));
@@ -283,11 +283,11 @@ public class RangeStoreServiceImplTest {
     public void testCreateStream() throws Exception {
         mockStorageContainer(SCID);
 
-        CreateStreamResponse expectedResp = CreateStreamResponse.getDefaultInstance();
+        CreateStreamResponse expectedResp = new CreateStreamResponse();
         when(rrStore.createStream(any(CreateStreamRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        CreateStreamRequest expectedReq = CreateStreamRequest.getDefaultInstance();
+        CreateStreamRequest expectedReq = new CreateStreamRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.createStream(expectedReq)));
@@ -299,11 +299,11 @@ public class RangeStoreServiceImplTest {
     public void testDeleteStream() throws Exception {
         mockStorageContainer(SCID);
 
-        DeleteStreamResponse expectedResp = DeleteStreamResponse.getDefaultInstance();
+        DeleteStreamResponse expectedResp = new DeleteStreamResponse();
         when(rrStore.deleteStream(any(DeleteStreamRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        DeleteStreamRequest expectedReq = DeleteStreamRequest.getDefaultInstance();
+        DeleteStreamRequest expectedReq = new DeleteStreamRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.deleteStream(expectedReq)));
@@ -315,11 +315,11 @@ public class RangeStoreServiceImplTest {
     public void testGetStream() throws Exception {
         mockStorageContainer(SCID);
 
-        GetStreamResponse expectedResp = GetStreamResponse.getDefaultInstance();
+        GetStreamResponse expectedResp = new GetStreamResponse();
         when(rrStore.getStream(any(GetStreamRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        GetStreamRequest expectedReq = GetStreamRequest.getDefaultInstance();
+        GetStreamRequest expectedReq = new GetStreamRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(rrStore.getStream(expectedReq)));
@@ -335,11 +335,11 @@ public class RangeStoreServiceImplTest {
     public void testGetActiveRanges() throws Exception {
         mockStorageContainer(SCID);
 
-        GetActiveRangesResponse expectedResp = GetActiveRangesResponse.getDefaultInstance();
+        GetActiveRangesResponse expectedResp = new GetActiveRangesResponse();
         when(mrStore.getActiveRanges(any(GetActiveRangesRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
-        GetActiveRangesRequest expectedReq = GetActiveRangesRequest.getDefaultInstance();
+        GetActiveRangesRequest expectedReq = new GetActiveRangesRequest();
         assertSame(
             expectedResp,
             FutureUtils.result(mrStore.getActiveRanges(expectedReq)));
@@ -351,61 +351,47 @@ public class RangeStoreServiceImplTest {
     // Table API
     //
 
-    private PutRequest newPutRequest() {
-        RoutingHeader header = RoutingHeader.newBuilder()
+    private static RoutingHeader newRoutingHeader() {
+        return new RoutingHeader()
             .setStreamId(STREAM_ID)
-            .setRangeId(RANGE_ID)
-            .build();
-        return PutRequest.newBuilder()
-            .setHeader(header)
-            .build();
+            .setRangeId(RANGE_ID);
+    }
+
+    private PutRequest newPutRequest() {
+        PutRequest req = new PutRequest();
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
     }
 
     private DeleteRangeRequest newDeleteRequest() {
-        RoutingHeader header = RoutingHeader.newBuilder()
-            .setStreamId(STREAM_ID)
-            .setRangeId(RANGE_ID)
-            .build();
-        return DeleteRangeRequest.newBuilder()
-            .setHeader(header)
-            .build();
+        DeleteRangeRequest req = new DeleteRangeRequest();
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
     }
 
     private RangeRequest newRangeRequest() {
-        RoutingHeader header = RoutingHeader.newBuilder()
-            .setStreamId(STREAM_ID)
-            .setRangeId(RANGE_ID)
-            .build();
-        return RangeRequest.newBuilder()
-            .setHeader(header)
-            .build();
+        RangeRequest req = new RangeRequest();
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
     }
 
     private IncrementRequest newIncrRequest() {
-        RoutingHeader header = RoutingHeader.newBuilder()
-            .setStreamId(STREAM_ID)
-            .setRangeId(RANGE_ID)
-            .build();
-        return IncrementRequest.newBuilder()
-            .setHeader(header)
-            .build();
+        IncrementRequest req = new IncrementRequest();
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
     }
 
     private TxnRequest newTxnRequest() {
-        RoutingHeader header = RoutingHeader.newBuilder()
-            .setStreamId(STREAM_ID)
-            .setRangeId(RANGE_ID)
-            .build();
-        return TxnRequest.newBuilder()
-            .setHeader(header)
-            .build();
+        TxnRequest req = new TxnRequest();
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
     }
 
     @Test
     public void testRangeWhenTableStoreNotCached() throws Exception {
         mockStorageContainer(SCID);
 
-        RangeResponse expectedResp = RangeResponse.getDefaultInstance();
+        RangeResponse expectedResp = new RangeResponse();
         when(trStore.range(any(RangeRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
@@ -419,7 +405,7 @@ public class RangeStoreServiceImplTest {
     public void testRangeWhenTableStoreCached() throws Exception {
         mockStorageContainer(SCID);
 
-        RangeResponse expectedResp = RangeResponse.getDefaultInstance();
+        RangeResponse expectedResp = new RangeResponse();
         when(trStore.range(any(RangeRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
@@ -433,7 +419,7 @@ public class RangeStoreServiceImplTest {
     public void testPutWhenTableStoreNotCached() throws Exception {
         mockStorageContainer(SCID);
 
-        PutResponse expectedResp = PutResponse.getDefaultInstance();
+        PutResponse expectedResp = new PutResponse();
         when(trStore.put(any(PutRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
@@ -447,7 +433,7 @@ public class RangeStoreServiceImplTest {
     public void testPutWhenTableStoreCached() throws Exception {
         mockStorageContainer(SCID);
 
-        PutResponse expectedResp = PutResponse.getDefaultInstance();
+        PutResponse expectedResp = new PutResponse();
         when(trStore.put(any(PutRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
@@ -461,7 +447,7 @@ public class RangeStoreServiceImplTest {
     public void testDeleteWhenTableStoreNotCached() throws Exception {
         mockStorageContainer(SCID);
 
-        DeleteRangeResponse expectedResp = DeleteRangeResponse.getDefaultInstance();
+        DeleteRangeResponse expectedResp = new DeleteRangeResponse();
         when(trStore.delete(any(DeleteRangeRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
@@ -475,7 +461,7 @@ public class RangeStoreServiceImplTest {
     public void testDeleteWhenTableStoreCached() throws Exception {
         mockStorageContainer(SCID);
 
-        DeleteRangeResponse expectedResp = DeleteRangeResponse.getDefaultInstance();
+        DeleteRangeResponse expectedResp = new DeleteRangeResponse();
         when(trStore.delete(any(DeleteRangeRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);
@@ -489,7 +475,7 @@ public class RangeStoreServiceImplTest {
     public void testTxnWhenTableStoreNotCached() throws Exception {
         mockStorageContainer(SCID);
 
-        TxnResponse expectedResp = TxnResponse.getDefaultInstance();
+        TxnResponse expectedResp = new TxnResponse();
         when(trStore.txn(any(TxnRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
 
@@ -503,7 +489,7 @@ public class RangeStoreServiceImplTest {
     public void testTxnWhenTableStoreCached() throws Exception {
         mockStorageContainer(SCID);
 
-        TxnResponse expectedResp = TxnResponse.getDefaultInstance();
+        TxnResponse expectedResp = new TxnResponse();
         when(trStore.txn(any(TxnRequest.class)))
             .thenReturn(FutureUtils.value(expectedResp));
         container.getTableStoreCache().getTableStores().put(RID, trStore);

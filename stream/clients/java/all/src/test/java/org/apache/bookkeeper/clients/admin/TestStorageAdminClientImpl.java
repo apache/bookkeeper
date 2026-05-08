@@ -43,20 +43,32 @@ import org.junit.rules.TestName;
  */
 public class TestStorageAdminClientImpl {
 
-    private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-        .build();
-    private static final NamespaceProperties colProps = NamespaceProperties.newBuilder()
-        .setNamespaceId(System.currentTimeMillis())
-        .setNamespaceName("namespace")
-        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-        .build();
-    private static final StreamProperties streamProps = StreamProperties.newBuilder()
-        .setStreamId(System.currentTimeMillis())
-        .setStorageContainerId(System.currentTimeMillis())
-        .setStreamName("stream_" + System.currentTimeMillis())
-        .setStreamConf(DEFAULT_STREAM_CONF)
-        .build();
+    private static final NamespaceConfiguration colConf = newColConf();
+    private static final NamespaceProperties colProps = newColProps();
+    private static final StreamProperties streamProps = newStreamProps();
+
+    private static NamespaceConfiguration newColConf() {
+        NamespaceConfiguration c = new NamespaceConfiguration();
+        c.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return c;
+    }
+
+    private static NamespaceProperties newColProps() {
+        NamespaceProperties p = new NamespaceProperties()
+            .setNamespaceId(System.currentTimeMillis())
+            .setNamespaceName("namespace");
+        p.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return p;
+    }
+
+    private static StreamProperties newStreamProps() {
+        StreamProperties p = new StreamProperties()
+            .setStreamId(System.currentTimeMillis())
+            .setStorageContainerId(System.currentTimeMillis())
+            .setStreamName("stream_" + System.currentTimeMillis());
+        p.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return p;
+    }
 
     @Rule
     public TestName testName = new TestName();

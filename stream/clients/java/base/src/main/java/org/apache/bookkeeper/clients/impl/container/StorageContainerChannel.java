@@ -174,9 +174,9 @@ public class StorageContainerChannel {
         }
         // we got the updated location
         List<Endpoint> readEndpoints =
-            Lists.newArrayListWithExpectedSize(1 + endpoint.getRoEndpointCount());
+            Lists.newArrayListWithExpectedSize(1 + endpoint.getRoEndpointsCount());
         readEndpoints.add(endpoint.getRwEndpoint());
-        readEndpoints.addAll(endpoint.getRoEndpointList());
+        readEndpoints.addAll(endpoint.getRoEndpointsList());
         scInfo = StorageContainerInfo.of(
             scId,
             endpoint.getRevision(),

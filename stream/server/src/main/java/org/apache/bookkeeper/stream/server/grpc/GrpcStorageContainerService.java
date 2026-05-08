@@ -40,28 +40,24 @@ class GrpcStorageContainerService extends StorageContainerServiceImplBase {
     @Override
     public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
                                             StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-        GetStorageContainerEndpointResponse.Builder responseBuilder = GetStorageContainerEndpointResponse.newBuilder()
+        GetStorageContainerEndpointResponse response = new GetStorageContainerEndpointResponse()
             .setStatusCode(StatusCode.SUCCESS);
         for (int i = 0; i < request.getRequestsCount(); i++) {
             Endpoint endpoint = storageContainerStore
                 .getRoutingService()
-                .getStorageContainer(request.getRequests(i).getStorageContainer());
-            OneStorageContainerEndpointResponse.Builder oneRespBuilder;
+                .getStorageContainer(request.getRequestAt(i).getStorageContainer());
+            OneStorageContainerEndpointResponse oneResp = response.addResponse();
             if (null != endpoint) {
-                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-                    .setStatusCode(StatusCode.SUCCESS)
-                    .setEndpoint(
-                        StorageContainerEndpoint.newBuilder()
-                            .setRwEndpoint(endpoint)
-                            .addRoEndpoint(endpoint)
-                            .setRevision(0L));
+                oneResp.setStatusCode(StatusCode.SUCCESS);
+                StorageContainerEndpoint sce = oneResp.setEndpoint();
+                sce.setRwEndpoint().copyFrom(endpoint);
+                sce.addRoEndpoint().copyFrom(endpoint);
+                sce.setRevision(0L);
             } else {
-                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-                    .setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
+                oneResp.setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
             }
-            responseBuilder = responseBuilder.addResponses(oneRespBuilder);
         }
-        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 

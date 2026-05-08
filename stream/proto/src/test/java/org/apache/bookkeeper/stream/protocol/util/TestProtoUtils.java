@@ -108,12 +108,11 @@ public class TestProtoUtils {
     }
 
     private static RangeProperties createRangeMeta(long startKey, long endKey) {
-        return RangeProperties.newBuilder()
+        return new RangeProperties()
             .setStartHashKey(startKey)
             .setEndHashKey(endKey)
             .setStorageContainerId(1234L)
-            .setRangeId(1234L)
-            .build();
+            .setRangeId(1234L);
     }
 
     @Test
@@ -194,9 +193,8 @@ public class TestProtoUtils {
 
     @Test
     public void testCreateCreateNamespaceRequest() {
-        NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        NamespaceConfiguration nsConf = new NamespaceConfiguration();
+        nsConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         CreateNamespaceRequest request = createCreateNamespaceRequest(
             name.getMethodName(),
             nsConf);

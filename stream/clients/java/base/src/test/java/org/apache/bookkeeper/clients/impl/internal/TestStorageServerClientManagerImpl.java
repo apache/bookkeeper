@@ -52,15 +52,19 @@ public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
     protected void doTeardown() throws Exception {
     }
 
+    private static StreamProperties newStreamProperties(long streamId) {
+        StreamProperties props = new StreamProperties();
+        props.setStorageContainerId(1234L);
+        props.setStreamId(streamId);
+        props.setStreamName("metaclient-stream");
+        props.setStreamConf().copyFrom(new StreamConfiguration());
+        return props;
+    }
+
     @Test
     public void testGetMetaRangeClient() throws Exception {
         long streamId = 3456L;
-        StreamProperties props = StreamProperties.newBuilder()
-            .setStorageContainerId(1234L)
-            .setStreamId(streamId)
-            .setStreamName("metaclient-stream")
-            .setStreamConf(StreamConfiguration.newBuilder().build())
-            .build();
+        StreamProperties props = newStreamProperties(streamId);
 
         MetaRangeClientImpl metaRangeClient = serverManager.openMetaRangeClient(props);
         assertEquals(1234L, metaRangeClient.getStorageContainerClient().getStorageContainerId());
@@ -76,21 +80,16 @@ public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
     @Test
     public void testGetMetaRangeClientByStreamId() throws Exception {
         long streamId = 3456L;
-        StreamProperties props = StreamProperties.newBuilder()
-            .setStorageContainerId(1234L)
-            .setStreamId(streamId)
-            .setStreamName("metaclient-stream")
-            .setStreamConf(StreamConfiguration.newBuilder().build())
-            .build();
+        StreamProperties props = newStreamProperties(streamId);
 
         RootRangeServiceImplBase rootRangeService = new RootRangeServiceImplBase() {
             @Override
             public void getStream(GetStreamRequest request,
                                   StreamObserver<GetStreamResponse> responseObserver) {
-                responseObserver.onNext(GetStreamResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .setStreamProps(props)
-                    .build());
+                GetStreamResponse resp = new GetStreamResponse();
+                resp.setCode(StatusCode.SUCCESS);
+                resp.setStreamProps().copyFrom(props);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };
@@ -115,7 +114,7 @@ public class TestStorageServerClientManagerImpl extends GrpcClientTestBase {
         assertEquals(1, responses.size());
         assertEquals(StatusCode.SUCCESS, responses.get(0).getStatusCode());
         assertEquals(ENDPOINT, responses.get(0).getEndpoint().getRwEndpoint());
-        assertEquals(0, responses.get(0).getEndpoint().getRoEndpointCount());
+        assertEquals(0, responses.get(0).getEndpoint().getRoEndpointsCount());
     }
 
 
