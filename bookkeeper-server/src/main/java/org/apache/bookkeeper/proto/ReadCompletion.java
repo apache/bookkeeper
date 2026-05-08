@@ -81,6 +81,8 @@ class ReadCompletion extends CompletionValue {
     @Override
     public void handleV3Response(Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
+        long respLedgerId = ledgerId;
+        long respEntryId = entryId;
         StatusCode status;
         ByteBuf buffer = Unpooled.EMPTY_BUFFER;
         long maxLAC = INVALID_ENTRY_ID;
@@ -88,6 +90,14 @@ class ReadCompletion extends CompletionValue {
         if (response.getStatus() == StatusCode.EOK && response.hasReadResponse()) {
             ReadResponse readResponse = response.getReadResponse();
             status = readResponse.getStatus();
+            // For long-poll reads the request entryId is LAST_ADD_CONFIRMED
+            // and the server fills in the actual entry id alongside the body.
+            if (readResponse.hasLedgerId()) {
+                respLedgerId = readResponse.getLedgerId();
+            }
+            if (readResponse.hasEntryId()) {
+                respEntryId = readResponse.getEntryId();
+            }
             if (readResponse.hasBody()) {
                 buffer = readResponse.getBodySlice();
             }
@@ -102,7 +112,7 @@ class ReadCompletion extends CompletionValue {
             // fall back to the request's recorded ledgerId/entryId.
             status = response.getStatus();
         }
-        handleReadResponse(ledgerId, entryId, status, buffer, maxLAC, lacUpdateTimestamp);
+        handleReadResponse(respLedgerId, respEntryId, status, buffer, maxLAC, lacUpdateTimestamp);
         ReferenceCountUtil.release(
                 buffer); // meaningless using unpooled, but client may expect to hold the last reference
     }
