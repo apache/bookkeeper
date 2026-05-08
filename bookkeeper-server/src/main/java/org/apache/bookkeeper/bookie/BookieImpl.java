@@ -1192,9 +1192,8 @@ public class BookieImpl implements Bookie {
         int entrySize = 0;
         try {
             LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Reading {}@{} with maxEntrySize {}", entryId, ledgerId, maxEntrySize);
-            }
+            log.trace().attr("entryId", entryId).attr("ledgerId", ledgerId).attr("maxEntrySize", maxEntrySize)
+                    .log("Reading entry");
             ByteBuf entry = handle.readEntryIfFits(entryId, maxEntrySize);
             if (entry != null) {
                 entrySize = entry.readableBytes();

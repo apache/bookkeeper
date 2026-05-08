@@ -676,9 +676,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private ByteBuf doGetEntryIfFits(long ledgerId, long entryId, long maxEntrySize)
             throws IOException, BookieException {
-        if (log.isDebugEnabled()) {
-            log.debug("Get Entry If Fits: {}@{} maxEntrySize={}", ledgerId, entryId, maxEntrySize);
-        }
+        log.debug().attr("ledgerId", ledgerId).attr("entryId", entryId).attr("maxEntrySize", maxEntrySize)
+                .log("Get Entry If Fits");
 
         if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             ByteBuf entry = getLastEntry(ledgerId);
