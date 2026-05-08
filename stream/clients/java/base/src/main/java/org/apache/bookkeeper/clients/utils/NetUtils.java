@@ -113,10 +113,9 @@ public class NetUtils {
      * @return an endpoint created from {@code hostname} and {@code port}.
      */
     public static Endpoint createEndpoint(String hostname, int port) {
-        return Endpoint.newBuilder()
+        return new Endpoint()
             .setHostname(hostname)
-            .setPort(port)
-            .build();
+            .setPort(port);
     }
 
     /**

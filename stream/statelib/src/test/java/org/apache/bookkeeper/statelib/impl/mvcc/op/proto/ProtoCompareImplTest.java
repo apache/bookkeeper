@@ -23,7 +23,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-import com.google.protobuf.ByteString;
 import lombok.Cleanup;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare;
 import org.apache.bookkeeper.stream.proto.kv.rpc.Compare.CompareResult;
@@ -35,19 +34,18 @@ import org.junit.Test;
  */
 public class ProtoCompareImplTest {
 
-    private static final ByteString KEY = ByteString.copyFromUtf8("test-key");
-    private static final ByteString VAL = ByteString.copyFromUtf8("test-value");
+    private static final byte[] KEY = "test-key".getBytes(UTF_8);
+    private static final byte[] VAL = "test-value".getBytes(UTF_8);
     private static final long MOD_REV = System.currentTimeMillis();
     private static final long CREATE_REV = MOD_REV + 1;
     private static final long VERSION = CREATE_REV + 1;
 
     @Test
     public void testCompareEmptyValue() {
-        Compare compare = Compare.newBuilder()
+        Compare compare = new Compare()
             .setKey(KEY)
             .setResult(CompareResult.EQUAL)
-            .setTarget(CompareTarget.VALUE)
-            .build();
+            .setTarget(CompareTarget.VALUE);
 
         @Cleanup ProtoCompareImpl protoCompare = ProtoCompareImpl.newCompareOp(compare);
         assertArrayEquals("test-key".getBytes(UTF_8), protoCompare.key());
@@ -58,12 +56,11 @@ public class ProtoCompareImplTest {
 
     @Test
     public void testCompareValue() {
-        Compare compare = Compare.newBuilder()
+        Compare compare = new Compare()
             .setKey(KEY)
             .setValue(VAL)
             .setResult(CompareResult.EQUAL)
-            .setTarget(CompareTarget.VALUE)
-            .build();
+            .setTarget(CompareTarget.VALUE);
 
         @Cleanup ProtoCompareImpl protoCompare = ProtoCompareImpl.newCompareOp(compare);
         assertArrayEquals("test-key".getBytes(UTF_8), protoCompare.key());
@@ -74,12 +71,11 @@ public class ProtoCompareImplTest {
 
     @Test
     public void testCompareMod() {
-        Compare compare = Compare.newBuilder()
+        Compare compare = new Compare()
             .setKey(KEY)
             .setModRevision(MOD_REV)
             .setResult(CompareResult.EQUAL)
-            .setTarget(CompareTarget.MOD)
-            .build();
+            .setTarget(CompareTarget.MOD);
 
         @Cleanup ProtoCompareImpl protoCompare = ProtoCompareImpl.newCompareOp(compare);
         assertArrayEquals("test-key".getBytes(UTF_8), protoCompare.key());
@@ -90,12 +86,11 @@ public class ProtoCompareImplTest {
 
     @Test
     public void testCompareCreate() {
-        Compare compare = Compare.newBuilder()
+        Compare compare = new Compare()
             .setKey(KEY)
             .setCreateRevision(CREATE_REV)
             .setResult(CompareResult.EQUAL)
-            .setTarget(CompareTarget.CREATE)
-            .build();
+            .setTarget(CompareTarget.CREATE);
 
         @Cleanup ProtoCompareImpl protoCompare = ProtoCompareImpl.newCompareOp(compare);
         assertArrayEquals("test-key".getBytes(UTF_8), protoCompare.key());
@@ -106,12 +101,11 @@ public class ProtoCompareImplTest {
 
     @Test
     public void testCompareVersion() {
-        Compare compare = Compare.newBuilder()
+        Compare compare = new Compare()
             .setKey(KEY)
             .setVersion(VERSION)
             .setResult(CompareResult.EQUAL)
-            .setTarget(CompareTarget.VERSION)
-            .build();
+            .setTarget(CompareTarget.VERSION);
 
         @Cleanup ProtoCompareImpl protoCompare = ProtoCompareImpl.newCompareOp(compare);
         assertArrayEquals("test-key".getBytes(UTF_8), protoCompare.key());

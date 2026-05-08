@@ -19,11 +19,11 @@ import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newDeleteRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newIncrementRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newPutRequest;
 import static org.apache.bookkeeper.clients.impl.kv.KvUtils.newRangeRequest;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import org.apache.bookkeeper.api.kv.impl.options.OptionFactoryImpl;
@@ -44,12 +44,10 @@ import org.junit.Test;
  */
 public class TestKvUtils {
 
-    private static final long scId = System.currentTimeMillis();
-    private static final ByteString routingKey = ByteString.copyFrom("test-routing-key", UTF_8);
     private static final ByteBuf key = Unpooled.wrappedBuffer("test-key".getBytes(UTF_8));
     private static final ByteBuf value = Unpooled.wrappedBuffer("test-value".getBytes(UTF_8));
-    private static final ByteString keyBs = ByteString.copyFrom("test-key".getBytes(UTF_8));
-    private static final ByteString valueBs = ByteString.copyFrom("test-value".getBytes(UTF_8));
+    private static final byte[] keyBytes = "test-key".getBytes(UTF_8);
+    private static final byte[] valueBytes = "test-value".getBytes(UTF_8);
 
     private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();
 
@@ -65,11 +63,11 @@ public class TestKvUtils {
             .maxModRev(2345L)
             .minModRev(1235L)
             .build()) {
-            RangeRequest rr = newRangeRequest(key, rangeOption).build();
-            assertEquals(keyBs, rr.getKey());
-            assertEquals(keyBs, rr.getRangeEnd());
-            assertTrue(rr.getCountOnly());
-            assertTrue(rr.getKeysOnly());
+            RangeRequest rr = newRangeRequest(key, rangeOption);
+            assertArrayEquals(keyBytes, rr.getKey());
+            assertArrayEquals(keyBytes, rr.getRangeEnd());
+            assertTrue(rr.isCountOnly());
+            assertTrue(rr.isKeysOnly());
             assertEquals(10, rr.getLimit());
             assertEquals(1234L, rr.getMaxCreateRevision());
             assertEquals(234L, rr.getMinCreateRevision());
@@ -82,10 +80,10 @@ public class TestKvUtils {
     @Test
     public void testNewPutRequest() {
         try (PutOption<ByteBuf> option = Options.putAndGet()) {
-            PutRequest rr = newPutRequest(key, value, option).build();
-            assertEquals(keyBs, rr.getKey());
-            assertEquals(valueBs, rr.getValue());
-            assertTrue(rr.getPrevKv());
+            PutRequest rr = newPutRequest(key, value, option);
+            assertArrayEquals(keyBytes, rr.getKey());
+            assertArrayEquals(valueBytes, rr.getValue());
+            assertTrue(rr.isPrevKv());
             assertFalse(rr.hasHeader());
         }
     }
@@ -93,10 +91,10 @@ public class TestKvUtils {
     @Test
     public void testNewIncrementRequest() {
         try (IncrementOption<ByteBuf> option = Options.incrementAndGet()) {
-            IncrementRequest rr = newIncrementRequest(key, 100L, option).build();
-            assertEquals(keyBs, rr.getKey());
+            IncrementRequest rr = newIncrementRequest(key, 100L, option);
+            assertArrayEquals(keyBytes, rr.getKey());
             assertEquals(100L, rr.getAmount());
-            assertTrue(rr.getGetTotal());
+            assertTrue(rr.isGetTotal());
             assertFalse(rr.hasHeader());
         }
     }
@@ -107,10 +105,10 @@ public class TestKvUtils {
             .endKey(key.retainedDuplicate())
             .prevKv(true)
             .build()) {
-            DeleteRangeRequest rr = newDeleteRequest(key, option).build();
-            assertEquals(keyBs, rr.getKey());
-            assertEquals(keyBs, rr.getRangeEnd());
-            assertTrue(rr.getPrevKv());
+            DeleteRangeRequest rr = newDeleteRequest(key, option);
+            assertArrayEquals(keyBytes, rr.getKey());
+            assertArrayEquals(keyBytes, rr.getRangeEnd());
+            assertTrue(rr.isPrevKv());
             assertFalse(rr.hasHeader());
         }
     }

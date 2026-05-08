@@ -50,9 +50,8 @@ public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
             new ResponseHandler<GetActiveRangesResponse>(responseObserver) {
                 @Override
                 protected GetActiveRangesResponse createErrorResp(Throwable cause) {
-                    return GetActiveRangesResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new GetActiveRangesResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }

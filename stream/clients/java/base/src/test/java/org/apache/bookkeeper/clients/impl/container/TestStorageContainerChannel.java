@@ -62,23 +62,20 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
     private StorageServerChannel mockChannel = newMockServerChannel();
     private StorageServerChannel mockChannel2 = newMockServerChannel();
     private StorageServerChannel mockChannel3 = newMockServerChannel();
-    private final Endpoint endpoint = Endpoint.newBuilder()
+    private final Endpoint endpoint = new Endpoint()
         .setHostname("127.0.0.1")
-        .setPort(8181)
-        .build();
-    private final Endpoint endpoint2 = Endpoint.newBuilder()
+        .setPort(8181);
+    private final Endpoint endpoint2 = new Endpoint()
         .setHostname("127.0.0.2")
-        .setPort(8282)
-        .build();
-    private final Endpoint endpoint3 = Endpoint.newBuilder()
+        .setPort(8282);
+    private final Endpoint endpoint3 = new Endpoint()
         .setHostname("127.0.0.3")
-        .setPort(8383)
-        .build();
+        .setPort(8383);
     private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
         ep -> {
-            if (endpoint2 == ep) {
+            if (endpoint2.equals(ep)) {
                 return mockChannel2;
-            } else if (endpoint3 == ep) {
+            } else if (endpoint3.equals(ep)) {
                 return mockChannel3;
             } else {
                 return mockChannel;
@@ -113,6 +110,18 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         return channel;
     }
 
+    private static OneStorageContainerEndpointResponse buildOneEndpointResponse(
+            long scId, long revision, Endpoint rwEndpoint, Endpoint roEndpoint) {
+        OneStorageContainerEndpointResponse oneResp = new OneStorageContainerEndpointResponse();
+        oneResp.setStatusCode(StatusCode.SUCCESS);
+        StorageContainerEndpoint scEndpoint = oneResp.setEndpoint();
+        scEndpoint.setStorageContainerId(scId);
+        scEndpoint.setRevision(revision);
+        scEndpoint.setRwEndpoint().copyFrom(rwEndpoint);
+        scEndpoint.addRoEndpoint().copyFrom(roEndpoint);
+        return oneResp;
+    }
+
     private void ensureCallbackExecuted() throws Exception {
         final CountDownLatch latch = new CountDownLatch(1);
         scheduler.submit(() -> latch.countDown());
@@ -139,16 +148,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         assertNull(scClient.getStorageContainerInfo());
         verify(locationClient, times(1)).locateStorageContainers(anyList());
         // prepare the result and complete the request
-        OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1000L)
-                    .setRwEndpoint(endpoint)
-                    .addRoEndpoint(endpoint)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1000L, endpoint, endpoint);
         locateResponses.complete(Lists.newArrayList(oneResp));
         // get the service
         StorageServerChannel rsChannel = rsChannelFuture.get();
@@ -187,16 +188,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         // closing the channel manager
         channelManager.close();
         // prepare the result and complete the request
-        OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1000L)
-                    .setRwEndpoint(endpoint)
-                    .addRoEndpoint(endpoint)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1000L, endpoint, endpoint);
         locateResponses.complete(Lists.newArrayList(oneResp));
         // verify the result
         try {
@@ -247,16 +240,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         //
 
         // prepare the result and complete the request
-        OneStorageContainerEndpointResponse oneResp1 = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1000L)
-                    .setRwEndpoint(endpoint)
-                    .addRoEndpoint(endpoint)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp1 =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1000L, endpoint, endpoint);
         locateResponses1.complete(Lists.newArrayList(oneResp1));
         // get the service
         StorageServerChannel rsChannel = rsChannelFuture.get();
@@ -277,16 +262,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         scClient.resetStorageServerChannelFuture();
         rsChannelFuture = scClient.getStorageContainerChannelFuture();
 
-        OneStorageContainerEndpointResponse oneResp2 = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(999L)
-                    .setRwEndpoint(endpoint2)
-                    .addRoEndpoint(endpoint2)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp2 =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 999L, endpoint2, endpoint2);
         locateResponses2.complete(Lists.newArrayList(oneResp2));
         ensureCallbackExecuted();
 
@@ -306,16 +283,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         scClient.resetStorageServerChannelFuture();
         rsChannelFuture = scClient.getStorageContainerChannelFuture();
 
-        OneStorageContainerEndpointResponse oneResp3 = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1001L)
-                    .setRwEndpoint(endpoint3)
-                    .addRoEndpoint(endpoint3)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp3 =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1001L, endpoint3, endpoint3);
         locateResponses3.complete(Lists.newArrayList(oneResp3));
         ensureCallbackExecuted();
 
@@ -354,16 +323,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         assertNull(scClient.getStorageContainerInfo());
         verify(locationClient, times(1)).locateStorageContainers(anyList());
         // prepare the result and complete the request
-        OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1000L)
-                    .setRwEndpoint(endpoint)
-                    .addRoEndpoint(endpoint)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1000L, endpoint, endpoint);
         // complete with wrong responses
         locateResponses1.complete(Lists.newArrayList(oneResp, oneResp));
         ensureCallbackExecuted();
@@ -413,16 +374,8 @@ public class TestStorageContainerChannel extends GrpcClientTestBase {
         assertNull(scClient.getStorageContainerInfo());
         verify(locationClient, times(1)).locateStorageContainers(anyList());
         // prepare the result and complete the request
-        OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-            .setStatusCode(StatusCode.SUCCESS)
-            .setEndpoint(
-                StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(ROOT_STORAGE_CONTAINER_ID)
-                    .setRevision(1000L)
-                    .setRwEndpoint(endpoint)
-                    .addRoEndpoint(endpoint)
-                    .build())
-            .build();
+        OneStorageContainerEndpointResponse oneResp =
+            buildOneEndpointResponse(ROOT_STORAGE_CONTAINER_ID, 1000L, endpoint, endpoint);
         // complete exceptionally
         locateResponses1.completeExceptionally(new ClientException("test-exception"));
         ensureCallbackExecuted();

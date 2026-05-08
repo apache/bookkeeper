@@ -26,7 +26,6 @@ import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.proce
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.processRangeResult;
 import static org.apache.bookkeeper.stream.storage.impl.kv.TableStoreUtils.processTxnResult;
 
-import com.google.protobuf.ByteString;
 import java.util.concurrent.CompletableFuture;
 import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
@@ -87,12 +86,11 @@ public class TableStoreImpl implements TableStore {
             })
             .exceptionally(cause -> {
                 log.error().attr("request", rangeReq).exception(cause).log("Failed to process range request");
-                return RangeResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(handleCause(cause))
-                        .setRoutingHeader(rangeReq.getHeader())
-                        .build())
-                    .build();
+                RangeResponse resp = new RangeResponse();
+                ResponseHeader header = resp.setHeader();
+                header.setCode(handleCause(cause));
+                header.setRoutingHeader().copyFrom(rangeReq.getHeader());
+                return resp;
             });
     }
 
@@ -103,12 +101,12 @@ public class TableStoreImpl implements TableStore {
     }
 
     private RangeOp<byte[], byte[]> buildRangeOp(RoutingHeader header, RangeRequest request) {
-        ByteString rKey = header.getRKey();
-        ByteString lKey = request.getKey();
-        ByteString lEndKey = request.getRangeEnd();
+        byte[] rKey = header.getRKey();
+        byte[] lKey = request.getKey();
+        byte[] lEndKey = request.getRangeEnd();
         byte[] storeKey = newStoreKey(rKey, lKey);
         byte[] storeEndKey = null;
-        if (null != lEndKey && lEndKey.size() > 0) {
+        if (null != lEndKey && lEndKey.length > 0) {
             storeEndKey = newStoreKey(rKey, lEndKey);
         }
 
@@ -151,12 +149,11 @@ public class TableStoreImpl implements TableStore {
             })
             .exceptionally(cause -> {
                 log.error().attr("request", putReq).exception(cause).log("Failed to process put request");
-                return PutResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(handleCause(cause))
-                        .setRoutingHeader(putReq.getHeader())
-                        .build())
-                    .build();
+                PutResponse resp = new PutResponse();
+                ResponseHeader header = resp.setHeader();
+                header.setCode(handleCause(cause));
+                header.setRoutingHeader().copyFrom(putReq.getHeader());
+                return resp;
             });
     }
 
@@ -167,14 +164,14 @@ public class TableStoreImpl implements TableStore {
     }
 
     private PutOp<byte[], byte[]> buildPutOp(RoutingHeader header, PutRequest request) {
-        ByteString rKey = header.getRKey();
-        ByteString lKey = request.getKey();
+        byte[] rKey = header.getRKey();
+        byte[] lKey = request.getKey();
         byte[] storeKey = newStoreKey(rKey, lKey);
         return store.getOpFactory().newPut(
             storeKey,
-            request.getValue().toByteArray(),
+            request.getValue(),
             store.getOpFactory().optionFactory().newPutOption()
-                .prevKv(request.getPrevKv())
+                .prevKv(request.isPrevKv())
                 .build());
     }
 
@@ -192,12 +189,11 @@ public class TableStoreImpl implements TableStore {
             })
             .exceptionally(cause -> {
                 log.error().attr("request", incrementReq).exception(cause).log("Failed to process increment request");
-                return IncrementResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(handleCause(cause))
-                        .setRoutingHeader(incrementReq.getHeader())
-                        .build())
-                    .build();
+                IncrementResponse resp = new IncrementResponse();
+                ResponseHeader header = resp.setHeader();
+                header.setCode(handleCause(cause));
+                header.setRoutingHeader().copyFrom(incrementReq.getHeader());
+                return resp;
             });
     }
 
@@ -208,14 +204,14 @@ public class TableStoreImpl implements TableStore {
     }
 
     private IncrementOp<byte[], byte[]> buildIncrementOp(RoutingHeader header, IncrementRequest request) {
-        ByteString rKey = header.getRKey();
-        ByteString lKey = request.getKey();
+        byte[] rKey = header.getRKey();
+        byte[] lKey = request.getKey();
         byte[] storeKey = newStoreKey(rKey, lKey);
         return store.getOpFactory().newIncrement(
             storeKey,
             request.getAmount(),
             store.getOpFactory().optionFactory().newIncrementOption()
-                .getTotal(request.getGetTotal())
+                .getTotal(request.isGetTotal())
                 .build());
     }
 
@@ -231,12 +227,13 @@ public class TableStoreImpl implements TableStore {
                     result.close();
                 }
             })
-            .exceptionally(cause -> DeleteRangeResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(handleCause(cause))
-                    .setRoutingHeader(deleteReq.getHeader())
-                    .build())
-                .build());
+            .exceptionally(cause -> {
+                DeleteRangeResponse resp = new DeleteRangeResponse();
+                ResponseHeader header = resp.setHeader();
+                header.setCode(handleCause(cause));
+                header.setRoutingHeader().copyFrom(deleteReq.getHeader());
+                return resp;
+            });
     }
 
     private CompletableFuture<DeleteResult<byte[], byte[]>> doDelete(DeleteRangeRequest request) {
@@ -246,18 +243,18 @@ public class TableStoreImpl implements TableStore {
     }
 
     private DeleteOp<byte[], byte[]> buildDeleteOp(RoutingHeader header, DeleteRangeRequest request) {
-        ByteString rKey = header.getRKey();
-        ByteString lKey = request.getKey();
-        ByteString lEndKey = request.getRangeEnd();
+        byte[] rKey = header.getRKey();
+        byte[] lKey = request.getKey();
+        byte[] lEndKey = request.getRangeEnd();
         byte[] storeKey = newStoreKey(rKey, lKey);
         byte[] storeEndKey = null;
-        if (null != lEndKey && lEndKey.size() > 0) {
+        if (null != lEndKey && lEndKey.length > 0) {
             storeEndKey = newStoreKey(rKey, lEndKey);
         }
         return store.getOpFactory().newDelete(
             storeKey,
             store.getOpFactory().optionFactory().newDeleteOption()
-                .prevKv(request.getPrevKv())
+                .prevKv(request.isPrevKv())
                 .endKey(storeEndKey)
                 .build());
     }
@@ -273,12 +270,13 @@ public class TableStoreImpl implements TableStore {
                     txnResult.close();
                 }
             })
-            .exceptionally(cause -> TxnResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(handleCause(cause))
-                    .setRoutingHeader(txnReq.getHeader())
-                    .build())
-                .build());
+            .exceptionally(cause -> {
+                TxnResponse resp = new TxnResponse();
+                ResponseHeader header = resp.setHeader();
+                header.setCode(handleCause(cause));
+                header.setRoutingHeader().copyFrom(txnReq.getHeader());
+                return resp;
+            });
     }
 
     private CompletableFuture<TxnResult<byte[], byte[]>> doTxn(TxnRequest request) {
@@ -290,13 +288,13 @@ public class TableStoreImpl implements TableStore {
     private TxnOp<byte[], byte[]> buildTxnOp(TxnRequest request) {
         RoutingHeader header = request.getHeader();
         TxnOpBuilder<byte[], byte[]> txnBuilder = store.getOpFactory().newTxn();
-        for (RequestOp requestOp : request.getSuccessList()) {
+        for (RequestOp requestOp : request.getSuccessesList()) {
             txnBuilder.Then(buildTxnOp(header, requestOp));
         }
-        for (RequestOp requestOp : request.getFailureList()) {
+        for (RequestOp requestOp : request.getFailuresList()) {
             txnBuilder.Else(buildTxnOp(header, requestOp));
         }
-        for (Compare compare : request.getCompareList()) {
+        for (Compare compare : request.getComparesList()) {
             txnBuilder.If(fromProtoCompare(store.getOpFactory(), header, compare));
         }
         return txnBuilder.build();

@@ -68,32 +68,30 @@ public class TestProtocolInternalUtils {
     // Test Meta KeyRange Server Requests
     //
 
+    private static void addRange(GetActiveRangesResponse response,
+                                 long startHashKey,
+                                 long endHashKey,
+                                 long rangeId,
+                                 long scId) {
+        RelatedRanges related = response.addRange();
+        RangeProperties props = related.setProps();
+        props.setStartHashKey(startHashKey);
+        props.setEndHashKey(endHashKey);
+        props.setRangeId(rangeId);
+        props.setStorageContainerId(scId);
+        related.setType(RelationType.PARENTS);
+        related.addRelatedRange(INVALID_RANGE_ID);
+    }
+
     @Test
     public void testCreateActiveRanges() {
-        GetActiveRangesResponse.Builder responseBuilder = GetActiveRangesResponse.newBuilder();
-        responseBuilder.addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(Long.MIN_VALUE)
-                    .setEndHashKey(0L)
-                    .setRangeId(1L)
-                    .setStorageContainerId(1L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID)
-        ).addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(0L)
-                    .setEndHashKey(Long.MAX_VALUE)
-                    .setRangeId(2L)
-                    .setStorageContainerId(2L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID));
-        GetActiveRangesResponse response = responseBuilder.build();
+        GetActiveRangesResponse response = new GetActiveRangesResponse();
+        addRange(response, Long.MIN_VALUE, 0L, 1L, 1L);
+        addRange(response, 0L, Long.MAX_VALUE, 2L, 2L);
         HashStreamRanges hsr = createActiveRanges(response);
         TreeMap<Long, RangeProperties> activeRanges = Maps.newTreeMap();
-        activeRanges.put(Long.MIN_VALUE, response.getRanges(0).getProps());
-        activeRanges.put(0L, response.getRanges(1).getProps());
+        activeRanges.put(Long.MIN_VALUE, response.getRangeAt(0).getProps());
+        activeRanges.put(0L, response.getRangeAt(1).getProps());
         HashStreamRanges expectedHSR = HashStreamRanges.ofHash(
             RangeKeyType.HASH,
             activeRanges);
@@ -103,27 +101,11 @@ public class TestProtocolInternalUtils {
 
     @Test
     public void testCreateActiveRangesInvalidKeyRange() {
-        GetActiveRangesResponse.Builder responseBuilder = GetActiveRangesResponse.newBuilder();
-        responseBuilder.addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(Long.MIN_VALUE)
-                    .setEndHashKey(0L)
-                    .setRangeId(1L)
-                    .setStorageContainerId(1L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID)
-        ).addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(1L)
-                    .setEndHashKey(Long.MAX_VALUE)
-                    .setRangeId(2L)
-                    .setStorageContainerId(2L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID));
+        GetActiveRangesResponse response = new GetActiveRangesResponse();
+        addRange(response, Long.MIN_VALUE, 0L, 1L, 1L);
+        addRange(response, 1L, Long.MAX_VALUE, 2L, 2L);
         try {
-            createActiveRanges(responseBuilder.build());
+            createActiveRanges(response);
             fail("Should fail with invalid key range");
         } catch (IllegalStateException ise) {
             assertEquals(
@@ -134,27 +116,11 @@ public class TestProtocolInternalUtils {
 
     @Test
     public void testCreateActiveRangesMissingKeyRange() {
-        GetActiveRangesResponse.Builder responseBuilder = GetActiveRangesResponse.newBuilder();
-        responseBuilder.addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(Long.MIN_VALUE)
-                    .setEndHashKey(0L)
-                    .setRangeId(1L)
-                    .setStorageContainerId(1L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID)
-        ).addRanges(
-            RelatedRanges.newBuilder()
-                .setProps(RangeProperties.newBuilder()
-                    .setStartHashKey(0L)
-                    .setEndHashKey(1234L)
-                    .setRangeId(2L)
-                    .setStorageContainerId(2L))
-                .setType(RelationType.PARENTS)
-                .addRelatedRanges(INVALID_RANGE_ID));
+        GetActiveRangesResponse response = new GetActiveRangesResponse();
+        addRange(response, Long.MIN_VALUE, 0L, 1L, 1L);
+        addRange(response, 0L, 1234L, 2L, 2L);
         try {
-            createActiveRanges(responseBuilder.build());
+            createActiveRanges(response);
             fail("Should fail with missing key range");
         } catch (IllegalStateException ise) {
             assertEquals(
@@ -186,15 +152,15 @@ public class TestProtocolInternalUtils {
     @Test
     public void testCreateStorageContainerEndpointResponse() {
         List<StorageContainerEndpoint> endpoints = Lists.newArrayList(
-            StorageContainerEndpoint.newBuilder().setStorageContainerId(1L).build(),
-            StorageContainerEndpoint.newBuilder().setStorageContainerId(2L).build(),
-            StorageContainerEndpoint.newBuilder().setStorageContainerId(3L).build());
+            new StorageContainerEndpoint().setStorageContainerId(1L),
+            new StorageContainerEndpoint().setStorageContainerId(2L),
+            new StorageContainerEndpoint().setStorageContainerId(3L));
         GetStorageContainerEndpointResponse response = createGetStorageContainerEndpointResponse(endpoints);
         assertEquals(3, response.getResponsesCount());
         int i = 0;
         for (OneStorageContainerEndpointResponse oneResp : response.getResponsesList()) {
             assertEquals(StatusCode.SUCCESS, oneResp.getStatusCode());
-            assertTrue(endpoints.get(i) == oneResp.getEndpoint());
+            assertEquals(endpoints.get(i), oneResp.getEndpoint());
             ++i;
         }
     }

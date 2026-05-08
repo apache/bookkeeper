@@ -48,17 +48,17 @@ public class ProtoTxnOpImpl implements TxnOp<byte[], byte[]> {
         ProtoTxnOpImpl op = RECYCLER.get();
         op.setRequest(request);
         RecyclableArrayList<CompareOp<byte[], byte[]>> compareOps = COMPARE_OPS_RECYCLER.newInstance();
-        for (Compare compare : request.getCompareList()) {
+        for (Compare compare : request.getComparesList()) {
             compareOps.add(ProtoCompareImpl.newCompareOp(compare));
         }
         op.setCompareOps(compareOps);
         RecyclableArrayList<Op<byte[], byte[]>> successOps = OPS_RECYCLER.newInstance();
-        for (RequestOp reqOp : request.getSuccessList()) {
+        for (RequestOp reqOp : request.getSuccessesList()) {
             successOps.add(toApiOp(reqOp));
         }
         op.setSuccessOps(successOps);
         RecyclableArrayList<Op<byte[], byte[]>> failureOps = OPS_RECYCLER.newInstance();
-        for (RequestOp reqOp : request.getFailureList()) {
+        for (RequestOp reqOp : request.getFailuresList()) {
             failureOps.add(toApiOp(reqOp));
         }
         return op;

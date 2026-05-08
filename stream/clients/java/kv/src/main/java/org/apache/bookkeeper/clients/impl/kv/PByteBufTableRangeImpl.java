@@ -14,11 +14,10 @@
 
 package org.apache.bookkeeper.clients.impl.kv;
 
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.toProtoCompare;
-import static org.apache.bookkeeper.clients.impl.kv.KvUtils.toProtoRequest;
+import static org.apache.bookkeeper.clients.impl.kv.KvUtils.populateProtoCompare;
+import static org.apache.bookkeeper.clients.impl.kv.KvUtils.populateProtoRequest;
 
 import com.google.common.collect.Lists;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import java.util.List;
@@ -44,6 +43,10 @@ import org.apache.bookkeeper.api.kv.result.TxnResult;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.common.util.Backoff;
 import org.apache.bookkeeper.stream.proto.RangeProperties;
+import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
+import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 
@@ -80,11 +83,13 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         this.backoffPolicy = backoffPolicy;
     }
 
-    private RoutingHeader.Builder newRoutingHeader(ByteBuf pKey) {
-        return RoutingHeader.newBuilder()
-            .setStreamId(streamId)
-            .setRangeId(rangeProps.getRangeId())
-            .setRKey(UnsafeByteOperations.unsafeWrap(pKey.nioBuffer()));
+    private void populateRoutingHeader(RoutingHeader header, ByteBuf pKey) {
+        header.setStreamId(streamId);
+        header.setRangeId(rangeProps.getRangeId());
+        // Slice so the rKey has its own readerIndex independent of any other ByteBuf
+        // fields that alias the same underlying buffer. See PByteBufSimpleTableImpl
+        // for details.
+        header.setRKey(pKey.slice());
     }
 
     @Override
@@ -95,10 +100,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         if (null != option.endKey()) {
             option.endKey().retain();
         }
+        RangeRequest request = KvUtils.newRangeRequest(lKey, option);
+        populateRoutingHeader(request.setHeader(), pKey);
         return RangeRequestProcessor.of(
-            KvUtils.newRangeRequest(lKey, option)
-                .setHeader(newRoutingHeader(pKey))
-                .build(),
+            request,
             response -> KvUtils.newRangeResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
@@ -120,10 +125,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         pKey.retain();
         lKey.retain();
         value.retain();
+        PutRequest request = KvUtils.newPutRequest(lKey, value, option);
+        populateRoutingHeader(request.setHeader(), pKey);
         return PutRequestProcessor.of(
-            KvUtils.newPutRequest(lKey, value, option)
-                .setHeader(newRoutingHeader(pKey))
-                .build(),
+            request,
             response -> KvUtils.newPutResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
@@ -144,10 +149,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         if (null != option.endKey()) {
             option.endKey().retain();
         }
+        DeleteRangeRequest request = KvUtils.newDeleteRequest(lKey, option);
+        populateRoutingHeader(request.setHeader(), pKey);
         return DeleteRequestProcessor.of(
-            KvUtils.newDeleteRequest(lKey, option)
-                .setHeader(newRoutingHeader(pKey))
-                .build(),
+            request,
             response -> KvUtils.newDeleteResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
@@ -168,10 +173,10 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
                                                                           IncrementOption<ByteBuf> option) {
         pKey.retain();
         lKey.retain();
+        IncrementRequest request = KvUtils.newIncrementRequest(lKey, amount, option);
+        populateRoutingHeader(request.setHeader(), pKey);
         return IncrementRequestProcessor.of(
-            KvUtils.newIncrementRequest(lKey, amount, option)
-                .setHeader(newRoutingHeader(pKey))
-                .build(),
+            request,
             response -> KvUtils.newIncrementResult(response, resultFactory, kvFactory),
             scChannel,
             executor,
@@ -204,12 +209,12 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     class TxnImpl implements Txn<ByteBuf, ByteBuf> {
 
         private final ByteBuf pKey;
-        private final TxnRequest.Builder txnBuilder;
+        private final TxnRequest txnRequest;
         private final List<AutoCloseable> resourcesToRelease;
 
         TxnImpl(ByteBuf pKey) {
             this.pKey = pKey.retain();
-            this.txnBuilder = TxnRequest.newBuilder();
+            this.txnRequest = new TxnRequest();
             this.resourcesToRelease = Lists.newArrayList();
         }
 
@@ -217,7 +222,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         @Override
         public Txn<ByteBuf, ByteBuf> If(CompareOp... cmps) {
             for (CompareOp<ByteBuf, ByteBuf> cmp : cmps) {
-                txnBuilder.addCompare(toProtoCompare(cmp));
+                populateProtoCompare(txnRequest.addCompare(), cmp);
                 resourcesToRelease.add(cmp);
             }
             return this;
@@ -227,7 +232,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         @Override
         public Txn<ByteBuf, ByteBuf> Then(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
-                txnBuilder.addSuccess(toProtoRequest(op));
+                populateProtoRequest(txnRequest.addSuccess(), op);
                 resourcesToRelease.add(op);
             }
             return this;
@@ -237,7 +242,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         @Override
         public Txn<ByteBuf, ByteBuf> Else(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
-                txnBuilder.addFailure(toProtoRequest(op));
+                populateProtoRequest(txnRequest.addFailure(), op);
                 resourcesToRelease.add(op);
             }
             return this;
@@ -245,8 +250,9 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
 
         @Override
         public CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commit() {
+            populateRoutingHeader(txnRequest.setHeader(), pKey);
             return TxnRequestProcessor.of(
-                txnBuilder.setHeader(newRoutingHeader(pKey)).build(),
+                txnRequest,
                 response -> KvUtils.newKvTxnResult(response, resultFactory, kvFactory),
                 scChannel,
                 executor,

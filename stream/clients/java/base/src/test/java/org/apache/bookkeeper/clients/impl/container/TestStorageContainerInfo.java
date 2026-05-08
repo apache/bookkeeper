@@ -33,10 +33,9 @@ public class TestStorageContainerInfo {
     public void testBasic() {
         long groupId = 1234L;
         long revision = 4468L;
-        Endpoint endpoint = Endpoint.newBuilder()
+        Endpoint endpoint = new Endpoint()
             .setHostname("123.46.78.96")
-            .setPort(3181)
-            .build();
+            .setPort(3181);
         StorageContainerInfo sc = StorageContainerInfo.of(
             groupId,
             revision,

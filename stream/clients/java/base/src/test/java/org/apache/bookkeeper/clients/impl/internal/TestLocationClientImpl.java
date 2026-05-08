@@ -62,12 +62,12 @@ import org.junit.Test;
 public class TestLocationClientImpl extends GrpcClientTestBase {
 
     private static StorageContainerEndpoint createEndpoint(int groupId) {
-        return StorageContainerEndpoint.newBuilder()
-            .setStorageContainerId(groupId)
-            .setRevision(1000L + groupId)
-            .setRwEndpoint(NetUtils.createEndpoint("127.0.0." + groupId, groupId))
-            .addRoEndpoint(NetUtils.createEndpoint("128.0.0." + groupId, groupId))
-            .build();
+        StorageContainerEndpoint endpoint = new StorageContainerEndpoint();
+        endpoint.setStorageContainerId(groupId);
+        endpoint.setRevision(1000L + groupId);
+        endpoint.setRwEndpoint().copyFrom(NetUtils.createEndpoint("127.0.0." + groupId, groupId));
+        endpoint.addRoEndpoint().copyFrom(NetUtils.createEndpoint("128.0.0." + groupId, groupId));
+        return endpoint;
     }
 
     private LocationClientImpl locationClient;
@@ -83,20 +83,21 @@ public class TestLocationClientImpl extends GrpcClientTestBase {
         @Override
         public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
                                                 StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-            GetStorageContainerEndpointResponse.Builder respBuilder = GetStorageContainerEndpointResponse.newBuilder();
+            GetStorageContainerEndpointResponse resp = new GetStorageContainerEndpointResponse();
             if (0 == request.getRequestsCount()) {
                 responseObserver.onError(new StatusRuntimeException(Status.INVALID_ARGUMENT));
             } else {
                 for (OneStorageContainerEndpointRequest oneRequest : request.getRequestsList()) {
-                    respBuilder.addResponses(processOneStorageContainerEndpointRequest(oneRequest));
+                    populateOneStorageContainerEndpointResponse(resp.addResponse(), oneRequest);
                 }
-                respBuilder.setStatusCode(StatusCode.SUCCESS);
-                responseObserver.onNext(respBuilder.build());
+                resp.setStatusCode(StatusCode.SUCCESS);
+                responseObserver.onNext(resp);
             }
             responseObserver.onCompleted();
         }
 
-        OneStorageContainerEndpointResponse.Builder processOneStorageContainerEndpointRequest(
+        void populateOneStorageContainerEndpointResponse(
+            OneStorageContainerEndpointResponse response,
             OneStorageContainerEndpointRequest request) {
             StatusCode code;
             StorageContainerEndpoint endpoint = null;
@@ -114,12 +115,10 @@ public class TestLocationClientImpl extends GrpcClientTestBase {
                     endpoint = null;
                 }
             }
-            OneStorageContainerEndpointResponse.Builder builder = OneStorageContainerEndpointResponse.newBuilder()
-                .setStatusCode(code);
+            response.setStatusCode(code);
             if (null != endpoint) {
-                builder = builder.setEndpoint(endpoint);
+                response.setEndpoint().copyFrom(endpoint);
             }
-            return builder;
         }
     };
     private ServerServiceDefinition locationServiceDefinition;

@@ -93,18 +93,16 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
     @FlakyTest("https://github.com/apache/bookkeeper/issues/1440")
     public void testTableSimpleAPI() throws Exception {
         // Create a namespace
-        NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        NamespaceConfiguration nsConf = new NamespaceConfiguration();
+        nsConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         NamespaceProperties nsProps = result(adminClient.createNamespace(namespace, nsConf));
         assertEquals(namespace, nsProps.getNamespaceName());
         assertEquals(nsConf.getDefaultStreamConf(), nsProps.getDefaultStreamConf());
 
         // Create a stream
         String streamName = testName.getMethodName() + "_stream";
-        StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .setStorageType(StorageType.TABLE)
-            .build();
+        StreamConfiguration streamConf = new StreamConfiguration().copyFrom(DEFAULT_STREAM_CONF)
+            .setStorageType(StorageType.TABLE);
         StreamProperties streamProps = result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
@@ -247,15 +245,14 @@ public class TableClientSimpleTest extends StreamClusterTestBase {
         final String ns = namespace + "_ttl";
         final int ttlSeconds = 5;
 
-        result(adminClient.createNamespace(ns, NamespaceConfiguration.newBuilder()
-                .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-                .build()));
+        NamespaceConfiguration nsConfTtl = new NamespaceConfiguration();
+        nsConfTtl.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        result(adminClient.createNamespace(ns, nsConfTtl));
 
         final String streamName = testName.getMethodName() + "_stream";
-        result(adminClient.createStream(ns, streamName, StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+        result(adminClient.createStream(ns, streamName, new StreamConfiguration().copyFrom(DEFAULT_STREAM_CONF)
                         .setStorageType(StorageType.TABLE)
-                        .setTtlSeconds(ttlSeconds)
-                        .build()));
+                        .setTtlSeconds(ttlSeconds)));
 
         final PTable<ByteBuf, ByteBuf> table = result(storageClient.openPTable(streamName));
 

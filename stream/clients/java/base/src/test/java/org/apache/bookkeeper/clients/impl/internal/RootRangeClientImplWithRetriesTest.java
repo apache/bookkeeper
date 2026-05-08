@@ -48,11 +48,11 @@ public class RootRangeClientImplWithRetriesTest {
     private static final int NUM_RETRIES = 3;
 
     private static final String NS_NAME = "test-namespace";
-    private static final NamespaceConfiguration NS_CONF = NamespaceConfiguration.newBuilder().build();
-    private static final NamespaceProperties NS_PROPS = NamespaceProperties.newBuilder().build();
+    private static final NamespaceConfiguration NS_CONF = new NamespaceConfiguration();
+    private static final NamespaceProperties NS_PROPS = new NamespaceProperties();
     private static final String STREAM_NAME = "test-stream";
-    private static final StreamConfiguration STREAM_CONF = StreamConfiguration.newBuilder().build();
-    private static final StreamProperties STREAM_PROPS = StreamProperties.newBuilder().build();
+    private static final StreamConfiguration STREAM_CONF = new StreamConfiguration();
+    private static final StreamProperties STREAM_PROPS = new StreamProperties();
 
     private AtomicInteger callCounter;
     private RootRangeClient client;

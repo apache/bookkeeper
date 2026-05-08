@@ -17,12 +17,10 @@
  */
 package org.apache.bookkeeper.stream.storage.impl.kv;
 
-import com.google.common.collect.Lists;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import lombok.AccessLevel;
 import lombok.CustomLog;
@@ -61,44 +59,44 @@ final class TableStoreUtils {
     static final byte NO_ROUTING_KEY = 0x0;
     static final byte HAS_ROUTING_KEY = 0x1;
 
-    static boolean hasRKey(ByteString rKey) {
-        return null != rKey && rKey.size() > 0;
+    static boolean hasRKey(byte[] rKey) {
+        return null != rKey && rKey.length > 0;
     }
 
-    static byte[] newStoreKey(ByteString rKey, ByteString lKey) {
+    static byte[] newStoreKey(byte[] rKey, byte[] lKey) {
         boolean hasRkey = hasRKey(rKey);
 
         int keyLen;
         if (hasRkey) {
-            keyLen = rKey.size() + lKey.size() + 2;
+            keyLen = rKey.length + lKey.length + 2;
         } else {
-            keyLen = lKey.size() + 1;
+            keyLen = lKey.length + 1;
         }
         ByteBuf keyBuf = Unpooled.buffer(keyLen);
         if (hasRkey) {
             keyBuf.writeByte(HAS_ROUTING_KEY);
-            keyBuf.writeBytes(rKey.asReadOnlyByteBuffer());
+            keyBuf.writeBytes(rKey);
             keyBuf.writeByte(SEP);
-            keyBuf.writeBytes(lKey.asReadOnlyByteBuffer());
+            keyBuf.writeBytes(lKey);
         } else {
             keyBuf.writeByte(NO_ROUTING_KEY);
-            keyBuf.writeBytes(lKey.asReadOnlyByteBuffer());
+            keyBuf.writeBytes(lKey);
         }
 
         return ByteBufUtil.getBytes(keyBuf);
     }
 
-    static ByteString getLKey(byte[] storeKey, ByteString rKey) {
+    static byte[] getLKey(byte[] storeKey, byte[] rKey) {
         boolean hasRKey = hasRKey(rKey);
 
         int lKeyOffset;
         if (hasRKey) {
-            lKeyOffset = rKey.size() + 2;
+            lKeyOffset = rKey.length + 2;
         } else {
             lKeyOffset = 1;
         }
 
-        return UnsafeByteOperations.unsafeWrap(storeKey, lKeyOffset, storeKey.length - lKeyOffset);
+        return Arrays.copyOfRange(storeKey, lKeyOffset, storeKey.length);
     }
 
     static StatusCode handleCause(Throwable cause) {
@@ -137,118 +135,114 @@ final class TableStoreUtils {
         }
     }
 
-    static KeyValue newKeyValue(ByteString rKey,
+    static KeyValue newKeyValue(byte[] rKey,
                                 org.apache.bookkeeper.api.kv.result.KeyValue<byte[], byte[]> kv) {
         if (null == kv) {
             return null;
         }
-        return KeyValue.newBuilder()
+        return new KeyValue()
             .setKey(getLKey(kv.key(), rKey))
-            .setValue(UnsafeByteOperations.unsafeWrap(kv.value()))
+            .setValue(kv.value())
             .setCreateRevision(kv.createRevision())
             .setModRevision(kv.modifiedRevision())
             .setVersion(kv.version())
             .setIsNumber(kv.isNumber())
-            .setNumberValue(kv.numberValue())
-            .build();
+            .setNumberValue(kv.numberValue());
     }
 
     static PutResponse processPutResult(RoutingHeader routingHeader,
                                         PutResult<byte[], byte[]> result) {
-        ByteString rKey = routingHeader.getRKey();
-        PutResponse.Builder putRespBuilder = PutResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(mvccCodeToStatusCode(result.code()))
-                .setRoutingHeader(routingHeader)
-                .build());
+        byte[] rKey = routingHeader.getRKey();
+        PutResponse putResp = new PutResponse();
+        ResponseHeader header = putResp.setHeader();
+        header.setCode(mvccCodeToStatusCode(result.code()));
+        header.setRoutingHeader().copyFrom(routingHeader);
         if (null != result.prevKv()) {
-            putRespBuilder = putRespBuilder.setPrevKv(newKeyValue(rKey, result.prevKv()));
+            putResp.setPrevKv().copyFrom(newKeyValue(rKey, result.prevKv()));
         }
-        return putRespBuilder.build();
+        return putResp;
     }
 
     static IncrementResponse processIncrementResult(RoutingHeader routingHeader,
                                                     IncrementResult<byte[], byte[]> result) {
-        IncrementResponse.Builder putRespBuilder = IncrementResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(mvccCodeToStatusCode(result.code()))
-                .setRoutingHeader(routingHeader)
-                .build())
-            .setTotalAmount(result.totalAmount());
-        return putRespBuilder.build();
+        IncrementResponse putResp = new IncrementResponse();
+        ResponseHeader header = putResp.setHeader();
+        header.setCode(mvccCodeToStatusCode(result.code()));
+        header.setRoutingHeader().copyFrom(routingHeader);
+        putResp.setTotalAmount(result.totalAmount());
+        return putResp;
     }
 
     static RangeResponse processRangeResult(RoutingHeader routingHeader,
                                             RangeResult<byte[], byte[]> result) {
-        ByteString rKey = routingHeader.getRKey();
-        return RangeResponse.newBuilder()
-            .setCount(result.count())
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(mvccCodeToStatusCode(result.code()))
-                .setRoutingHeader(routingHeader)
-                .build())
-            .addAllKvs(Lists.transform(result.kvs(), kv -> newKeyValue(rKey, kv)))
-            .setMore(result.more())
-            .build();
+        byte[] rKey = routingHeader.getRKey();
+        RangeResponse rangeResp = new RangeResponse();
+        rangeResp.setCount(result.count());
+        ResponseHeader header = rangeResp.setHeader();
+        header.setCode(mvccCodeToStatusCode(result.code()));
+        header.setRoutingHeader().copyFrom(routingHeader);
+        for (org.apache.bookkeeper.api.kv.result.KeyValue<byte[], byte[]> kv : result.kvs()) {
+            rangeResp.addKv().copyFrom(newKeyValue(rKey, kv));
+        }
+        rangeResp.setMore(result.more());
+        return rangeResp;
     }
 
     static DeleteRangeResponse processDeleteResult(RoutingHeader routingHeader,
                                                    DeleteResult<byte[], byte[]> result) {
-        ByteString rKey = routingHeader.getRKey();
-        return DeleteRangeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(mvccCodeToStatusCode(result.code()))
-                .setRoutingHeader(routingHeader)
-                .build())
-            .setDeleted(result.numDeleted())
-            .addAllPrevKvs(Lists.transform(result.prevKvs(), kv -> newKeyValue(rKey, kv)))
-            .build();
+        byte[] rKey = routingHeader.getRKey();
+        DeleteRangeResponse delResp = new DeleteRangeResponse();
+        ResponseHeader header = delResp.setHeader();
+        header.setCode(mvccCodeToStatusCode(result.code()));
+        header.setRoutingHeader().copyFrom(routingHeader);
+        delResp.setDeleted(result.numDeleted());
+        for (org.apache.bookkeeper.api.kv.result.KeyValue<byte[], byte[]> kv : result.prevKvs()) {
+            delResp.addPrevKv().copyFrom(newKeyValue(rKey, kv));
+        }
+        return delResp;
     }
 
     static TxnResponse processTxnResult(RoutingHeader routingHeader,
                                         TxnResult<byte[], byte[]> txnResult) {
-        return TxnResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(mvccCodeToStatusCode(txnResult.code()))
-                .setRoutingHeader(routingHeader)
-                .build())
-            .setSucceeded(txnResult.isSuccess())
-            .addAllResponses(Lists.transform(txnResult.results(), result -> processTxnResult(
-                routingHeader, result)))
-            .build();
+        TxnResponse txnResp = new TxnResponse();
+        ResponseHeader header = txnResp.setHeader();
+        header.setCode(mvccCodeToStatusCode(txnResult.code()));
+        header.setRoutingHeader().copyFrom(routingHeader);
+        txnResp.setSucceeded(txnResult.isSuccess());
+        for (Result<byte[], byte[]> result : txnResult.results()) {
+            txnResp.addResponse().copyFrom(processTxnResult(routingHeader, result));
+        }
+        return txnResp;
     }
 
     static ResponseOp processTxnResult(RoutingHeader routingHeader,
                                        Result<byte[], byte[]> result) {
 
-        ResponseOp.Builder respBuilder = ResponseOp.newBuilder();
+        ResponseOp respOp = new ResponseOp();
         switch (result.type()) {
             case PUT:
                 PutResult<byte[], byte[]> putResult = (PutResult<byte[], byte[]>) result;
-                respBuilder.setResponsePut(
-                    processPutResult(routingHeader, putResult));
+                respOp.setResponsePut().copyFrom(processPutResult(routingHeader, putResult));
                 break;
             case DELETE:
                 DeleteResult<byte[], byte[]> delResult = (DeleteResult<byte[], byte[]>) result;
-                respBuilder.setResponseDeleteRange(
-                    processDeleteResult(routingHeader, delResult));
+                respOp.setResponseDeleteRange().copyFrom(processDeleteResult(routingHeader, delResult));
                 break;
             case RANGE:
                 RangeResult<byte[], byte[]> rangeResult = (RangeResult<byte[], byte[]>) result;
-                respBuilder.setResponseRange(
-                    processRangeResult(routingHeader, rangeResult));
+                respOp.setResponseRange().copyFrom(processRangeResult(routingHeader, rangeResult));
                 break;
             default:
                 break;
         }
-        return respBuilder.build();
+        return respOp;
     }
 
     static CompareOp<byte[], byte[]> fromProtoCompare(OpFactory<byte[], byte[]> opFactory,
                                                       RoutingHeader header,
                                                       Compare compare) {
-        ByteString rKey = header.getRKey();
-        ByteString lKey = compare.getKey();
+        byte[] rKey = header.getRKey();
+        byte[] lKey = compare.getKey();
         byte[] storeKey = newStoreKey(rKey, lKey);
         CompareResult result = fromProtoCompareResult(compare.getResult());
         switch (compare.getTarget()) {
@@ -268,11 +262,12 @@ final class TableStoreUtils {
                     storeKey,
                     compare.getVersion());
             case VALUE:
+                byte[] cv = compare.getValue();
                 return opFactory.compareValue(
                     result,
                     storeKey,
-                    (null == compare.getValue() || compare.getValue().size() == 0)
-                        ? null : compare.getValue().toByteArray());
+                    (null == cv || cv.length == 0)
+                        ? null : cv);
             default:
                 throw new IllegalArgumentException("Invalid compare target " + compare.getTarget());
         }

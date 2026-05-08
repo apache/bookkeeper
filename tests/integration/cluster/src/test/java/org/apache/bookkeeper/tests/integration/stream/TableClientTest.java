@@ -102,18 +102,16 @@ public class TableClientTest extends StreamClusterTestBase {
                               StorageAdminClient adminClient,
                               StorageClient storageClient) throws Exception {
         // Create a namespace
-        NamespaceConfiguration nsConf = NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        NamespaceConfiguration nsConf = new NamespaceConfiguration();
+        nsConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         NamespaceProperties nsProps = FutureUtils.result(adminClient.createNamespace(namespace, nsConf));
         assertEquals(namespace, nsProps.getNamespaceName());
         assertEquals(nsConf.getDefaultStreamConf(), nsProps.getDefaultStreamConf());
 
         // Create a stream
         String streamName = testName.getMethodName() + "_stream";
-        StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .setStorageType(StorageType.TABLE)
-            .build();
+        StreamConfiguration streamConf = new StreamConfiguration().copyFrom(DEFAULT_STREAM_CONF)
+            .setStorageType(StorageType.TABLE);
         StreamProperties streamProps = FutureUtils.result(
             adminClient.createStream(namespace, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());

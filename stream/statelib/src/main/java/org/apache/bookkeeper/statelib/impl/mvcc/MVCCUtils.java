@@ -18,15 +18,8 @@
 
 package org.apache.bookkeeper.statelib.impl.mvcc;
 
-import com.google.common.collect.Lists;
-import com.google.protobuf.InvalidProtocolBufferException;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
 import lombok.CustomLog;
@@ -56,7 +49,6 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RequestOp;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.store.Command;
-import org.apache.bookkeeper.stream.proto.kv.store.NopRequest;
 
 /**
  * Utils for mvcc stores.
@@ -65,17 +57,20 @@ import org.apache.bookkeeper.stream.proto.kv.store.NopRequest;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MVCCUtils {
 
-    public static final Command NOP_CMD = Command.newBuilder()
-        .setNopReq(NopRequest.newBuilder().build())
-        .build();
+    public static final Command NOP_CMD = newNopCommand();
+
+    private static Command newNopCommand() {
+        Command cmd = new Command();
+        cmd.setNopReq();
+        return cmd;
+    }
 
     static PutRequest toPutRequest(PutOp<byte[], byte[]> op) {
-        PutRequest.Builder reqBuilder = PutRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
-            .setValue(UnsafeByteOperations.unsafeWrap(op.value()))
+        return new PutRequest()
+            .setKey(op.key())
+            .setValue(op.value())
             .setLease(0)
             .setPrevKv(op.option().prevKv());
-        return reqBuilder.build();
     }
 
     static DeleteRangeRequest toDeleteRequest(DeleteOp<byte[], byte[]> op) {
@@ -88,11 +83,10 @@ public final class MVCCUtils {
             endKey = Constants.NULL_END_KEY;
         }
 
-        DeleteRangeRequest.Builder reqBuilder = DeleteRangeRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(key))
-            .setRangeEnd(UnsafeByteOperations.unsafeWrap(endKey));
-
-        return reqBuilder.setPrevKv(op.option().prevKv()).build();
+        return new DeleteRangeRequest()
+            .setKey(key)
+            .setRangeEnd(endKey)
+            .setPrevKv(op.option().prevKv());
     }
 
     static RangeRequest toRangeRequest(RangeOp<byte[], byte[]> op) {
@@ -105,46 +99,37 @@ public final class MVCCUtils {
             endKey = Constants.NULL_END_KEY;
         }
 
-        RangeRequest.Builder reqBuilder = RangeRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(key))
-            .setRangeEnd(UnsafeByteOperations.unsafeWrap(endKey))
+        return new RangeRequest()
+            .setKey(key)
+            .setRangeEnd(endKey)
             .setMaxCreateRevision(op.option().maxCreateRev())
             .setMinCreateRevision(op.option().minCreateRev())
             .setMaxModRevision(op.option().maxModRev())
             .setMinModRevision(op.option().minModRev())
             .setCountOnly(false);
-
-        return reqBuilder.build();
     }
 
-    private static List<RequestOp> toRequestOpList(List<Op<byte[], byte[]>> ops) {
+    private static void appendRequestOps(TxnRequest target, java.util.List<Op<byte[], byte[]>> ops, boolean success) {
         if (ops == null) {
-            return Collections.emptyList();
+            return;
         }
-        List<RequestOp> requestOps = Lists.newArrayListWithExpectedSize(ops.size());
         for (Op<byte[], byte[]> op : ops) {
+            RequestOp reqOp = success ? target.addSuccess() : target.addFailure();
             switch (op.type()) {
                 case PUT:
-                    requestOps.add(RequestOp.newBuilder()
-                        .setRequestPut(toPutRequest((PutOp<byte[], byte[]>) op))
-                        .build());
+                    reqOp.setRequestPut().copyFrom(toPutRequest((PutOp<byte[], byte[]>) op));
                     break;
                 case DELETE:
-                    requestOps.add(RequestOp.newBuilder()
-                        .setRequestDeleteRange(toDeleteRequest((DeleteOp<byte[], byte[]>) op))
-                        .build());
+                    reqOp.setRequestDeleteRange().copyFrom(toDeleteRequest((DeleteOp<byte[], byte[]>) op));
                     break;
                 case RANGE:
-                    requestOps.add(RequestOp.newBuilder()
-                        .setRequestRange(toRangeRequest((RangeOp<byte[], byte[]>) op))
-                        .build());
+                    reqOp.setRequestRange().copyFrom(toRangeRequest((RangeOp<byte[], byte[]>) op));
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown request "
                         + op.type() + " found in a txn request");
             }
         }
-        return requestOps;
     }
 
     public static Op<byte[], byte[]> toApiOp(RequestOp protoOp) {
@@ -161,38 +146,37 @@ public final class MVCCUtils {
         }
     }
 
-    private static List<Compare> toCompareList(List<CompareOp<byte[], byte[]>> ops) {
-        List<Compare> compares = Lists.newArrayListWithExpectedSize(ops.size());
-        for (CompareOp<byte[], byte[]> op : ops) {
-            compares.add(toCompare(op));
+    private static void appendCompares(TxnRequest target, java.util.List<CompareOp<byte[], byte[]>> ops) {
+        if (ops == null) {
+            return;
         }
-        return compares;
+        for (CompareOp<byte[], byte[]> op : ops) {
+            populateCompare(target.addCompare(), op);
+        }
     }
 
-    private static Compare toCompare(CompareOp<byte[], byte[]> op) {
-        Compare.Builder compareBuilder = Compare.newBuilder();
-        compareBuilder.setTarget(toProtoCompareTarget(op.target()));
-        compareBuilder.setResult(toProtoCompareResult(op.result()));
-        compareBuilder.setKey(UnsafeByteOperations.unsafeWrap(op.key()));
+    private static void populateCompare(Compare compare, CompareOp<byte[], byte[]> op) {
+        compare.setTarget(toProtoCompareTarget(op.target()));
+        compare.setResult(toProtoCompareResult(op.result()));
+        compare.setKey(op.key());
         switch (op.target()) {
             case MOD:
-                compareBuilder.setModRevision(op.revision());
+                compare.setModRevision(op.revision());
                 break;
             case CREATE:
-                compareBuilder.setCreateRevision(op.revision());
+                compare.setCreateRevision(op.revision());
                 break;
             case VERSION:
-                compareBuilder.setVersion(op.revision());
+                compare.setVersion(op.revision());
                 break;
             case VALUE:
                 if (op.value() != null) {
-                    compareBuilder.setValue(UnsafeByteOperations.unsafeWrap(op.value()));
+                    compare.setValue(op.value());
                 }
                 break;
             default:
                 throw new IllegalArgumentException("Invalid compare target " + op.target());
         }
-        return compareBuilder.build();
     }
 
     private static Compare.CompareTarget toProtoCompareTarget(CompareTarget target) {
@@ -256,47 +240,46 @@ public final class MVCCUtils {
     }
 
     static TxnRequest toTxnRequest(TxnOp<byte[], byte[]> op) {
-        return TxnRequest.newBuilder()
-            .addAllSuccess(toRequestOpList(op.successOps()))
-            .addAllFailure(toRequestOpList(op.failureOps()))
-            .addAllCompare(toCompareList(op.compareOps()))
-            .build();
+        TxnRequest req = new TxnRequest();
+        appendRequestOps(req, op.successOps(), true);
+        appendRequestOps(req, op.failureOps(), false);
+        appendCompares(req, op.compareOps());
+        return req;
     }
 
     static IncrementRequest toIncrementRequest(IncrementOp<byte[], byte[]> op) {
-        return IncrementRequest.newBuilder()
-            .setKey(UnsafeByteOperations.unsafeWrap(op.key()))
+        return new IncrementRequest()
+            .setKey(op.key())
             .setAmount(op.amount())
-            .setGetTotal(op.option().getTotal())
-            .build();
+            .setGetTotal(op.option().getTotal());
     }
 
     static Command toCommand(Op<byte[], byte[]> op) {
-        Command.Builder cmdBuilder = Command.newBuilder();
+        Command cmd = new Command();
         switch (op.type()) {
             case PUT:
-                cmdBuilder.setPutReq(toPutRequest((PutOp<byte[], byte[]>) op));
+                cmd.setPutReq().copyFrom(toPutRequest((PutOp<byte[], byte[]>) op));
                 break;
             case DELETE:
-                cmdBuilder.setDeleteReq(toDeleteRequest((DeleteOp<byte[], byte[]>) op));
+                cmd.setDeleteReq().copyFrom(toDeleteRequest((DeleteOp<byte[], byte[]>) op));
                 break;
             case TXN:
-                cmdBuilder.setTxnReq(toTxnRequest((TxnOp<byte[], byte[]>) op));
+                cmd.setTxnReq().copyFrom(toTxnRequest((TxnOp<byte[], byte[]>) op));
                 break;
             case INCREMENT:
-                cmdBuilder.setIncrReq(toIncrementRequest((IncrementOp<byte[], byte[]>) op));
+                cmd.setIncrReq().copyFrom(toIncrementRequest((IncrementOp<byte[], byte[]>) op));
                 break;
             default:
                 throw new IllegalArgumentException("Unknown command type " + op.type());
         }
-        return cmdBuilder.build();
+        return cmd;
     }
 
     public static ByteBuf newLogRecordBuf(Command command) {
         ByteBuf buf = Unpooled.buffer(command.getSerializedSize());
         try {
-            command.writeTo(new ByteBufOutputStream(buf));
-        } catch (IOException e) {
+            command.writeTo(buf);
+        } catch (RuntimeException e) {
             throw new StateStoreRuntimeException("Invalid command : " + command, e);
         }
         return buf;
@@ -304,8 +287,10 @@ public final class MVCCUtils {
 
     static Command newCommand(ByteBuf recordBuf) {
         try {
-            return Command.parseFrom(recordBuf.nioBuffer());
-        } catch (InvalidProtocolBufferException e) {
+            Command cmd = new Command();
+            cmd.parseFrom(recordBuf, recordBuf.readableBytes());
+            return cmd;
+        } catch (RuntimeException e) {
             log.error().exception(e).log("Found a corrupted record on replaying log stream");
             throw new StateStoreRuntimeException("Found a corrupted record on replaying log stream", e);
         }

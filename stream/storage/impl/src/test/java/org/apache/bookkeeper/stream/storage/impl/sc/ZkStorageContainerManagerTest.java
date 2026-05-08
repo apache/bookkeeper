@@ -64,10 +64,9 @@ public class ZkStorageContainerManagerTest extends ZooKeeperClusterTestCase {
     @Rule
     public final TestName runtime = new TestName();
 
-    private final Endpoint myEndpoint = Endpoint.newBuilder()
+    private final Endpoint myEndpoint = new Endpoint()
         .setHostname("127.0.0.1")
-        .setPort(4181)
-        .build();
+        .setPort(4181);
 
     private CuratorFramework curatorClient;
     private StorageContainerFactory mockScFactory;

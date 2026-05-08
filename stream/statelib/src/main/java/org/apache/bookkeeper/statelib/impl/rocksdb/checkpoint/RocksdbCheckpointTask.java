@@ -20,7 +20,6 @@ package org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint;
 import com.google.common.collect.Sets;
 import com.google.common.io.MoreFiles;
 import com.google.common.io.RecursiveDeleteOption;
-import com.google.protobuf.UnsafeByteOperations;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -177,21 +176,21 @@ public class RocksdbCheckpointTask {
                                     String checkpointId,
                                     byte[] txid) throws IOException {
 
-        CheckpointMetadata.Builder metadataBuilder = CheckpointMetadata.newBuilder();
+        CheckpointMetadata metadata = new CheckpointMetadata();
         for (CheckpointFile file : files) {
             if (checkpointChecksumEnable) {
-                metadataBuilder.addFileInfos(file.getFileInfo());
+                metadata.addFileInfo().copyFrom(file.getFileInfo());
             }
-            metadataBuilder.addFiles(file.getName());
+            metadata.addFile(file.getName());
         }
         if (null != txid) {
-            metadataBuilder.setTxid(UnsafeByteOperations.unsafeWrap(txid));
+            metadata.setTxid(txid);
         }
-        metadataBuilder.setCreatedAt(System.currentTimeMillis());
+        metadata.setCreatedAt(System.currentTimeMillis());
 
         String destCheckpointPath = RocksUtils.getDestCheckpointMetadataPath(dbPrefix, checkpointId);
         try (OutputStream os = checkpointStore.openOutputStream(destCheckpointPath)) {
-            os.write(metadataBuilder.build().toByteArray());
+            os.write(metadata.toByteArray());
         }
     }
 

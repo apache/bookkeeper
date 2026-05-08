@@ -48,7 +48,8 @@ public class CheckpointInfo implements Comparable<CheckpointInfo> {
 
     public CheckpointInfo(String id, InputStream is) throws IOException {
         this.id = id;
-        this.metadata = CheckpointMetadata.parseFrom(is);
+        this.metadata = new CheckpointMetadata();
+        this.metadata.parseFrom(is.readAllBytes());
     }
 
     public CheckpointInfo(String id) {

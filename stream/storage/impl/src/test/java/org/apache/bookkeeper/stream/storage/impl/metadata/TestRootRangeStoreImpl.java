@@ -56,14 +56,21 @@ import org.junit.Test;
 @CustomLog
 public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
-    private final NamespaceConfiguration namespaceConf =
-        NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+    private final NamespaceConfiguration namespaceConf = newNamespaceConf();
 
-    private final StreamConfiguration streamConf =
-        StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .build();
+    private static NamespaceConfiguration newNamespaceConf() {
+        NamespaceConfiguration conf = new NamespaceConfiguration();
+        conf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
+
+    private final StreamConfiguration streamConf = newStreamConf();
+
+    private static StreamConfiguration newStreamConf() {
+        StreamConfiguration conf = new StreamConfiguration();
+        conf.copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
 
 
     private RootRangeStoreImpl rootRangeStore;

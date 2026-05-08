@@ -27,7 +27,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import io.grpc.stub.StreamObserver;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -68,37 +67,33 @@ public class RangeRoutingTableImplTest extends GrpcClientTestBase {
 
     @Override
     protected void doSetup() throws Exception {
-        this.props = StreamProperties.newBuilder()
+        this.props = new StreamProperties()
             .setStorageContainerId(scId)
             .setStreamId(streamId)
-            .setStreamName("metaclient-stream")
-            .setStreamConf(StreamConfiguration.newBuilder().build())
-            .build();
+            .setStreamName("metaclient-stream");
+        this.props.setStreamConf().copyFrom(new StreamConfiguration());
         this.rangeProps = ProtoUtils.split(
             streamId,
             24,
             23456L,
             StorageContainerPlacementPolicyImpl.of(4)
         );
-        final GetActiveRangesResponse.Builder getActiveRangesResponseBuilder = GetActiveRangesResponse.newBuilder();
+        final GetActiveRangesResponse getActiveRangesResp = new GetActiveRangesResponse();
         for (RangeProperties range : rangeProps) {
-            RelatedRanges.Builder rrBuilder = RelatedRanges.newBuilder()
-                .setProps(range)
-                .setType(RelationType.PARENTS)
-                .addAllRelatedRanges(Collections.emptyList());
-            getActiveRangesResponseBuilder.addRanges(rrBuilder);
+            RelatedRanges rr = getActiveRangesResp.addRange();
+            rr.setProps().copyFrom(range);
+            rr.setType(RelationType.PARENTS);
         }
-        this.getActiveRangesResponse = getActiveRangesResponseBuilder
-            .setCode(StatusCode.SUCCESS)
-            .build();
+        getActiveRangesResp.setCode(StatusCode.SUCCESS);
+        this.getActiveRangesResponse = getActiveRangesResp;
         RootRangeServiceImplBase rootRangeService = new RootRangeServiceImplBase() {
             @Override
             public void getStream(GetStreamRequest request,
                                   StreamObserver<GetStreamResponse> responseObserver) {
-                responseObserver.onNext(GetStreamResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .setStreamProps(props)
-                    .build());
+                GetStreamResponse resp = new GetStreamResponse()
+                    .setCode(StatusCode.SUCCESS);
+                resp.setStreamProps().copyFrom(props);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

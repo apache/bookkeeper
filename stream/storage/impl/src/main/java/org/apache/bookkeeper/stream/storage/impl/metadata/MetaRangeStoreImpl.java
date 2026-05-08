@@ -74,9 +74,8 @@ public class MetaRangeStoreImpl
                                                                              MetaRangeImpl metaRange,
                                                                              StreamProperties streamProps) {
         if (null == streamProps) {
-            return FutureUtils.value(GetActiveRangesResponse.newBuilder()
-                .setCode(StatusCode.STREAM_NOT_FOUND)
-                .build());
+            return FutureUtils.value(new GetActiveRangesResponse()
+                .setCode(StatusCode.STREAM_NOT_FOUND));
         }
 
         return metaRange.create(streamProps).thenCompose(created -> {
@@ -86,9 +85,8 @@ public class MetaRangeStoreImpl
                 }
                 return getActiveRanges(metaRange);
             } else {
-                return FutureUtils.value(GetActiveRangesResponse.newBuilder()
-                    .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                    .build());
+                return FutureUtils.value(new GetActiveRangesResponse()
+                    .setCode(StatusCode.INTERNAL_SERVER_ERROR));
             }
         });
     }
@@ -121,21 +119,21 @@ public class MetaRangeStoreImpl
     }
 
     private CompletableFuture<GetActiveRangesResponse> getActiveRanges(MetaRange metaRange) {
-        GetActiveRangesResponse.Builder respBuilder = GetActiveRangesResponse.newBuilder();
+        GetActiveRangesResponse resp = new GetActiveRangesResponse();
         return metaRange.getActiveRanges()
             .thenApplyAsync(ranges -> {
                 for (RangeMetadata range : ranges) {
-                    RelatedRanges.Builder rrBuilder = RelatedRanges.newBuilder()
-                        .setProps(range.getProps())
-                        .setType(RelationType.PARENTS)
-                        .addAllRelatedRanges(range.getParentsList());
-                    respBuilder.addRanges(rrBuilder);
+                    RelatedRanges rr = resp.addRange();
+                    rr.setProps().copyFrom(range.getProps());
+                    rr.setType(RelationType.PARENTS);
+                    for (int i = 0; i < range.getParentsCount(); i++) {
+                        rr.addRelatedRange(range.getParentAt(i));
+                    }
                 }
-                return respBuilder
-                    .setCode(StatusCode.SUCCESS)
-                    .build();
+                resp.setCode(StatusCode.SUCCESS);
+                return resp;
             }, executor)
-            .exceptionally(cause -> respBuilder.setCode(StatusCode.INTERNAL_SERVER_ERROR).build());
+            .exceptionally(cause -> new GetActiveRangesResponse().setCode(StatusCode.INTERNAL_SERVER_ERROR));
     }
 
 }

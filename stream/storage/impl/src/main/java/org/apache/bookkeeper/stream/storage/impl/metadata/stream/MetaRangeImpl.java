@@ -28,7 +28,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.protobuf.InvalidProtocolBufferException;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.concurrent.CompletableFuture;
@@ -135,12 +134,10 @@ public class MetaRangeImpl implements MetaRange {
             placementPolicy,
             Maps.newTreeMap(),
             Lists.newArrayList(),
-            StreamMetadata
-                .newBuilder()
+            new StreamMetadata()
                 .setLifecycleState(LifecycleState.UNINIT)
                 .setServingState(ServingState.WRITABLE)
-                .setNextRangeId(MIN_DATA_RANGE_ID)
-                .build(),
+                .setNextRangeId(MIN_DATA_RANGE_ID),
             0L,
             0L);
     }
@@ -200,29 +197,31 @@ public class MetaRangeImpl implements MetaRange {
 
     @VisibleForTesting
     private synchronized StreamMetadata toStreamMetadata(LifecycleState state) {
-        StreamMetadata.Builder builder = StreamMetadata
-            .newBuilder()
-            .setProps(streamProps)
-            .setLifecycleState(state)
-            .setServingState(servingState)
-            .setNextRangeId(nextRangeId)
-            .setCTime(cTime)
-            .setMTime(mTime)
-            .addAllCurrentRanges(currentRanges);
-        return builder.build();
+        StreamMetadata metadata = new StreamMetadata();
+        metadata.setProps().copyFrom(streamProps);
+        metadata.setLifecycleState(state);
+        metadata.setServingState(servingState);
+        metadata.setNextRangeId(nextRangeId);
+        metadata.setCTime(cTime);
+        metadata.setMTime(mTime);
+        for (long currentRange : currentRanges) {
+            metadata.addCurrentRange(currentRange);
+        }
+        return metadata;
     }
 
     private synchronized StreamMetadata toStreamMetadata(ServingState state, long mTime) {
-        StreamMetadata.Builder builder = StreamMetadata
-            .newBuilder()
-            .setProps(streamProps)
-            .setLifecycleState(lifecycleState)
-            .setServingState(state)
-            .setNextRangeId(nextRangeId)
-            .setCTime(cTime)
-            .setMTime(mTime)
-            .addAllCurrentRanges(currentRanges);
-        return builder.build();
+        StreamMetadata metadata = new StreamMetadata();
+        metadata.setProps().copyFrom(streamProps);
+        metadata.setLifecycleState(lifecycleState);
+        metadata.setServingState(state);
+        metadata.setNextRangeId(nextRangeId);
+        metadata.setCTime(cTime);
+        metadata.setMTime(mTime);
+        for (long currentRange : currentRanges) {
+            metadata.addCurrentRange(currentRange);
+        }
+        return metadata;
     }
 
     @VisibleForTesting
@@ -294,13 +293,11 @@ public class MetaRangeImpl implements MetaRange {
         List<Op<byte[], byte[]>> successOps = Lists.newArrayListWithExpectedSize(
             propertiesList.size() + 1);
         for (RangeProperties props : propertiesList) {
-            RangeMetadata meta = RangeMetadata.newBuilder()
-                .setProps(props)
-                .setCreateTime(cTime)
-                .setFenceTime(Long.MAX_VALUE)
-                .setState(RangeState.RANGE_ACTIVE)
-                .addAllParents(Lists.newArrayList())
-                .build();
+            RangeMetadata meta = new RangeMetadata();
+            meta.setProps().copyFrom(props);
+            meta.setCreateTime(cTime);
+            meta.setFenceTime(Long.MAX_VALUE);
+            meta.setState(RangeState.RANGE_ACTIVE);
             ranges.put(props.getRangeId(), meta);
             currentRanges.add(props.getRangeId());
 
@@ -382,10 +379,10 @@ public class MetaRangeImpl implements MetaRange {
 
     private synchronized void loadStreamMetadata(long streamId, byte[] streamMetadataBytes) {
         this.streamId = streamId;
-        StreamMetadata metadata;
+        StreamMetadata metadata = new StreamMetadata();
         try {
-            metadata = StreamMetadata.parseFrom(streamMetadataBytes);
-        } catch (InvalidProtocolBufferException e) {
+            metadata.parseFrom(streamMetadataBytes);
+        } catch (RuntimeException e) {
             throw new RuntimeException("Invalid stream metadata of stream " + streamId, e);
         }
 
@@ -393,7 +390,9 @@ public class MetaRangeImpl implements MetaRange {
         this.lifecycleState = metadata.getLifecycleState();
         this.servingState = metadata.getServingState();
         this.currentRanges.clear();
-        this.currentRanges.addAll(metadata.getCurrentRangesList());
+        for (int i = 0; i < metadata.getCurrentRangesCount(); i++) {
+            this.currentRanges.add(metadata.getCurrentRangeAt(i));
+        }
         this.nextRangeId = metadata.getNextRangeId();
         this.cTime = metadata.getCTime();
         this.mTime = metadata.getMTime();
@@ -403,10 +402,10 @@ public class MetaRangeImpl implements MetaRange {
         checkArgument(this.streamId == streamId);
         checkArgument(rangeId >= 0L);
 
-        RangeMetadata metadata;
+        RangeMetadata metadata = new RangeMetadata();
         try {
-            metadata = RangeMetadata.parseFrom(rangeMetadataBytes);
-        } catch (InvalidProtocolBufferException e) {
+            metadata.parseFrom(rangeMetadataBytes);
+        } catch (RuntimeException e) {
             throw new RuntimeException("Invalid range metadata of range (" + streamId + ", " + rangeId + ")", e);
         }
 

@@ -23,10 +23,6 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RID_METADA
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RK_METADATA_KEY;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SID_METADATA_KEY;
 
-import com.google.protobuf.CodedOutputStream;
-import com.google.protobuf.MessageLite;
-import com.google.protobuf.Parser;
-import com.google.protobuf.UnsafeByteOperations;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
@@ -43,6 +39,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 import lombok.CustomLog;
 import lombok.Data;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
@@ -82,80 +79,173 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
 
     }
 
-    private static RoutingHeader.Builder newRoutingHeaderBuilder(RoutingHeader header,
-                                                                 Long sid,
-                                                                 Long rid,
-                                                                 byte[] rk) {
-        return RoutingHeader.newBuilder(header)
-                .setStreamId(sid)
-                .setRangeId(rid)
-                .setRKey(UnsafeByteOperations.unsafeWrap(rk));
+    private static RoutingHeader newRoutingHeader(RoutingHeader header,
+                                                  Long sid,
+                                                  Long rid,
+                                                  byte[] rk) {
+        RoutingHeader newHeader = new RoutingHeader();
+        newHeader.copyFrom(header);
+        newHeader.setStreamId(sid);
+        newHeader.setRangeId(rid);
+        newHeader.setRKey(rk);
+        return newHeader;
     }
 
     private static final TableRequestMutator<PutRequest> PUT_INTERCEPTOR =
-        (request, sid, rid, rk) -> PutRequest.newBuilder(request)
-            .setHeader(newRoutingHeaderBuilder(request.getHeader(), sid, rid, rk))
-            .build();
+        (request, sid, rid, rk) -> {
+            PutRequest mutated = new PutRequest();
+            mutated.copyFrom(request);
+            mutated.setHeader().copyFrom(newRoutingHeader(request.getHeader(), sid, rid, rk));
+            return mutated;
+        };
 
     private static final TableRequestMutator<RangeRequest> RANGE_INTERCEPTOR =
-        (request, sid, rid, rk) -> RangeRequest.newBuilder(request)
-            .setHeader(newRoutingHeaderBuilder(request.getHeader(), sid, rid, rk))
-            .build();
+        (request, sid, rid, rk) -> {
+            RangeRequest mutated = new RangeRequest();
+            mutated.copyFrom(request);
+            mutated.setHeader().copyFrom(newRoutingHeader(request.getHeader(), sid, rid, rk));
+            return mutated;
+        };
 
     private static final TableRequestMutator<DeleteRangeRequest> DELETE_INTERCEPTOR =
-        (request, sid, rid, rk) -> DeleteRangeRequest.newBuilder(request)
-            .setHeader(newRoutingHeaderBuilder(request.getHeader(), sid, rid, rk))
-            .build();
+        (request, sid, rid, rk) -> {
+            DeleteRangeRequest mutated = new DeleteRangeRequest();
+            mutated.copyFrom(request);
+            mutated.setHeader().copyFrom(newRoutingHeader(request.getHeader(), sid, rid, rk));
+            return mutated;
+        };
 
     private static final TableRequestMutator<IncrementRequest> INCR_INTERCEPTOR =
-        (request, sid, rid, rk) -> IncrementRequest.newBuilder(request)
-            .setHeader(newRoutingHeaderBuilder(request.getHeader(), sid, rid, rk))
-            .build();
+        (request, sid, rid, rk) -> {
+            IncrementRequest mutated = new IncrementRequest();
+            mutated.copyFrom(request);
+            mutated.setHeader().copyFrom(newRoutingHeader(request.getHeader(), sid, rid, rk));
+            return mutated;
+        };
 
     private static final TableRequestMutator<TxnRequest> TXN_INTERCEPTOR =
-        (request, sid, rid, rk) -> TxnRequest.newBuilder(request)
-            .setHeader(newRoutingHeaderBuilder(request.getHeader(), sid, rid, rk))
-            .build();
+        (request, sid, rid, rk) -> {
+            TxnRequest mutated = new TxnRequest();
+            mutated.copyFrom(request);
+            mutated.setHeader().copyFrom(newRoutingHeader(request.getHeader(), sid, rid, rk));
+            return mutated;
+        };
+
+    /**
+     * Parser that creates a new instance of a lightproto message from a byte array.
+     */
+    private interface LightProtoParser<T> {
+        T parseFrom(byte[] data);
+    }
+
+    /**
+     * Serializer that converts a lightproto message to a byte array.
+     */
+    private interface LightProtoSerializer<T> {
+        byte[] toByteArray(T msg);
+    }
 
     @Data(staticConstructor = "of")
-    private static class InterceptorDescriptor<T extends MessageLite> {
+    private static class InterceptorDescriptor<T> {
 
         private final Class<T> clz;
-        private final Parser<T> parser;
+        private final Supplier<T> factory;
+        private final LightProtoParser<T> parser;
+        private final LightProtoSerializer<T> serializer;
         private final TableRequestMutator<T> interceptor;
 
     }
 
+    private static <T> InterceptorDescriptor<T> descriptor(
+        Class<T> clz,
+        Supplier<T> factory,
+        LightProtoParser<T> parser,
+        LightProtoSerializer<T> serializer,
+        TableRequestMutator<T> interceptor
+    ) {
+        return InterceptorDescriptor.of(clz, factory, parser, serializer, interceptor);
+    }
+
     private static Map<String, InterceptorDescriptor<?>> kvRpcMethods = new HashMap<>();
+    private static PutRequest parsePutRequest(byte[] bytes) {
+        PutRequest m = new PutRequest();
+        m.parseFrom(bytes);
+        return m;
+    }
+
+    private static RangeRequest parseRangeRequest(byte[] bytes) {
+        RangeRequest m = new RangeRequest();
+        m.parseFrom(bytes);
+        return m;
+    }
+
+    private static DeleteRangeRequest parseDeleteRangeRequest(byte[] bytes) {
+        DeleteRangeRequest m = new DeleteRangeRequest();
+        m.parseFrom(bytes);
+        return m;
+    }
+
+    private static IncrementRequest parseIncrementRequest(byte[] bytes) {
+        IncrementRequest m = new IncrementRequest();
+        m.parseFrom(bytes);
+        return m;
+    }
+
+    private static TxnRequest parseTxnRequest(byte[] bytes) {
+        TxnRequest m = new TxnRequest();
+        m.parseFrom(bytes);
+        return m;
+    }
+
     static {
         kvRpcMethods.put(
             TableServiceGrpc.getPutMethod().getFullMethodName(),
-            InterceptorDescriptor.of(
-                PutRequest.class, PutRequest.parser(), PUT_INTERCEPTOR
+            descriptor(
+                PutRequest.class,
+                PutRequest::new,
+                RoutingHeaderProxyInterceptor::parsePutRequest,
+                PutRequest::toByteArray,
+                PUT_INTERCEPTOR
             )
         );
         kvRpcMethods.put(
             TableServiceGrpc.getRangeMethod().getFullMethodName(),
-            InterceptorDescriptor.of(
-                RangeRequest.class, RangeRequest.parser(), RANGE_INTERCEPTOR
+            descriptor(
+                RangeRequest.class,
+                RangeRequest::new,
+                RoutingHeaderProxyInterceptor::parseRangeRequest,
+                RangeRequest::toByteArray,
+                RANGE_INTERCEPTOR
             )
         );
         kvRpcMethods.put(
             TableServiceGrpc.getDeleteMethod().getFullMethodName(),
-            InterceptorDescriptor.of(
-                DeleteRangeRequest.class, DeleteRangeRequest.parser(), DELETE_INTERCEPTOR
+            descriptor(
+                DeleteRangeRequest.class,
+                DeleteRangeRequest::new,
+                RoutingHeaderProxyInterceptor::parseDeleteRangeRequest,
+                DeleteRangeRequest::toByteArray,
+                DELETE_INTERCEPTOR
             )
         );
         kvRpcMethods.put(
             TableServiceGrpc.getIncrementMethod().getFullMethodName(),
-            InterceptorDescriptor.of(
-                IncrementRequest.class, IncrementRequest.parser(), INCR_INTERCEPTOR
+            descriptor(
+                IncrementRequest.class,
+                IncrementRequest::new,
+                RoutingHeaderProxyInterceptor::parseIncrementRequest,
+                IncrementRequest::toByteArray,
+                INCR_INTERCEPTOR
             )
         );
         kvRpcMethods.put(
             TableServiceGrpc.getTxnMethod().getFullMethodName(),
-            InterceptorDescriptor.of(
-                TxnRequest.class, TxnRequest.parser(), TXN_INTERCEPTOR
+            descriptor(
+                TxnRequest.class,
+                TxnRequest::new,
+                RoutingHeaderProxyInterceptor::parseTxnRequest,
+                TxnRequest::toByteArray,
+                TXN_INTERCEPTOR
             )
         );
     }
@@ -236,7 +326,7 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
             .parse(new ByteBufInputStream(buffer, true));
     }
 
-    private <ReqT, TableReqT extends MessageLite> ReqT interceptMessage(
+    private <ReqT, TableReqT> ReqT interceptMessage(
         MethodDescriptor<ReqT, ?> method,
         InterceptorDescriptor<TableReqT> descriptor,
         ReqT message,
@@ -262,7 +352,7 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
     }
 
     @SuppressWarnings("unchecked")
-    private <ReqT, TableReqT extends MessageLite> ReqT interceptTableRequest(
+    private <ReqT, TableReqT> ReqT interceptTableRequest(
         MethodDescriptor<ReqT, ?> method,
         InterceptorDescriptor<TableReqT> interceptor,
         ReqT message,
@@ -274,7 +364,8 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
             request = (TableReqT) message;
         } else {
             InputStream is = method.getRequestMarshaller().stream(message);
-            request = interceptor.getParser().parseFrom(is);
+            byte[] bytes = is.readAllBytes();
+            request = interceptor.getParser().parseFrom(bytes);
         }
         TableReqT interceptedMessage = interceptor.getInterceptor().intercept(
             request, sid, rid, rk
@@ -282,8 +373,7 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
         if (message.getClass() == interceptor.getClz()) {
             return (ReqT) interceptedMessage;
         } else {
-            byte[] reqBytes = new byte[interceptedMessage.getSerializedSize()];
-            interceptedMessage.writeTo(CodedOutputStream.newInstance(reqBytes));
+            byte[] reqBytes = interceptor.getSerializer().toByteArray(interceptedMessage);
             return method.getRequestMarshaller().parse(new ByteArrayInputStream(reqBytes));
 
         }
