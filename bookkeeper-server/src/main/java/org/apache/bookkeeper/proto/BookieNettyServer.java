@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.annotations.VisibleForTesting;
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.PooledByteBufAllocator;
@@ -109,7 +108,6 @@ class BookieNettyServer {
     final InetSocketAddress bindAddress;
 
     final BookieAuthProvider.Factory authProviderFactory;
-    final ExtensionRegistry registry = ExtensionRegistry.newInstance();
 
     private final ByteBufAllocator allocator;
 
@@ -382,8 +380,8 @@ class BookieNettyServer {
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
 
-                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
-                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
+                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder());
+                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder());
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(
                                 contextHandler.getConnectionPeer(), authProviderFactory));
 
@@ -440,8 +438,8 @@ class BookieNettyServer {
 
                     pipeline.addLast("lengthbaseddecoder", new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
 
-                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder(registry));
-                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder(registry));
+                    pipeline.addLast("bookieProtoDecoder", new BookieProtoEncoding.RequestDecoder());
+                    pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.ResponseEncoder());
                     pipeline.addLast("bookieAuthHandler", new AuthHandler.ServerSideHandler(
                                 contextHandler.getConnectionPeer(), authProviderFactory));
 

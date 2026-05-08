@@ -163,6 +163,71 @@ public class ByteBufListTest {
     }
 
     @Test
+    public void testToByteBufEmpty() throws Exception {
+        ByteBufList buf = ByteBufList.get();
+        assertEquals(1, buf.refCnt());
+
+        ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
+
+        // empty list returns the EMPTY_BUFFER sentinel and the list is untouched
+        assertEquals(Unpooled.EMPTY_BUFFER, result);
+        assertEquals(1, buf.refCnt());
+
+        buf.release();
+    }
+
+    @Test
+    public void testToByteBufSingle() throws Exception {
+        ByteBuf b1 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
+        b1.writerIndex(b1.capacity());
+        ByteBufList buf = ByteBufList.get(b1);
+
+        assertEquals(1, buf.refCnt());
+        assertEquals(1, b1.refCnt());
+
+        ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
+
+        // fast path: a retained duplicate of the single buffer is returned with
+        // its own independent ref count; the list itself is unchanged.
+        assertEquals(1, buf.refCnt());
+        assertEquals(2, b1.refCnt());
+        assertEquals(128, result.readableBytes());
+
+        result.release();
+        assertEquals(1, b1.refCnt());
+        buf.release();
+        assertEquals(0, b1.refCnt());
+    }
+
+    @Test
+    public void testToByteBufMultiple() throws Exception {
+        ByteBuf b1 = Unpooled.wrappedBuffer("hello".getBytes());
+        ByteBuf b2 = Unpooled.wrappedBuffer("world".getBytes());
+        ByteBufList buf = ByteBufList.get(b1, b2);
+
+        assertEquals(1, buf.refCnt());
+        assertEquals(1, b1.refCnt());
+        assertEquals(1, b2.refCnt());
+
+        ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
+
+        // multi-buffer path: a CompositeByteBuf is returned whose components
+        // hold their own retained references; the list itself is unchanged.
+        assertEquals(1, buf.refCnt());
+        assertEquals(1, result.refCnt());
+        assertEquals(2, b1.refCnt());
+        assertEquals(2, b2.refCnt());
+        assertEquals(Unpooled.wrappedBuffer("helloworld".getBytes()), result);
+
+        result.release();
+        assertEquals(1, b1.refCnt());
+        assertEquals(1, b2.refCnt());
+        buf.release();
+        assertEquals(0, b1.refCnt());
+        assertEquals(0, b2.refCnt());
+    }
+
+    @Test
     public void testRetain() throws Exception {
         ByteBuf b1 = PooledByteBufAllocator.DEFAULT.heapBuffer(128, 128);
         b1.writerIndex(b1.capacity());

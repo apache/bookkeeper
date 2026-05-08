@@ -89,7 +89,7 @@ public class BookieRequestHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-        if (!(msg instanceof BookkeeperProtocol.Request || msg instanceof BookieProtocol.Request)) {
+        if (!(msg instanceof Request || msg instanceof BookieProtocol.Request)) {
             ctx.fireChannelRead(msg);
             return;
         }

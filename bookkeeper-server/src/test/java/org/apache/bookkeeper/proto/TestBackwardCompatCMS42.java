@@ -24,8 +24,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
@@ -45,7 +43,6 @@ import org.apache.bookkeeper.proto.BookieProtocol.AuthResponse;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.proto.BookieProtocol.Request;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.Test;
@@ -63,7 +60,6 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     private static final byte[] FAILURE_RESPONSE = {2};
     private static final byte[] PAYLOAD_MESSAGE = {3};
 
-    ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
     ClientAuthProvider.Factory authProvider;
     EventLoopGroup eventLoopGroup = new NioEventLoopGroup();
     OrderedExecutor executor = OrderedExecutor.newBuilder().numThreads(1).name("TestBackwardCompatClient")
@@ -84,10 +80,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 TestAuth.AlwaysSucceedBookieAuthProviderFactory.class.getName());
         BookieServer bookie1 = startAndStoreBookie(bookieConf);
 
-        AuthMessage.Builder builder = AuthMessage.newBuilder()
-            .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
-        builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
-        final AuthMessage authMessage = builder.build();
+        final AuthMessage authMessage = new AuthMessage()
+                .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME)
+                .setPayload(PAYLOAD_MESSAGE);
 
         CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
@@ -106,10 +101,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 TestAuth.SucceedAfter3BookieAuthProviderFactory.class.getName());
         BookieServer bookie1 = startAndStoreBookie(bookieConf);
 
-        AuthMessage.Builder builder = AuthMessage.newBuilder()
-            .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
-        builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
-        final AuthMessage authMessage = builder.build();
+        final AuthMessage authMessage = new AuthMessage()
+                .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME)
+                .setPayload(PAYLOAD_MESSAGE);
         CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
@@ -121,7 +115,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             assertEquals("Should have succeeded",
                          response.getErrorCode(), BookieProtocol.EOK);
             byte[] type = authResponse.getAuthMessage()
-                .getPayload().toByteArray();
+                .getPayload();
             if (i == 2) {
                 assertArrayEquals("Should succeed after 3",
                              type, SUCCESS_RESPONSE);
@@ -139,10 +133,9 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                 TestAuth.FailAfter3BookieAuthProviderFactory.class.getName());
         BookieServer bookie1 = startAndStoreBookie(bookieConf);
 
-        AuthMessage.Builder builder = AuthMessage.newBuilder()
-            .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME);
-        builder.setPayload(ByteString.copyFrom(PAYLOAD_MESSAGE));
-        final AuthMessage authMessage = builder.build();
+        final AuthMessage authMessage = new AuthMessage()
+                .setAuthPluginName(TestAuth.TEST_AUTH_PROVIDER_PLUGIN_NAME)
+                .setPayload(PAYLOAD_MESSAGE);
         CompatClient42 client = newCompatClient(bookie1.getBookieId());
 
         Request request = new AuthRequest(BookieProtocol.CURRENT_PROTOCOL_VERSION, authMessage);
@@ -154,7 +147,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
             assertEquals("Should have succeeded",
                          response.getErrorCode(), BookieProtocol.EOK);
             byte[] type = authResponse.getAuthMessage()
-                .getPayload().toByteArray();
+                .getPayload();
             if (i == 2) {
                 assertArrayEquals("Should fail after 3",
                              type, FAILURE_RESPONSE);
@@ -181,7 +174,7 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
     CompatClient42 newCompatClient(BookieId addr) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setUseV2WireProtocol(true);
-        return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider, extRegistry);
+        return new CompatClient42(conf, executor, eventLoopGroup, addr, authProvider);
     }
 
     // extending PerChannelBookieClient to get the pipeline factory
@@ -194,15 +187,13 @@ public class TestBackwardCompatCMS42 extends BookKeeperClusterTestCase {
                        OrderedExecutor executor,
                        EventLoopGroup eventLoopGroup,
                        BookieId addr,
-                       ClientAuthProvider.Factory authProviderFactory,
-                       ExtensionRegistry extRegistry) throws Exception {
+                       ClientAuthProvider.Factory authProviderFactory) throws Exception {
             super(conf,
                 executor,
                 eventLoopGroup,
                 addr,
                 NullStatsLogger.INSTANCE,
                 authProviderFactory,
-                extRegistry,
                 null,
                 BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 

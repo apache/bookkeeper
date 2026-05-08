@@ -21,7 +21,6 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
@@ -31,11 +30,6 @@ import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 
 @CustomLog
@@ -54,13 +48,13 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         long ledgerId = addRequest.getLedgerId();
         long entryId = addRequest.getEntryId();
 
-        final AddResponse.Builder addResponse = AddResponse.newBuilder()
+        final AddResponse addResponse = new AddResponse()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId);
 
         if (!isVersionCompatible()) {
             addResponse.setStatus(StatusCode.EBADVERSION);
-            return addResponse.build();
+            return addResponse;
         }
 
         if (requestProcessor.getBookie().isReadOnly()
@@ -68,7 +62,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                     && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
             log.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
-            return addResponse.build();
+            return addResponse;
         }
 
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
@@ -96,11 +90,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         break;
                 }
                 addResponse.setStatus(status);
-                Response.Builder response = Response.newBuilder()
-                        .setHeader(getHeader())
-                        .setStatus(addResponse.getStatus())
-                        .setAddResponse(addResponse);
-                Response resp = response.build();
+                Response resp = new Response();
+                resp.setHeader().copyFrom(getHeader());
+                resp.setStatus(addResponse.getStatus());
+                resp.setAddResponse().copyFrom(addResponse);
                 sendResponse(status, resp, requestProcessor.getRequestStats().getAddRequestStats());
             }
         };
@@ -112,8 +105,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         }
         final boolean ackBeforeSync = writeFlags.contains(WriteFlag.DEFERRED_SYNC);
         StatusCode status = null;
-        byte[] masterKey = addRequest.getMasterKey().toByteArray();
-        ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
+        byte[] masterKey = addRequest.getMasterKey();
+        ByteBuf entryToAdd = addRequest.getBodySlice();
         try {
             if (RequestUtils.hasFlag(addRequest, AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.getBookie().recoveryAddEntry(entryToAdd, wcb,
@@ -167,7 +160,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         // doesn't return a response back to the caller.
         if (!status.equals(StatusCode.EOK)) {
             addResponse.setStatus(status);
-            return addResponse.build();
+            return addResponse;
         }
         return null;
     }
@@ -179,11 +172,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         AddResponse addResponse = getAddResponse();
         if (null != addResponse) {
             // This means there was an error and we should send this back.
-            Response.Builder response = Response.newBuilder()
-                    .setHeader(getHeader())
-                    .setStatus(addResponse.getStatus())
-                    .setAddResponse(addResponse);
-            Response resp = response.build();
+            Response resp = new Response();
+            resp.setHeader().copyFrom(getHeader());
+            resp.setStatus(addResponse.getStatus());
+            resp.setAddResponse().copyFrom(addResponse);
             sendResponse(addResponse.getStatus(), resp,
                          requestProcessor.getRequestStats().getAddRequestStats());
         }

@@ -69,7 +69,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.proto.GetBookieInfoRequest;
 import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
@@ -318,8 +318,8 @@ public class BookieClientTest {
         TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         BookieClient bc = new BookieClientImpl(clientConf, new NioEventLoopGroup(), UnpooledByteBufAllocator.DEFAULT,
                 executor, scheduler, statsLogger, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
-                | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
+        long flags = GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
+                | GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
         class CallbackObj {
             int rc;
@@ -341,11 +341,11 @@ public class BookieClientTest {
                 CallbackObj obj = (CallbackObj) ctx;
                 obj.rc = rc;
                 if (rc == Code.OK) {
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
+                    if ((obj.requested & GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
                         obj.freeDiskSpace = bInfo.getFreeDiskSpace();
                     }
                     if ((obj.requested
-                            & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
+                            & GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
                         obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
                     }
                 }

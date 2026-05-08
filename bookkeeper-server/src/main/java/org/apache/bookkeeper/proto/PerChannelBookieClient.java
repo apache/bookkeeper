@@ -19,13 +19,11 @@
 package org.apache.bookkeeper.proto;
 
 import com.google.common.collect.Sets;
-import com.google.protobuf.ByteString;
-import com.google.protobuf.ExtensionRegistry;
-import com.google.protobuf.UnsafeByteOperations;
 import io.github.merlimat.slog.Logger;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
@@ -106,19 +104,6 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadLacCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.WriteLacRequest;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -330,35 +315,33 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
     private final PerChannelBookieClientPool pcbcPool;
     private final ClientAuthProvider.Factory authProviderFactory;
-    private final ExtensionRegistry extRegistry;
     private final SecurityHandlerFactory shFactory;
     private volatile boolean isWritable = true;
     private long lastBookieUnavailableLogTimestamp = 0;
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId addr, BookieAddressResolver bookieAddressResolver) throws SecurityException {
-        this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE, null, null,
+        this(new ClientConfiguration(), executor, eventLoopGroup, addr, NullStatsLogger.INSTANCE, null,
                 null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(OrderedExecutor executor, EventLoopGroup eventLoopGroup,
                                   BookieId bookieId,
                                   ClientAuthProvider.Factory authProviderFactory,
-                                  ExtensionRegistry extRegistry, BookieAddressResolver bookieAddressResolver)
+                                  BookieAddressResolver bookieAddressResolver)
             throws SecurityException {
         this(new ClientConfiguration(), executor, eventLoopGroup, bookieId,
                 NullStatsLogger.INSTANCE,
-                authProviderFactory, extRegistry, null, bookieAddressResolver);
+                authProviderFactory, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
                                   EventLoopGroup eventLoopGroup, BookieId bookieId,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
-                                  ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool, BookieAddressResolver bookieAddressResolver)
             throws SecurityException {
         this(conf, executor, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, bookieId, NullStatsLogger.INSTANCE,
-                authProviderFactory, extRegistry, pcbcPool, null, bookieAddressResolver);
+                authProviderFactory, pcbcPool, null, bookieAddressResolver);
     }
 
     public PerChannelBookieClient(ClientConfiguration conf, OrderedExecutor executor,
@@ -366,7 +349,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                   ByteBufAllocator allocator,
                                   BookieId bookieId,
                                   StatsLogger parentStatsLogger, ClientAuthProvider.Factory authProviderFactory,
-                                  ExtensionRegistry extRegistry,
                                   PerChannelBookieClientPool pcbcPool,
                                   SecurityHandlerFactory shFactory,
                                   BookieAddressResolver bookieAddressResolver) throws SecurityException {
@@ -395,7 +377,6 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         this.preserveMdcForTaskExecution = conf.getPreserveMdcForTaskExecution();
 
         this.authProviderFactory = authProviderFactory;
-        this.extRegistry = extRegistry;
         this.shFactory = shFactory;
         if (shFactory != null) {
             shFactory.init(NodeType.Client, conf, allocator);
@@ -609,10 +590,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 pipeline.addLast("bytebufList", ByteBufList.ENCODER);
                 pipeline.addLast("lengthbasedframedecoder",
                         new LengthFieldBasedFrameDecoder(maxFrameSize, 0, 4, 0, 4));
-                pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder(extRegistry));
+                pipeline.addLast("bookieProtoEncoder", new BookieProtoEncoding.RequestEncoder());
                 pipeline.addLast(
                     "bookieProtoDecoder",
-                    new BookieProtoEncoding.ResponseDecoder(extRegistry, useV2WireProtocol, shFactory != null));
+                    new BookieProtoEncoding.ResponseDecoder(useV2WireProtocol, shFactory != null));
                 pipeline.addLast("authHandler", new AuthHandler.ClientSideHandler(authProviderFactory, txnIdGenerator,
                             connectionPeer, useV2WireProtocol));
                 pipeline.addLast("mainhandler", PerChannelBookieClient.this);
@@ -710,26 +691,21 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                      ctx, ledgerId, this));
 
         // Build the request
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+        Request writeLacRequest = new Request();
+        writeLacRequest.setHeader()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.WRITE_LAC)
                 .setTxnId(txnId);
-        ByteString body = ByteStringUtil.byteBufListToByteString(toSend);
-        toSend.retain();
-        Runnable cleanupActionFailedBeforeWrite = toSend::release;
-        Runnable cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
-        WriteLacRequest.Builder writeLacBuilder = WriteLacRequest.newBuilder()
+        ByteBuf body = toSend.toByteBuf(PooledByteBufAllocator.DEFAULT);
+        Runnable releaseBody = body::release;
+        writeLacRequest.setWriteLacRequest()
                 .setLedgerId(ledgerId)
                 .setLac(lac)
-                .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                .setMasterKey(masterKey)
                 .setBody(body);
+        withRequestContext(writeLacRequest);
 
-        final Request writeLacRequest = withRequestContext(Request.newBuilder())
-                .setHeader(headerBuilder)
-                .setWriteLacRequest(writeLacBuilder)
-                .build();
-        writeAndFlush(channel, completionKey, writeLacRequest, false, cleanupActionFailedBeforeWrite,
-                cleanupActionAfterWrite);
+        writeAndFlush(channel, completionKey, writeLacRequest, false, releaseBody, releaseBody);
     }
 
     void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx) {
@@ -749,17 +725,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                                      ctx, ledgerId, this));
 
         // Build the request
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+        Request forceLedgerRequest = new Request();
+        forceLedgerRequest.setHeader()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.FORCE_LEDGER)
                 .setTxnId(txnId);
-        ForceLedgerRequest.Builder writeLacBuilder = ForceLedgerRequest.newBuilder()
-                .setLedgerId(ledgerId);
-
-        final Request forceLedgerRequest = withRequestContext(Request.newBuilder())
-                .setHeader(headerBuilder)
-                .setForceLedgerRequest(writeLacBuilder)
-                .build();
+        forceLedgerRequest.setForceLedgerRequest().setLedgerId(ledgerId);
+        withRequestContext(forceLedgerRequest);
         writeAndFlush(channel, completionKey, forceLedgerRequest);
     }
 
@@ -813,38 +785,36 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             completionKey = new TxnCompletionKey(txnId, OperationType.ADD_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
-            BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+            Request addEntryRequest = new Request();
+            BKPacketHeader header = addEntryRequest.setHeader()
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.ADD_ENTRY)
                     .setTxnId(txnId);
             if (((short) options & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+                header.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
             ByteBufList bufToSend = (ByteBufList) toSend;
-            ByteString body = ByteStringUtil.byteBufListToByteString(bufToSend);
-            bufToSend.retain();
-            cleanupActionFailedBeforeWrite = bufToSend::release;
+            ByteBuf body = bufToSend.toByteBuf(PooledByteBufAllocator.DEFAULT);
+            cleanupActionFailedBeforeWrite = body::release;
             cleanupActionAfterWrite = cleanupActionFailedBeforeWrite;
-            AddRequest.Builder addBuilder = AddRequest.newBuilder()
+            AddRequest addRequestMsg = addEntryRequest.setAddRequest()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId)
-                    .setMasterKey(UnsafeByteOperations.unsafeWrap(masterKey))
+                    .setMasterKey(masterKey)
                     .setBody(body);
 
             if (((short) options & BookieProtocol.FLAG_RECOVERY_ADD) == BookieProtocol.FLAG_RECOVERY_ADD) {
-                addBuilder.setFlag(AddRequest.Flag.RECOVERY_ADD);
+                addRequestMsg.setFlag(AddRequest.Flag.RECOVERY_ADD);
             }
 
             if (!writeFlags.isEmpty()) {
                 // add flags only if needed, in order to be able to talk with old bookies
-                addBuilder.setWriteFlags(WriteFlag.getWriteFlagsValue(writeFlags));
+                addRequestMsg.setWriteFlags(WriteFlag.getWriteFlagsValue(writeFlags));
             }
 
-            request = withRequestContext(Request.newBuilder())
-                    .setHeader(headerBuilder)
-                    .setAddRequest(addBuilder)
-                    .build();
+            withRequestContext(addEntryRequest);
+            request = addEntryRequest;
         }
 
         putCompletionKeyValue(completionKey,
@@ -867,16 +837,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             completionKey = new TxnCompletionKey(txnId, OperationType.READ_LAC);
 
             // Build the request and calculate the total size to be included in the packet.
-            BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+            Request readLacRequest = new Request();
+            readLacRequest.setHeader()
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.READ_LAC)
                     .setTxnId(txnId);
-            ReadLacRequest.Builder readLacBuilder = ReadLacRequest.newBuilder()
-                    .setLedgerId(ledgerId);
-            request = withRequestContext(Request.newBuilder())
-                    .setHeader(headerBuilder)
-                    .setReadLacRequest(readLacBuilder)
-                    .build();
+            readLacRequest.setReadLacRequest().setLedgerId(ledgerId);
+            withRequestContext(readLacRequest);
+            request = readLacRequest;
         }
         putCompletionKeyValue(completionKey,
                               new ReadLacCompletion(completionKey, cb,
@@ -891,14 +859,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                 completionKey, cb, ledgerId, this));
 
         // Build the request.
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder().setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.GET_LIST_OF_ENTRIES_OF_LEDGER).setTxnId(txnId);
-
-        GetListOfEntriesOfLedgerRequest.Builder getListOfEntriesOfLedgerRequestBuilder =
-                GetListOfEntriesOfLedgerRequest.newBuilder().setLedgerId(ledgerId);
-
-        final Request getListOfEntriesOfLedgerRequest = Request.newBuilder().setHeader(headerBuilder)
-                .setGetListOfEntriesOfLedgerRequest(getListOfEntriesOfLedgerRequestBuilder).build();
+        Request getListOfEntriesOfLedgerRequest = new Request();
+        getListOfEntriesOfLedgerRequest.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.GET_LIST_OF_ENTRIES_OF_LEDGER)
+                .setTxnId(txnId);
+        getListOfEntriesOfLedgerRequest.setGetListOfEntriesOfLedgerRequest().setLedgerId(ledgerId);
 
         writeAndFlush(channel, completionKey, getListOfEntriesOfLedgerRequest);
     }
@@ -952,20 +918,21 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             completionKey = new TxnCompletionKey(txnId, OperationType.READ_ENTRY);
 
             // Build the request and calculate the total size to be included in the packet.
-            BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+            Request readEntryRequest = new Request();
+            BKPacketHeader header = readEntryRequest.setHeader()
                     .setVersion(ProtocolVersion.VERSION_THREE)
                     .setOperation(OperationType.READ_ENTRY)
                     .setTxnId(txnId);
             if (((short) flags & BookieProtocol.FLAG_HIGH_PRIORITY) == BookieProtocol.FLAG_HIGH_PRIORITY) {
-                headerBuilder.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
+                header.setPriority(DEFAULT_HIGH_PRIORITY_VALUE);
             }
 
-            ReadRequest.Builder readBuilder = ReadRequest.newBuilder()
+            ReadRequest readRequestMsg = readEntryRequest.setReadRequest()
                     .setLedgerId(ledgerId)
                     .setEntryId(entryId);
 
             if (null != previousLAC) {
-                readBuilder = readBuilder.setPreviousLAC(previousLAC);
+                readRequestMsg.setPreviousLAC(previousLAC);
             }
 
             if (null != timeOutInMillis) {
@@ -975,7 +942,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         ledgerId, entryId, null, ctx);
                     return;
                 }
-                readBuilder = readBuilder.setTimeOut(timeOutInMillis);
+                readRequestMsg.setTimeOut(timeOutInMillis);
             }
 
             if (piggyBackEntry) {
@@ -985,24 +952,22 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                         ledgerId, entryId, null, ctx);
                     return;
                 }
-                readBuilder = readBuilder.setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
+                readRequestMsg.setFlag(ReadRequest.Flag.ENTRY_PIGGYBACK);
             }
 
             // Only one flag can be set on the read requests
             if (((short) flags & BookieProtocol.FLAG_DO_FENCING) == BookieProtocol.FLAG_DO_FENCING) {
-                readBuilder.setFlag(ReadRequest.Flag.FENCE_LEDGER);
+                readRequestMsg.setFlag(ReadRequest.Flag.FENCE_LEDGER);
                 if (masterKey == null) {
                     cb.readEntryComplete(BKException.Code.IncorrectParameterException,
                                          ledgerId, entryId, null, ctx);
                     return;
                 }
-                readBuilder.setMasterKey(ByteString.copyFrom(masterKey));
+                readRequestMsg.setMasterKey(masterKey);
             }
 
-            request = withRequestContext(Request.newBuilder())
-                    .setHeader(headerBuilder)
-                    .setReadRequest(readBuilder)
-                    .build();
+            withRequestContext(readEntryRequest);
+            request = readEntryRequest;
         }
 
         ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId, this);
@@ -1062,18 +1027,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                       completionKey, cb, ctx, this));
 
         // Build the request and calculate the total size to be included in the packet.
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+        Request getBookieInfoRequest = new Request();
+        getBookieInfoRequest.setHeader()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.GET_BOOKIE_INFO)
                 .setTxnId(txnId);
-
-        GetBookieInfoRequest.Builder getBookieInfoBuilder = GetBookieInfoRequest.newBuilder()
-                .setRequested(requested);
-
-        final Request getBookieInfoRequest = withRequestContext(Request.newBuilder())
-                .setHeader(headerBuilder)
-                .setGetBookieInfoRequest(getBookieInfoBuilder)
-                .build();
+        getBookieInfoRequest.setGetBookieInfoRequest().setRequested(requested);
+        withRequestContext(getBookieInfoRequest);
 
         writeAndFlush(channel, completionKey, getBookieInfoRequest);
     }
@@ -1697,26 +1657,22 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         return txnIdGenerator.incrementAndGet();
     }
 
-    Request.Builder withRequestContext(Request.Builder builder) {
+    Request withRequestContext(Request request) {
         if (preserveMdcForTaskExecution) {
-            return appendRequestContext(builder);
+            return appendRequestContext(request);
         }
-        return builder;
+        return request;
     }
 
-    static Request.Builder appendRequestContext(Request.Builder builder) {
+    static Request appendRequestContext(Request request) {
         final Map<String, String> mdcContextMap = MDC.getCopyOfContextMap();
         if (mdcContextMap == null || mdcContextMap.isEmpty()) {
-            return builder;
+            return request;
         }
         for (Map.Entry<String, String> kv : mdcContextMap.entrySet()) {
-            final BookkeeperProtocol.ContextPair context = BookkeeperProtocol.ContextPair.newBuilder()
-                    .setKey(kv.getKey())
-                    .setValue(kv.getValue())
-                    .build();
-            builder.addRequestContext(context);
+            request.addRequestContext().setKey(kv.getKey()).setValue(kv.getValue());
         }
-        return builder;
+        return request;
     }
 
     ChannelFutureListener contextPreservingListener(ChannelFutureListener listener) {
@@ -1878,15 +1834,15 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         final CompletionKey completionKey = new TxnCompletionKey(txnId, OperationType.START_TLS);
         completionObjects.put(completionKey,
                               new StartTLSCompletion(completionKey, this));
-        BookkeeperProtocol.Request.Builder h = withRequestContext(BookkeeperProtocol.Request.newBuilder());
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
+        Request startTlsRequest = new Request();
+        startTlsRequest.setHeader()
                 .setVersion(ProtocolVersion.VERSION_THREE)
                 .setOperation(OperationType.START_TLS)
                 .setTxnId(txnId);
-        h.setHeader(headerBuilder.build());
-        h.setStartTLSRequest(BookkeeperProtocol.StartTLSRequest.newBuilder().build());
+        startTlsRequest.setStartTLSRequest();
+        withRequestContext(startTlsRequest);
         state = ConnectionState.START_TLS;
-        writeAndFlush(channel, completionKey, h.build());
+        writeAndFlush(channel, completionKey, startTlsRequest);
     }
 
     protected void failTLS(int rc) {

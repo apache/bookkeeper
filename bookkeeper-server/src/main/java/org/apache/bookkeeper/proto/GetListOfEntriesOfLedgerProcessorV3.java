@@ -20,17 +20,11 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.GetListOfEntriesOfLedgerResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.util.AvailabilityOfEntriesOfLedger;
 
 /**
@@ -51,15 +45,14 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
     private GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse() {
         long startTimeNanos = MathUtils.nowInNano();
 
-        GetListOfEntriesOfLedgerResponse.Builder getListOfEntriesOfLedgerResponse = GetListOfEntriesOfLedgerResponse
-                .newBuilder();
+        GetListOfEntriesOfLedgerResponse getListOfEntriesOfLedgerResponse = new GetListOfEntriesOfLedgerResponse();
         getListOfEntriesOfLedgerResponse.setLedgerId(ledgerId);
 
         if (!isVersionCompatible()) {
             getListOfEntriesOfLedgerResponse.setStatus(StatusCode.EBADVERSION);
             requestProcessor.getRequestStats().getGetListOfEntriesOfLedgerStats()
                     .registerFailedEvent(MathUtils.elapsedNanos(startTimeNanos), TimeUnit.NANOSECONDS);
-            return getListOfEntriesOfLedgerResponse.build();
+            return getListOfEntriesOfLedgerResponse;
         }
 
         log.debug().attr("request", request).log("Received new getListOfEntriesOfLedger request");
@@ -69,7 +62,7 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
             availabilityOfEntriesOfLedger = new AvailabilityOfEntriesOfLedger(
                     requestProcessor.bookie.getListOfEntriesOfLedger(ledgerId));
             getListOfEntriesOfLedgerResponse.setAvailabilityOfEntriesOfLedger(
-                    ByteString.copyFrom(availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger()));
+                    availabilityOfEntriesOfLedger.serializeStateOfEntriesOfLedger());
 
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
@@ -93,17 +86,17 @@ public class GetListOfEntriesOfLedgerProcessorV3 extends PacketProcessorBaseV3 i
         }
         // Finally set the status and return
         getListOfEntriesOfLedgerResponse.setStatus(status);
-        return getListOfEntriesOfLedgerResponse.build();
+        return getListOfEntriesOfLedgerResponse;
     }
 
     @Override
     public void run() {
         GetListOfEntriesOfLedgerResponse listOfEntriesOfLedgerResponse = getListOfEntriesOfLedgerResponse();
-        Response.Builder response = Response.newBuilder().setHeader(getHeader())
-                .setStatus(listOfEntriesOfLedgerResponse.getStatus())
-                .setGetListOfEntriesOfLedgerResponse(listOfEntriesOfLedgerResponse);
-        Response resp = response.build();
-        sendResponse(listOfEntriesOfLedgerResponse.getStatus(), resp,
+        Response response = new Response();
+        response.setHeader().copyFrom(getHeader());
+        response.setStatus(listOfEntriesOfLedgerResponse.getStatus());
+        response.setGetListOfEntriesOfLedgerResponse().copyFrom(listOfEntriesOfLedgerResponse);
+        sendResponse(listOfEntriesOfLedgerResponse.getStatus(), response,
                 requestProcessor.getRequestStats().getListOfEntriesOfLedgerRequestStats);
     }
 }

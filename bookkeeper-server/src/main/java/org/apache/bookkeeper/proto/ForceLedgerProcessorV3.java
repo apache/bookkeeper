@@ -27,11 +27,6 @@ import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ForceLedgerResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 
 
 @CustomLog
@@ -48,11 +43,11 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         ForceLedgerRequest forceLedgerRequest = request.getForceLedgerRequest();
         long ledgerId = forceLedgerRequest.getLedgerId();
 
-        final ForceLedgerResponse.Builder forceLedgerResponse = ForceLedgerResponse.newBuilder().setLedgerId(ledgerId);
+        final ForceLedgerResponse forceLedgerResponse = new ForceLedgerResponse().setLedgerId(ledgerId);
 
         if (!isVersionCompatible()) {
             forceLedgerResponse.setStatus(StatusCode.EBADVERSION);
-            return forceLedgerResponse.build();
+            return forceLedgerResponse;
         }
 
         BookkeeperInternalCallbacks.WriteCallback wcb =
@@ -87,11 +82,10 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
                     break;
             }
             forceLedgerResponse.setStatus(status);
-            Response.Builder response = Response.newBuilder()
-                    .setHeader(getHeader())
-                    .setStatus(forceLedgerResponse.getStatus())
-                    .setForceLedgerResponse(forceLedgerResponse);
-            Response resp = response.build();
+            Response resp = new Response();
+            resp.setHeader().copyFrom(getHeader());
+            resp.setStatus(forceLedgerResponse.getStatus());
+            resp.setForceLedgerResponse().copyFrom(forceLedgerResponse);
             sendResponse(status, resp, requestProcessor.getRequestStats().getForceLedgerRequestStats());
         };
         StatusCode status = null;
@@ -111,7 +105,7 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         // doesn't return a response back to the caller.
         if (!status.equals(StatusCode.EOK)) {
             forceLedgerResponse.setStatus(status);
-            return forceLedgerResponse.build();
+            return forceLedgerResponse;
         }
         return null;
     }
@@ -120,11 +114,10 @@ class ForceLedgerProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     public void run() {
         ForceLedgerResponse forceLedgerResponse = getForceLedgerResponse();
         if (null != forceLedgerResponse) {
-            Response.Builder response = Response.newBuilder()
-                    .setHeader(getHeader())
-                    .setStatus(forceLedgerResponse.getStatus())
-                    .setForceLedgerResponse(forceLedgerResponse);
-            Response resp = response.build();
+            Response resp = new Response();
+            resp.setHeader().copyFrom(getHeader());
+            resp.setStatus(forceLedgerResponse.getStatus());
+            resp.setForceLedgerResponse().copyFrom(forceLedgerResponse);
             sendResponse(
                 forceLedgerResponse.getStatus(),
                 resp,

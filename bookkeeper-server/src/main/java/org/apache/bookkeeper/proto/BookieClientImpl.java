@@ -24,7 +24,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -89,7 +88,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             new ConcurrentHashMap<BookieId, PerChannelBookieClientPool>();
 
     private final ClientAuthProvider.Factory authProviderFactory;
-    private final ExtensionRegistry registry;
 
     private final ClientConfiguration conf;
     private final ClientConfiguration v3Conf;
@@ -116,7 +114,6 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
         this.closed = false;
         this.closeLock = new ReentrantReadWriteLock();
         this.bookieAddressResolver = bookieAddressResolver;
-        this.registry = ExtensionRegistry.newInstance();
         this.authProviderFactory = AuthProviderFactoryFactory.newClientAuthProviderFactory(conf);
 
         this.statsLogger = statsLogger;
@@ -192,7 +189,7 @@ public class BookieClientImpl implements BookieClient, PerChannelBookieClientFac
             clientConfiguration = v3Conf;
         }
         return new PerChannelBookieClient(clientConfiguration, executor, eventLoopGroup, allocator, address,
-                                   statsLoggerForPCBC, authProviderFactory, registry, pcbcPool,
+                                   statsLoggerForPCBC, authProviderFactory, pcbcPool,
                                    shFactory, bookieAddressResolver);
     }
 

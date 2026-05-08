@@ -20,8 +20,8 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -29,11 +29,6 @@ import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 
 /**
  * A read processor for v3 last add confirmed messages.
@@ -52,11 +47,11 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         ReadLacRequest readLacRequest = request.getReadLacRequest();
         long ledgerId = readLacRequest.getLedgerId();
 
-        final ReadLacResponse.Builder readLacResponse = ReadLacResponse.newBuilder().setLedgerId(ledgerId);
+        final ReadLacResponse readLacResponse = new ReadLacResponse().setLedgerId(ledgerId);
 
         if (!isVersionCompatible()) {
             readLacResponse.setStatus(StatusCode.EBADVERSION);
-            return readLacResponse.build();
+            return readLacResponse;
         }
 
         log.debug().attr("request", request).log("Received ReadLac request");
@@ -66,7 +61,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         try {
             lac = requestProcessor.bookie.getExplicitLac(ledgerId);
             if (lac != null) {
-                readLacResponse.setLacBody(ByteString.copyFrom(lac.nioBuffer()));
+                readLacResponse.setLacBody(ByteBufUtil.getBytes(lac));
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
@@ -93,7 +88,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         try {
             lastEntry = requestProcessor.bookie.readEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             if (lastEntry != null) {
-                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
+                readLacResponse.setLastEntryBody(ByteBufUtil.getBytes(lastEntry));
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
@@ -130,7 +125,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
         // Finally set the status and return
         readLacResponse.setStatus(status);
-        return readLacResponse.build();
+        return readLacResponse;
     }
 
     @Override
@@ -140,12 +135,12 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     private void sendResponse(ReadLacResponse readLacResponse) {
-        Response.Builder response = Response.newBuilder()
-            .setHeader(getHeader())
-            .setStatus(readLacResponse.getStatus())
-            .setReadLacResponse(readLacResponse);
+        Response response = new Response();
+        response.setHeader().copyFrom(getHeader());
+        response.setStatus(readLacResponse.getStatus());
+        response.setReadLacResponse().copyFrom(readLacResponse);
         sendResponse(response.getStatus(),
-                response.build(),
+                response,
                 requestProcessor.getRequestStats().getReadLacRequestStats());
     }
 }

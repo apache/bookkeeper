@@ -79,20 +79,13 @@ public class GetBookieInfoProcessorV3Test {
 
     @Test
     public void testGetBookieInfoProcessorStats() throws IOException {
-        final BookkeeperProtocol.BKPacketHeader.Builder headerBuilder =
-                BookkeeperProtocol.BKPacketHeader.newBuilder()
-                .setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE)
-                .setOperation(BookkeeperProtocol.OperationType.GET_BOOKIE_INFO)
+        final Request getBookieInfoRequest = new Request();
+        getBookieInfoRequest.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.GET_BOOKIE_INFO)
                 .setTxnId(0);
-
-        final BookkeeperProtocol.GetBookieInfoRequest.Builder getBookieInfoBuilder =
-                BookkeeperProtocol.GetBookieInfoRequest.newBuilder()
-                        .setRequested(BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE);
-
-        final BookkeeperProtocol.Request getBookieInfoRequest = BookkeeperProtocol.Request.newBuilder()
-                .setHeader(headerBuilder)
-                .setGetBookieInfoRequest(getBookieInfoBuilder)
-                .build();
+        getBookieInfoRequest.setGetBookieInfoRequest()
+                .setRequested(GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE);
 
         GetBookieInfoProcessorV3 getBookieInfo = new GetBookieInfoProcessorV3(
                 getBookieInfoRequest, requestHandler, requestProcessor);

@@ -55,11 +55,15 @@ class ForceLedgerCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.ForceLedgerResponse forceLedgerResponse = response.getForceLedgerResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
-                ? forceLedgerResponse.getStatus() : response.getStatus();
-        long ledgerId = forceLedgerResponse.getLedgerId();
+    public void handleV3Response(Response response) {
+        StatusCode status;
+        if (response.getStatus() == StatusCode.EOK && response.hasForceLedgerResponse()) {
+            status = response.getForceLedgerResponse().getStatus();
+        } else {
+            // Error responses may not carry a populated ForceLedgerResponse;
+            // fall back to the request's recorded ledgerId.
+            status = response.getStatus();
+        }
 
         logEvent(status).log("Got response from bookie");
         int rc = convertStatus(status, BKException.Code.WriteException);

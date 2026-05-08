@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import com.google.protobuf.ExtensionRegistry;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.EventLoopGroup;
@@ -65,7 +64,6 @@ import org.slf4j.LoggerFactory;
 public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
     private static final Logger LOG = LoggerFactory.getLogger(TestPerChannelBookieClient.class);
 
-    ExtensionRegistry extRegistry = ExtensionRegistry.newInstance();
     ClientAuthProvider.Factory authProvider;
 
     public TestPerChannelBookieClient() throws Exception {
@@ -90,7 +88,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         BookieId addr = getBookie(0);
         for (int i = 0; i < 1000; i++) {
             PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
-                    authProvider, extRegistry, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+                    authProvider, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
             client.connectIfNeededAndDoOp(new GenericCallback<PerChannelBookieClient>() {
                     @Override
                     public void operationComplete(int rc, PerChannelBookieClient client) {
@@ -133,7 +131,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         BookieId addr = getBookie(0);
         for (int i = 0; i < 100; i++) {
             PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup, addr,
-                                                                       authProvider, extRegistry,
+                                                                       authProvider,
                                                                        BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
             for (int j = i; j < 10; j++) {
                 client.connectIfNeededAndDoOp(nullop);
@@ -165,7 +163,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         BookieId addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
-                addr, authProvider, extRegistry,
+                addr, authProvider,
                 BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         final AtomicBoolean shouldFail = new AtomicBoolean(false);
         final AtomicBoolean running = new AtomicBoolean(true);
@@ -261,7 +259,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         BookieId addr = getBookie(0);
 
         final PerChannelBookieClient client = new PerChannelBookieClient(executor, eventLoopGroup,
-                addr, authProvider, extRegistry,
+                addr, authProvider,
                 BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
         final CountDownLatch completion = new CountDownLatch(1);
         final ReadEntryCallback cb = new ReadEntryCallback() {
@@ -311,7 +309,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
 
         // Pass to the PerChannelBookieClient object the client configuration with TCP user timeout.
         PerChannelBookieClient channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
-                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                addr, Mockito.mock(StatsLogger.class), authProvider,
                 Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         // Verify that the configured value has not been set in the channel if does not exist in config.
@@ -322,7 +320,7 @@ public class TestPerChannelBookieClient extends BookKeeperClusterTestCase {
         // Create a new channel with new TCP user timeout set.
         conf.setTcpUserTimeoutMillis(tcpUserTimeout);
         channel = new PerChannelBookieClient(conf, executor, eventLoopGroup,
-                addr, Mockito.mock(StatsLogger.class), authProvider, extRegistry,
+                addr, Mockito.mock(StatsLogger.class), authProvider,
                 Mockito.mock(PerChannelBookieClientPool.class), BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
 
         // Verify that the configured value has been set.

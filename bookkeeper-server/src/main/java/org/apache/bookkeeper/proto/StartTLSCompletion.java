@@ -52,8 +52,8 @@ class StartTLSCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.StatusCode status = response.getStatus();
+    public void handleV3Response(Response response) {
+        StatusCode status = response.getStatus();
 
         logEvent(status).log("Got response from bookie");
 
@@ -65,7 +65,7 @@ class StartTLSCompletion extends CompletionValue {
         if (perChannelBookieClient.state != PerChannelBookieClient.ConnectionState.START_TLS) {
             log.error("Connection state changed before TLS response received");
             perChannelBookieClient.failTLS(BKException.Code.BookieHandleNotAvailableException);
-        } else if (status != BookkeeperProtocol.StatusCode.EOK) {
+        } else if (status != StatusCode.EOK) {
             log.error().attr("status", status).log("Client received error during TLS negotiation");
             perChannelBookieClient.failTLS(BKException.Code.SecurityException);
         } else {

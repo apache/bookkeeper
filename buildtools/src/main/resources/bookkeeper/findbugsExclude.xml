@@ -37,14 +37,9 @@
     <Method name="submit" />
     <Bug pattern="NP_PARAMETER_MUST_BE_NONNULL_BUT_MARKED_AS_NULLABLE"/>
   </Match>
-  <!-- bookkeeper-proto -->
+  <!-- bookkeeper-proto: lightproto-generated classes -->
   <Match>
-    <!-- generated code, we can't be held responsible for findbugs in it //-->
-    <Class name="~org\.apache\.bookkeeper\.proto\.BookkeeperProtocol.*" />
-  </Match>
-  <!-- lightproto-generated classes from DataFormats.proto -->
-  <Match>
-    <Class name="~org\.apache\.bookkeeper\.proto\.(LedgerMetadataFormat|LedgerRereplicationLayoutFormat|UnderreplicatedLedgerFormat|CookieFormat|LockDataFormat|AuditorVoteFormat|CheckAllLedgersFormat|PlacementPolicyCheckFormat|ReplicasCheckFormat|BookieServiceInfoFormat|LightProtoCodec)(\$.*)?" />
+    <Class name="~org\.apache\.bookkeeper\.proto\.(AddRequest|AddResponse|AuditorVoteFormat|AuthMessage|BKPacketHeader|BookieServiceInfoFormat|CheckAllLedgersFormat|ContextPair|CookieFormat|ForceLedgerRequest|ForceLedgerResponse|GetBookieInfoRequest|GetBookieInfoResponse|GetListOfEntriesOfLedgerRequest|GetListOfEntriesOfLedgerResponse|LedgerMetadataFormat|LedgerRereplicationLayoutFormat|LightProtoCodec|LockDataFormat|OperationType|PlacementPolicyCheckFormat|ProtocolVersion|ReadLacRequest|ReadLacResponse|ReadRequest|ReadResponse|ReplicasCheckFormat|Request|Response|StartTLSRequest|StartTLSResponse|StatusCode|UnderreplicatedLedgerFormat|WriteLacRequest|WriteLacResponse)(\$.*)?" />
   </Match>
   <!-- lightproto-generated classes from DbLedgerStorageDataFormats.proto -->
   <Match>

@@ -73,7 +73,6 @@
                   <include>com.fasterxml.jackson.core:jackson-annotations</include>
                   <include>com.google.guava:failureaccess</include>
                   <include>com.google.guava:guava</include>
-                  <include>com.google.protobuf:protobuf-java</include>
                   <include>at.yawk.lz4:lz4-java</include>
                   <include>org.apache.bookkeeper:bookkeeper-common</include>
                   <include>org.apache.bookkeeper:bookkeeper-common-allocator</include>

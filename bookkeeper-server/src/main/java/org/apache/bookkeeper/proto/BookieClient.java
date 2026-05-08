@@ -250,7 +250,7 @@ public interface BookieClient {
      *
      * @param address the address of the bookie to request information from
      * @param requested a bitset specifying which pieces of information to request
-     *                  {@link org.apache.bookkeeper.proto.BookkeeperProtocol.GetBookieInfoRequest}
+     *                  {@link org.apache.bookkeeper.proto.GetBookieInfoRequest}
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      *

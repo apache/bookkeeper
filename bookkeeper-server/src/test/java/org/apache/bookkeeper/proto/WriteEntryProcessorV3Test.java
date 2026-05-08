@@ -29,7 +29,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
@@ -40,13 +39,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.junit.Before;
 import org.junit.Test;
@@ -66,19 +58,16 @@ public class WriteEntryProcessorV3Test {
 
     @Before
     public void setup() {
-        request = Request.newBuilder()
-            .setHeader(BKPacketHeader.newBuilder()
+        request = new Request();
+        request.setHeader()
                 .setTxnId(System.currentTimeMillis())
                 .setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.ADD_ENTRY)
-                .build())
-            .setAddRequest(AddRequest.newBuilder()
+                .setOperation(OperationType.ADD_ENTRY);
+        request.setAddRequest()
                 .setLedgerId(System.currentTimeMillis())
                 .setEntryId(System.currentTimeMillis() + 1)
-                .setBody(ByteString.copyFromUtf8("test-entry-data"))
-                .setMasterKey(ByteString.copyFrom(new byte[0]))
-                .build())
-            .build();
+                .setBody("test-entry-data".getBytes())
+                .setMasterKey(new byte[0]);
         channel = mock(Channel.class);
         when(channel.isOpen()).thenReturn(true);
 
@@ -100,11 +89,7 @@ public class WriteEntryProcessorV3Test {
     }
 
     private void reinitRequest(int priority) {
-        request = Request.newBuilder(request)
-            .setHeader(BKPacketHeader.newBuilder(request.getHeader())
-                .setPriority(priority)
-                .build())
-            .build();
+        request.setHeader().setPriority(priority);
 
         processor = new WriteEntryProcessorV3(
             request,
