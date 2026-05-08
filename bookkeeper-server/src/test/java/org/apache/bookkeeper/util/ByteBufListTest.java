@@ -20,7 +20,6 @@ package org.apache.bookkeeper.util;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -170,9 +169,11 @@ public class ByteBufListTest {
 
         ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
 
-        // empty list returns the EMPTY_BUFFER sentinel and releases the list
+        // empty list returns the EMPTY_BUFFER sentinel and the list is untouched
         assertEquals(Unpooled.EMPTY_BUFFER, result);
-        assertEquals(0, buf.refCnt());
+        assertEquals(1, buf.refCnt());
+
+        buf.release();
     }
 
     @Test
@@ -186,14 +187,15 @@ public class ByteBufListTest {
 
         ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
 
-        // fast path: the single underlying buffer is returned directly with its
-        // ref count transferred to the caller; the list itself is released.
-        assertSame(b1, result);
-        assertEquals(0, buf.refCnt());
-        assertEquals(1, result.refCnt());
+        // fast path: a retained duplicate of the single buffer is returned with
+        // its own independent ref count; the list itself is unchanged.
+        assertEquals(1, buf.refCnt());
+        assertEquals(2, b1.refCnt());
         assertEquals(128, result.readableBytes());
 
         result.release();
+        assertEquals(1, b1.refCnt());
+        buf.release();
         assertEquals(0, b1.refCnt());
     }
 
@@ -210,14 +212,17 @@ public class ByteBufListTest {
         ByteBuf result = buf.toByteBuf(PooledByteBufAllocator.DEFAULT);
 
         // multi-buffer path: a CompositeByteBuf is returned whose components
-        // own the references previously held by the list.
-        assertEquals(0, buf.refCnt());
+        // hold their own retained references; the list itself is unchanged.
+        assertEquals(1, buf.refCnt());
         assertEquals(1, result.refCnt());
-        assertEquals(1, b1.refCnt());
-        assertEquals(1, b2.refCnt());
+        assertEquals(2, b1.refCnt());
+        assertEquals(2, b2.refCnt());
         assertEquals(Unpooled.wrappedBuffer("helloworld".getBytes()), result);
 
         result.release();
+        assertEquals(1, b1.refCnt());
+        assertEquals(1, b2.refCnt());
+        buf.release();
         assertEquals(0, b1.refCnt());
         assertEquals(0, b2.refCnt());
     }
