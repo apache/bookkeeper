@@ -127,11 +127,16 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
     public void handleV3Response(
             Response response) {
         perChannelBookieClient.addEntryOutstanding.dec();
-        AddResponse addResponse = response.getAddResponse();
-        StatusCode status = response.getStatus() == StatusCode.EOK
-                ? addResponse.getStatus() : response.getStatus();
-        handleResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
-                status);
+        StatusCode status;
+        if (response.getStatus() == StatusCode.EOK && response.hasAddResponse()) {
+            status = response.getAddResponse().getStatus();
+        } else {
+            // Error responses (e.g. EUA from a rejected auth handshake) may not
+            // carry an AddResponse with ledgerId/entryId populated. Fall back to
+            // the values we recorded from the outgoing request.
+            status = response.getStatus();
+        }
+        handleResponse(ledgerId, entryId, status);
     }
 
     private void handleResponse(long ledgerId, long entryId,

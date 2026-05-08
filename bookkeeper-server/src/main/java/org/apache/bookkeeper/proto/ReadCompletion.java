@@ -81,24 +81,28 @@ class ReadCompletion extends CompletionValue {
     @Override
     public void handleV3Response(Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
-        ReadResponse readResponse = response.getReadResponse();
-        StatusCode status = response.getStatus() == StatusCode.EOK
-                ? readResponse.getStatus() : response.getStatus();
+        StatusCode status;
         ByteBuf buffer = Unpooled.EMPTY_BUFFER;
-        if (readResponse.hasBody()) {
-            buffer = readResponse.getBodySlice();
-        }
         long maxLAC = INVALID_ENTRY_ID;
-        if (readResponse.hasMaxLAC()) {
-            maxLAC = readResponse.getMaxLAC();
-        }
         long lacUpdateTimestamp = -1L;
-        if (readResponse.hasLacUpdateTimestamp()) {
-            lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+        if (response.getStatus() == StatusCode.EOK && response.hasReadResponse()) {
+            ReadResponse readResponse = response.getReadResponse();
+            status = readResponse.getStatus();
+            if (readResponse.hasBody()) {
+                buffer = readResponse.getBodySlice();
+            }
+            if (readResponse.hasMaxLAC()) {
+                maxLAC = readResponse.getMaxLAC();
+            }
+            if (readResponse.hasLacUpdateTimestamp()) {
+                lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+            }
+        } else {
+            // Error responses may not carry a populated ReadResponse;
+            // fall back to the request's recorded ledgerId/entryId.
+            status = response.getStatus();
         }
-        handleReadResponse(readResponse.getLedgerId(),
-                readResponse.getEntryId(),
-                status, buffer, maxLAC, lacUpdateTimestamp);
+        handleReadResponse(ledgerId, entryId, status, buffer, maxLAC, lacUpdateTimestamp);
         ReferenceCountUtil.release(
                 buffer); // meaningless using unpooled, but client may expect to hold the last reference
     }
