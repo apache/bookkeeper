@@ -328,7 +328,6 @@ Apache Software License, Version 2.
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-2.27.0.jar [58]
 - lib/io.opentelemetry.instrumentation-opentelemetry-instrumentation-api-incubator-2.27.0-alpha.jar [58]
 - lib/io.opentelemetry.instrumentation-opentelemetry-runtime-telemetry-2.27.0-alpha.jar [58]
-- lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.56.0-alpha.jar [54]
 - lib/io.opentelemetry.semconv-opentelemetry-semconv-1.41.0.jar [54]
 - lib/io.prometheus-prometheus-metrics-config-1.5.1.jar [59]
 - lib/io.prometheus-prometheus-metrics-exporter-common-1.5.1.jar [59]

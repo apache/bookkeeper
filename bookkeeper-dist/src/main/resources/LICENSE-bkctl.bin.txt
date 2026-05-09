@@ -275,20 +275,6 @@ Apache Software License, Version 2.
 - lib/io.reactivex.rxjava3-rxjava-3.0.1.jar [51]
 - lib/com.carrotsearch-hppc-0.9.1.jar [52]
 - lib/com.lmax-disruptor-4.0.0.jar [53]
-- lib/io.opentelemetry-opentelemetry-api-1.61.0.jar [54]
-- lib/io.opentelemetry-opentelemetry-common-1.61.0.jar [54]
-- lib/io.opentelemetry-opentelemetry-context-1.61.0.jar [54]
-- lib/io.opentelemetry-opentelemetry-api-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-common-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-context-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-common-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-spi-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-logs-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-metrics-1.61.0.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-trace-1.61.0.jar [55]
-- lib/io.opentelemetry.contrib-opentelemetry-gcp-resources-1.56.0-alpha.jar [55]
-- lib/io.opentelemetry-opentelemetry-sdk-extension-autoconfigure-1.61.0.jar [55]
 
 [1] Source available at https://github.com/FasterXML/jackson-annotations/tree/jackson-annotations-2.17.1
 [2] Source available at https://github.com/FasterXML/jackson-core/tree/jackson-core-2.17.1
@@ -324,7 +310,6 @@ Apache Software License, Version 2.
 [51] Source available at https://github.com/ReactiveX/RxJava/tree/v3.0.1
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 [53] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
-[54] Source available at https://github.com/open-telemetry/opentelemetry-java/releases/tag/v1.61.0
 [55] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.20.0
 [56] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.13.1
 [57] Source available at https://github.com/apache/commons-beanutils/tree/rel/commons-beanutils-1.11.0
@@ -556,14 +541,6 @@ This private header is also used by Apple's open source
   * HOMEPAGE:
     * http://www.opensource.apple.com/source/configd/configd-453.19/dnsinfo/dnsinfo.h
 
-------------------------------------------------------------------------------------
-This product bundles Google Protocol Buffers, which is available under a "3-clause BSD"
-license.
-
-Bundled as
-  - lib/com.google.protobuf-protobuf-java-4.34.0.jar
-Source available at https://github.com/protocolbuffers/protobuf/tree/v34.0/java
-For details, see deps/protobuf/LICENSE.
 ------------------------------------------------------------------------------------
 This product bundles Simple Logging Facade for Java, which is available under a
 MIT license. For details, see deps/slf4j-2.0.12/LICENSE.txt.
