@@ -26,13 +26,13 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.common.collect.PeekingIterator;
 import com.google.common.primitives.UnsignedBytes;
-import com.google.protobuf.TextFormat;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.NoSuchElementException;
 import javax.annotation.Nullable;
@@ -772,7 +772,7 @@ class MVCCStoreImpl<K, V> extends RocksdbKVStore<K, V> implements MVCCStore<K, V
             if (null == record) {
                 if (CompareTarget.VALUE != op.target()) {
                     throw new MVCCStoreException(Code.KEY_NOT_FOUND,
-                        "Key '" + TextFormat.escapeBytes(rawKey) + "' is not found");
+                        "Key '" + HexFormat.of().formatHex(rawKey) + "' is not found");
                 }
             }
             return processCompareOp(record, op);

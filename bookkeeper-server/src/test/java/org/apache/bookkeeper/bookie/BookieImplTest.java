@@ -26,11 +26,10 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
-import com.google.protobuf.ByteString;
-import com.google.protobuf.UnsafeByteOperations;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -86,10 +85,11 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
                 baseClientConf.getUseV2WireProtocol());
 
         final ByteBufList toSend = digestManager.computeDigestAndPackageForSendingLac(lac);
-        ByteString body = UnsafeByteOperations.unsafeWrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes());
+        ByteBuffer body = ByteBuffer.wrap(toSend.array(), toSend.arrayOffset(), toSend.readableBytes())
+                .asReadOnlyBuffer();
 
-        final ByteBuf lacToAdd = Unpooled.wrappedBuffer(body.asReadOnlyByteBuffer());
-        final byte[] masterKey = ByteString.copyFrom("masterKey".getBytes()).toByteArray();
+        final ByteBuf lacToAdd = Unpooled.wrappedBuffer(body);
+        final byte[] masterKey = "masterKey".getBytes(StandardCharsets.UTF_8);
 
         final ByteBuf explicitLACEntry = b.createExplicitLACEntry(ledgerId, lacToAdd);
         lacToAdd.resetReaderIndex();
@@ -145,7 +145,7 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
 
         final long ledgerId = 10;
 
-        final byte[] masterKey = ByteString.copyFrom("masterKey".getBytes()).toByteArray();
+        final byte[] masterKey = "masterKey".getBytes(StandardCharsets.UTF_8);
 
         final ByteBuf masterKeyEntry = b.createMasterKeyEntry(ledgerId, masterKey);
 
