@@ -432,53 +432,13 @@
         <scope>import</scope>
       </dependency>
 
-      <!-- grpc dependencies -->
+      <!-- grpc dependencies: grpc-bom enforces a single version across all io.grpc:* artifacts -->
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <!-- exclude dependencies from grpc-all -->
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-all</artifactId>
-        <version>${grpc.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-testing</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-okhttp</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-servlet</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-servlet-jakarta</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <!-- used by jetcd-core-shaded -->
