@@ -21,22 +21,32 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import io.netty.buffer.ByteBuf;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.bookie.Bookie;
+import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -288,5 +298,131 @@ public class TestBatchedRead extends BookKeeperClusterTestCase {
 
         lh.close();
         newBk.close();
+    }
+
+    @Test
+    public void testDigestMismatchRetriesNextReplicaAndCompletes() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf)
+                .setUseV2WireProtocol(true)
+                .setReorderReadSequenceEnabled(false)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        try (BookKeeperTestClient bk = new BookKeeperTestClient(conf)) {
+            byte[] data = "batch-digest-data".getBytes(StandardCharsets.UTF_8);
+            LedgerHandle writer = bk.createLedger(3, 3, 2, digestType, passwd);
+            writer.addEntry(data);
+            long ledgerId = writer.getId();
+            BookieId corruptReplica = writer.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+            writer.close();
+
+            ServerConfiguration corruptConf = killBookie(corruptReplica);
+            startAndAddBookie(corruptConf, new CorruptReadBookie(corruptConf));
+
+            LedgerHandle reader = bk.openLedger(ledgerId, digestType, passwd);
+            BatchedReadOp readOp = new BatchedReadOp(reader, bk.getClientCtx(), 0, 1, 1024, false);
+            readOp.submit();
+
+            Iterator<LedgerEntry> entries = readOp.future().get().iterator();
+            assertTrue(entries.hasNext());
+            LedgerEntry entry = entries.next();
+            assertArrayEquals(data, entry.getEntryBytes());
+            entry.close();
+            assertFalse(entries.hasNext());
+            reader.close();
+        }
+    }
+
+    @Test
+    public void testDigestMismatchAfterPartialVerificationDoesNotRetainEntries() throws Exception {
+        ClientConfiguration conf = new ClientConfiguration(baseClientConf)
+                .setUseV2WireProtocol(true)
+                .setReorderReadSequenceEnabled(false)
+                .setMetadataServiceUri(zkUtil.getMetadataServiceUri());
+
+        try (BookKeeperTestClient bk = new BookKeeperTestClient(conf)) {
+            byte[] entry0 = "batch-digest-entry-0".getBytes(StandardCharsets.UTF_8);
+            byte[] entry1 = "batch-digest-entry-1".getBytes(StandardCharsets.UTF_8);
+            LedgerHandle writer = bk.createLedger(3, 3, 2, digestType, passwd);
+            writer.addEntry(entry0);
+            writer.addEntry(entry1);
+            long ledgerId = writer.getId();
+            List<BookieId> ensemble = writer.getLedgerMetadata().getAllEnsembles().get(0L);
+            BookieId corruptReplica = ensemble.get(0);
+            BookieId retryReplica = ensemble.get(1);
+            writer.close();
+
+            CountDownLatch corruptReadLatch = new CountDownLatch(1);
+            ServerConfiguration corruptConf = killBookie(corruptReplica);
+            startAndAddBookie(corruptConf, new CorruptReadBookie(corruptConf, 1L, corruptReadLatch));
+
+            CountDownLatch retryLatch = new CountDownLatch(1);
+            sleepBookie(retryReplica, retryLatch);
+
+            LedgerHandle reader = null;
+            try {
+                reader = bk.openLedger(ledgerId, digestType, passwd);
+                BatchedReadOp readOp = new BatchedReadOp(reader, bk.getClientCtx(), 0, 2, 2048, false);
+                readOp.submit();
+
+                assertTrue("corrupt replica did not read the corrupted entry",
+                        corruptReadLatch.await(10, TimeUnit.SECONDS));
+                Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
+                    assertNotNull(readOp.request);
+                    BatchedReadOp.SequenceReadRequest request =
+                            (BatchedReadOp.SequenceReadRequest) readOp.request;
+                    assertTrue(request.nextReplicaIndexToReadFrom >= 2);
+                });
+                assertTrue("digest mismatch must not retain partially verified entries",
+                        readOp.request.entries.isEmpty());
+
+                retryLatch.countDown();
+                Iterator<LedgerEntry> entries = readOp.future().get(10, TimeUnit.SECONDS).iterator();
+                assertTrue(entries.hasNext());
+                LedgerEntry first = entries.next();
+                assertArrayEquals(entry0, first.getEntryBytes());
+                first.close();
+                assertTrue(entries.hasNext());
+                LedgerEntry second = entries.next();
+                assertArrayEquals(entry1, second.getEntryBytes());
+                second.close();
+                assertFalse(entries.hasNext());
+            } finally {
+                retryLatch.countDown();
+                if (reader != null) {
+                    reader.close();
+                }
+            }
+        }
+    }
+
+    static class CorruptReadBookie extends TestBookieImpl {
+        private final long corruptEntryId;
+        private final CountDownLatch corruptReadLatch;
+
+        CorruptReadBookie(ServerConfiguration conf) throws Exception {
+            this(conf, -1L, null);
+        }
+
+        CorruptReadBookie(ServerConfiguration conf, long corruptEntryId, CountDownLatch corruptReadLatch)
+                throws Exception {
+            super(conf);
+            this.corruptEntryId = corruptEntryId;
+            this.corruptReadLatch = corruptReadLatch;
+        }
+
+        @Override
+        public ByteBuf readEntry(long ledgerId, long entryId)
+                throws IOException, Bookie.NoLedgerException, BookieException {
+            ByteBuf localBuf = super.readEntry(ledgerId, entryId);
+            if (corruptEntryId < 0 || corruptEntryId == entryId) {
+                for (int i = 0; i < localBuf.capacity(); i++) {
+                    localBuf.setByte(i, 0);
+                }
+                if (corruptReadLatch != null) {
+                    corruptReadLatch.countDown();
+                }
+            }
+            return localBuf;
+        }
     }
 }
