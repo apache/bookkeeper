@@ -151,7 +151,7 @@
     <junit5.version>5.10.2</junit5.version>
     <assertj-core.version>3.25.3</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <libthrift.version>0.14.2</libthrift.version>
+    <libthrift.version>0.23.0</libthrift.version>
     <lombok.version>1.18.30</lombok.version>
     <log4j.version>2.18.0</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
@@ -379,6 +379,7 @@
         <artifactId>libthrift</artifactId>
         <version>${libthrift.version}</version>
         <exclusions>
+          <!-- Only TJSON/TMemory APIs are used; exclude HTTP/servlet transports and their transitives -->
           <exclusion>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
@@ -386,6 +387,26 @@
           <exclusion>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
