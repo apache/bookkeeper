@@ -856,6 +856,7 @@ public class DefaultEntryLogger implements EntryLogger {
             ByteBuf sizeBuff = readEntrySize(ledgerId, entryId, entryLogId, pos, fc);
             entrySize = sizeBuff.getInt(0);
             if (entrySize + Integer.BYTES > maxEntrySize) {
+                // Oversized entries are treated as budget misses; a later unbounded read will validate them.
                 return null;
             }
             validateEntry(ledgerId, entryId, entryLogId, pos, sizeBuff);

@@ -140,7 +140,7 @@ public class MockBookies {
         if (maxCount <= 0) {
             maxCount = Integer.MAX_VALUE;
         }
-        long frameSize = 24 + 8 + 4;
+        long frameSize = 24 + 8 + Integer.BYTES;
         for (long i = startEntryId; i < startEntryId + maxCount; i++) {
             ByteBuf entry = ledger.getEntry(i);
             if (data == null) {
@@ -148,7 +148,7 @@ public class MockBookies {
                     LOG.warn("[{};L{}] entry({}) not found", bookieId, ledgerId, i);
                     throw new BKException.BKNoSuchEntryException();
                 }
-                frameSize += entry.readableBytes() + 4;
+                frameSize += entry.readableBytes() + Integer.BYTES;
                 data = ByteBufList.get(entry);
                 continue;
             }
@@ -158,11 +158,12 @@ public class MockBookies {
                 break;
             }
 
-            if (frameSize + entry.readableBytes() + 4 > maxSize) {
+            if (frameSize + entry.readableBytes() + Integer.BYTES > maxSize) {
+                // MockLedgerData returns the stored shared buffer, so this path does not own the skipped entry.
                 break;
             }
 
-            frameSize += entry.readableBytes() + 4;
+            frameSize += entry.readableBytes() + Integer.BYTES;
             data.add(entry);
         }
         return data;

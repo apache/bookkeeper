@@ -20,7 +20,11 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_READ_ENTRY_BYTES;
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -43,6 +47,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
+import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.PortManager;
 import org.awaitility.Awaitility;
@@ -126,6 +131,39 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
     @Test
     public void testRecoveryAddEntry() throws Exception {
         mockAddEntryReleased(RECOVERY_ADD);
+    }
+
+    @Test
+    public void testReadEntryIfFitsDoesNotRecordReadStatsWhenEntryIsTooLarge() throws Exception {
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsProvider.TestStatsLogger statsLogger = statsProvider.getStatsLogger(BOOKIE_SCOPE);
+        BookieImpl bookie = new TestBookieImpl(new TestBookieImpl.ResourceBuilder(conf).build(statsLogger),
+                statsLogger);
+        bookie.start();
+
+        long ledgerId = 11L;
+        long entryId = 0L;
+        byte[] masterKey = ByteString.copyFrom("masterKey".getBytes()).toByteArray();
+        ByteBuf entry = generateEntry(ledgerId, entryId);
+
+        try {
+            bookie.addEntry(entry, false, new BookieImpl.NopWriteCallback(), null, masterKey);
+
+            assertNull(bookie.readEntryIfFits(ledgerId, entryId, Integer.BYTES));
+            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY)
+                    .getSuccessCount());
+            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY)
+                    .getFailureCount());
+            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY_BYTES)
+                    .getSuccessCount());
+            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY_BYTES)
+                    .getFailureCount());
+            assertEquals(0, statsProvider.getCounter(BOOKIE_SCOPE + "." + BookKeeperServerStats.READ_BYTES).get()
+                    .longValue());
+        } finally {
+            bookie.shutdown();
+        }
     }
 
     public void mockAddEntryReleased(int flag) throws Exception {

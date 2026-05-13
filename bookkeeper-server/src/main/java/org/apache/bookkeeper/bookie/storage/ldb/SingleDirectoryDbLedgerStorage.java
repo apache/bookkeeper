@@ -681,11 +681,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
             ByteBuf entry = getLastEntry(ledgerId);
-            if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
-                entry.release();
-                return null;
-            }
-            return entry;
+            return entryIfFits(entry, maxEntrySize);
         }
 
         long stamp = writeCacheRotationLock.tryOptimisticRead();
@@ -704,21 +700,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         ByteBuf entry = localWriteCache.get(ledgerId, entryId);
         if (entry != null) {
             dbLedgerStorageStats.getWriteCacheHitCounter().inc();
-            if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
-                entry.release();
-                return null;
-            }
-            return entry;
+            return entryIfFits(entry, maxEntrySize);
         }
 
         entry = localWriteCacheBeingFlushed.get(ledgerId, entryId);
         if (entry != null) {
             dbLedgerStorageStats.getWriteCacheHitCounter().inc();
-            if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
-                entry.release();
-                return null;
-            }
-            return entry;
+            return entryIfFits(entry, maxEntrySize);
         }
 
         dbLedgerStorageStats.getWriteCacheMissCounter().inc();
@@ -726,11 +714,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         entry = readCache.get(ledgerId, entryId);
         if (entry != null) {
             dbLedgerStorageStats.getReadCacheHitCounter().inc();
-            if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
-                entry.release();
-                return null;
-            }
-            return entry;
+            return entryIfFits(entry, maxEntrySize);
         }
 
         dbLedgerStorageStats.getReadCacheMissCounter().inc();
@@ -764,6 +748,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         readCache.put(ledgerId, entryId, entry);
 
+        return entry;
+    }
+
+    private static ByteBuf entryIfFits(ByteBuf entry, long maxEntrySize) {
+        if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
+            entry.release();
+            return null;
+        }
         return entry;
     }
 

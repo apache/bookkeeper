@@ -57,12 +57,12 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
         }
         long maxSize = Math.min(batchRequest.getMaxSize(), maxBatchReadSize);
         //See BookieProtoEncoding.ResponseEnDeCoderPreV3#encode on BatchedReadResponse case.
-        long frameSize = 24 + 8 + 4;
+        long frameSize = 24 + 8 + Integer.BYTES;
         for (int i = 0; i < maxCount; i++) {
             try {
                 if (data == null) {
                     ByteBuf entry = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId());
-                    frameSize += entry.readableBytes() + 4;
+                    frameSize += entry.readableBytes() + Integer.BYTES;
                     data = ByteBufList.get(entry);
                 } else {
                     long remainingEntrySize = maxSize - frameSize;
@@ -74,7 +74,7 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
                     if (entry == null) {
                         break;
                     }
-                    frameSize += entry.readableBytes() + 4;
+                    frameSize += entry.readableBytes() + Integer.BYTES;
                     data.add(entry);
                 }
             } catch (Bookie.NoEntryException e) {
