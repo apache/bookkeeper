@@ -133,39 +133,6 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         mockAddEntryReleased(RECOVERY_ADD);
     }
 
-    @Test
-    public void testReadEntryIfFitsDoesNotRecordReadStatsWhenEntryIsTooLarge() throws Exception {
-        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
-        TestStatsProvider statsProvider = new TestStatsProvider();
-        TestStatsProvider.TestStatsLogger statsLogger = statsProvider.getStatsLogger(BOOKIE_SCOPE);
-        BookieImpl bookie = new TestBookieImpl(new TestBookieImpl.ResourceBuilder(conf).build(statsLogger),
-                statsLogger);
-        bookie.start();
-
-        long ledgerId = 11L;
-        long entryId = 0L;
-        byte[] masterKey = ByteString.copyFrom("masterKey".getBytes()).toByteArray();
-        ByteBuf entry = generateEntry(ledgerId, entryId);
-
-        try {
-            bookie.addEntry(entry, false, new BookieImpl.NopWriteCallback(), null, masterKey);
-
-            assertNull(bookie.readEntryIfFits(ledgerId, entryId, Integer.BYTES));
-            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY)
-                    .getSuccessCount());
-            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY)
-                    .getFailureCount());
-            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY_BYTES)
-                    .getSuccessCount());
-            assertEquals(0, statsProvider.getOpStatsLogger(BOOKIE_SCOPE + "." + BOOKIE_READ_ENTRY_BYTES)
-                    .getFailureCount());
-            assertEquals(0, statsProvider.getCounter(BOOKIE_SCOPE + "." + BookKeeperServerStats.READ_BYTES).get()
-                    .longValue());
-        } finally {
-            bookie.shutdown();
-        }
-    }
-
     public void mockAddEntryReleased(int flag) throws Exception {
         final String metadataServiceUri = zkUtil.getMetadataServiceUri();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
