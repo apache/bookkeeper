@@ -1184,41 +1184,6 @@ public class BookieImpl implements Bookie {
         }
     }
 
-    @Override
-    public ByteBuf readEntryIfFits(long ledgerId, long entryId, long maxEntrySize)
-            throws IOException, NoLedgerException, BookieException {
-        long requestNanos = MathUtils.nowInNano();
-        boolean recordStats = true;
-        boolean success = false;
-        int entrySize = 0;
-        try {
-            LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
-            log.trace().attr("entryId", entryId).attr("ledgerId", ledgerId).attr("maxEntrySize", maxEntrySize)
-                    .log("Reading entry");
-            ByteBuf entry = handle.readEntryIfFits(entryId, maxEntrySize);
-            if (entry != null) {
-                entrySize = entry.readableBytes();
-                bookieStats.getReadBytes().addCount(entrySize);
-            } else {
-                recordStats = false;
-                return null;
-            }
-            success = true;
-            return entry;
-        } finally {
-            long elapsedNanos = MathUtils.elapsedNanos(requestNanos);
-            if (recordStats) {
-                if (success) {
-                    bookieStats.getReadEntryStats().registerSuccessfulEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                    bookieStats.getReadBytesStats().registerSuccessfulValue(entrySize);
-                } else {
-                    bookieStats.getReadEntryStats().registerFailedEvent(elapsedNanos, TimeUnit.NANOSECONDS);
-                    bookieStats.getReadBytesStats().registerFailedValue(entrySize);
-                }
-            }
-        }
-    }
-
     public long readLastAddConfirmed(long ledgerId) throws IOException, BookieException {
         LedgerDescriptor handle = handles.getReadOnlyHandle(ledgerId);
         return handle.getLastAddConfirmed();

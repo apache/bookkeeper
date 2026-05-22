@@ -59,18 +59,17 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
         long frameSize = 24 + 8 + Integer.BYTES;
         for (int i = 0; i < maxCount; i++) {
             try {
+                ByteBuf entry = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId() + i);
                 if (data == null) {
-                    ByteBuf entry = requestProcessor.getBookie().readEntry(request.getLedgerId(), request.getEntryId());
                     frameSize += entry.readableBytes() + Integer.BYTES;
                     data = ByteBufList.get(entry);
+                    long perEntrySize = entry.readableBytes() + Integer.BYTES;
+                    long remainingBudget = maxSize - frameSize;
+                    long remainingEntries = remainingBudget > 0 ? remainingBudget / Math.max(perEntrySize, 1L) : 0L;
+                    maxCount = (int) Math.min(maxCount, 1L + remainingEntries);
                 } else {
-                    long remainingEntrySize = maxSize - frameSize;
-                    if (remainingEntrySize <= 0) {
-                        break;
-                    }
-                    ByteBuf entry = requestProcessor.getBookie().readEntryIfFits(
-                            request.getLedgerId(), request.getEntryId() + i, remainingEntrySize);
-                    if (entry == null) {
+                    if (frameSize + entry.readableBytes() + Integer.BYTES > maxSize) {
+                        entry.release();
                         break;
                     }
                     frameSize += entry.readableBytes() + Integer.BYTES;

@@ -163,11 +163,6 @@ public class LedgerDescriptorImpl extends LedgerDescriptor {
     }
 
     @Override
-    ByteBuf readEntryIfFits(long entryId, long maxEntrySize) throws IOException, BookieException {
-        return ledgerStorage.getEntryIfFits(ledgerId, entryId, maxEntrySize);
-    }
-
-    @Override
     long getLastAddConfirmed() throws IOException, BookieException {
         return ledgerStorage.getLastAddConfirmed(ledgerId);
     }

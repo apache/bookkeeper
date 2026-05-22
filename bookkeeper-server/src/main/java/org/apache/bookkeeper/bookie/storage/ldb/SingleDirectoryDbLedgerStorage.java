@@ -577,18 +577,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
     }
 
-    public ByteBuf getEntryIfFits(long ledgerId, long entryId, long maxEntrySize) throws IOException, BookieException {
-        long startTime = MathUtils.nowInNano();
-        try {
-            ByteBuf entry = doGetEntryIfFits(ledgerId, entryId, maxEntrySize);
-            recordSuccessfulEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            return entry;
-        } catch (IOException e) {
-            recordFailedEvent(dbLedgerStorageStats.getReadEntryStats(), startTime);
-            throw e;
-        }
-    }
-
     private ByteBuf doGetEntry(long ledgerId, long entryId) throws IOException, BookieException {
         log.debug()
                 .attr("ledgerId", ledgerId)
@@ -671,91 +659,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         long nextEntryLocation = entryLocation + 4 /* size header */ + entry.readableBytes();
         fillReadAheadCache(ledgerId, entryId + 1, nextEntryLocation);
 
-        return entry;
-    }
-
-    private ByteBuf doGetEntryIfFits(long ledgerId, long entryId, long maxEntrySize)
-            throws IOException, BookieException {
-        log.debug().attr("ledgerId", ledgerId).attr("entryId", entryId).attr("maxEntrySize", maxEntrySize)
-                .log("Get Entry If Fits");
-
-        if (entryId == BookieProtocol.LAST_ADD_CONFIRMED) {
-            ByteBuf entry = getLastEntry(ledgerId);
-            return entryIfFits(entry, maxEntrySize);
-        }
-
-        long stamp = writeCacheRotationLock.tryOptimisticRead();
-        WriteCache localWriteCache = writeCache;
-        WriteCache localWriteCacheBeingFlushed = writeCacheBeingFlushed;
-        if (!writeCacheRotationLock.validate(stamp)) {
-            stamp = writeCacheRotationLock.readLock();
-            try {
-                localWriteCache = writeCache;
-                localWriteCacheBeingFlushed = writeCacheBeingFlushed;
-            } finally {
-                writeCacheRotationLock.unlockRead(stamp);
-            }
-        }
-
-        ByteBuf entry = localWriteCache.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getWriteCacheHitCounter().inc();
-            return entryIfFits(entry, maxEntrySize);
-        }
-
-        entry = localWriteCacheBeingFlushed.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getWriteCacheHitCounter().inc();
-            return entryIfFits(entry, maxEntrySize);
-        }
-
-        dbLedgerStorageStats.getWriteCacheMissCounter().inc();
-
-        entry = readCache.get(ledgerId, entryId);
-        if (entry != null) {
-            dbLedgerStorageStats.getReadCacheHitCounter().inc();
-            return entryIfFits(entry, maxEntrySize);
-        }
-
-        dbLedgerStorageStats.getReadCacheMissCounter().inc();
-
-        long entryLocation;
-        long locationIndexStartNano = MathUtils.nowInNano();
-        try {
-            entryLocation = entryLocationIndex.getLocation(ledgerId, entryId);
-            if (entryLocation == 0) {
-                // Only a negative result while in limbo equates to unknown
-                throwIfLimbo(ledgerId);
-
-                throw new NoEntryException(ledgerId, entryId);
-            }
-        } finally {
-            dbLedgerStorageStats.getReadFromLocationIndexTime().addLatency(
-                    MathUtils.elapsedNanos(locationIndexStartNano), TimeUnit.NANOSECONDS);
-        }
-
-        long readEntryStartNano = MathUtils.nowInNano();
-        try {
-            entry = entryLogger.readEntryIfFits(ledgerId, entryId, entryLocation, maxEntrySize);
-        } finally {
-            dbLedgerStorageStats.getReadFromEntryLogTime().addLatency(
-                    MathUtils.elapsedNanos(readEntryStartNano), TimeUnit.NANOSECONDS);
-        }
-
-        if (entry == null) {
-            return null;
-        }
-
-        readCache.put(ledgerId, entryId, entry);
-
-        return entry;
-    }
-
-    private static ByteBuf entryIfFits(ByteBuf entry, long maxEntrySize) {
-        if (entry.readableBytes() + Integer.BYTES > maxEntrySize) {
-            entry.release();
-            return null;
-        }
         return entry;
     }
 

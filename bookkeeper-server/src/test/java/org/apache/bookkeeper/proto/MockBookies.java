@@ -150,6 +150,10 @@ public class MockBookies {
                 }
                 frameSize += entry.readableBytes() + Integer.BYTES;
                 data = ByteBufList.get(entry);
+                long perEntrySize = entry.readableBytes() + Integer.BYTES;
+                long remainingBudget = maxSize - frameSize;
+                long remainingEntries = remainingBudget > 0 ? remainingBudget / Math.max(perEntrySize, 1L) : 0L;
+                maxCount = (int) Math.min(maxCount, 1L + remainingEntries);
                 continue;
             }
 
