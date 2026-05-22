@@ -709,6 +709,8 @@ public class Journal implements CheckpointSource {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
         }
         lastLogMark.readLog();
+        lastPersistedMark.setLogMark(
+                lastLogMark.getCurMark().getLogFileId(), lastLogMark.getCurMark().getLogFileOffset());
         log.debug().attr("lastMark", () -> lastLogMark.getCurMark()).log("Last Log Mark");
 
         try {
@@ -775,7 +777,7 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
-     * <p>Skips if the checkpoint is not newer than the last persisted mark,
+     * <p>Skips if the checkpoint is older than the last persisted mark,
      * preventing lastMark from regressing backwards.
      *
      * @throws IOException
@@ -788,16 +790,16 @@ public class Journal implements CheckpointSource {
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
 
-        // Skip if this mark is not newer than what was already persisted.
+        // See #4105: keep the monotonic decision and lastMark persistence together.
         synchronized (checkpointLock) {
             if (mark.getCurMark().compare(lastPersistedMark) < 0) {
                 return;
             }
+            persistLastLogMark(mark);
             lastPersistedMark.setLogMark(
                     mark.getCurMark().getLogFileId(), mark.getCurMark().getLogFileOffset());
         }
 
-        mark.rollLog(mark);
         if (compact) {
             // list the journals that have been marked
             List<Long> logs = listJournalIds(journalDirectory, new JournalRollingFilter(mark));
@@ -817,6 +819,16 @@ public class Journal implements CheckpointSource {
                 }
             }
         }
+    }
+
+    @VisibleForTesting
+    protected void persistLastLogMark(LastLogMark mark) throws NoWritableLedgerDirException {
+        mark.rollLog(mark);
+    }
+
+    @VisibleForTesting
+    protected boolean isCheckpointCompleteLockHeldByCurrentThread() {
+        return Thread.holdsLock(checkpointLock);
     }
 
     /**
