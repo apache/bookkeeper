@@ -46,7 +46,6 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -333,7 +332,7 @@ public class TestBatchedRead extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testDigestMismatchAfterPartialVerificationDoesNotRetainEntries() throws Exception {
+    public void testDigestMismatchAfterPartialVerificationReturnsVerifiedPrefix() throws Exception {
         ClientConfiguration conf = new ClientConfiguration(baseClientConf)
                 .setUseV2WireProtocol(true)
                 .setReorderReadSequenceEnabled(false)
@@ -348,50 +347,25 @@ public class TestBatchedRead extends BookKeeperClusterTestCase {
             long ledgerId = writer.getId();
             List<BookieId> ensemble = writer.getLedgerMetadata().getAllEnsembles().get(0L);
             BookieId corruptReplica = ensemble.get(0);
-            BookieId retryReplica = ensemble.get(1);
             writer.close();
 
             CountDownLatch corruptReadLatch = new CountDownLatch(1);
             ServerConfiguration corruptConf = killBookie(corruptReplica);
             startAndAddBookie(corruptConf, new CorruptReadBookie(corruptConf, 1L, corruptReadLatch));
 
-            CountDownLatch retryLatch = new CountDownLatch(1);
-            sleepBookie(retryReplica, retryLatch);
+            LedgerHandle reader = bk.openLedger(ledgerId, digestType, passwd);
+            BatchedReadOp readOp = new BatchedReadOp(reader, bk.getClientCtx(), 0, 2, 2048, false);
+            readOp.submit();
 
-            LedgerHandle reader = null;
-            try {
-                reader = bk.openLedger(ledgerId, digestType, passwd);
-                BatchedReadOp readOp = new BatchedReadOp(reader, bk.getClientCtx(), 0, 2, 2048, false);
-                readOp.submit();
-
-                assertTrue("corrupt replica did not read the corrupted entry",
-                        corruptReadLatch.await(10, TimeUnit.SECONDS));
-                Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() -> {
-                    assertNotNull(readOp.request);
-                    BatchedReadOp.SequenceReadRequest request =
-                            (BatchedReadOp.SequenceReadRequest) readOp.request;
-                    assertTrue(request.nextReplicaIndexToReadFrom >= 2);
-                });
-                assertTrue("digest mismatch must not retain partially verified entries",
-                        readOp.request.entries.isEmpty());
-
-                retryLatch.countDown();
-                Iterator<LedgerEntry> entries = readOp.future().get(10, TimeUnit.SECONDS).iterator();
-                assertTrue(entries.hasNext());
-                LedgerEntry first = entries.next();
-                assertArrayEquals(entry0, first.getEntryBytes());
-                first.close();
-                assertTrue(entries.hasNext());
-                LedgerEntry second = entries.next();
-                assertArrayEquals(entry1, second.getEntryBytes());
-                second.close();
-                assertFalse(entries.hasNext());
-            } finally {
-                retryLatch.countDown();
-                if (reader != null) {
-                    reader.close();
-                }
-            }
+            assertTrue("corrupt replica did not read the corrupted entry",
+                    corruptReadLatch.await(10, TimeUnit.SECONDS));
+            Iterator<LedgerEntry> entries = readOp.future().get(10, TimeUnit.SECONDS).iterator();
+            assertTrue(entries.hasNext());
+            LedgerEntry first = entries.next();
+            assertArrayEquals(entry0, first.getEntryBytes());
+            first.close();
+            assertFalse(entries.hasNext());
+            reader.close();
         }
     }
 

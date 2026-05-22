@@ -167,25 +167,30 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             }
 
             /*
-             * Verify the whole batch before creating LedgerEntryImpl instances. If any entry fails
-             * digest verification, no partial entries are retained and readEntriesComplete() releases
-             * the retained ByteBufList after this method returns false.
+             * Verify entries in order. If the first entry has a digest mismatch, retry the read from
+             * another replica. If a later entry fails, return the verified prefix; batch reads are allowed
+             * to return fewer than maxCount entries.
              */
+            int verifiedEntries = 0;
             for (int i = 0; i < bufList.size(); i++) {
                 ByteBuf buffer = bufList.getBuffer(i);
                 try {
                     lh.macManager.verifyDigestAndReturnData(eId + i, buffer);
+                    verifiedEntries++;
                 } catch (BKException.BKDigestMatchException e) {
                     clientCtx.getClientStats().getReadOpDmCounter().inc();
-                    logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch",
-                            BKException.Code.DigestMatchException);
-                    return false;
+                    if (verifiedEntries == 0) {
+                        logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch",
+                                BKException.Code.DigestMatchException);
+                        return false;
+                    }
+                    break;
                 }
             }
 
             if (complete.compareAndSet(false, true)) {
                 rc = BKException.Code.OK;
-                for (int i = 0; i < bufList.size(); i++) {
+                for (int i = 0; i < verifiedEntries; i++) {
                     ByteBuf buffer = bufList.getBuffer(i);
                     /*
                      * The length is a long and it is the last field of the metadata of an entry.
@@ -195,6 +200,10 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
                     entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
                     entryImpl.setEntryBuf(buffer);
                     entries.add(entryImpl);
+                }
+                // These buffers are not transferred to LedgerEntryImpl, so release them here.
+                for (int i = verifiedEntries; i < bufList.size(); i++) {
+                    bufList.getBuffer(i).release();
                 }
                 writeSet.recycle();
                 return true;
