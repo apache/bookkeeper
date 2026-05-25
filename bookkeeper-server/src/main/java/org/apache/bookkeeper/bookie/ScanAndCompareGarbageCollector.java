@@ -70,7 +70,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
  * </p>
  */
 @CustomLog
-public class ScanAndCompareGarbageCollector implements GarbageCollector {
+public class ScanAndCompareGarbageCollector implements GarbageCollector, AutoCloseable {
 
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
@@ -84,6 +84,8 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private StatsLogger statsLogger;
     private final int maxConcurrentRequests;
     private final RateLimiter gcMetadataOpRateLimiter;
+    private MetadataBookieDriver metadataDriver;
+    private LedgerManagerFactory metadataLedgerManagerFactory;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
@@ -235,13 +237,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
         final Semaphore semaphore = new Semaphore(this.maxConcurrentRequests);
         final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
-        // instantiate zookeeper client to initialize ledger manager
-
-        @Cleanup
-        MetadataBookieDriver metadataDriver = instantiateMetadataDriver(conf, statsLogger);
-
-        @Cleanup
-        LedgerManagerFactory lmf = metadataDriver.getLedgerManagerFactory();
+        LedgerManagerFactory lmf = getOrCreateMetadataLedgerManagerFactory();
 
         @Cleanup
         LedgerUnderreplicationManager lum = lmf.newLedgerUnderreplicationManager();
@@ -324,6 +320,22 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         return overReplicatedLedgers;
     }
 
+    private synchronized LedgerManagerFactory getOrCreateMetadataLedgerManagerFactory() throws BookieException {
+        if (metadataLedgerManagerFactory != null) {
+            return metadataLedgerManagerFactory;
+        }
+
+        metadataDriver = instantiateMetadataDriver(conf, statsLogger);
+        try {
+            metadataLedgerManagerFactory = metadataDriver.getLedgerManagerFactory();
+        } catch (MetadataException me) {
+            closeMetadataDriver();
+            throw new BookieException.MetadataStoreException(
+                    "Failed to initialize ledger manager factory for over-replicated ledger GC", me);
+        }
+        return metadataLedgerManagerFactory;
+    }
+
     private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger)
             throws BookieException {
         try {
@@ -337,6 +349,24 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             throw new BookieException.MetadataStoreException("Failed to initialize metadata bookie driver", me);
         } catch (ConfigurationException e) {
             throw new BookieException.BookieIllegalOpException(e);
+        }
+    }
+
+    @Override
+    public synchronized void close() {
+        closeMetadataDriver();
+    }
+
+    private void closeMetadataDriver() {
+        metadataLedgerManagerFactory = null;
+        if (metadataDriver != null) {
+            try {
+                metadataDriver.close();
+            } catch (Exception e) {
+                log.warn().exception(e).log("Failed to close metadata driver used for over-replicated ledger GC");
+            } finally {
+                metadataDriver = null;
+            }
         }
     }
 
