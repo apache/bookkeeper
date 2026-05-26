@@ -112,6 +112,11 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         heardFromHosts.add(rctx.to);
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
+        /*
+         * Retain the response while this read op handles it. complete() returns true only when it
+         * transfers the buffers into request.entries. For digest failures, duplicate responses, or
+         * other incomplete paths, complete() returns false and this retained reference is released here.
+         */
         bufList.retain();
         // if entry has completed don't handle twice
         if (entry.complete(rctx.bookieIndex, rctx.to, bufList)) {
@@ -160,32 +165,50 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             if (isComplete()) {
                 return false;
             }
-            if (!complete.getAndSet(true)) {
-                for (int i = 0; i < bufList.size(); i++) {
-                    ByteBuf buffer = bufList.getBuffer(i);
-                    ByteBuf content;
-                    try {
-                        content = lh.macManager.verifyDigestAndReturnData(eId + i, buffer);
-                    } catch (BKException.BKDigestMatchException e) {
-                        clientCtx.getClientStats().getReadOpDmCounter().inc();
+
+            /*
+             * Verify entries in order. If the first entry has a digest mismatch, retry the read from
+             * another replica. If a later entry fails, return the verified prefix; batch reads are allowed
+             * to return fewer than maxCount entries.
+             */
+            int verifiedEntries = 0;
+            for (int i = 0; i < bufList.size(); i++) {
+                ByteBuf buffer = bufList.getBuffer(i);
+                try {
+                    lh.macManager.verifyDigestAndReturnData(eId + i, buffer);
+                    verifiedEntries++;
+                } catch (BKException.BKDigestMatchException e) {
+                    clientCtx.getClientStats().getReadOpDmCounter().inc();
+                    if (verifiedEntries == 0) {
                         logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch",
                                 BKException.Code.DigestMatchException);
                         return false;
                     }
-                    rc = BKException.Code.OK;
+                    break;
+                }
+            }
+
+            if (complete.compareAndSet(false, true)) {
+                rc = BKException.Code.OK;
+                for (int i = 0; i < verifiedEntries; i++) {
+                    ByteBuf buffer = bufList.getBuffer(i);
                     /*
                      * The length is a long and it is the last field of the metadata of an entry.
                      * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                      */
-                    LedgerEntryImpl entryImpl =  LedgerEntryImpl.create(lh.ledgerId, startEntryId + i);
+                    LedgerEntryImpl entryImpl = LedgerEntryImpl.create(lh.ledgerId, startEntryId + i);
                     entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
-                    entryImpl.setEntryBuf(content);
+                    entryImpl.setEntryBuf(buffer);
                     entries.add(entryImpl);
+                }
+                // These buffers are not transferred to LedgerEntryImpl, so release them here.
+                for (int i = verifiedEntries; i < bufList.size(); i++) {
+                    bufList.getBuffer(i).release();
                 }
                 writeSet.recycle();
                 return true;
             } else {
-                writeSet.recycle();
+                // Another response completed the request first; readEntriesComplete() releases bufList.
                 return false;
             }
         }
