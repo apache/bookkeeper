@@ -189,7 +189,13 @@ public class ReadLedgerCommand extends BookieCommand<ReadLedgerCommand.ReadLedge
                                                                  executor, scheduler, NullStatsLogger.INSTANCE,
                                                                  bk.getBookieAddressResolver());
 
-                LongStream.range(flags.firstEntryId, lastEntry).forEach(entryId -> {
+                // Determine the last ledger entry from ledger metadata if its is not provided
+                if (flags.lastEntryId == -1 && !flags.forceRecovery) {
+                    LedgerHandle lh = bk.openLedgerNoRecovery(flags.ledgerId);
+                    lastEntry = lh.getLastAddConfirmed();
+                }
+
+                LongStream.rangeClosed(flags.firstEntryId, lastEntry).forEach(entryId -> {
                     CompletableFuture<Void> future = new CompletableFuture<>();
 
                     bookieClient.readEntry(bookie, flags.ledgerId, entryId,
