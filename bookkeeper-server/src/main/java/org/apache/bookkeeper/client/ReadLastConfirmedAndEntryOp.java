@@ -189,6 +189,12 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
          *          read result code
          */
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
+            // Late error response after this request was already completed (e.g. by a
+            // faster bookie's success): writeSet/orderedEnsemble have been recycled, so
+            // do not enter logic that would access them.
+            if (isComplete()) {
+                return;
+            }
             translateAndSetFirstError(rc);
 
             if (BKException.Code.NoSuchEntryException == rc || BKException.Code.NoSuchLedgerExistsException == rc) {
@@ -401,6 +407,9 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         @Override
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
+            if (isComplete()) {
+                return;
+            }
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
             int replica = getReplicaIndex(bookieIndex);
@@ -426,15 +435,22 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
 
         @Override
         boolean complete(int bookieIndex, BookieId host, ByteBuf buffer, long entryId) {
+            if (isComplete()) {
+                return false;
+            }
+            // Snapshot the slow-bookie addresses BEFORE super.complete() recycles
+            // orderedEnsemble (see issue #4680). The loop runs for every replica tried
+            // (including the successful one), so numReplicasTried is at least 1 here.
+            final int numReplicasTried = getNextReplicaIndexToReadFrom();
+            final BookieId[] slowBookies = new BookieId[numReplicasTried];
+            for (int i = 0; i < slowBookies.length; i++) {
+                slowBookies[i] = ensemble.get(orderedEnsemble.get(i));
+            }
+
             boolean completed = super.complete(bookieIndex, host, buffer, entryId);
             if (completed) {
-                int numReplicasTried = getNextReplicaIndexToReadFrom();
-                // Check if any speculative reads were issued and mark any bookies before the
-                // first speculative read as slow
-                for (int i = 0; i < numReplicasTried; i++) {
-                    int slowBookieIndex = orderedEnsemble.get(i);
-                    BookieId slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, entryId);
+                for (BookieId slowBookie : slowBookies) {
+                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookie, entryId);
                 }
             }
             return completed;

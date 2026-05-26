@@ -388,6 +388,12 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
         @Override
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
+            // A late error response from a bookie whose request was already superseded by
+            // a faster (e.g. speculative) read must not flow through the reattempt logic:
+            // writeSet has been recycled at the moment this entry transitioned to complete.
+            if (isComplete()) {
+                return;
+            }
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
             int replica = writeSet.indexOf(bookieIndex);
@@ -415,15 +421,29 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
         @Override
         boolean complete(int bookieIndex, BookieId host, ByteBuf buffer) {
+            if (isComplete()) {
+                return false;
+            }
+            // Common case: the very first replica responded successfully; no
+            // speculative retry happened, so there are no slow bookies to mark.
+            // Skip the snapshot allocation entirely.
+            final int numReplicasTried = getNextReplicaIndexToReadFrom();
+            if (numReplicasTried <= 1) {
+                return super.complete(bookieIndex, host, buffer);
+            }
+            // Speculative retry happened: snapshot the addresses of the replicas tried
+            // before this one BEFORE calling super.complete(), which recycles writeSet
+            // (see issue #4680). The WriteSet keeps its normal pooled lifecycle.
+            final BookieId[] slowBookies = new BookieId[numReplicasTried - 1];
+            for (int i = 0; i < slowBookies.length; i++) {
+                slowBookies[i] = ensemble.get(writeSet.get(i));
+            }
+
             boolean completed = super.complete(bookieIndex, host, buffer);
             if (completed) {
-                int numReplicasTried = getNextReplicaIndexToReadFrom();
-                // Check if any speculative reads were issued and mark any slow bookies before
-                // the first successful speculative read as "slow"
-                for (int i = 0; i < numReplicasTried - 1; i++) {
-                    int slowBookieIndex = writeSet.get(i);
-                    BookieId slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, eId);
+                // Mark replicas tried before the first successful response as "slow".
+                for (BookieId slowBookie : slowBookies) {
+                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookie, eId);
                 }
             }
             return completed;
