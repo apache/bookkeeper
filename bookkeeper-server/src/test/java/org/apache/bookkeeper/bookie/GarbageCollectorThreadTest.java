@@ -173,7 +173,7 @@ public class GarbageCollectorThreadTest {
             Assert.assertSame(lmf, getOrCreateMetadataLedgerManagerFactory(garbageCollector));
             metadataDrivers.verify(() -> MetadataDrivers.getBookieDriver(any(URI.class)), times(1));
 
-            garbageCollector.close();
+            garbageCollector.closeMetadataDriver();
 
             verify(metadataDriver).close();
             Assert.assertNull(getMetadataDriver(garbageCollector));

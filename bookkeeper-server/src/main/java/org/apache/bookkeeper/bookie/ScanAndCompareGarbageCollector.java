@@ -70,7 +70,7 @@ import org.apache.commons.configuration2.ex.ConfigurationException;
  * </p>
  */
 @CustomLog
-public class ScanAndCompareGarbageCollector implements GarbageCollector, AutoCloseable {
+public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     private final LedgerManager ledgerManager;
     private final CompactableLedgerStorage ledgerStorage;
@@ -346,19 +346,15 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector, AutoClo
         }
     }
 
-    @Override
-    public synchronized void close() {
-        closeMetadataDriver();
-    }
-
-    private void closeMetadataDriver() {
-        metadataLedgerManagerFactory = null;
+    public void closeMetadataDriver() {
         if (metadataDriver != null) {
             try {
+                metadataLedgerManagerFactory.close();
                 metadataDriver.close();
             } catch (Exception e) {
                 log.warn().exception(e).log("Failed to close metadata driver used for over-replicated ledger GC");
             } finally {
+                metadataLedgerManagerFactory = null;
                 metadataDriver = null;
             }
         }

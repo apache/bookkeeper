@@ -820,7 +820,7 @@ public class GarbageCollectorThread implements Runnable {
             log.warn().exception(e).log("Failed to close entryLog metadata-map");
         }
         try {
-            garbageCollector.close();
+            garbageCollector.closeMetadataDriver();
         } catch (Exception e) {
             log.warn().exception(e).log("Failed to close garbage collector metadata resources");
         }
