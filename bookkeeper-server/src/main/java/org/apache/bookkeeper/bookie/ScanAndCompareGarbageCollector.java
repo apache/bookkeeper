@@ -320,19 +320,13 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector, AutoClo
         return overReplicatedLedgers;
     }
 
-    private synchronized LedgerManagerFactory getOrCreateMetadataLedgerManagerFactory() throws BookieException {
+    private synchronized LedgerManagerFactory getOrCreateMetadataLedgerManagerFactory() throws Exception {
         if (metadataLedgerManagerFactory != null) {
             return metadataLedgerManagerFactory;
         }
 
         metadataDriver = instantiateMetadataDriver(conf, statsLogger);
-        try {
-            metadataLedgerManagerFactory = metadataDriver.getLedgerManagerFactory();
-        } catch (MetadataException me) {
-            closeMetadataDriver();
-            throw new BookieException.MetadataStoreException(
-                    "Failed to initialize ledger manager factory for over-replicated ledger GC", me);
-        }
+        metadataLedgerManagerFactory = metadataDriver.getLedgerManagerFactory();
         return metadataLedgerManagerFactory;
     }
 
