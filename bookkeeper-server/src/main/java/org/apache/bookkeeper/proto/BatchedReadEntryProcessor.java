@@ -68,11 +68,11 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
                     long remainingEntries = remainingBudget > 0 ? remainingBudget / Math.max(perEntrySize, 1L) : 0L;
                     maxCount = (int) Math.min(maxCount, 1L + remainingEntries);
                 } else {
-                    if (frameSize + entry.readableBytes() + Integer.BYTES > maxSize) {
+                    frameSize += entry.readableBytes() + Integer.BYTES;
+                    if (frameSize > maxSize) {
                         entry.release();
                         break;
                     }
-                    frameSize += entry.readableBytes() + Integer.BYTES;
                     data.add(entry);
                 }
             } catch (Throwable e) {
