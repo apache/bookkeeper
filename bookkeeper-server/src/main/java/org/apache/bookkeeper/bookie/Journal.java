@@ -628,6 +628,10 @@ public class Journal implements CheckpointSource {
 
     private final LastLogMark lastLogMark = new LastLogMark(0, 0);
 
+    // Ensures lastMark only advances forward across concurrent checkpointComplete calls.
+    private final Object checkpointLock = new Object();
+    private final LogMark lastPersistedMark = new LogMark(0, 0);
+
     private static final String LAST_MARK_DEFAULT_NAME = "lastMark";
 
     private final String lastMarkFileName;
@@ -705,6 +709,8 @@ public class Journal implements CheckpointSource {
             lastMarkFileName = LAST_MARK_DEFAULT_NAME + "." + journalIndex;
         }
         lastLogMark.readLog();
+        lastPersistedMark.setLogMark(
+                lastLogMark.getCurMark().getLogFileId(), lastLogMark.getCurMark().getLogFileOffset());
         log.debug().attr("lastMark", () -> lastLogMark.getCurMark()).log("Last Log Mark");
 
         try {
@@ -771,6 +777,9 @@ public class Journal implements CheckpointSource {
     /**
      * Telling journal a checkpoint is finished.
      *
+     * <p>Skips if the checkpoint is older than the last persisted mark,
+     * preventing lastMark from regressing backwards.
+     *
      * @throws IOException
      */
     @Override
@@ -781,7 +790,16 @@ public class Journal implements CheckpointSource {
         LogMarkCheckpoint lmcheckpoint = (LogMarkCheckpoint) checkpoint;
         LastLogMark mark = lmcheckpoint.mark;
 
-        mark.rollLog(mark);
+        // See #4105: keep the monotonic decision and lastMark persistence together.
+        synchronized (checkpointLock) {
+            if (mark.getCurMark().compare(lastPersistedMark) < 0) {
+                return;
+            }
+            persistLastLogMark(mark);
+            lastPersistedMark.setLogMark(
+                    mark.getCurMark().getLogFileId(), mark.getCurMark().getLogFileOffset());
+        }
+
         if (compact) {
             // list the journals that have been marked
             List<Long> logs = listJournalIds(journalDirectory, new JournalRollingFilter(mark));
@@ -801,6 +819,16 @@ public class Journal implements CheckpointSource {
                 }
             }
         }
+    }
+
+    @VisibleForTesting
+    protected void persistLastLogMark(LastLogMark mark) throws NoWritableLedgerDirException {
+        mark.rollLog(mark);
+    }
+
+    @VisibleForTesting
+    protected boolean isCheckpointCompleteLockHeldByCurrentThread() {
+        return Thread.holdsLock(checkpointLock);
     }
 
     /**
