@@ -26,6 +26,11 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -249,6 +254,86 @@ public class EntryLocationIndexTest {
 
         // Ledger 2 should still work
         assertEquals(5, idx.getLastEntryInLedger(2));
+
+        idx.close();
+    }
+
+    /**
+     * Regression test for the cache-update races between getLastEntryInLedger and addLocation,
+     * and between concurrent addLocation calls. Without the CAS-loop guard, an interleaving can
+     * leave a stale (lower) entryId cached after a higher one was successfully written.
+     */
+    @Test
+    public void testGetLastEntryInLedgerCacheConcurrent() throws Exception {
+        File tmpDir = File.createTempFile("bkTest", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        tmpDir.deleteOnExit();
+
+        EntryLocationIndex idx = new EntryLocationIndex(serverConfiguration, KeyValueStorageRocksDB.factory,
+                tmpDir.getAbsolutePath(), NullStatsLogger.INSTANCE);
+
+        final long ledgerId = 42L;
+        final int writers = 4;
+        final int readers = 4;
+        final int entriesPerWriter = 2_000;
+        final AtomicLong highestWritten = new AtomicLong(-1);
+
+        ExecutorService pool = Executors.newFixedThreadPool(writers + readers);
+        CountDownLatch start = new CountDownLatch(1);
+        CountDownLatch done = new CountDownLatch(writers + readers);
+
+        // Writers interleave entry ids from disjoint ranges so any combination is monotone-ish
+        // but every writer occasionally produces both lower and higher ids than its peers.
+        for (int w = 0; w < writers; w++) {
+            final int writerIdx = w;
+            pool.submit(() -> {
+                try {
+                    start.await();
+                    for (int i = 0; i < entriesPerWriter; i++) {
+                        long entryId = (long) i * writers + writerIdx;
+                        idx.addLocation(ledgerId, entryId, 1000L + entryId);
+                        highestWritten.accumulateAndGet(entryId, Math::max);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        // Readers keep hammering getLastEntryInLedger to widen the race window between the
+        // cache-miss read of getFloor() and the cache-populate write.
+        for (int r = 0; r < readers; r++) {
+            pool.submit(() -> {
+                try {
+                    start.await();
+                    for (int i = 0; i < entriesPerWriter; i++) {
+                        try {
+                            idx.getLastEntryInLedger(ledgerId);
+                        } catch (Bookie.NoEntryException ignored) {
+                            // first few reads may race ahead of any write
+                        }
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    done.countDown();
+                }
+            });
+        }
+
+        start.countDown();
+        assertTrue(done.await(60, TimeUnit.SECONDS));
+        pool.shutdown();
+
+        // After all writers drained, the cache (if populated) must reflect the highest write.
+        // We trigger one more read; this returns the cached value if any, or falls through to
+        // RocksDB. Either way it must equal highestWritten.
+        long expected = highestWritten.get();
+        long observed = idx.getLastEntryInLedger(ledgerId);
+        assertEquals("cache regressed below the highest written entry", expected, observed);
 
         idx.close();
     }
