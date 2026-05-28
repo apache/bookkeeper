@@ -426,7 +426,10 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         boolean initialized = false;
         try {
             // initialize resources
-            this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
+            this.scheduler = OrderedScheduler.newSchedulerBuilder()
+                    .numThreads(1)
+                    .name("BookKeeperClientScheduler")
+                    .build();
             this.highPriorityTaskExecutor =
                     OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperHighPriorityThread").build();
             this.mainWorkerPool = OrderedExecutor.newBuilder()

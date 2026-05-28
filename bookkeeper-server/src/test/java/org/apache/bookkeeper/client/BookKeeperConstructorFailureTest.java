@@ -143,7 +143,7 @@ public class BookKeeperConstructorFailureTest {
         }
         return counts;
     }
-    
+
     private static String matchPrefix(String name) {
         if (name == null) {
             return null;
@@ -153,7 +153,7 @@ public class BookKeeperConstructorFailureTest {
                 .findFirst()
                 .orElse(null);
     }
-    
+
     private static boolean hasLeak(Map<String, Integer> counts) {
         for (Integer v : counts.values()) {
             if (v != null && v > 0) {
@@ -162,7 +162,7 @@ public class BookKeeperConstructorFailureTest {
         }
         return false;
     }
-    
+
     private static void waitForThreadShutdown(ThreadGroup group, long timeoutMs)
             throws InterruptedException {
         long deadline = System.currentTimeMillis() + timeoutMs;
