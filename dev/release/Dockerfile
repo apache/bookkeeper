@@ -21,7 +21,7 @@ FROM --platform=linux/amd64 maven:3.9.11-eclipse-temurin-17
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
   apt-get dist-upgrade -y && \
-  apt-get install -y g++ cmake gnupg2 vim subversion less zip unzip
+  apt-get install -y g++ cmake gnupg2 vim subversion less zip unzip xz-utils
 
 # Rust toolchain (for native-io module's cargo-zigbuild build)
 ENV RUSTUP_HOME=/usr/local/rustup \
