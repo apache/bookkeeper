@@ -29,11 +29,13 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.bookkeeper.client.MockBookKeeperTestCase;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.config.Property;
 import org.apache.logging.log4j.util.ReadOnlyStringMap;
@@ -41,8 +43,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Verifies that the slog {@link Logger} passed to {@link CreateBuilder#withLoggerContext} /
- * {@link OpenBuilder#withLoggerContext} contributes its context attributes to every log event
- * emitted by the resulting handle (and by the create/open machinery that produces it).
+ * {@link OpenBuilder#withLoggerContext} / {@link DeleteBuilder#withLoggerContext} contributes its
+ * context attributes to every log event emitted by the resulting handle (and by the
+ * create/open/delete machinery that produces it).
  */
 public class LoggerContextTest extends MockBookKeeperTestCase {
 
@@ -84,7 +87,7 @@ public class LoggerContextTest extends MockBookKeeperTestCase {
         appender.start();
         config.addAppender(appender);
         LoggerConfig root = config.getRootLogger();
-        root.addAppender(appender, root.getLevel(), null);
+        root.addAppender(appender, Level.ALL, null);
         ctx.updateLoggers();
         return appender;
     }
@@ -140,6 +143,37 @@ public class LoggerContextTest extends MockBookKeeperTestCase {
     }
 
     @Test
+    public void deleteBuilder_withLoggerContext_propagatesIntoLogEvents() throws Exception {
+        // Delete a ledger that does not exist. LedgerDeleteOp logs the failure at debug
+        // level via its contextual logger, which should carry both the parent logger's
+        // attrs and the always-present ledgerId.
+        Logger requestLog = requestLogger("req-del", "acme");
+
+        Configurator.setLevel("org.apache.bookkeeper.client.LedgerDeleteOp", Level.DEBUG);
+        CapturingAppender appender = installAppender("LedgerDeleteOp");
+        try {
+            try {
+                newDeleteLedgerOp()
+                        .withLedgerId(ledgerId)
+                        .withLoggerContext(requestLog)
+                        .execute()
+                        .get();
+            } catch (Exception ignored) {
+                // expected — ledger doesn't exist in the mock
+            }
+        } finally {
+            uninstallAppender(appender);
+            Configurator.setLevel("org.apache.bookkeeper.client.LedgerDeleteOp", Level.INFO);
+        }
+
+        Map<String, String> ctxData = appender.firstMatch().orElseThrow(
+                () -> new AssertionError("expected to capture a LogEvent from LedgerDeleteOp"));
+        assertEquals("req-del", ctxData.get("requestId"));
+        assertEquals("acme", ctxData.get("tenant"));
+        assertEquals(String.valueOf(ledgerId), ctxData.get("ledgerId"));
+    }
+
+    @Test
     public void openBuilder_withLoggerContext_compilesAndChains() throws Exception {
         OpenBuilder ob = newOpenLedgerOp()
                 .withLedgerId(ledgerId)
@@ -153,6 +187,13 @@ public class LoggerContextTest extends MockBookKeeperTestCase {
         CreateBuilder cb = newCreateLedgerOp().withPassword(password);
         CreateBuilder cb2 = cb.withLoggerContext(requestLogger("req-1", "acme"));
         assertTrue(cb2 instanceof CreateBuilder);
+    }
+
+    @Test
+    public void deleteBuilder_withLoggerContext_compilesAndChains() throws Exception {
+        DeleteBuilder db = newDeleteLedgerOp().withLedgerId(ledgerId);
+        DeleteBuilder db2 = db.withLoggerContext(requestLogger("req-1", "acme"));
+        assertTrue(db2 instanceof DeleteBuilder);
     }
 
     @Test
@@ -191,5 +232,22 @@ public class LoggerContextTest extends MockBookKeeperTestCase {
                 .execute()
                 .get();
         assertEquals(ledgerId, writer.getId());
+    }
+
+    @Test
+    public void deleteBuilder_withLoggerContext_nullIsTreatedAsNoExtraContext() throws Exception {
+        setNewGeneratedLedgerId(ledgerId);
+        WriteHandle writer = newCreateLedgerOp()
+                .withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(1)
+                .withPassword(password)
+                .execute()
+                .get();
+        assertEquals(ledgerId, writer.getId());
+
+        newDeleteLedgerOp()
+                .withLedgerId(ledgerId)
+                .withLoggerContext(null)
+                .execute()
+                .get();
     }
 }
