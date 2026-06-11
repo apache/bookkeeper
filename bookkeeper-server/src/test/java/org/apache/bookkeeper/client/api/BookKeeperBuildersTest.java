@@ -26,6 +26,11 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -368,6 +373,35 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
     }
 
     @Test
+    public void testOpenLedgerWithRecoveryAndKeepUpdateMetadata() throws Exception {
+        registerMockLedgerMetadata(ledgerId, generateClosedLedgerMetadata());
+
+        ReadHandle reader = newOpenLedgerOp()
+            .withPassword(password)
+            .withLedgerId(ledgerId)
+            .withRecovery(true)
+            .withKeepUpdateMetadata(true)
+            .execute()
+            .get();
+        assertEquals(ledgerId, reader.getId());
+        verify(ledgerManager).registerLedgerMetadataListener(eq(ledgerId), any());
+    }
+
+    @Test
+    public void testOpenLedgerWithRecoveryNoKeepUpdateMetadata() throws Exception {
+        registerMockLedgerMetadata(ledgerId, generateClosedLedgerMetadata());
+
+        ReadHandle reader = newOpenLedgerOp()
+            .withPassword(password)
+            .withLedgerId(ledgerId)
+            .withRecovery(true)
+            .execute()
+            .get();
+        assertEquals(ledgerId, reader.getId());
+        verify(ledgerManager, never()).registerLedgerMetadataListener(anyLong(), any());
+    }
+
+    @Test
     public void testDeleteLedgerNoLedgerId() throws Exception {
         assertThrows(BKIncorrectParameterException.class, () -> {
             result(newDeleteLedgerOp()
@@ -418,6 +452,15 @@ public class BookKeeperBuildersTest extends MockBookKeeperTestCase {
             .withCustomMetadata(customMetadata)
             .withCreationTime(System.currentTimeMillis())
             .newEnsembleEntry(0, generateNewEnsemble(ensembleSize)).build();
+    }
+
+    private LedgerMetadata generateClosedLedgerMetadata() throws BKException.BKNotEnoughBookiesException {
+        return LedgerMetadataBuilder.from(generateLedgerMetadata(ensembleSize,
+                writeQuorumSize, ackQuorumSize, password, customMetadata))
+            .withClosedState()
+            .withLastEntryId(-1)
+            .withLength(0)
+            .build();
     }
 
     @Test
