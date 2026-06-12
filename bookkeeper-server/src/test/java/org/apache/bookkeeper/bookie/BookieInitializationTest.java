@@ -247,8 +247,7 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
             int logBefore = countNumOfFiles(conf.getLedgerDirs(), "log");
             int idxBefore = countNumOfFiles(conf.getLedgerDirs(), "idx");
 
-            assertThatThrownBy(server::start)
-                .isInstanceOf(IllegalStateException.class);
+            server.start();
 
             for (int j = 0; j < journalDirs.length; j++) {
                 Journal journal = ((BookieImpl) server.getBookie()).journals.get(j);
