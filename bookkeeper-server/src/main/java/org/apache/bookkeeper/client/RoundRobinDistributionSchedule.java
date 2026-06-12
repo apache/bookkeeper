@@ -247,7 +247,7 @@ public class RoundRobinDistributionSchedule implements DistributionSchedule {
         }
 
         private void checkBounds(int i) {
-            if (i < 0 || i > size) {
+            if (i < 0 || i >= size) {
                 throw new IndexOutOfBoundsException(
                         "Index " + i + " out of bounds, array size = " + size);
             }
