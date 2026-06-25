@@ -424,10 +424,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
         this.internalConf = ClientInternalConf.fromConfigAndFeatureProvider(conf, this.featureProvider);
 
         // initialize resources
-        this.scheduler = OrderedScheduler.newSchedulerBuilder()
-                .numThreads(1)
-                .name("BookKeeperClientScheduler")
-                .build();
+        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
         this.highPriorityTaskExecutor =
                 OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperHighPriorityThread").build();
         this.mainWorkerPool = OrderedExecutor.newBuilder()
@@ -462,11 +459,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             log.error()
                     .exception(ce)
                     .log("Failed to initialize metadata client driver using invalid metadata service uri");
-            closeQuietlyOnConstructorFailure();
+            close();
             throw new IOException("Failed to initialize metadata client driver", ce);
         } catch (MetadataException me) {
             log.error().exception(me).log("Encountered metadata exceptions on initializing metadata client driver");
-            closeQuietlyOnConstructorFailure();
+            close();
             throw new IOException("Failed to initialize metadata client driver", me);
         }
 
@@ -541,7 +538,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ledgerManagerFactory =
                 this.metadataDriver.getLedgerManagerFactory();
         } catch (MetadataException e) {
-            closeQuietlyOnConstructorFailure();
+            close();
             throw new IOException("Failed to initialize ledger manager factory", e);
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
@@ -549,15 +546,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
         scheduleBookieHealthCheckIfEnabled(conf);
-    }
-
-    private void closeQuietlyOnConstructorFailure() {
-        try {
-            close();
-        } catch (Throwable closeError) {
-            log.error().exception(closeError)
-                    .log("Failed to release resources after BookKeeper construction error");
-        }
     }
 
     /**
