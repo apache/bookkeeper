@@ -4,6 +4,150 @@ format: md
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.18.0
+
+Release 4.18.0 includes multiple important features, improvements, bug fixes and dependency/CVE updates.
+
+The technical details of this release are summarized below.
+
+### Breaking Changes
+
+* Require Java 17+ for building and running BookKeeper [PR #4446](https://github.com/apache/bookkeeper/pull/4446)
+* [improve][conf] Change the default value of `readOnlyModeOnAnyDiskFullEnabled` to true [PR #4520](https://github.com/apache/bookkeeper/pull/4520)
+* BP-69: Remove `bookkeeper-slogger` module [PR #4764](https://github.com/apache/bookkeeper/pull/4764)
+* Remove deprecated method `setAllocatorPoolingConcurrenncy` [PR #4431](https://github.com/apache/bookkeeper/pull/4431)
+* Remove deprecated class `MathUtils` [PR #4274](https://github.com/apache/bookkeeper/pull/4274)
+
+### Features
+
+* BP-69: Adopt slog for structured logging [PR #4751](https://github.com/apache/bookkeeper/pull/4751)
+* BP-69: Convert bookkeeper-common to slog (phase 1) [PR #4754](https://github.com/apache/bookkeeper/pull/4754)
+* BP-69: Convert stats and allocator modules to slog (phase 2) [PR #4755](https://github.com/apache/bookkeeper/pull/4755)
+* BP-69: Convert bookkeeper-server to slog (phase 3) [PR #4756](https://github.com/apache/bookkeeper/pull/4756)
+* BP-69: Convert stream/distributedlog modules to slog (phase 5) [PR #4757](https://github.com/apache/bookkeeper/pull/4757)
+* BP-69: Convert http, tools, benchmark and metadata-drivers to slog (phase 4+6) [PR #4758](https://github.com/apache/bookkeeper/pull/4758)
+* BP-69: Convert remaining SLF4J usages in non-test code to slog [PR #4765](https://github.com/apache/bookkeeper/pull/4765)
+* BP-69: Allow caller to pass a parent slog Logger to created/opened ledgers [PR #4766](https://github.com/apache/bookkeeper/pull/4766)
+* BP-69: Inherit LedgerHandle logger context in ledger operations [PR #4767](https://github.com/apache/bookkeeper/pull/4767)
+* BP-69: Print slog context attrs in log4j2; add OTel JSON example [PR #4770](https://github.com/apache/bookkeeper/pull/4770)
+* BP-68: Delete cookie as part of decommission API [PR #4500](https://github.com/apache/bookkeeper/pull/4500)
+* Delete cookie as part of decommission API [PR #4592](https://github.com/apache/bookkeeper/pull/4592)
+* BP-66: support throttling for zookeeper read during rereplication [PR #4258](https://github.com/apache/bookkeeper/pull/4258)
+* [BP-62] Expose `batchReadUnconfirmedAsync` to ReadHandle [PR #4739](https://github.com/apache/bookkeeper/pull/4739)
+* feat: migrate native-io implementation from C to Rust [PR #4738](https://github.com/apache/bookkeeper/pull/4738)
+* Migrate `BookkeeperProtocol` from protobuf-java to LightProto [PR #4780](https://github.com/apache/bookkeeper/pull/4780)
+* Migrate `DataFormats` from protobuf-java to LightProto [PR #4779](https://github.com/apache/bookkeeper/pull/4779)
+* Migrate stream non-gRPC protos to LightProto [PR #4781](https://github.com/apache/bookkeeper/pull/4781)
+* Migrate stream gRPC protos to LightProto [PR #4783](https://github.com/apache/bookkeeper/pull/4783)
+* Migrate from Yahoo DataSketches to Apache DataSketches 7.0.1 (KLL) [PR #4774](https://github.com/apache/bookkeeper/pull/4774)
+* Support bookie server config TCP keep-alive [PR #4762](https://github.com/apache/bookkeeper/pull/4762)
+* [client] new API to check if BookKeeper client is connected to metadata service [PR #4342](https://github.com/apache/bookkeeper/pull/4342)
+* feat: allow user config AsyncLogger in log4j2 [PR #4269](https://github.com/apache/bookkeeper/pull/4269)
+
+### Improvements
+
+#### Bookie
+
+* [improve] add metrics: `total_entry_log_space_bytes` [PR #4507](https://github.com/apache/bookkeeper/pull/4507)
+* improve: Enrich GC metrics to better analyze GC behavior and the time consumption of each phase [PR #4384](https://github.com/apache/bookkeeper/pull/4384)
+* add metric for rocksdb `getLastEntryInLedger` to help find out bottleneck [PR #4529](https://github.com/apache/bookkeeper/pull/4529)
+* Set ThreadFactory for Executor in EntryLoggerAllocator [PR #4562](https://github.com/apache/bookkeeper/pull/4562)
+* Add temp dir property for native library [PR #4533](https://github.com/apache/bookkeeper/pull/4533)
+* Apply WRITE_BUFFER_WATER_MARK setting to child channels in BookieNetty Server [PR #4337](https://github.com/apache/bookkeeper/pull/4337)
+* SingleDirectoryDbLedgerStorage skip optimistic cache put sometimes [PR #4306](https://github.com/apache/bookkeeper/pull/4306)
+* Log only overridden config in BookieServer startup [PR #4768](https://github.com/apache/bookkeeper/pull/4768)
+* Remove unused journaltime [PR #4006](https://github.com/apache/bookkeeper/pull/4006)
+
+#### Client
+
+* LedgerHandle: eliminate unnecessary synchronization on `LedgerHandle.getLength()` [PR #4516](https://github.com/apache/bookkeeper/pull/4516)
+* Optimize bounded batch reads by predicting entry count [PR #4741](https://github.com/apache/bookkeeper/pull/4741)
+* improve: Improve host address resolution logic for bookie id [PR #4588](https://github.com/apache/bookkeeper/pull/4588)
+* Rename the client high priority thread pool [PR #4496](https://github.com/apache/bookkeeper/pull/4496)
+
+#### Tools
+
+* [improve] Update readledger command to read all the entries from a bookie when first entry and last entry ids are not provided [PR #4692](https://github.com/apache/bookkeeper/pull/4692)
+* Optimize ListActiveLedgersCommand [PR #4602](https://github.com/apache/bookkeeper/pull/4602)
+* Optimize bookie usage information while using command line option `--help` [PR #4241](https://github.com/apache/bookkeeper/pull/4241)
+
+### Bugs
+
+#### Bookie
+
+* fix BookKeeper can't startup cause by 'IOException: Recovery log xxx is missing' [PR #4740](https://github.com/apache/bookkeeper/pull/4740)
+* Prevent double flush due to race in SingleDirectoryDbLedgerStorage [PR #4305](https://github.com/apache/bookkeeper/pull/4305)
+* Fix RocksDB configuration path handling on Windows [PR #4407](https://github.com/apache/bookkeeper/pull/4407)
+* Issue 4503: Added check into BufferedChannel's read to avoid endless loop [PR #4506](https://github.com/apache/bookkeeper/pull/4506)
+* [Fix] ConcurrentLongHashMap throw ArrayIndexOutOfBoundsException [PR #4771](https://github.com/apache/bookkeeper/pull/4771)
+* Add workaround for ZOOKEEPER-3825 related to numeric IPs and DNS names with multiple numeric IPs and support on Java 17 [PR #4719](https://github.com/apache/bookkeeper/pull/4719)
+* Fix async log appender not print error log when bookie starting exceptionally [PR #4475](https://github.com/apache/bookkeeper/pull/4475)
+* fix: throw reject when SingleThreadExecutor drainTo in progress and queue is empty [PR #4488](https://github.com/apache/bookkeeper/pull/4488)
+
+#### Client
+
+* Fix batch reads hanging after digest mismatch retries are ignored [PR #4789](https://github.com/apache/bookkeeper/pull/4789)
+* Fix WriteSet use-after-recycle in sequence reads [PR #4788](https://github.com/apache/bookkeeper/pull/4788)
+* Fix NPE in PendingAddOp.maybeTimeout() when clientCtx is null after recycling [PR #4760](https://github.com/apache/bookkeeper/pull/4760)
+* Fix race condition NPE in V3 response handling during timeout check [PR #4737](https://github.com/apache/bookkeeper/pull/4737)
+* [client][fix] Bookie WatchTask may be stuck [PR #4481](https://github.com/apache/bookkeeper/pull/4481)
+* Fix LedgerHandle batchReadUnconfirmedAsync: use slog log instead of LOG [PR #4782](https://github.com/apache/bookkeeper/pull/4782)
+* #4574: fix sanity check asyncBatchReadEntries [PR #4579](https://github.com/apache/bookkeeper/pull/4579)
+* fix: Add strict hostname resolution and loopback check for advertised address [PR #4595](https://github.com/apache/bookkeeper/pull/4595)
+* [fix] Change log level to debug when check parameters in BatchRead [PR #4485](https://github.com/apache/bookkeeper/pull/4485)
+
+#### Others
+
+* [FIX] Fix IllegalThreadStateException in ComponentStarter shutdown hook [PR #4733](https://github.com/apache/bookkeeper/pull/4733)
+* Fix potential jetcd-core shading problem [PR #4526](https://github.com/apache/bookkeeper/pull/4526)
+* Fix potential class conflict during jetcd-core-shaded shading process [PR #4532](https://github.com/apache/bookkeeper/pull/4532)
+* compatible fix wrong key for getHttpServerTrustStorePassword [PR #4301](https://github.com/apache/bookkeeper/pull/4301)
+* [fix] fix string format for exception in RocksdbKVStore [PR #4448](https://github.com/apache/bookkeeper/pull/4448)
+* fix: permission denied in the docker image [PR #4464](https://github.com/apache/bookkeeper/pull/4464)
+* [fix] Fix issue where options for sanity test command are ignored [PR #4691](https://github.com/apache/bookkeeper/pull/4691)
+* Fix duplicated call zkGetLogSegmentNames in getLogSegmentNames [PR #4050](https://github.com/apache/bookkeeper/pull/4050)
+* Fix the pid occupied check when use bookkeeper-daemon.sh start or stop [PR #3113](https://github.com/apache/bookkeeper/pull/3113)
+
+### Build, CI and Tests
+
+* Introduce /bkbot Command to Control CI Workflow Runs via PR Comments [PR #4673](https://github.com/apache/bookkeeper/pull/4673)
+* [Doc] Introduce CI Workflow Management with BookKeeper Bot [PR #4674](https://github.com/apache/bookkeeper/pull/4674)
+* [ci] Add /bkbot rerun-failure command for job-level failure rerun [PR #4746](https://github.com/apache/bookkeeper/pull/4746)
+* Upgrade website to Docusaurus 3 and use Node 24 to build [PR #4723](https://github.com/apache/bookkeeper/pull/4723)
+* ci: add java21(LTS) Compatibility Check [PR #4350](https://github.com/apache/bookkeeper/pull/4350)
+* build: add java21 and windows daily build [PR #4292](https://github.com/apache/bookkeeper/pull/4292)
+* ci: add typo ci check and fix typos [PR #4375](https://github.com/apache/bookkeeper/pull/4375)
+* Improve CI: add caching for BookKeeper old release downloads and improve maven caching and error logs [PR #4722](https://github.com/apache/bookkeeper/pull/4722)
+* Remove OWASP dependency check from CI [PR #4717](https://github.com/apache/bookkeeper/pull/4717)
+* fix: add javadoc support for pom-only shaded modules [PR #4787](https://github.com/apache/bookkeeper/pull/4787)
+
+### Dependency updates
+
+* Upgrade Netty to 4.2.14 [PR #4799](https://github.com/apache/bookkeeper/pull/4799)
+* Upgrade Netty to 4.2.13.Final to address CVEs [PR #4775](https://github.com/apache/bookkeeper/pull/4775)
+* Upgrade Netty to 4.2.12.Final [PR #4744](https://github.com/apache/bookkeeper/pull/4744)
+* Upgrade vert.x to 4.5.25 to address CVE-2026-6860 [PR #4790](https://github.com/apache/bookkeeper/pull/4790)
+* Upgrade OpenTelemetry libraries to 1.61.0 / 2.27.0 [PR #4773](https://github.com/apache/bookkeeper/pull/4773)
+* Upgrade to RocksDB 9.9.3 [PR #4580](https://github.com/apache/bookkeeper/pull/4580)
+* Upgrade Jetty from 9.4.57 to 12.1.7 [PR #4710](https://github.com/apache/bookkeeper/pull/4710)
+* Upgrade protobuf and grpc to latest versions [PR #4716](https://github.com/apache/bookkeeper/pull/4716)
+* Scope gRPC dependencies and rely on grpc-bom for single version [PR #4784](https://github.com/apache/bookkeeper/pull/4784)
+* Upgrade jctools to 4.0.6 (jctools-core-jdk11) [PR #4776](https://github.com/apache/bookkeeper/pull/4776)
+* Upgrade jctools version to 4.0.5 [PR #4656](https://github.com/apache/bookkeeper/pull/4656)
+* build(deps): bump org.apache.zookeeper:zookeeper from 3.9.4 to 3.9.5 [PR #4721](https://github.com/apache/bookkeeper/pull/4721)
+* build(deps): bump org.apache.zookeeper:zookeeper from 3.9.3 to 3.9.4 [PR #4667](https://github.com/apache/bookkeeper/pull/4667)
+* Upgrade Lombok to 1.18.32 for Java 22 support [PR #4267](https://github.com/apache/bookkeeper/pull/4267)
+* Bump bouncycastle version from 1.75 to 1.78 [PR #4295](https://github.com/apache/bookkeeper/pull/4295)
+* build(deps): bump org.bouncycastle:bc-fips from 1.0.2.4 to 1.0.2.5 [PR #4366](https://github.com/apache/bookkeeper/pull/4366)
+* build(deps): bump commons-io:commons-io from 2.7 to 2.17.0 [PR #4509](https://github.com/apache/bookkeeper/pull/4509)
+* Use slf4j-bom and log4j-bom in dependencyManagement [PR #4346](https://github.com/apache/bookkeeper/pull/4346)
+* Remove unused commons-lang dependency [PR #4654](https://github.com/apache/bookkeeper/pull/4654)
+* Upgrade os-maven-plugin to support RISC-V 64 [PR #4515](https://github.com/apache/bookkeeper/pull/4515)
+
+### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+milestone%3A4.18.0+is%3Aclosed
+
 ## 4.17.3
 
 Release 4.17.3 includes multiple bug fixes and few dependency updates.
