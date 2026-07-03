@@ -209,21 +209,22 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
     class TxnImpl implements Txn<ByteBuf, ByteBuf> {
 
         private final ByteBuf pKey;
-        private final TxnRequest txnRequest;
-        private final List<AutoCloseable> resourcesToRelease;
+        private final List<CompareOp<ByteBuf, ByteBuf>> compareOps;
+        private final List<Op<ByteBuf, ByteBuf>> successOps;
+        private final List<Op<ByteBuf, ByteBuf>> failureOps;
 
         TxnImpl(ByteBuf pKey) {
             this.pKey = pKey.retain();
-            this.txnRequest = new TxnRequest();
-            this.resourcesToRelease = Lists.newArrayList();
+            this.compareOps = Lists.newArrayList();
+            this.successOps = Lists.newArrayList();
+            this.failureOps = Lists.newArrayList();
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public Txn<ByteBuf, ByteBuf> If(CompareOp... cmps) {
             for (CompareOp<ByteBuf, ByteBuf> cmp : cmps) {
-                populateProtoCompare(txnRequest.addCompare(), cmp);
-                resourcesToRelease.add(cmp);
+                compareOps.add(cmp);
             }
             return this;
         }
@@ -232,8 +233,7 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         @Override
         public Txn<ByteBuf, ByteBuf> Then(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
-                populateProtoRequest(txnRequest.addSuccess(), op);
-                resourcesToRelease.add(op);
+                successOps.add(op);
             }
             return this;
         }
@@ -242,25 +242,47 @@ class PByteBufTableRangeImpl implements PTable<ByteBuf, ByteBuf> {
         @Override
         public Txn<ByteBuf, ByteBuf> Else(Op... ops) {
             for (Op<ByteBuf, ByteBuf> op : ops) {
-                populateProtoRequest(txnRequest.addFailure(), op);
-                resourcesToRelease.add(op);
+                failureOps.add(op);
             }
             return this;
         }
 
+        // Serializing a request drains the ByteBuf slices stored in it, so a request instance
+        // must not be reused across RPC attempts: a retried attempt would send a corrupted
+        // request. Build a fresh request per attempt.
+        private TxnRequest newTxnRequest() {
+            TxnRequest txnRequest = new TxnRequest();
+            for (CompareOp<ByteBuf, ByteBuf> cmp : compareOps) {
+                populateProtoCompare(txnRequest.addCompare(), cmp);
+            }
+            for (Op<ByteBuf, ByteBuf> op : successOps) {
+                populateProtoRequest(txnRequest.addSuccess(), op);
+            }
+            for (Op<ByteBuf, ByteBuf> op : failureOps) {
+                populateProtoRequest(txnRequest.addFailure(), op);
+            }
+            populateRoutingHeader(txnRequest.setHeader(), pKey);
+            return txnRequest;
+        }
+
         @Override
         public CompletableFuture<TxnResult<ByteBuf, ByteBuf>> commit() {
-            populateRoutingHeader(txnRequest.setHeader(), pKey);
             return TxnRequestProcessor.of(
-                txnRequest,
+                this::newTxnRequest,
                 response -> KvUtils.newKvTxnResult(response, resultFactory, kvFactory),
                 scChannel,
                 executor,
                 backoffPolicy
             ).process().whenComplete((ignored, cause) -> {
                 ReferenceCountUtil.release(pKey);
-                for (AutoCloseable resource : resourcesToRelease) {
-                    closeResource(resource);
+                for (CompareOp<ByteBuf, ByteBuf> cmp : compareOps) {
+                    closeResource(cmp);
+                }
+                for (Op<ByteBuf, ByteBuf> op : successOps) {
+                    closeResource(op);
+                }
+                for (Op<ByteBuf, ByteBuf> op : failureOps) {
+                    closeResource(op);
                 }
             });
         }
