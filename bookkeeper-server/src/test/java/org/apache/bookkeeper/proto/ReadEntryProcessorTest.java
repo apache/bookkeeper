@@ -302,14 +302,13 @@ public class ReadEntryProcessorTest {
     }
 
     /**
-     * Verify that maxReadsInProgressLimit defaults to 10000 (enabled),
-     * ensuring non-blocking read response writes are bounded by default.
+     * Verify that maxReadsInProgressLimit defaults to 0 (disabled).
      */
     @Test
-    public void testDefaultMaxReadsInProgressLimitIsEnabled() {
+    public void testDefaultMaxReadsInProgressLimitIsDisabled() {
         ServerConfiguration conf = new ServerConfiguration();
-        assertEquals("maxReadsInProgressLimit should default to 10000",
-                10000, conf.getMaxReadsInProgressLimit());
+        assertEquals("maxReadsInProgressLimit should default to 0 (disabled)",
+                0, conf.getMaxReadsInProgressLimit());
     }
 
     /**

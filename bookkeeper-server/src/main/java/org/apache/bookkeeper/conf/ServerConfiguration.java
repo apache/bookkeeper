@@ -1081,13 +1081,18 @@ public class ServerConfiguration extends AbstractConfiguration<ServerConfigurati
      * <p>This limit bounds the memory used by read responses that have been read from storage
      * but not yet flushed to the network. Since read response writes are non-blocking,
      * without this limit a slow consumer could cause unbounded memory growth.
-     * The default value of 10000 provides a reasonable balance between throughput and memory usage.
      * Tune based on your average entry size: memoryBudget / avgEntrySize.
+     *
+     * <p>Note: the current implementation has a known bug — when the limit is exhausted,
+     * permit acquisition blocks Netty event loop threads, while releasing a permit
+     * requires event-loop progress to flush the response; under a sustained read backlog
+     * or slow consumers this can permanently deadlock the request path. For this reason
+     * the limit is disabled (0) by default.
      *
      * @return Max number of reads in progress.
      */
     public int getMaxReadsInProgressLimit() {
-        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 10000);
+        return this.getInt(MAX_READS_IN_PROGRESS_LIMIT, 0);
     }
 
     /**
