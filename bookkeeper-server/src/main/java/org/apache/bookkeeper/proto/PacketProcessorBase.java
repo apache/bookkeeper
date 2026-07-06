@@ -19,8 +19,8 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelPromise;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -73,12 +73,10 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
     protected void sendReadReqResponse(int rc, Object response, OpStatsLogger statsLogger, boolean throttle) {
         if (throttle) {
             sendResponseAndWait(rc, response, statsLogger);
-            // onReadRequestFinish is called asynchronously in the ChannelFutureListener
-            // inside sendResponseAndWait to maintain throttling without blocking the thread.
         } else {
             sendResponse(rc, response, statsLogger);
-            requestProcessor.onReadRequestFinish();
         }
+        requestProcessor.onReadRequestFinish();
     }
 
     protected void sendResponse(int rc, Object response, OpStatsLogger statsLogger) {
@@ -146,42 +144,27 @@ abstract class PacketProcessorBase<T extends Request> implements Runnable {
     }
 
     /**
-     * Write on the channel and notify completion via a listener.
+     * Write on the channel and wait until the write is completed.
      *
-     * <p>This provides auto-throttling by holding the read semaphore until the write completes,
-     * without blocking the read thread pool thread. The read thread is freed immediately to
-     * process other requests, while the semaphore prevents unbounded read concurrency.
+     * <p>That will make the thread to get blocked until we're able to
+     * write everything on the TCP stack, providing auto-throttling
+     * and avoiding using too much memory when handling read-requests.
      */
     protected void sendResponseAndWait(int rc, Object response, OpStatsLogger statsLogger) {
-        // Capture fields before the processor may be recycled after this method returns.
-        final long capturedEnqueueNanos = this.enqueueNanos;
-        final BookieRequestProcessor processor = this.requestProcessor;
         try {
             Channel channel = requestHandler.ctx().channel();
             ChannelFuture future = channel.writeAndFlush(response);
-            future.addListener((ChannelFutureListener) f -> {
-                if (!f.isSuccess()) {
-                    log.debug().exception(f.cause()).log("Netty channel write exception");
-                }
-                if (BookieProtocol.EOK == rc) {
-                    statsLogger.registerSuccessfulEvent(
-                            MathUtils.elapsedNanos(capturedEnqueueNanos), TimeUnit.NANOSECONDS);
-                } else {
-                    statsLogger.registerFailedEvent(
-                            MathUtils.elapsedNanos(capturedEnqueueNanos), TimeUnit.NANOSECONDS);
-                }
-                processor.onReadRequestFinish();
-            });
-        } catch (Exception e) {
-            log.debug().exception(e).log("Netty channel write exception");
-            if (BookieProtocol.EOK == rc) {
-                statsLogger.registerSuccessfulEvent(
-                        MathUtils.elapsedNanos(capturedEnqueueNanos), TimeUnit.NANOSECONDS);
-            } else {
-                statsLogger.registerFailedEvent(
-                        MathUtils.elapsedNanos(capturedEnqueueNanos), TimeUnit.NANOSECONDS);
+            if (!channel.eventLoop().inEventLoop()) {
+                future.get();
             }
-            processor.onReadRequestFinish();
+        } catch (ExecutionException | InterruptedException e) {
+            log.debug().exception(e).log("Netty channel write exception");
+            return;
+        }
+        if (BookieProtocol.EOK == rc) {
+            statsLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
+        } else {
+            statsLogger.registerFailedEvent(MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         }
     }
 
