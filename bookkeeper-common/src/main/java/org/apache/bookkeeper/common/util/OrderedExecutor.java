@@ -28,12 +28,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -65,7 +65,6 @@ public class OrderedExecutor implements ExecutorService {
     final String name;
     final ExecutorService[] threads;
     final long[] threadIds;
-    final Random rand = new Random();
     final OpStatsLogger taskExecutionStats;
     final OpStatsLogger taskPendingStats;
     final boolean traceTaskExecution;
@@ -545,7 +544,7 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[rand.nextInt(threads.length)];
+        return threads[ThreadLocalRandom.current().nextInt(threads.length)];
     }
 
     public ExecutorService chooseThread(Object orderingKey) {
@@ -555,7 +554,7 @@ public class OrderedExecutor implements ExecutorService {
         }
 
         if (null == orderingKey) {
-            return threads[rand.nextInt(threads.length)];
+            return threads[ThreadLocalRandom.current().nextInt(threads.length)];
         } else {
             return threads[chooseThreadIdx(orderingKey.hashCode(), threads.length)];
         }
