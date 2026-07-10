@@ -17,17 +17,25 @@
  */
 package org.apache.bookkeeper.clients.impl.kv;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import io.grpc.Status;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 import lombok.Cleanup;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
@@ -98,13 +106,84 @@ public class TxnRequestProcessorTest extends GrpcClientTestBase {
         TxnRequest request = newRequest();
 
         TxnRequestProcessor<String> processor = TxnRequestProcessor.of(
-            request,
+            () -> request,
             resp -> "test",
             scChannel,
             scheduler,
             ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         assertEquals("test", FutureUtils.result(processor.process()));
         assertEquals(request, receivedRequest.get());
+    }
+
+    /**
+     * Serializing a request drains the ByteBuf slices stored in it, so a request instance must
+     * not be reused across RPC attempts. Verify that a retried txn sends an intact request built
+     * fresh from the request supplier for every attempt.
+     */
+    @Test
+    public void testRequestRebuiltForEachAttempt() throws Exception {
+        @Cleanup("shutdown") ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
+        StorageContainerChannel scChannel = mock(StorageContainerChannel.class);
+
+        CompletableFuture<StorageServerChannel> serverChannelFuture = FutureUtils.createFuture();
+        when(scChannel.getStorageContainerChannelFuture()).thenReturn(serverChannelFuture);
+
+        TxnResponse response = newSuccessResponse();
+
+        List<TxnRequest> receivedRequests = new CopyOnWriteArrayList<>();
+        TableServiceImplBase tableService = new TableServiceImplBase() {
+
+            @Override
+            public void txn(TxnRequest request,
+                            StreamObserver<TxnResponse> responseObserver) {
+                receivedRequests.add(request);
+                if (receivedRequests.size() == 1) {
+                    // fail the first attempt with a retryable status to force a retry
+                    responseObserver.onError(Status.NOT_FOUND.asRuntimeException());
+                } else {
+                    responseObserver.onNext(response);
+                    responseObserver.onCompleted();
+                }
+            }
+        };
+        serviceRegistry.addService(tableService.bindService());
+        StorageServerChannel ssChannel = new StorageServerChannel(
+            InProcessChannelBuilder.forName(serverName).directExecutor().build(),
+            Optional.empty());
+        serverChannelFuture.complete(ssChannel);
+
+        ByteBuf key = Unpooled.wrappedBuffer("txn-key".getBytes(UTF_8));
+        ByteBuf value = Unpooled.wrappedBuffer("txn-value".getBytes(UTF_8));
+        Supplier<TxnRequest> requestSupplier = () -> {
+            TxnRequest request = new TxnRequest();
+            request.addCompare().setKey(key.slice());
+            request.addSuccess().setRequestPut()
+                .setKey(key.slice())
+                .setValue(value.slice());
+            request.setHeader()
+                .setStreamId(1234L)
+                .setRKey(key.slice());
+            return request;
+        };
+
+        TxnRequestProcessor<String> processor = TxnRequestProcessor.of(
+            requestSupplier,
+            resp -> "test",
+            scChannel,
+            scheduler,
+            ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
+        assertEquals("test", FutureUtils.result(processor.process()));
+
+        assertEquals(2, receivedRequests.size());
+        for (TxnRequest received : receivedRequests) {
+            assertEquals(1, received.getComparesCount());
+            assertArrayEquals("txn-key".getBytes(UTF_8), received.getCompareAt(0).getKey());
+            assertEquals(1, received.getSuccessesCount());
+            assertArrayEquals("txn-key".getBytes(UTF_8), received.getSuccessAt(0).getRequestPut().getKey());
+            assertArrayEquals("txn-value".getBytes(UTF_8), received.getSuccessAt(0).getRequestPut().getValue());
+            assertArrayEquals("txn-key".getBytes(UTF_8), received.getHeader().getRKey());
+        }
     }
 
 }
