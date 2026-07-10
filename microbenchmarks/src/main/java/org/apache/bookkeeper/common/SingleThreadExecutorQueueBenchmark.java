@@ -29,7 +29,6 @@ import lombok.SneakyThrows;
 import org.apache.bookkeeper.common.collections.BatchedArrayBlockingQueue;
 import org.apache.bookkeeper.common.collections.BatchedBlockingQueue;
 import org.apache.bookkeeper.common.collections.GrowableBatchedArrayBlockingQueue;
-import org.apache.bookkeeper.common.collections.GrowableMpScArrayConsumerBlockingQueue;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -45,9 +44,9 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 /**
- * Compares the queue options for {@code SingleThreadExecutor}: the current unbounded
- * {@code GrowableMpScArrayConsumerBlockingQueue}, the current bounded {@code ArrayBlockingQueue},
- * and {@code BatchedArrayBlockingQueue} drained with {@code takeAll}.
+ * Compares the queue options for {@code SingleThreadExecutor}: the JDK {@code ArrayBlockingQueue}
+ * drained with {@code drainTo}, and the batched queues ({@code BatchedArrayBlockingQueue} and
+ * {@code GrowableBatchedArrayBlockingQueue}) drained with {@code takeAll}.
  *
  * <p>The consumer threads mirror the drain patterns of {@code SingleThreadExecutor.run()}.
  */
@@ -67,9 +66,6 @@ public class SingleThreadExecutorQueueBenchmark {
     @State(Scope.Benchmark)
     public static class TestState {
 
-        private final GrowableMpScArrayConsumerBlockingQueue<Integer> growableQueue =
-                new GrowableMpScArrayConsumerBlockingQueue<>();
-
         private final ArrayBlockingQueue<Integer> arrayBlockingQueue = new ArrayBlockingQueue<>(QUEUE_SIZE);
 
         private final BatchedArrayBlockingQueue<Integer> batchedQueue = new BatchedArrayBlockingQueue<>(QUEUE_SIZE);
@@ -81,7 +77,6 @@ public class SingleThreadExecutorQueueBenchmark {
 
         @Setup(Level.Trial)
         public void setup() {
-            executor.execute(() -> consumeWithDrainTo(growableQueue));
             executor.execute(() -> consumeWithDrainTo(arrayBlockingQueue));
             executor.execute(() -> consumeWithTakeAll(batchedQueue));
             executor.execute(() -> consumeWithTakeAll(growableBatchedQueue));
@@ -125,11 +120,6 @@ public class SingleThreadExecutorQueueBenchmark {
         public void drainBacklog() throws InterruptedException {
             Thread.sleep(1_000);
         }
-    }
-
-    @Benchmark
-    public void growableMpScQueue(TestState s) throws Exception {
-        s.growableQueue.put(1);
     }
 
     @Benchmark
