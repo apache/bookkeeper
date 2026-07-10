@@ -24,12 +24,14 @@ package org.apache.bookkeeper.bookie;
 import static org.junit.Assert.assertThrows;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.Random;
 import org.junit.Assert;
 import org.junit.Test;
@@ -125,6 +127,44 @@ public class BufferedChannelTest {
         if (unpersistedBytesBound > 0) {
             Assert.assertEquals("Unpersisted bytes", expectedNumOfUnpersistedBytes, logChannel.getUnpersistedBytes());
         }
+        logChannel.close();
+        fileChannel.close();
+    }
+
+    @Test
+    public void testWriteTwoBuffers() throws Exception {
+        File newLogFile = File.createTempFile("test", "log");
+        newLogFile.deleteOnExit();
+        FileChannel fileChannel = new RandomAccessFile(newLogFile, "rw").getChannel();
+
+        // small write capacity so the pairs below cross the buffer boundary at varied offsets,
+        // including a payload equal to the capacity and one larger than it
+        int writeCapacity = 64;
+        BufferedChannel logChannel = new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                writeCapacity, INTERNAL_BUFFER_READ_CAPACITY, 0);
+
+        int[] payloadSizes = { 25, 31, 60, 3, 64, 128, 1, 41 };
+        ByteBuf expected = Unpooled.buffer();
+        ByteBuf lenBuf = Unpooled.buffer(4);
+
+        for (int payloadSize : payloadSizes) {
+            ByteBuf payload = generateEntry(payloadSize);
+            lenBuf.clear();
+            lenBuf.writeInt(payloadSize);
+
+            expected.writeBytes(lenBuf.slice());
+            expected.writeBytes(payload.slice());
+
+            logChannel.write(lenBuf, payload);
+        }
+
+        Assert.assertEquals(expected.readableBytes(), logChannel.position());
+
+        logChannel.flush();
+
+        byte[] fileBytes = Files.readAllBytes(newLogFile.toPath());
+        Assert.assertArrayEquals(ByteBufUtil.getBytes(expected), fileBytes);
+
         logChannel.close();
         fileChannel.close();
     }

@@ -1232,8 +1232,7 @@ public class Journal implements CheckpointSource {
                     // preAlloc based on size
                     logFile.preAllocIfNeeded(4 + entrySize);
 
-                    bc.write(lenBuff);
-                    bc.write(qe.entry);
+                    bc.write(lenBuff, qe.entry);
                     memoryLimitController.releaseMemory(qe.entry.readableBytes());
                     ReferenceCountUtil.release(qe.entry);
                 }
