@@ -1210,6 +1210,16 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         statusMap.put("/data2/bookkeeper/ledgers/current/locations", true);
         when(spyLedgerStorage.isEntryLocationCompacting(dbLocationPath))
                 .thenReturn(statusMap);
+        HashMap<String, Boolean> cancelledCompactions = Maps.newHashMap();
+        cancelledCompactions.put("/data1/bookkeeper/ledgers/current/locations", true);
+        cancelledCompactions.put("/data2/bookkeeper/ledgers/current/locations", false);
+        when(spyLedgerStorage.cancelEntryLocationCompaction(dbLocationPath))
+                .thenReturn(cancelledCompactions);
+        List<String> selectedLocation = Lists.newArrayList("/data1/bookkeeper/ledgers/current/locations");
+        HashMap<String, Boolean> selectedCancelledCompactions = Maps.newHashMap();
+        selectedCancelledCompactions.put("/data1/bookkeeper/ledgers/current/locations", true);
+        when(spyLedgerStorage.cancelEntryLocationCompaction(selectedLocation))
+                .thenReturn(selectedCancelledCompactions);
 
         Field ledgerStorageField = bookieServer.getBookie().getClass().getDeclaredField("ledgerStorage");
         ledgerStorageField.setAccessible(true);
@@ -1265,9 +1275,32 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         assertTrue(response6.getBody().contains("\"/data2/bookkeeper/ledgers/current/locations\" : true"));
         assertTrue(response6.getBody().contains("\"/data1/bookkeeper/ledgers/current/locations\" : false"));
 
-        // 3. POST, should return NOT_FOUND
+        // 3. POST, should return METHOD_NOT_ALLOWED
         HttpServiceRequest request7 = new HttpServiceRequest(null, HttpServer.Method.POST, null);
         HttpServiceResponse response7 = triggerEntryLocationCompactService.handle(request7);
         assertEquals(HttpServer.StatusCode.METHOD_NOT_ALLOWED.getValue(), response7.getStatusCode());
+
+        // 4. DELETE, should cancel the specified running RocksDB compaction
+        Map<String, String> deleteParams = Maps.newHashMap();
+        deleteParams.put("entryLocations", "/data1/bookkeeper/ledgers/current/locations");
+        HttpServiceRequest request8 = new HttpServiceRequest(null, HttpServer.Method.DELETE, deleteParams);
+        HttpServiceResponse response8 = triggerEntryLocationCompactService.handle(request8);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response8.getStatusCode());
+        assertTrue(response8.getBody().contains("\"/data1/bookkeeper/ledgers/current/locations\" : true"));
+        assertFalse(response8.getBody().contains("/data2/bookkeeper/ledgers/current/locations"));
+
+        // 5. DELETE without entryLocations, should request cancellation on all directories
+        HttpServiceRequest request9 = new HttpServiceRequest(null, HttpServer.Method.DELETE, null);
+        HttpServiceResponse response9 = triggerEntryLocationCompactService.handle(request9);
+        assertEquals(HttpServer.StatusCode.OK.getValue(), response9.getStatusCode());
+        assertTrue(response9.getBody().contains("\"/data1/bookkeeper/ledgers/current/locations\" : true"));
+        assertTrue(response9.getBody().contains("\"/data2/bookkeeper/ledgers/current/locations\" : false"));
+
+        // 6. DELETE with an invalid location, should return BAD_REQUEST
+        Map<String, String> invalidDeleteParams = Maps.newHashMap();
+        invalidDeleteParams.put("entryLocations", "/invalid1/locations");
+        HttpServiceRequest request10 = new HttpServiceRequest(null, HttpServer.Method.DELETE, invalidDeleteParams);
+        HttpServiceResponse response10 = triggerEntryLocationCompactService.handle(request10);
+        assertEquals(HttpServer.StatusCode.BAD_REQUEST.getValue(), response10.getStatusCode());
     }
 }
