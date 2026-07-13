@@ -947,6 +947,46 @@ public class GcLedgersTest extends LedgerManagerTestCase {
     }
 
     @Test
+    public void testGcLedgersDoesNotReadMetadataForPresentCacheResult() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return LedgerMetadataCacheResult.PRESENT;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                throw new AssertionError("GC should not read metadata when ledger is present in metadata cache");
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+
+        garbageCollector.gc(cleaned::add);
+        assertTrue("Should not clean ledger present in metadata cache", cleaned.isEmpty());
+    }
+
+    @Test
     public void testGcLedgersDeletesExpiredLedgerAfterCacheRefresh() throws Exception {
         baseConf.setVerifyMetadataOnGc(true);
         final long ledgerId = 1234L;

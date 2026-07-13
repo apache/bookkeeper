@@ -941,6 +941,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         entryLocationIndex.delete(ledgerId);
         ledgerIndex.delete(ledgerId);
+        notifiedLocalLedgers.remove(ledgerId);
 
         for (int i = 0, size = ledgerDeletionListeners.size(); i < size; i++) {
             LedgerDeletionListener listener = ledgerDeletionListeners.get(i);

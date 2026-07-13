@@ -104,8 +104,11 @@ public class TestZkUtils extends TestCase {
         zkc.getChildren(parentPath, new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                eventRef.set(event);
-                eventReceived.countDown();
+                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged
+                        && parentPath.equals(event.getPath())) {
+                    eventRef.set(event);
+                    eventReceived.countDown();
+                }
             }
         });
 
@@ -130,8 +133,11 @@ public class TestZkUtils extends TestCase {
         zkc.exists(childPath, new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                eventRef.set(event);
-                eventReceived.countDown();
+                if (event.getType() == Watcher.Event.EventType.NodeDeleted
+                        && childPath.equals(event.getPath())) {
+                    eventRef.set(event);
+                    eventReceived.countDown();
+                }
             }
         });
 

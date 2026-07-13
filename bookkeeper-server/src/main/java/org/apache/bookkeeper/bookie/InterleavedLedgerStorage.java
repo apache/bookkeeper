@@ -509,6 +509,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
         activeLedgers.remove(ledgerId);
+        notifiedLocalLedgers.remove(ledgerId);
         ledgerCache.deleteLedger(ledgerId);
 
         for (LedgerDeletionListener listener : ledgerDeletionListeners) {

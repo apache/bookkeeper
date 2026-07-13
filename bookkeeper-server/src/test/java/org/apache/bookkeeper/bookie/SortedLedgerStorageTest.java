@@ -124,6 +124,11 @@ public class SortedLedgerStorageTest {
 
         verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(123L);
         verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(124L);
+
+        sortedLedgerStorage.deleteLedger(123L);
+        sortedLedgerStorage.setMasterKey(123L, "ledger-123".getBytes());
+
+        verify(ledgerManager, times(2)).onLedgerAddedToLocalStorage(123L);
     }
 
     @Test

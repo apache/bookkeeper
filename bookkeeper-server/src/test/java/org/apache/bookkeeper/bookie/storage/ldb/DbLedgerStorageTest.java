@@ -68,6 +68,7 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -264,9 +265,14 @@ public class DbLedgerStorageTest {
 
             verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(123L);
             verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(124L);
+
+            dbStorage.deleteLedger(123L);
+            dbStorage.setMasterKey(123L, "ledger-123".getBytes());
+
+            verify(ledgerManager, times(2)).onLedgerAddedToLocalStorage(123L);
         } finally {
             dbStorage.shutdown();
-            dbTmpDir.delete();
+            FileUtils.deleteDirectory(dbTmpDir);
         }
     }
 

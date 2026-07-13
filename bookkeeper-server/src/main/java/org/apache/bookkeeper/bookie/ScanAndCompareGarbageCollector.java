@@ -258,18 +258,14 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             if (cacheResult == LedgerMetadataCacheResult.UNKNOWN) {
                 continue;
             }
-            if (cacheResult == LedgerMetadataCacheResult.PRESENT && !verifyMetadataOnGc) {
-                continue;
-            }
-            if (cacheResult == LedgerMetadataCacheResult.PRESENT && !isBookieMissingFromMetadata(bkLid,
-                    zkOpTimeoutMs)) {
+            if (cacheResult == LedgerMetadataCacheResult.PRESENT) {
                 continue;
             }
             if (cacheResult == LedgerMetadataCacheResult.MISSING
                     && verifyMetadataOnGc && !isBookieMissingFromMetadata(bkLid, zkOpTimeoutMs)) {
                 continue;
             }
-            if (cacheResult == LedgerMetadataCacheResult.MISSING || verifyMetadataOnGc) {
+            if (cacheResult == LedgerMetadataCacheResult.MISSING) {
                 garbageCleaner.clean(bkLid);
             }
         }
