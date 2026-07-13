@@ -24,11 +24,15 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.google.common.collect.Lists;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,7 +64,9 @@ import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.proto.BookieProtocol;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.After;
 import org.junit.Assert;
@@ -229,6 +235,38 @@ public class DbLedgerStorageTest {
             fail("Should have thrown exception since the ledger was deleted");
         } catch (Bookie.NoLedgerException e) {
             // ok
+        }
+    }
+
+    @Test
+    public void testSetMasterKeyNotifiesLedgerAddedToLocalStorageOnce() throws Exception {
+        File dbTmpDir = File.createTempFile("bkDbTest", ".dir");
+        dbTmpDir.delete();
+        dbTmpDir.mkdir();
+        File curDir = BookieImpl.getCurrentDirectory(dbTmpDir);
+        BookieImpl.checkDirectoryStructure(curDir);
+
+        ServerConfiguration dbConf = TestBKConfiguration.newServerConfiguration();
+        dbConf.setGcWaitTime(1000);
+        dbConf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        dbConf.setLedgerDirNames(new String[] { dbTmpDir.toString() });
+        LedgerDirsManager dbLedgerDirsManager = new LedgerDirsManager(dbConf, dbConf.getLedgerDirs(),
+                ledgerDirsManager.getDiskChecker());
+        DbLedgerStorage dbStorage = new DbLedgerStorage();
+        LedgerManager ledgerManager = mock(LedgerManager.class);
+        try {
+            dbStorage.initialize(dbConf, ledgerManager, dbLedgerDirsManager, dbLedgerDirsManager,
+                    NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT);
+
+            dbStorage.setMasterKey(123L, "ledger-123".getBytes());
+            dbStorage.setMasterKey(123L, "ledger-123".getBytes());
+            dbStorage.setMasterKey(124L, "ledger-124".getBytes());
+
+            verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(123L);
+            verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(124L);
+        } finally {
+            dbStorage.shutdown();
+            dbTmpDir.delete();
         }
     }
 

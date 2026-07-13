@@ -47,6 +47,8 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -95,6 +97,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     // A sorted map to stored all active ledger ids
     protected final SnapshotMap<Long, Boolean> activeLedgers;
+    private LedgerManager ledgerManager;
+    private final Set<Long> notifiedLocalLedgers = ConcurrentHashMap.newKeySet();
 
     // This is the thread that garbage collects the entry logs that do not
     // contain any active ledgers in them; and compacts the entry logs that
@@ -183,6 +187,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         checkNotNull(checkpointer, "invalid null checkpointer");
         this.entryLogger = (DefaultEntryLogger) entryLogger;
         this.entryLogger.addListener(this);
+        this.ledgerManager = ledgerManager;
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
         gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
@@ -337,6 +342,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     @Override
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
         ledgerCache.setMasterKey(ledgerId, masterKey);
+        notifyLedgerAddedToLocalStorage(ledgerId);
+    }
+
+    private void notifyLedgerAddedToLocalStorage(long ledgerId) {
+        if (ledgerManager != null && notifiedLocalLedgers.add(ledgerId)) {
+            ledgerManager.onLedgerAddedToLocalStorage(ledgerId);
+        }
     }
 
     @Override

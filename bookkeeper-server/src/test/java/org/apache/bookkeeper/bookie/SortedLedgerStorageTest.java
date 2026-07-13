@@ -24,6 +24,9 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -38,6 +41,7 @@ import java.util.stream.IntStream;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Before;
@@ -55,6 +59,7 @@ public class SortedLedgerStorageTest {
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     LedgerDirsManager ledgerDirsManager;
     SortedLedgerStorage sortedLedgerStorage = new SortedLedgerStorage();
+    LedgerManager ledgerManager = mock(LedgerManager.class);
 
     final long numWrites = 2000;
     final long moreNumOfWrites = 3000;
@@ -105,10 +110,20 @@ public class SortedLedgerStorageTest {
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
         ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
                 new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
-        sortedLedgerStorage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+        sortedLedgerStorage.initialize(conf, ledgerManager, ledgerDirsManager, ledgerDirsManager,
                                        statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
         sortedLedgerStorage.setCheckpointSource(checkpointSource);
         sortedLedgerStorage.setCheckpointer(checkpointer);
+    }
+
+    @Test
+    public void testSetMasterKeyNotifiesLedgerAddedToLocalStorageOnce() throws Exception {
+        sortedLedgerStorage.setMasterKey(123L, "ledger-123".getBytes());
+        sortedLedgerStorage.setMasterKey(123L, "ledger-123".getBytes());
+        sortedLedgerStorage.setMasterKey(124L, "ledger-124".getBytes());
+
+        verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(123L);
+        verify(ledgerManager, times(1)).onLedgerAddedToLocalStorage(124L);
     }
 
     @Test

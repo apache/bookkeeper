@@ -160,6 +160,32 @@ public interface LedgerManager extends Closeable {
      */
     LedgerRangeIterator getLedgerRanges(long zkOpTimeOutMs);
 
+    enum LedgerMetadataCacheResult {
+        PRESENT,
+        MISSING,
+        UNKNOWN
+    }
+
+    default void ensureLedgerMetadataBucketWatched(long ledgerId) {
+    }
+
+    default void onLedgerAddedToLocalStorage(long ledgerId) {
+    }
+
+    default void retainLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+    }
+
+    default void refreshLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+    }
+
+    default LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+        return LedgerMetadataCacheResult.UNKNOWN;
+    }
+
+    default boolean supportsLedgerMetadataCache() {
+        return false;
+    }
+
     /**
      * Used to represent the Ledgers range returned from the
      * current scan.

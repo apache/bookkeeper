@@ -70,6 +70,7 @@ import org.apache.bookkeeper.client.api.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerMetadataCacheResult;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.net.BookieId;
@@ -159,6 +160,15 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY).get(10, TimeUnit.SECONDS);
     }
 
+    private LedgerManager newLedgerManagerWithoutMetadataCache() {
+        return new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return false;
+            }
+        };
+    }
+
     @Test
     public void testGarbageCollectLedgers() throws Exception {
         int numLedgers = 100;
@@ -186,7 +196,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         final CountDownLatch endLatch = new CountDownLatch(2);
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         TestStatsProvider stats = new TestStatsProvider();
-        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
+        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
+                newLedgerManagerWithoutMetadataCache(),
                 mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         Thread gcThread = new Thread() {
             @Override
@@ -214,7 +225,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                         }
                         LOG.info("Garbage Collected ledger {}", ledgerId);
                     }
-                });
+                }, true);
                 LOG.info("Gc Thread quits.");
                 endLatch.countDown();
             }
@@ -263,7 +274,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         MockLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         TestStatsProvider stats = new TestStatsProvider();
-        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
+        final ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
+                newLedgerManagerWithoutMetadataCache(),
                 mockLedgerStorage, baseConf, stats.getStatsLogger("gc"));
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
                 @Override
@@ -279,7 +291,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
                 }
             };
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertNull("Should have cleaned nothing", cleaned.poll());
         assertTrue(
                 "Wrong ACTIVE_LEDGER_COUNT",
@@ -287,17 +299,17 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         long last = createdLedgers.last();
         removeLedger(last);
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned last ledger" + last, (long) last, (long) cleaned.poll());
 
         long first = createdLedgers.first();
         removeLedger(first);
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertNotNull("Should have cleaned something", cleaned.peek());
         assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.poll());
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertTrue(
                 "Wrong ACTIVE_LEDGER_COUNT",
                 garbageCollector.getNumActiveLedgers() == (numLedgers - 2));
@@ -314,8 +326,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         createLedgers(numLedgers, createdLedgers);
 
-        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
+                newLedgerManagerWithoutMetadataCache(), new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
                 @Override
                 public void clean(long ledgerId) {
@@ -333,12 +345,12 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         assertEquals(createdLedgers, scannedLedgers);
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertTrue("Should have cleaned nothing", cleaned.isEmpty());
 
         long first = createdLedgers.first();
         removeLedger(first);
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertEquals("Should have cleaned something", 1, cleaned.size());
         assertEquals("Should have cleaned first ledger" + first, (long) first, (long) cleaned.get(0));
     }
@@ -362,7 +374,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         conf.setVerifyMetadataOnGc(true);
 
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
-                getLedgerManager(), new MockLedgerStorage(), conf, NullStatsLogger.INSTANCE);
+                newLedgerManagerWithoutMetadataCache(), new MockLedgerStorage(), conf, NullStatsLogger.INSTANCE);
 
         // delete created ledgers to simulate the garbage collection scenario
         Iterator<Long> createdLedgersIterator = createdLedgers.iterator();
@@ -401,8 +413,8 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         // no ledger created
 
-        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(getLedgerManager(),
-                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
+                newLedgerManagerWithoutMetadataCache(), new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
         AtomicBoolean cleanerCalled = new AtomicBoolean(false);
 
         GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
@@ -415,7 +427,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         validateLedgerRangeIterator(createdLedgers);
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertFalse("Should have cleaned nothing, since no ledger is created", cleanerCalled.get());
     }
 
@@ -443,14 +455,14 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         validateLedgerRangeIterator(createdLedgers);
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertTrue("Should have cleaned nothing", cleaned.isEmpty());
 
         for (long ledgerId : createdLedgers) {
             removeLedger(ledgerId);
         }
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertEquals("Should have cleaned all the created ledgers", createdLedgers, cleaned);
     }
 
@@ -477,6 +489,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
         createLedgers(numLedgers, createdLedgers);
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return false;
+            }
+
             @Override
             public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
                 return new LedgerRangeIterator() {
@@ -505,7 +522,7 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         validateLedgerRangeIterator(createdLedgers);
 
-        garbageCollector.gc(cleaner);
+        garbageCollector.gc(cleaner, true);
         assertTrue("Should have cleaned nothing", cleaned.isEmpty());
     }
 
@@ -803,6 +820,11 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
             @Override
+            public boolean supportsLedgerMetadataCache() {
+                return false;
+            }
+
+            @Override
             public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
                 return new LedgerRangeIterator() {
                     @Override
@@ -832,5 +854,236 @@ public class GcLedgersTest extends LedgerManagerTestCase {
 
         garbageCollector.gc(cleaner);
         assertEquals("Should have cleaned all ledgers", cleaned.size(), numLedgers);
+    }
+
+    @Test
+    public void testGcLedgersUsesMetadataCacheWhenAvailable() throws Exception {
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return LedgerMetadataCacheResult.MISSING;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                throw new AssertionError("GC should not read metadata when verifyMetadataOnGc is disabled");
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+        GarbageCollector.GarbageCleaner cleaner = new GarbageCollector.GarbageCleaner() {
+            @Override
+            public void clean(long ledgerId) {
+                cleaned.add(ledgerId);
+            }
+        };
+
+        garbageCollector.gc(cleaner);
+        assertEquals("Should clean ledger missing from metadata cache when metadata verification is disabled",
+                Collections.singleton(ledgerId), cleaned);
+    }
+
+    @Test
+    public void testGcLedgersDoesNotDeleteNewLedgerMissingFromStaleCache() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        LedgerMetadata metadata = newLedgerMetadata(ledgerId, BookieImpl.getBookieId(baseConf));
+        CompletableFuture<Versioned<LedgerMetadata>> existingLedger =
+                CompletableFuture.completedFuture(new Versioned<>(metadata, Version.NEW));
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return LedgerMetadataCacheResult.MISSING;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                return existingLedger;
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+
+        garbageCollector.gc(cleaned::add);
+        assertTrue("Should not clean ledger that still exists in metadata and contains self bookie",
+                cleaned.isEmpty());
+    }
+
+    @Test
+    public void testGcLedgersDeletesExpiredLedgerAfterCacheRefresh() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        AtomicInteger lookupCount = new AtomicInteger();
+        CompletableFuture<Versioned<LedgerMetadata>> noSuchLedger = new CompletableFuture<>();
+        noSuchLedger.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return lookupCount.incrementAndGet() == 1
+                        ? LedgerMetadataCacheResult.UNKNOWN : LedgerMetadataCacheResult.MISSING;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                return noSuchLedger;
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+
+        garbageCollector.gc(cleaned::add);
+        assertTrue("Should wait for metadata cache to refresh before cleaning", cleaned.isEmpty());
+
+        garbageCollector.gc(cleaned::add);
+        assertEquals("Should clean expired ledger after cache reports it missing",
+                Collections.singleton(ledgerId), cleaned);
+    }
+
+    @Test
+    public void testGcLedgersDoesNotCleanUnknownMetadataCacheResult() throws Exception {
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return LedgerMetadataCacheResult.UNKNOWN;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                throw new AssertionError("GC should not read metadata when metadata cache result is unknown");
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+
+        garbageCollector.gc(cleaned::add);
+        assertTrue("Should not clean ledger when metadata cache result is unknown", cleaned.isEmpty());
+    }
+
+    @Test
+    public void testGcLedgersDoesNotCleanWhenMetadataVerificationTimesOut() throws Exception {
+        baseConf.setVerifyMetadataOnGc(true);
+        baseConf.setZkTimeout(10);
+        final long ledgerId = 1234L;
+        activeLedgers.put(ledgerId, true);
+        final SortedSet<Long> cleaned = Collections.synchronizedSortedSet(new TreeSet<Long>());
+        CompletableFuture<Versioned<LedgerMetadata>> pendingMetadata = new CompletableFuture<>();
+
+        LedgerManager mockLedgerManager = new CleanupLedgerManager(getLedgerManager()) {
+            @Override
+            public boolean supportsLedgerMetadataCache() {
+                return true;
+            }
+
+            @Override
+            public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+            }
+
+            @Override
+            public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+                return LedgerMetadataCacheResult.MISSING;
+            }
+
+            @Override
+            public CompletableFuture<Versioned<LedgerMetadata>> readLedgerMetadata(long ledgerId) {
+                return pendingMetadata;
+            }
+
+            @Override
+            public LedgerRangeIterator getLedgerRanges(long zkOpTimeout) {
+                throw new AssertionError("GC should not scan all ledger ranges when metadata cache is available");
+            }
+        };
+
+        GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(mockLedgerManager,
+                new MockLedgerStorage(), baseConf, NullStatsLogger.INSTANCE);
+
+        garbageCollector.gc(cleaned::add);
+        assertTrue("Should not clean ledger when metadata verification times out", cleaned.isEmpty());
+    }
+
+    private LedgerMetadata newLedgerMetadata(long ledgerId, BookieId bookieId) {
+        return LedgerMetadataBuilder.create()
+                .withId(ledgerId)
+                .withDigestType(DigestType.CRC32C)
+                .withPassword(new byte[0])
+                .withEnsembleSize(1)
+                .withWriteQuorumSize(1)
+                .withAckQuorumSize(1)
+                .newEnsembleEntry(0L, Lists.newArrayList(bookieId))
+                .build();
     }
 }

@@ -40,6 +40,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.PrimitiveIterator.OfLong;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -150,6 +152,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final boolean singleLedgerDirs;
     private final String ledgerBaseDir;
     private final String indexBaseDir;
+    private final LedgerManager ledgerManager;
+    private final Set<Long> notifiedLocalLedgers = ConcurrentHashMap.newKeySet();
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
@@ -182,6 +186,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         this.writeCache = new WriteCache(allocator, writeCacheMaxSize / 2);
         this.writeCacheBeingFlushed = new WriteCache(allocator, writeCacheMaxSize / 2);
         this.singleLedgerDirs = conf.getLedgerDirs().length == 1;
+        this.ledgerManager = ledgerManager;
 
         readCacheMaxSize = readCacheSize;
         this.readAheadCacheBatchSize = readAheadCacheBatchSize;
@@ -457,6 +462,13 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     public void setMasterKey(long ledgerId, byte[] masterKey) throws IOException {
         log.debug().attr("ledgerId", ledgerId).log("Set master key");
         ledgerIndex.setMasterKey(ledgerId, masterKey);
+        notifyLedgerAddedToLocalStorage(ledgerId);
+    }
+
+    private void notifyLedgerAddedToLocalStorage(long ledgerId) {
+        if (ledgerManager != null && notifiedLocalLedgers.add(ledgerId)) {
+            ledgerManager.onLedgerAddedToLocalStorage(ledgerId);
+        }
     }
 
     @Override

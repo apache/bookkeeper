@@ -43,6 +43,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManager.LedgerMetadataCacheResult;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
@@ -117,6 +118,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
     @Override
     public void gc(GarbageCleaner garbageCleaner) {
+        gc(garbageCleaner, false);
+    }
+
+    @Override
+    public void gc(GarbageCleaner garbageCleaner, boolean force) {
         if (null == ledgerManager) {
             // if ledger manager is null, the bookie is not started to connect to metadata store.
             // so skip garbage collection
@@ -128,6 +134,7 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             NavigableSet<Long> bkActiveLedgers = Sets.newTreeSet(ledgerStorage.getActiveLedgersInRange(0,
                     Long.MAX_VALUE));
             this.activeLedgerCounter = bkActiveLedgers.size();
+            ledgerManager.retainLedgerMetadataBucketsForLedgers(bkActiveLedgers);
 
             long curTime = System.currentTimeMillis();
             boolean checkOverreplicatedLedgers = (enableGcOverReplicatedLedger && curTime
@@ -151,6 +158,11 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
 
             // Iterate over all the ledger on the metadata store
             long zkOpTimeoutMs = this.conf.getZkTimeout() * 2;
+            if (gcLedgersUsingMetadataCache(bkActiveLedgers, garbageCleaner, zkOpTimeoutMs, force)) {
+                return;
+            }
+
+            // Iterate over all the ledger on the metadata store
             LedgerRangeIterator ledgerRangeIterator = ledgerManager
                     .getLedgerRanges(zkOpTimeoutMs);
             Set<Long> ledgersInMetadata = null;
@@ -228,6 +240,80 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
             // ignore exception, collecting garbage next time
             log.warn().exception(t).log("Exception when iterating over the metadata");
         }
+    }
+
+    private boolean gcLedgersUsingMetadataCache(NavigableSet<Long> bkActiveLedgers, GarbageCleaner garbageCleaner,
+                                                long zkOpTimeoutMs, boolean force) throws Exception {
+        if (!ledgerManager.supportsLedgerMetadataCache()) {
+            return false;
+        }
+
+        if (force) {
+            ledgerManager.refreshLedgerMetadataBucketsForLedgers(bkActiveLedgers);
+        }
+
+        for (Long bkLid : bkActiveLedgers) {
+            ledgerManager.ensureLedgerMetadataBucketWatched(bkLid);
+            LedgerMetadataCacheResult cacheResult = ledgerManager.lookupLedgerMetadataInCache(bkLid);
+            if (cacheResult == LedgerMetadataCacheResult.UNKNOWN) {
+                continue;
+            }
+            if (cacheResult == LedgerMetadataCacheResult.PRESENT && !verifyMetadataOnGc) {
+                continue;
+            }
+            if (cacheResult == LedgerMetadataCacheResult.PRESENT && !isBookieMissingFromMetadata(bkLid,
+                    zkOpTimeoutMs)) {
+                continue;
+            }
+            if (cacheResult == LedgerMetadataCacheResult.MISSING
+                    && verifyMetadataOnGc && !isBookieMissingFromMetadata(bkLid, zkOpTimeoutMs)) {
+                continue;
+            }
+            if (cacheResult == LedgerMetadataCacheResult.MISSING || verifyMetadataOnGc) {
+                garbageCleaner.clean(bkLid);
+            }
+        }
+        return true;
+    }
+
+    private boolean isBookieMissingFromMetadata(long ledgerId, long zkOpTimeoutMs) throws Exception {
+        AtomicBoolean isBookieInEnsembles = new AtomicBoolean(false);
+        Versioned<LedgerMetadata> metadata = null;
+        int rc = BKException.Code.OK;
+        try {
+            metadata = result(ledgerManager.readLedgerMetadata(ledgerId), zkOpTimeoutMs, TimeUnit.MILLISECONDS);
+        } catch (BKException | TimeoutException e) {
+            if (e instanceof BKException) {
+                rc = ((BKException) e).getCode();
+            } else {
+                log.warn()
+                        .attr("ledgerId", ledgerId)
+                        .attr("error", e.getMessage())
+                        .log("Time-out while fetching metadata for ledger");
+                return false;
+            }
+        }
+
+        if (metadata != null && metadata.getValue() != null) {
+            metadata.getValue().getAllEnsembles().forEach((entryId, ensembles) -> {
+                if (ensembles != null && ensembles.contains(selfBookieAddress)) {
+                    isBookieInEnsembles.set(true);
+                }
+            });
+            return !isBookieInEnsembles.get();
+        } else if (!isNoSuchLedgerInMetadataStore(rc)) {
+            log.warn()
+                    .attr("ledgerId", ledgerId)
+                    .attr("rc", rc)
+                    .log("Ledger missing in metadata cache, but ledgerManager returned unexpected rc");
+            return false;
+        }
+        return true;
+    }
+
+    private boolean isNoSuchLedgerInMetadataStore(int rc) {
+        return rc == BKException.Code.NoSuchLedgerExistsException
+                || rc == BKException.Code.NoSuchLedgerExistsOnMetadataServerException;
     }
 
     private Set<Long> removeOverReplicatedledgers(Set<Long> bkActiveledgers, final GarbageCleaner garbageCleaner)
