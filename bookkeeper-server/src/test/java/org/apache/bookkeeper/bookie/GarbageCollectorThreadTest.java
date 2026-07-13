@@ -35,9 +35,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
@@ -45,9 +44,6 @@ import static org.mockito.MockitoAnnotations.openMocks;
 import io.github.merlimat.slog.Event;
 import io.github.merlimat.slog.Logger;
 import java.io.File;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.net.URI;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -55,8 +51,6 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -67,7 +61,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockedStatic;
 import org.mockito.Spy;
 
 /**
@@ -156,43 +149,16 @@ public class GarbageCollectorThreadTest {
     }
 
     @Test
-    public void testOverreplicatedLedgerGcReusesMetadataDriverUntilClosed() throws Exception {
-        ServerConfiguration bkConf = TestBKConfiguration.newServerConfiguration()
-                .setAllowLoopback(true)
-                .setMetadataServiceUri("zk://127.0.0.1/ledgers");
-        MetadataBookieDriver metadataDriver = mock(MetadataBookieDriver.class);
+    public void testGarbageCollectorThreadDoesNotCloseServerOwnedLedgerManagerFactory() throws Exception {
         LedgerManagerFactory lmf = mock(LedgerManagerFactory.class);
-        when(metadataDriver.getLedgerManagerFactory()).thenReturn(lmf);
+        File ledgerDir = tmpDirs.createNew("testGcFactoryOwnership", "ledgers");
+        GarbageCollectorThread gcThread = new GarbageCollectorThread(
+                TestBKConfiguration.newServerConfiguration(), new MockLedgerManager(), lmf, newDirsManager(ledgerDir),
+                new MockLedgerStorage(), newLegacyEntryLogger(20000, ledgerDir), NullStatsLogger.INSTANCE);
 
-        try (MockedStatic<MetadataDrivers> metadataDrivers = mockStatic(MetadataDrivers.class)) {
-            metadataDrivers.when(() -> MetadataDrivers.getBookieDriver(any(URI.class))).thenReturn(metadataDriver);
-            ScanAndCompareGarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(
-                    ledgerManager, ledgerStorage, bkConf, NullStatsLogger.INSTANCE);
+        gcThread.shutdown();
 
-            Assert.assertSame(lmf, getOrCreateMetadataLedgerManagerFactory(garbageCollector));
-            Assert.assertSame(lmf, getOrCreateMetadataLedgerManagerFactory(garbageCollector));
-            metadataDrivers.verify(() -> MetadataDrivers.getBookieDriver(any(URI.class)), times(1));
-
-            garbageCollector.closeMetadataDriver();
-
-            verify(metadataDriver).close();
-            Assert.assertNull(getMetadataDriver(garbageCollector));
-        }
-    }
-
-    private static LedgerManagerFactory getOrCreateMetadataLedgerManagerFactory(
-            ScanAndCompareGarbageCollector garbageCollector) throws Exception {
-        Method method = ScanAndCompareGarbageCollector.class.getDeclaredMethod(
-                "getOrCreateMetadataLedgerManagerFactory");
-        method.setAccessible(true);
-        return (LedgerManagerFactory) method.invoke(garbageCollector);
-    }
-
-    private static MetadataBookieDriver getMetadataDriver(ScanAndCompareGarbageCollector garbageCollector)
-            throws Exception {
-        Field field = ScanAndCompareGarbageCollector.class.getDeclaredField("metadataDriver");
-        field.setAccessible(true);
-        return (MetadataBookieDriver) field.get(garbageCollector);
+        verify(lmf, never()).close();
     }
 
     @Test

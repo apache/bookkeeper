@@ -49,6 +49,7 @@ import org.apache.bookkeeper.bookie.storage.ldb.PersistentEntryLogMetadataMap;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableLong;
@@ -147,7 +148,17 @@ public class GarbageCollectorThread implements Runnable {
                                   final CompactableLedgerStorage ledgerStorage,
                                   EntryLogger entryLogger,
                                   StatsLogger statsLogger) throws IOException {
-        this(conf, ledgerManager, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger, newExecutor());
+        this(conf, ledgerManager, null, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger, newExecutor());
+    }
+
+    public GarbageCollectorThread(ServerConfiguration conf, LedgerManager ledgerManager,
+                                  LedgerManagerFactory ledgerManagerFactory,
+                                  final LedgerDirsManager ledgerDirsManager,
+                                  final CompactableLedgerStorage ledgerStorage,
+                                  EntryLogger entryLogger,
+                                  StatsLogger statsLogger) throws IOException {
+        this(conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger,
+                newExecutor());
     }
 
     @VisibleForTesting
@@ -170,6 +181,18 @@ public class GarbageCollectorThread implements Runnable {
                                   StatsLogger statsLogger,
                                   ScheduledExecutorService gcExecutor)
         throws IOException {
+        this(conf, ledgerManager, null, ledgerDirsManager, ledgerStorage, entryLogger, statsLogger, gcExecutor);
+    }
+
+    public GarbageCollectorThread(ServerConfiguration conf,
+                                  LedgerManager ledgerManager,
+                                  LedgerManagerFactory ledgerManagerFactory,
+                                  final LedgerDirsManager ledgerDirsManager,
+                                  final CompactableLedgerStorage ledgerStorage,
+                                  EntryLogger entryLogger,
+                                  StatsLogger statsLogger,
+                                  ScheduledExecutorService gcExecutor)
+        throws IOException {
         this.gcExecutor = gcExecutor;
         this.conf = conf;
 
@@ -184,7 +207,8 @@ public class GarbageCollectorThread implements Runnable {
         this.totalEntryLogSize = 0L;
         this.entryLogCompactRatio = 0.0;
         this.currentEntryLogUsageBuckets = new int[ENTRY_LOG_USAGE_SEGMENT_COUNT];
-        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage, conf, statsLogger);
+        this.garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, ledgerStorage,
+                ledgerManagerFactory, conf, statsLogger);
         this.gcStats = new GarbageCollectorStats(
             statsLogger,
             () -> numActiveEntryLogs,
@@ -818,11 +842,6 @@ public class GarbageCollectorThread implements Runnable {
             entryLogMetaMap.close();
         } catch (Exception e) {
             log.warn().exception(e).log("Failed to close entryLog metadata-map");
-        }
-        try {
-            garbageCollector.closeMetadataDriver();
-        } catch (Exception e) {
-            log.warn().exception(e).log("Failed to close garbage collector metadata resources");
         }
     }
 

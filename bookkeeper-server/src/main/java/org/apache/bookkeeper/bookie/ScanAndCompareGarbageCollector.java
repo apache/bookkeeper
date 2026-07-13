@@ -26,7 +26,6 @@ import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
-import java.net.URI;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -47,13 +46,9 @@ import org.apache.bookkeeper.meta.LedgerManager.LedgerRange;
 import org.apache.bookkeeper.meta.LedgerManager.LedgerRangeIterator;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.meta.MetadataDrivers;
-import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Garbage collector implementation using scan and compare.
@@ -81,18 +76,22 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
     private long lastOverReplicatedLedgerGcTimeMillis;
     private final boolean verifyMetadataOnGc;
     private int activeLedgerCounter;
-    private StatsLogger statsLogger;
     private final int maxConcurrentRequests;
     private final RateLimiter gcMetadataOpRateLimiter;
-    private MetadataBookieDriver metadataDriver;
-    private LedgerManagerFactory metadataLedgerManagerFactory;
+    private final LedgerManagerFactory ledgerManagerFactory;
 
     public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
             ServerConfiguration conf, StatsLogger statsLogger) throws IOException {
+        this(ledgerManager, ledgerStorage, null, conf, statsLogger);
+    }
+
+    public ScanAndCompareGarbageCollector(LedgerManager ledgerManager, CompactableLedgerStorage ledgerStorage,
+            LedgerManagerFactory ledgerManagerFactory, ServerConfiguration conf, StatsLogger statsLogger)
+            throws IOException {
         this.ledgerManager = ledgerManager;
         this.ledgerStorage = ledgerStorage;
+        this.ledgerManagerFactory = ledgerManagerFactory;
         this.conf = conf;
-        this.statsLogger = statsLogger;
         this.selfBookieAddress = BookieImpl.getBookieId(conf);
 
         this.gcOverReplicatedLedgerIntervalMillis = conf.getGcOverreplicatedLedgerWaitTimeMillis();
@@ -237,10 +236,13 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         final Set<Long> overReplicatedLedgers = Sets.newHashSet();
         final Semaphore semaphore = new Semaphore(this.maxConcurrentRequests);
         final CountDownLatch latch = new CountDownLatch(bkActiveledgers.size());
-        LedgerManagerFactory lmf = getOrCreateMetadataLedgerManagerFactory();
+        if (ledgerManagerFactory == null) {
+            log.warn("Skipping over-replicated ledger GC because LedgerManagerFactory is not available.");
+            return overReplicatedLedgers;
+        }
 
         @Cleanup
-        LedgerUnderreplicationManager lum = lmf.newLedgerUnderreplicationManager();
+        LedgerUnderreplicationManager lum = ledgerManagerFactory.newLedgerUnderreplicationManager();
 
         for (final Long ledgerId : bkActiveledgers) {
             try {
@@ -318,46 +320,6 @@ public class ScanAndCompareGarbageCollector implements GarbageCollector {
         latch.await();
         bkActiveledgers.removeAll(overReplicatedLedgers);
         return overReplicatedLedgers;
-    }
-
-    private synchronized LedgerManagerFactory getOrCreateMetadataLedgerManagerFactory() throws Exception {
-        if (metadataLedgerManagerFactory != null) {
-            return metadataLedgerManagerFactory;
-        }
-
-        metadataDriver = instantiateMetadataDriver(conf, statsLogger);
-        metadataLedgerManagerFactory = metadataDriver.getLedgerManagerFactory();
-        return metadataLedgerManagerFactory;
-    }
-
-    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf, StatsLogger statsLogger)
-            throws BookieException {
-        try {
-            String metadataServiceUriStr = conf.getMetadataServiceUri();
-            MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
-            driver.initialize(
-                    conf,
-                    statsLogger);
-            return driver;
-        } catch (MetadataException me) {
-            throw new BookieException.MetadataStoreException("Failed to initialize metadata bookie driver", me);
-        } catch (ConfigurationException e) {
-            throw new BookieException.BookieIllegalOpException(e);
-        }
-    }
-
-    public void closeMetadataDriver() {
-        if (metadataDriver != null) {
-            try {
-                metadataLedgerManagerFactory.close();
-                metadataDriver.close();
-            } catch (Exception e) {
-                log.warn().exception(e).log("Failed to close metadata driver used for over-replicated ledger GC");
-            } finally {
-                metadataLedgerManagerFactory = null;
-                metadataDriver = null;
-            }
-        }
     }
 
     private boolean isNotBookieIncludedInLedgerEnsembles(Versioned<LedgerMetadata> metadata) {

@@ -886,7 +886,7 @@ public abstract class BookKeeperClusterTestCase {
             UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
             storage = BookieResources.createLedgerStorage(
-                    conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+                    conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager, indexDirsManager,
                     bookieStats, allocator);
 
             if (conf.isForceReadOnlyBookie()) {
