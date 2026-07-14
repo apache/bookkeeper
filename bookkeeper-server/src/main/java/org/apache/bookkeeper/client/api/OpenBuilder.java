@@ -74,6 +74,22 @@ public interface OpenBuilder extends OpBuilder<ReadHandle> {
     OpenBuilder withDigestType(DigestType digestType);
 
     /**
+     * Whether to keep updating the metadata of the resulting {@link ReadHandle} if the auto-recovery component
+     * modifies the ledger's ensemble (e.g. when it re-replicates the ledger's data after a bookie becomes
+     * unavailable). It defaults to 'false'.
+     *
+     * <p>This setting only has an effect when the ledger is opened in recovery mode (see
+     * {@link #withRecovery(boolean)}); a ledger opened in readonly mode always keeps its metadata updated.
+     *
+     * @param keepUpdateMetadata whether to keep the ledger metadata updated
+     *
+     * @return the builder itself
+     */
+    default OpenBuilder withKeepUpdateMetadata(boolean keepUpdateMetadata) {
+        return this;
+    }
+
+    /**
      * Inherit the context attributes of the given slog {@link Logger} on the logger bound to
      * the resulting {@link ReadHandle}. Every log statement emitted by the handle (and by the open-time machinery
      * that produces it) will carry the parent logger's context attributes, in addition to the {@code ledgerId}

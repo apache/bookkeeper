@@ -21,6 +21,8 @@
 
 package org.apache.bookkeeper.client;
 
+import io.github.merlimat.slog.Logger;
+import io.github.merlimat.slog.LoggerBuilder;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -36,8 +38,9 @@ import org.apache.bookkeeper.versioning.Version;
  * Encapsulates asynchronous ledger delete operation.
  *
  */
-@CustomLog
 class LedgerDeleteOp {
+
+    private final Logger log;
 
     final BookKeeper bk;
     final long ledgerId;
@@ -60,6 +63,16 @@ class LedgerDeleteOp {
      */
     LedgerDeleteOp(BookKeeper bk, BookKeeperClientStats clientStats,
                    long ledgerId, DeleteCallback cb, Object ctx) {
+        this(bk, clientStats, ledgerId, cb, ctx, null);
+    }
+
+    LedgerDeleteOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                   long ledgerId, DeleteCallback cb, Object ctx, Logger parentLogger) {
+        LoggerBuilder builder = Logger.get(LedgerDeleteOp.class).with();
+        if (parentLogger != null) {
+            builder = builder.ctx(parentLogger);
+        }
+        this.log = builder.attr("ledgerId", ledgerId).build();
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -77,6 +90,7 @@ class LedgerDeleteOp {
         bk.getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY)
             .whenCompleteAsync((ignore, exception) -> {
                     if (exception != null) {
+                        log.debug().exception(exception).log("Failed to delete ledger");
                         deleteOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                     } else {
                         deleteOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -90,9 +104,11 @@ class LedgerDeleteOp {
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
 
+    @CustomLog
     static class DeleteBuilderImpl  implements DeleteBuilder {
 
         private Long builderLedgerId;
+        private Logger builderParentLogger;
         private final BookKeeper bk;
 
         DeleteBuilderImpl(BookKeeper bk) {
@@ -102,6 +118,12 @@ class LedgerDeleteOp {
         @Override
         public DeleteBuilder withLedgerId(long ledgerId) {
             this.builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public DeleteBuilder withLoggerContext(Logger parentLogger) {
+            this.builderParentLogger = parentLogger;
             return this;
         }
 
@@ -126,7 +148,8 @@ class LedgerDeleteOp {
                 cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
                 return;
             }
-            LedgerDeleteOp op = new LedgerDeleteOp(bk, bk.getClientCtx().getClientStats(), ledgerId, cb, null);
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, bk.getClientCtx().getClientStats(), ledgerId, cb, null,
+                    builderParentLogger);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
