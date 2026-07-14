@@ -34,11 +34,14 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
 
     @Override
     public void put(T e) throws InterruptedException {
+        int idleCounter = 0;
         while (!this.relaxedOffer(e)) {
             // Do busy-spin loop
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
+
+            idleCounter = WAIT_STRATEGY.idle(idleCounter);
         }
     }
 
@@ -46,6 +49,7 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
     public boolean offer(T e, long timeout, TimeUnit unit) throws InterruptedException {
         long absoluteEndTime = System.nanoTime() + unit.toNanos(timeout);
 
+        int idleCounter = 0;
         while (!this.relaxedOffer(e)) {
             // Do busy-spin loop
 
@@ -56,6 +60,8 @@ public class BlockingMpscQueue<T> extends MpscArrayQueue<T> implements BlockingQ
             if (Thread.interrupted()) {
                 throw new InterruptedException();
             }
+
+            idleCounter = WAIT_STRATEGY.idle(idleCounter);
         }
 
         return true;
