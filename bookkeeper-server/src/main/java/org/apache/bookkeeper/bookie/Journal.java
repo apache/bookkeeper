@@ -1151,14 +1151,17 @@ public class Journal implements CheckpointSource {
                                 journalFlushWatcher.stop().elapsed(TimeUnit.NANOSECONDS), TimeUnit.NANOSECONDS);
 
                         // Trace the lifetime of entries through persistence
-                        for (QueueEntry e : toFlush) {
-                            if (e != null) {
-                                log.debug()
-                                        .attr("ledgerId", e.ledgerId)
-                                        .attr("entryId", e.entryId)
-                                        .log("Written and queuing for flush");
+                        RecyclableArrayList<QueueEntry> flushedEntries = toFlush;
+                        log.debug(e -> {
+                            for (QueueEntry entry : flushedEntries) {
+                                if (entry != null) {
+                                    log.debug()
+                                            .attr("ledgerId", entry.ledgerId)
+                                            .attr("entryId", entry.entryId)
+                                            .log("Written and queuing for flush");
+                                }
                             }
-                        }
+                        });
 
                         journalStats.getForceWriteBatchEntriesStats()
                             .registerSuccessfulValue(numEntriesToFlush);
