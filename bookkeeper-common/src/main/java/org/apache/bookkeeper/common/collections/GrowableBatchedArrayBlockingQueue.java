@@ -24,10 +24,12 @@ import java.util.AbstractQueue;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.bookkeeper.common.util.MathUtils;
 
 /**
  * This implements a {@link BlockingQueue} backed by an array with no fixed capacity.
@@ -58,7 +60,8 @@ public class GrowableBatchedArrayBlockingQueue<T>
 
     @SuppressWarnings("unchecked")
     public GrowableBatchedArrayBlockingQueue(int initialCapacity) {
-        data = (T[]) new Object[initialCapacity];
+        int capacity = MathUtils.findNextPositivePowerOfTwo(initialCapacity);
+        data = (T[]) new Object[capacity];
     }
 
     private T dequeueOne() {
@@ -83,16 +86,26 @@ public class GrowableBatchedArrayBlockingQueue<T>
         }
 
         if (size++ == 0) {
-            notEmpty.signalAll();
+            // There is a single consumer thread, so no need to use signalAll()
+            notEmpty.signal();
         }
     }
 
     // must be called while holding the lock
     @SuppressWarnings("unchecked")
     private void grow(int minCapacity) {
+        if (minCapacity < 0) {
+            // The requested capacity overflowed the int range
+            throw new IllegalStateException("Queue capacity would exceed the maximum array size");
+        }
+
         int newCapacity = data.length;
         while (newCapacity < minCapacity) {
             newCapacity *= 2;
+            if (newCapacity <= 0) {
+                // Doubling overflowed: fall back to the exact requested capacity
+                newCapacity = minCapacity;
+            }
         }
 
         T[] newData = (T[]) new Object[newCapacity];
@@ -142,6 +155,8 @@ public class GrowableBatchedArrayBlockingQueue<T>
 
     @Override
     public boolean offer(T e) {
+        Objects.requireNonNull(e);
+
         lock.lock();
 
         try {
@@ -166,10 +181,13 @@ public class GrowableBatchedArrayBlockingQueue<T>
 
     @Override
     public void putAll(T[] a, int offset, int len) {
+        Objects.requireNonNull(a);
+        Objects.checkFromIndexSize(offset, len, a.length);
+
         lock.lock();
 
         try {
-            if (size + len > data.length) {
+            if (len > data.length - size) {
                 grow(size + len);
             }
 
@@ -194,7 +212,8 @@ public class GrowableBatchedArrayBlockingQueue<T>
             this.producerIdx = producerIdx;
 
             if (size == 0) {
-                notEmpty.signalAll();
+                // There is a single consumer thread, so no need to use signalAll()
+                notEmpty.signal();
             }
 
             size += len;
@@ -250,25 +269,41 @@ public class GrowableBatchedArrayBlockingQueue<T>
 
     @Override
     public int drainTo(Collection<? super T> c, int maxElements) {
+        Objects.requireNonNull(c);
+        if (c == this) {
+            throw new IllegalArgumentException("Cannot drain a queue into itself");
+        }
+        if (maxElements <= 0) {
+            return 0;
+        }
+
         lock.lock();
         try {
             int toDrain = Math.min(size, maxElements);
 
             int capacity = data.length;
             int consumerIdx = this.consumerIdx;
-            for (int i = 0; i < toDrain; i++) {
-                T item = data[consumerIdx];
-                data[consumerIdx] = null;
-                c.add(item);
+            int drained = 0;
 
-                if (++consumerIdx == capacity) {
-                    consumerIdx = 0;
+            try {
+                while (drained < toDrain) {
+                    T item = data[consumerIdx];
+                    c.add(item);
+
+                    // Only clear the slot once the item was accepted by the target collection
+                    data[consumerIdx] = null;
+                    if (++consumerIdx == capacity) {
+                        consumerIdx = 0;
+                    }
+                    ++drained;
                 }
+            } finally {
+                // Even if c.add() threw, commit the items that were actually transferred
+                this.consumerIdx = consumerIdx;
+                size -= drained;
             }
 
-            this.consumerIdx = consumerIdx;
-            size -= toDrain;
-            return toDrain;
+            return drained;
         } finally {
             lock.unlock();
         }
@@ -286,15 +321,23 @@ public class GrowableBatchedArrayBlockingQueue<T>
 
     private int internalTakeAll(T[] array, boolean waitForever, long timeout, TimeUnit unit)
             throws InterruptedException {
+        if (array.length == 0) {
+            return 0;
+        }
+
+        long remainingTimeNanos = unit.toNanos(timeout);
+
         lock.lockInterruptibly();
         try {
             while (size == 0) {
                 if (waitForever) {
                     notEmpty.await();
                 } else {
-                    if (!notEmpty.await(timeout, unit)) {
+                    if (remainingTimeNanos <= 0L) {
                         return 0;
                     }
+
+                    remainingTimeNanos = notEmpty.awaitNanos(remainingTimeNanos);
                 }
             }
 

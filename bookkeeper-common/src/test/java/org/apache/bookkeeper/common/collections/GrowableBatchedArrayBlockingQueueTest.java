@@ -22,6 +22,7 @@ package org.apache.bookkeeper.common.collections;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -287,5 +288,93 @@ public class GrowableBatchedArrayBlockingQueueTest {
         queue.put(3);
         assertEquals(2, queue.poll(1, TimeUnit.HOURS).intValue());
         assertEquals(3, queue.poll(1, TimeUnit.HOURS).intValue());
+    }
+
+    @Test(timeout = 10_000)
+    public void zeroInitialCapacityIsNormalized() throws Exception {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>(0);
+
+        for (int i = 0; i < 10; i++) {
+            assertTrue(queue.offer(i));
+        }
+
+        for (int i = 0; i < 10; i++) {
+            assertEquals(i, queue.take().intValue());
+        }
+    }
+
+    @Test
+    public void rejectNullElements() {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>();
+
+        assertThrows(NullPointerException.class, () -> queue.offer(null));
+        assertThrows(NullPointerException.class, () -> queue.put(null));
+        assertThrows(NullPointerException.class, () -> queue.add(null));
+    }
+
+    @Test
+    public void drainToValidation() {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>();
+        queue.put(1);
+
+        assertThrows(NullPointerException.class, () -> queue.drainTo(null));
+        assertThrows(IllegalArgumentException.class, () -> queue.drainTo(queue));
+
+        // A non-positive maxElements does not drain and does not corrupt the queue state
+        List<Integer> list = new ArrayList<>();
+        assertEquals(0, queue.drainTo(list, -1));
+        assertEquals(0, queue.drainTo(list, 0));
+        assertEquals(1, queue.size());
+        assertEquals(1, queue.poll().intValue());
+    }
+
+    @Test
+    public void drainToIsExceptionSafe() {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>();
+        for (int i = 0; i < 5; i++) {
+            queue.put(i);
+        }
+
+        List<Integer> target = new ArrayList<Integer>() {
+            @Override
+            public boolean add(Integer item) {
+                if (size() == 2) {
+                    throw new RuntimeException("Rejecting item");
+                }
+                return super.add(item);
+            }
+        };
+
+        assertThrows(RuntimeException.class, () -> queue.drainTo(target));
+
+        // The two transferred items are committed, the rest are still in the queue
+        assertEquals(Lists.newArrayList(0, 1), target);
+        assertEquals(3, queue.size());
+        for (int i = 2; i < 5; i++) {
+            assertEquals(i, queue.poll().intValue());
+        }
+    }
+
+    @Test(timeout = 10_000)
+    public void takeAllWithEmptyArrayDoesNotBlock() throws Exception {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>();
+
+        // Even with an empty queue, a zero-length destination array returns immediately
+        assertEquals(0, queue.takeAll(new Integer[0]));
+        assertEquals(0, queue.pollAll(new Integer[0], 1, TimeUnit.HOURS));
+    }
+
+    @Test
+    public void putAllArgumentValidation() {
+        GrowableBatchedArrayBlockingQueue<Integer> queue = new GrowableBatchedArrayBlockingQueue<>();
+
+        assertThrows(NullPointerException.class, () -> queue.putAll(null, 0, 1));
+
+        Integer[] items = { 1, 2, 3 };
+        assertThrows(IndexOutOfBoundsException.class, () -> queue.putAll(items, -1, 2));
+        assertThrows(IndexOutOfBoundsException.class, () -> queue.putAll(items, 0, 4));
+        assertThrows(IndexOutOfBoundsException.class, () -> queue.putAll(items, 2, 2));
+
+        assertEquals(0, queue.size());
     }
 }
