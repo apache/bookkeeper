@@ -21,10 +21,15 @@
 package org.apache.bookkeeper.util;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import junit.framework.TestCase;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 import org.junit.After;
@@ -84,5 +89,63 @@ public class TestZkUtils extends TestCase {
                 null == zkc.exists(ledgerZnodePath, false));
         assertTrue("/ledgers/000" + " zNode should not exist, since it should be deleted recursively",
                 null == zkc.exists(ledgerZnodePath, false));
+    }
+
+    @Test
+    public void testParentChildrenWatchReceivesParentPathWhenChildDeleted() throws Exception {
+        ZooKeeper zkc = zkUtil.getZooKeeperClient();
+        String parentPath = "/parent-watch-test";
+        String childPath = parentPath + "/child";
+        zkc.create(parentPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zkc.create(childPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
+        CountDownLatch eventReceived = new CountDownLatch(1);
+        AtomicReference<WatchedEvent> eventRef = new AtomicReference<>();
+        zkc.getChildren(parentPath, new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+                if (event.getType() == Watcher.Event.EventType.NodeChildrenChanged
+                        && parentPath.equals(event.getPath())) {
+                    eventRef.set(event);
+                    eventReceived.countDown();
+                }
+            }
+        });
+
+        zkc.delete(childPath, -1);
+
+        assertTrue("parent children watch should fire",
+                eventReceived.await(10, TimeUnit.SECONDS));
+        assertEquals(Watcher.Event.EventType.NodeChildrenChanged, eventRef.get().getType());
+        assertEquals(parentPath, eventRef.get().getPath());
+    }
+
+    @Test
+    public void testChildExistsWatchReceivesChildPathWhenChildDeleted() throws Exception {
+        ZooKeeper zkc = zkUtil.getZooKeeperClient();
+        String parentPath = "/child-watch-test";
+        String childPath = parentPath + "/child";
+        zkc.create(parentPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        zkc.create(childPath, new byte[0], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+
+        CountDownLatch eventReceived = new CountDownLatch(1);
+        AtomicReference<WatchedEvent> eventRef = new AtomicReference<>();
+        zkc.exists(childPath, new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+                if (event.getType() == Watcher.Event.EventType.NodeDeleted
+                        && childPath.equals(event.getPath())) {
+                    eventRef.set(event);
+                    eventReceived.countDown();
+                }
+            }
+        });
+
+        zkc.delete(childPath, -1);
+
+        assertTrue("child exists watch should fire",
+                eventReceived.await(10, TimeUnit.SECONDS));
+        assertEquals(Watcher.Event.EventType.NodeDeleted, eventRef.get().getType());
+        assertEquals(childPath, eventRef.get().getPath());
     }
 }
