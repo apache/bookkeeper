@@ -899,15 +899,15 @@ public class BookieImpl implements Bookie {
     int shutdown(int exitCode) {
         lock.lock();
         try {
+            // the exitCode only set when first shutdown usually due to exception found
+            if (this.exitCode == ExitCode.OK) {
+                this.exitCode = exitCode;
+            }
             if (isRunning()) {
-                // the exitCode only set when first shutdown usually due to exception found
                 log.info()
                         .attr("bookiePort", conf.getBookiePort())
                         .attr("exitCode", exitCode)
                         .log("Shutting down Bookie");
-                if (this.exitCode == ExitCode.OK) {
-                    this.exitCode = exitCode;
-                }
 
                 stateManager.forceToShuttingDown();
 
