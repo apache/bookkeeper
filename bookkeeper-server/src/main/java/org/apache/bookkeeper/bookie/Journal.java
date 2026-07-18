@@ -501,10 +501,12 @@ public class Journal implements CheckpointSource {
             final ForceWriteRequest[] localRequests = new ForceWriteRequest[conf.getJournalQueueSize()];
 
             while (running) {
+                long forceWriteThreadStartTime = 0L;
                 try {
                     int numEntriesInLastForceWrite = 0;
 
                     int requestsCount = forceWriteRequests.takeAll(localRequests);
+                    forceWriteThreadStartTime = MathUtils.nowInNano();
 
                     journalStats.getForceWriteQueueSize().addCount(-requestsCount);
 
@@ -534,6 +536,11 @@ public class Journal implements CheckpointSource {
                     Thread.currentThread().interrupt();
                     log.info("ForceWrite thread interrupted");
                     running = false;
+                } finally {
+                    if (forceWriteThreadStartTime != 0L) {
+                        forceWriteThreadTime.addLatency(MathUtils.elapsedNanos(forceWriteThreadStartTime),
+                                TimeUnit.NANOSECONDS);
+                    }
                 }
             }
             // Regardless of what caused us to exit, we should notify the
@@ -1181,8 +1188,19 @@ public class Journal implements CheckpointSource {
                                 || shouldRolloverJournal
                                 || (System.currentTimeMillis() - lastFlushTimeMs
                                 >= journalPageCacheFlushIntervalMSec)) {
-                            forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
-                                    toFlush, shouldRolloverJournal));
+                            long enqueueStartTime = MathUtils.nowInNano();
+                            try {
+                                forceWriteRequests.put(createForceWriteRequest(logFile, logId, lastFlushPosition,
+                                        toFlush, shouldRolloverJournal));
+                                journalStats.getFwEnqueueTimeStats()
+                                        .registerSuccessfulEvent(MathUtils.elapsedNanos(enqueueStartTime),
+                                                TimeUnit.NANOSECONDS);
+                            } catch (InterruptedException ie) {
+                                journalStats.getFwEnqueueTimeStats()
+                                        .registerFailedEvent(MathUtils.elapsedNanos(enqueueStartTime),
+                                                TimeUnit.NANOSECONDS);
+                                throw ie;
+                            }
                             lastFlushTimeMs = System.currentTimeMillis();
                         }
                         toFlush = entryListRecycler.newInstance();

@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.bookie;
 
+import static org.apache.bookkeeper.bookie.BookKeeperServerStats.JOURNAL_FORCE_WRITE_ENQUEUE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,6 +37,7 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -69,6 +71,51 @@ public class BookieJournalForceTest {
 
     @Rule
     public TemporaryFolder tempDir = new TemporaryFolder();
+
+    @Test
+    public void testForceWriteMetrics() throws Exception {
+        File journalDir = tempDir.newFolder();
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(journalDir));
+
+        String statsScope = "journal";
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration()
+            .setJournalDirName(journalDir.getPath())
+            .setMetadataServiceUri(null)
+            .setJournalAdaptiveGroupWrites(false);
+
+        LedgerDirsManager ledgerDirsManager = mock(LedgerDirsManager.class);
+        Journal journal = spy(new Journal(0, journalDir, conf, ledgerDirsManager,
+                statsProvider.getStatsLogger(statsScope), UnpooledByteBufAllocator.DEFAULT));
+        JournalChannel jc = spy(new JournalChannel(journalDir, 1));
+        doAnswer((Answer<Void>) invocation -> {
+            Thread.sleep(10);
+            invocation.callRealMethod();
+            return null;
+        }).when(jc).forceWrite(false);
+        doReturn(jc).when(journal).newLogFile(anyLong(), nullable(Long.class));
+
+        journal.start();
+
+        try {
+            CountDownLatch latch = new CountDownLatch(1);
+            journal.logAddEntry(1, 0, DATA, false /* ackBeforeSync */, new WriteCallback() {
+                @Override
+                public void writeComplete(int rc, long ledgerId, long entryId, BookieId addr, Object ctx) {
+                    latch.countDown();
+                }
+            }, null);
+
+            assertTrue(latch.await(20, TimeUnit.SECONDS));
+
+            String journalStatsPath = statsScope + ".journalIndex_0.";
+            assertEquals(1, statsProvider.getOpStatsLogger(journalStatsPath + JOURNAL_FORCE_WRITE_ENQUEUE)
+                    .getSuccessCount());
+            assertTrue(statsProvider.getCounter(journalStatsPath + "force-write-thread-time").get() > 0);
+        } finally {
+            journal.shutdown();
+        }
+    }
 
     @Test
     public void testAckAfterSync() throws Exception {
