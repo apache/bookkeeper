@@ -459,9 +459,11 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             log.error()
                     .exception(ce)
                     .log("Failed to initialize metadata client driver using invalid metadata service uri");
+            close();
             throw new IOException("Failed to initialize metadata client driver", ce);
         } catch (MetadataException me) {
             log.error().exception(me).log("Encountered metadata exceptions on initializing metadata client driver");
+            close();
             throw new IOException("Failed to initialize metadata client driver", me);
         }
 
@@ -486,7 +488,6 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
                     .exitOnOutOfMemory(conf.exitOnOutOfMemory())
                     .build();
         }
-
 
         if (null == requestTimer) {
             this.requestTimer = new HashedWheelTimer(
@@ -537,6 +538,7 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             this.ledgerManagerFactory =
                 this.metadataDriver.getLedgerManagerFactory();
         } catch (MetadataException e) {
+            close();
             throw new IOException("Failed to initialize ledger manager factory", e);
         }
         this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
@@ -1520,32 +1522,44 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         // Close bookie client so all pending bookie requests would be failed
         // which will reject any incoming bookie requests.
-        bookieClient.close();
+        if (bookieClient != null) {
+            bookieClient.close();
+        }
         try {
             // Close ledger manage so all pending metadata requests would be failed
             // which will reject any incoming metadata requests.
-            ledgerManager.close();
-            ledgerIdGenerator.close();
+            if (ledgerManager != null) {
+                ledgerManager.close();
+            }
+            if (ledgerIdGenerator != null) {
+                ledgerIdGenerator.close();
+            }
         } catch (IOException ie) {
             log.error().exception(ie).log("Failed to close ledger manager");
         }
 
         // Close the scheduler
-        scheduler.shutdown();
-        if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-            log.warn("The scheduler did not shutdown cleanly");
+        if (scheduler != null) {
+            scheduler.shutdown();
+            if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("The scheduler did not shutdown cleanly");
+            }
         }
 
         // Close the watchTask scheduler
-        highPriorityTaskExecutor.shutdown();
-        if (!highPriorityTaskExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
-            log.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly, interrupting");
-            highPriorityTaskExecutor.shutdownNow();
+        if (highPriorityTaskExecutor != null) {
+            highPriorityTaskExecutor.shutdown();
+            if (!highPriorityTaskExecutor.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("The highPriorityTaskExecutor for WatchTask did not shutdown cleanly, interrupting");
+                highPriorityTaskExecutor.shutdownNow();
+            }
         }
 
-        mainWorkerPool.shutdown();
-        if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
-            log.warn("The mainWorkerPool did not shutdown cleanly");
+        if (mainWorkerPool != null) {
+            mainWorkerPool.shutdown();
+            if (!mainWorkerPool.awaitTermination(10, TimeUnit.SECONDS)) {
+                log.warn("The mainWorkerPool did not shutdown cleanly");
+            }
         }
         if (this.bookieInfoScheduler != null) {
             this.bookieInfoScheduler.shutdown();
@@ -1554,13 +1568,15 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
             }
         }
 
-        if (ownTimer) {
+        if (ownTimer && requestTimer != null) {
             requestTimer.stop();
         }
-        if (ownEventLoopGroup) {
+        if (ownEventLoopGroup && eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully();
         }
-        this.metadataDriver.close();
+        if (metadataDriver != null) {
+            this.metadataDriver.close();
+        }
     }
 
     @Override
