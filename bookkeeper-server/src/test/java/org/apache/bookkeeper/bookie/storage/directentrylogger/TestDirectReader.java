@@ -446,6 +446,49 @@ public class TestDirectReader {
     }
 
     @Test
+    public void testPartialReadProgressesByAlignedBytes() throws Exception {
+        File ledgerDir = tmpDirs.createNew("partialReadAligned", "logs");
+
+        writeFileWithPattern(ledgerDir, 1234, 0xbeefcafe, 1, 1 << 20);
+
+        class ShortReadNativeIO extends NativeIOImpl {
+            int calls;
+
+            @Override
+            public long pread(int fd, long buf, long size, long offset) throws NativeIOException {
+                if (calls == 0) {
+                    assertThat(offset, equalTo(0L));
+                } else if (calls == 1) {
+                    assertThat(offset, equalTo((long) Buffer.ALIGNMENT * 2));
+                }
+                calls++;
+
+                long read = super.pread(fd, buf, size, offset);
+                return Math.min(read, Buffer.ALIGNMENT * 2L);
+            }
+        }
+
+        ShortReadNativeIO nativeIO = new ShortReadNativeIO();
+        try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
+                                                 ByteBufAllocator.DEFAULT,
+                                                 nativeIO, Buffer.ALIGNMENT * 4,
+                                                 1 << 20, opLogger)) {
+            ByteBuf bb = reader.readBufferAt(0, Buffer.ALIGNMENT * 4);
+            try {
+                for (int block = 0; block < 4; block++) {
+                    for (int i = 0; i < Buffer.ALIGNMENT / Integer.BYTES; i++) {
+                        assertThat(bb.readInt(), equalTo(0xbeefcafe + block));
+                    }
+                }
+                assertThat(bb.readableBytes(), equalTo(0));
+            } finally {
+                bb.release();
+            }
+        }
+        assertThat(nativeIO.calls, equalTo(2));
+    }
+
+    @Test
     public void testLargeEntry() throws Exception {
         File ledgerDir = tmpDirs.createNew("largeEntries", "logs");
 
