@@ -18,10 +18,11 @@
 package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -30,7 +31,7 @@ import org.apache.bookkeeper.client.api.WriteAdvHandle;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.client.api.WriteHandle;
 import org.apache.bookkeeper.net.BookieId;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Client side tests on deferred sync write flag.
@@ -42,7 +43,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     static final int NUM_ENTRIES = 100;
 
     @Test
-    public void testAddEntryLastAddConfirmedDoesNotAdvance() throws Exception {
+    void addEntryLastAddConfirmedDoesNotAdvance() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
@@ -61,7 +62,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testAddEntryLastAddConfirmedAdvanceWithForce() throws Exception {
+    void addEntryLastAddConfirmedAdvanceWithForce() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
@@ -82,7 +83,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForceOnWriteAdvHandle() throws Exception {
+    void forceOnWriteAdvHandle() throws Exception {
         try (WriteAdvHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
@@ -112,7 +113,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForceRequiresFullEnsemble() throws Exception {
+    void forceRequiresFullEnsemble() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(2)
@@ -146,7 +147,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForceWillAdvanceLacOnlyUpToLastAcknowledgedWrite() throws Exception {
+    void forceWillAdvanceLacOnlyUpToLastAcknowledgedWrite() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(3)
                 .withWriteQuorumSize(3)
@@ -187,7 +188,7 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
     }
 
     @Test
-    public void testForbiddenEnsembleChange() throws Exception {
+    void forbiddenEnsembleChange() throws Exception {
         try (WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
@@ -218,8 +219,8 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
         }
     }
 
-    @Test(expected = BKException.BKLedgerClosedException.class)
-    public void testCannotIssueForceOnClosedLedgerHandle() throws Exception {
+    @Test
+    void cannotIssueForceOnClosedLedgerHandle() throws Exception {
         WriteHandle wh = result(newCreateLedgerOp()
                 .withEnsembleSize(1)
                 .withWriteQuorumSize(1)
@@ -228,7 +229,8 @@ public class DeferredSyncTest extends MockBookKeeperTestCase {
                 .withWriteFlags(WriteFlag.DEFERRED_SYNC)
                 .execute());
         wh.close();
-        result(wh.force());
+        assertThrows(BKException.BKLedgerClosedException.class, () ->
+            result(wh.force()));
     }
 
 }
