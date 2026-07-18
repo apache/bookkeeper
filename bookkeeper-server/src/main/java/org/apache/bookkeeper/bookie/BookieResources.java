@@ -28,6 +28,7 @@ import org.apache.bookkeeper.common.allocator.ByteBufAllocatorBuilder;
 import org.apache.bookkeeper.common.allocator.ByteBufAllocatorWithOomHandler;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.exceptions.MetadataException;
@@ -95,6 +96,7 @@ public class BookieResources {
 
     public static LedgerStorage createLedgerStorage(ServerConfiguration conf,
                                                     LedgerManager ledgerManager,
+                                                    LedgerManagerFactory ledgerManagerFactory,
                                                     LedgerDirsManager ledgerDirsManager,
                                                     LedgerDirsManager indexDirsManager,
                                                     StatsLogger statsLogger,
@@ -104,6 +106,7 @@ public class BookieResources {
         log.info().attr("ledgerStorageClass", ledgerStorageClass).log("Using ledger storage");
         LedgerStorage storage = LedgerStorageFactory.createLedgerStorage(ledgerStorageClass);
 
+        storage.setLedgerManagerFactory(ledgerManagerFactory);
         storage.initialize(conf, ledgerManager, ledgerDirsManager, indexDirsManager, statsLogger, allocator);
         storage.setCheckpointSource(CheckpointSource.DEFAULT);
         return storage;

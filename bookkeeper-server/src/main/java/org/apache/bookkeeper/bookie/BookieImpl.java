@@ -363,6 +363,7 @@ public class BookieImpl implements Bookie {
 
         if (null == ledgerStorage) {
             ledgerStorage = BookieResources.createLedgerStorage(conf, null,
+                                                                null,
                                                                 ledgerDirsManager,
                                                                 indexDirsManager,
                                                                 statsLogger,
