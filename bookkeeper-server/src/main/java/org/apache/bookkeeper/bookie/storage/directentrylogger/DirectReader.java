@@ -207,6 +207,9 @@ class DirectReader implements LogReader {
         long bytesToRead = Math.min(blockSize, bytesAvailable);
         long bytesOutstanding = bytesToRead;
         long bytesRead = -1;
+        // A failed read may still overwrite nativeBuffer, so invalidate the
+        // cached block before loading a new one.
+        clearCache();
         try {
             while (true) {
                 long readSize = blockSize - bufferOffset;
@@ -229,9 +232,9 @@ class DirectReader implements LogReader {
                 long alignedBytesRead = bytesRead & ~(Buffer.ALIGNMENT - 1L);
                 if (alignedBytesRead <= 0) {
                     readBlockStats.registerFailedEvent(System.nanoTime() - startNs, TimeUnit.NANOSECONDS);
-                    throw new EOFException(exMsg("Short read did not make aligned progress")
-                                          .kv("requestedBytes", blockSize)
-                                          .kv("offset", blockStart)
+                    throw new IOException(exMsg("Short read did not make aligned progress")
+                                          .kv("requestedBytes", readSize)
+                                          .kv("offset", blockStart + bufferOffset)
                                           .kv("expectedBytes", Math.min(blockSize, bytesAvailable))
                                           .kv("bytesOutstanding", bytesOutstanding)
                                           .kv("bufferOffset", bufferOffset)
