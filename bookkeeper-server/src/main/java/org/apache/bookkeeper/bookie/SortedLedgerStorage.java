@@ -89,7 +89,8 @@ public class SortedLedgerStorage
             // since it manages entry log rotations and checkpoints.
             this,
             statsLogger,
-            allocator);
+            allocator,
+            false);
 
         this.scheduler = newScheduledExecutorService();
     }
