@@ -112,6 +112,15 @@ public interface KeyValueStorage extends Closeable {
     default void compact() throws IOException {}
 
     /**
+     * Cancel the active full-range compaction.
+     *
+     * @return true if there was a compaction to cancel
+     */
+    default boolean cancelCompaction() {
+        return false;
+    }
+
+    /**
      * Get storage path.
      */
     String getDBPath();

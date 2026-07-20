@@ -335,6 +335,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         return entryLocationIndex.isCompacting();
     }
 
+    public boolean cancelEntryLocationCompact() {
+        return entryLocationIndex.cancelCompaction();
+    }
+
     @Override
     public List<String> getEntryLocationDBPath() {
         return Lists.newArrayList(entryLocationIndex.getEntryLocationDBPath());
