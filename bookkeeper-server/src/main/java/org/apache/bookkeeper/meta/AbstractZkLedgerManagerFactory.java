@@ -62,9 +62,11 @@ public abstract class AbstractZkLedgerManagerFactory implements LedgerManagerFac
 
         Class<? extends LedgerManagerFactory> factoryClass;
         try {
-            factoryClass = conf.getLedgerManagerFactoryClass();
-        } catch (ConfigurationException e) {
-            throw new IOException("Failed to get ledger manager factory class from configuration : ", e);
+            factoryClass = (Class<? extends LedgerManagerFactory>)
+                    Class.forName(layoutManager.readLedgerLayout().getManagerFactoryClass());
+        } catch (ClassNotFoundException e) {
+            // should not reach here, as LayoutManager was successfully inited
+            throw new IOException("Failed to read ledger manager factory class from LAYOUT : ", e);
         }
 
         layoutManager.deleteLedgerLayout();
