@@ -337,8 +337,15 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
         if (null == descriptor) {
             return message;
         } else {
+            byte[] requestBytes = null;
             try {
-                return interceptTableRequest(method, descriptor, message, sid, rid, rk);
+                if (message.getClass() == descriptor.getClz()) {
+                    return interceptTableRequest(method, descriptor, message, sid, rid, rk);
+                } else {
+                    InputStream is = method.getRequestMarshaller().stream(message);
+                    requestBytes = is.readAllBytes();
+                    return interceptTableRequest(method, descriptor, requestBytes, sid, rid, rk);
+                }
             } catch (Throwable t) {
                 log.error()
                     .attr("streamId", sid)
@@ -346,6 +353,9 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
                     .attr("routingKey", Hex.encodeHexString(rk))
                     .exception(t)
                     .log("Failed to intercept table request");
+                if (null != requestBytes) {
+                    return method.getRequestMarshaller().parse(new ByteArrayInputStream(requestBytes));
+                }
                 return message;
             }
         }
@@ -363,9 +373,8 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
         if (message.getClass() == interceptor.getClz()) {
             request = (TableReqT) message;
         } else {
-            InputStream is = method.getRequestMarshaller().stream(message);
-            byte[] bytes = is.readAllBytes();
-            request = interceptor.getParser().parseFrom(bytes);
+            return interceptTableRequest(method, interceptor,
+                method.getRequestMarshaller().stream(message).readAllBytes(), sid, rid, rk);
         }
         TableReqT interceptedMessage = interceptor.getInterceptor().intercept(
             request, sid, rid, rk
@@ -377,5 +386,19 @@ public class RoutingHeaderProxyInterceptor implements ClientInterceptor {
             return method.getRequestMarshaller().parse(new ByteArrayInputStream(reqBytes));
 
         }
+    }
+
+    private <ReqT, TableReqT> ReqT interceptTableRequest(
+        MethodDescriptor<ReqT, ?> method,
+        InterceptorDescriptor<TableReqT> interceptor,
+        byte[] requestBytes,
+        Long sid, Long rid, byte[] rk
+    ) {
+        TableReqT request = interceptor.getParser().parseFrom(requestBytes);
+        TableReqT interceptedMessage = interceptor.getInterceptor().intercept(
+            request, sid, rid, rk
+        );
+        byte[] reqBytes = interceptor.getSerializer().toByteArray(interceptedMessage);
+        return method.getRequestMarshaller().parse(new ByteArrayInputStream(reqBytes));
     }
 }
