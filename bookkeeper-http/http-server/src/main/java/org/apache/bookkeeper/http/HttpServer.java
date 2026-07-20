@@ -91,6 +91,7 @@ public interface HttpServer {
         RESUME_GC_COMPACTION,
         SUSPEND_GC_COMPACTION,
         TRIGGER_ENTRY_LOCATION_COMPACT,
+        BOOKIE_COOKIE,
         // autorecovery
         AUTORECOVERY_STATUS,
         RECOVERY_BOOKIE,
