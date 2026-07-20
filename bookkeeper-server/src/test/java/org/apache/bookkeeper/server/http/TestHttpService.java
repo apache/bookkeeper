@@ -1084,6 +1084,17 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
         assertFalse(readOnlyState.isReadOnly());
 
+        // force=true force the bookie to readonly
+        Map<String, String> params = new HashMap<>();
+        params.put("force", "true");
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(true)), HttpServer.Method.PUT, params);
+        response = bookieReadOnlyService.handle(request);
+        readOnlyState = JsonUtil.fromJson(response.getBody(), ReadOnlyState.class);
+        assertTrue(readOnlyState.isReadOnly());
+        request = new HttpServiceRequest(JsonUtil.toJson(new ReadOnlyState(false)), HttpServer.Method.PUT, null);
+        response = bookieReadOnlyService.handle(request);
+        assertEquals(400, response.getStatusCode());
+
         //forceReadonly to writable
         MetadataBookieDriver metadataDriver = BookieResources.createMetadataDriver(
                 baseConf, NullStatsLogger.INSTANCE);
