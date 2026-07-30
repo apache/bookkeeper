@@ -423,129 +423,144 @@ public class BookKeeper implements org.apache.bookkeeper.client.api.BookKeeper {
 
         this.internalConf = ClientInternalConf.fromConfigAndFeatureProvider(conf, this.featureProvider);
 
-        // initialize resources
-        this.scheduler = OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
-        this.highPriorityTaskExecutor =
-                OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperHighPriorityThread").build();
-        this.mainWorkerPool = OrderedExecutor.newBuilder()
-                .name("BookKeeperClientWorker")
-                .numThreads(conf.getNumWorkerThreads())
-                .statsLogger(rootStatsLogger)
-                .traceTaskExecution(conf.getEnableTaskExecutionStats())
-                .preserveMdcForTaskExecution(conf.getPreserveMdcForTaskExecution())
-                .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
-                .enableBusyWait(conf.isBusyWaitEnabled())
-                .build();
-
-        // initialize stats logger
-        this.statsLogger = rootStatsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
-        this.clientStats = BookKeeperClientStats.newInstance(this.statsLogger);
-
-        // initialize metadata driver
+        boolean initialized = false;
         try {
-            String metadataServiceUriStr = conf.getMetadataServiceUri();
-            if (null != metadataServiceUriStr) {
-                this.metadataDriver = MetadataDrivers.getClientDriver(URI.create(metadataServiceUriStr));
-            } else {
-                checkNotNull(zkc, "No external zookeeper provided when no metadata service uri is found");
-                this.metadataDriver = MetadataDrivers.getClientDriver("zk");
-            }
-            this.metadataDriver.initialize(
-                conf,
-                highPriorityTaskExecutor,
-                rootStatsLogger,
-                Optional.ofNullable(zkc));
-        } catch (ConfigurationException ce) {
-            log.error()
-                    .exception(ce)
-                    .log("Failed to initialize metadata client driver using invalid metadata service uri");
-            close();
-            throw new IOException("Failed to initialize metadata client driver", ce);
-        } catch (MetadataException me) {
-            log.error().exception(me).log("Encountered metadata exceptions on initializing metadata client driver");
-            close();
-            throw new IOException("Failed to initialize metadata client driver", me);
-        }
-
-        // initialize event loop group
-        if (null == eventLoopGroup) {
-            this.eventLoopGroup = EventLoopUtil.getClientEventLoopGroup(conf,
-                    new DefaultThreadFactory("bookkeeper-io"));
-            this.ownEventLoopGroup = true;
-        } else {
-            this.eventLoopGroup = eventLoopGroup;
-            this.ownEventLoopGroup = false;
-        }
-
-        if (byteBufAllocator != null) {
-            this.allocator = byteBufAllocator;
-        } else {
-            this.allocator = ByteBufAllocatorBuilder.create()
-                    .poolingPolicy(conf.getAllocatorPoolingPolicy())
-                    .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
-                    .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
-                    .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
-                    .exitOnOutOfMemory(conf.exitOnOutOfMemory())
+            // initialize resources
+            this.scheduler =
+                    OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperClientScheduler").build();
+            this.highPriorityTaskExecutor =
+                    OrderedScheduler.newSchedulerBuilder().numThreads(1).name("BookKeeperHighPriorityThread").build();
+            this.mainWorkerPool = OrderedExecutor.newBuilder()
+                    .name("BookKeeperClientWorker")
+                    .numThreads(conf.getNumWorkerThreads())
+                    .statsLogger(rootStatsLogger)
+                    .traceTaskExecution(conf.getEnableTaskExecutionStats())
+                    .preserveMdcForTaskExecution(conf.getPreserveMdcForTaskExecution())
+                    .traceTaskWarnTimeMicroSec(conf.getTaskExecutionWarnTimeMicros())
+                    .enableBusyWait(conf.isBusyWaitEnabled())
                     .build();
+
+            // initialize stats logger
+            this.statsLogger = rootStatsLogger.scope(BookKeeperClientStats.CLIENT_SCOPE);
+            this.clientStats = BookKeeperClientStats.newInstance(this.statsLogger);
+
+            // initialize metadata driver
+            try {
+                String metadataServiceUriStr = conf.getMetadataServiceUri();
+                if (null != metadataServiceUriStr) {
+                    this.metadataDriver = MetadataDrivers.getClientDriver(URI.create(metadataServiceUriStr));
+                } else {
+                    checkNotNull(zkc, "No external zookeeper provided when no metadata service uri is found");
+                    this.metadataDriver = MetadataDrivers.getClientDriver("zk");
+                }
+                this.metadataDriver.initialize(
+                    conf,
+                    highPriorityTaskExecutor,
+                    rootStatsLogger,
+                    Optional.ofNullable(zkc));
+            } catch (ConfigurationException ce) {
+                log.error()
+                        .exception(ce)
+                        .log("Failed to initialize metadata client driver using invalid metadata service uri");
+                throw new IOException("Failed to initialize metadata client driver", ce);
+            } catch (MetadataException me) {
+                log.error().exception(me).log("Encountered metadata exceptions on initializing metadata client driver");
+                throw new IOException("Failed to initialize metadata client driver", me);
+            }
+
+            // initialize event loop group
+            if (null == eventLoopGroup) {
+                this.eventLoopGroup = EventLoopUtil.getClientEventLoopGroup(conf,
+                        new DefaultThreadFactory("bookkeeper-io"));
+                this.ownEventLoopGroup = true;
+            } else {
+                this.eventLoopGroup = eventLoopGroup;
+                this.ownEventLoopGroup = false;
+            }
+
+            if (byteBufAllocator != null) {
+                this.allocator = byteBufAllocator;
+            } else {
+                this.allocator = ByteBufAllocatorBuilder.create()
+                        .poolingPolicy(conf.getAllocatorPoolingPolicy())
+                        .poolingConcurrency(conf.getAllocatorPoolingConcurrency())
+                        .outOfMemoryPolicy(conf.getAllocatorOutOfMemoryPolicy())
+                        .leakDetectionPolicy(conf.getAllocatorLeakDetectionPolicy())
+                        .exitOnOutOfMemory(conf.exitOnOutOfMemory())
+                        .build();
+            }
+
+            if (null == requestTimer) {
+                this.requestTimer = new HashedWheelTimer(
+                        new ThreadFactoryBuilder().setNameFormat("BookieClientTimer-%d").build(),
+                        conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
+                        conf.getTimeoutTimerNumTicks());
+                this.ownTimer = true;
+            } else {
+                this.requestTimer = requestTimer;
+                this.ownTimer = false;
+            }
+
+            BookieAddressResolver bookieAddressResolver = conf.getBookieAddressResolverEnabled()
+                    ? new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient())
+                    : new BookieAddressResolverDisabled();
+            if (dnsResolver != null) {
+                dnsResolver.setBookieAddressResolver(bookieAddressResolver);
+            }
+            // initialize the ensemble placement
+            this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
+                    dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
+
+            this.bookieWatcher = new BookieWatcherImpl(
+                    conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver,
+                    this.statsLogger.scope(WATCHER_SCOPE));
+
+            // initialize bookie client
+            this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
+                    scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
+
+            if (conf.getDiskWeightBasedPlacementEnabled()) {
+                log.info("Weighted ledger placement enabled");
+                ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
+                        .setNameFormat("BKClientMetaDataPollScheduler-%d");
+                this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
+                this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
+                this.bookieWatcher.initialBlockingBookieRead();
+                this.bookieInfoReader.start();
+            } else {
+                log.info("Weighted ledger placement is not enabled");
+                this.bookieInfoScheduler = null;
+                this.bookieInfoReader = new BookieInfoReader(this, conf, null);
+                this.bookieWatcher.initialBlockingBookieRead();
+            }
+
+            // initialize ledger manager
+            try {
+                this.ledgerManagerFactory =
+                    this.metadataDriver.getLedgerManagerFactory();
+            } catch (MetadataException e) {
+                throw new IOException("Failed to initialize ledger manager factory", e);
+            }
+            this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
+            this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
+
+            this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
+            scheduleBookieHealthCheckIfEnabled(conf);
+            initialized = true;
+        } finally {
+            if (!initialized) {
+                try {
+                    close();
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn().exception(ie)
+                            .log("Interrupted while closing partially-initialized BookKeeper client");
+                } catch (Throwable t) {
+                    log.warn().exception(t)
+                            .log("Failed to close partially-initialized BookKeeper client");
+                }
+            }
         }
-
-        if (null == requestTimer) {
-            this.requestTimer = new HashedWheelTimer(
-                    new ThreadFactoryBuilder().setNameFormat("BookieClientTimer-%d").build(),
-                    conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
-                    conf.getTimeoutTimerNumTicks());
-            this.ownTimer = true;
-        } else {
-            this.requestTimer = requestTimer;
-            this.ownTimer = false;
-        }
-
-        BookieAddressResolver bookieAddressResolver = conf.getBookieAddressResolverEnabled()
-                ? new DefaultBookieAddressResolver(metadataDriver.getRegistrationClient())
-                : new BookieAddressResolverDisabled();
-        if (dnsResolver != null) {
-            dnsResolver.setBookieAddressResolver(bookieAddressResolver);
-        }
-        // initialize the ensemble placement
-        this.placementPolicy = initializeEnsemblePlacementPolicy(conf,
-                dnsResolver, this.requestTimer, this.featureProvider, this.statsLogger, bookieAddressResolver);
-
-        this.bookieWatcher = new BookieWatcherImpl(
-                conf, this.placementPolicy, metadataDriver.getRegistrationClient(), bookieAddressResolver,
-                this.statsLogger.scope(WATCHER_SCOPE));
-
-        // initialize bookie client
-        this.bookieClient = new BookieClientImpl(conf, this.eventLoopGroup, this.allocator, this.mainWorkerPool,
-                scheduler, rootStatsLogger, this.bookieWatcher.getBookieAddressResolver());
-
-        if (conf.getDiskWeightBasedPlacementEnabled()) {
-            log.info("Weighted ledger placement enabled");
-            ThreadFactoryBuilder tFBuilder = new ThreadFactoryBuilder()
-                    .setNameFormat("BKClientMetaDataPollScheduler-%d");
-            this.bookieInfoScheduler = Executors.newSingleThreadScheduledExecutor(tFBuilder.build());
-            this.bookieInfoReader = new BookieInfoReader(this, conf, this.bookieInfoScheduler);
-            this.bookieWatcher.initialBlockingBookieRead();
-            this.bookieInfoReader.start();
-        } else {
-            log.info("Weighted ledger placement is not enabled");
-            this.bookieInfoScheduler = null;
-            this.bookieInfoReader = new BookieInfoReader(this, conf, null);
-            this.bookieWatcher.initialBlockingBookieRead();
-        }
-
-        // initialize ledger manager
-        try {
-            this.ledgerManagerFactory =
-                this.metadataDriver.getLedgerManagerFactory();
-        } catch (MetadataException e) {
-            close();
-            throw new IOException("Failed to initialize ledger manager factory", e);
-        }
-        this.ledgerManager = new CleanupLedgerManager(ledgerManagerFactory.newLedgerManager());
-        this.ledgerIdGenerator = ledgerManagerFactory.newLedgerIdGenerator();
-
-        this.bookieQuarantineRatio = conf.getBookieQuarantineRatio();
-        scheduleBookieHealthCheckIfEnabled(conf);
     }
 
     /**
