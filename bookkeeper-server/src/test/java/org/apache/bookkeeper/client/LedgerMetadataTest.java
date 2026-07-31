@@ -19,9 +19,9 @@
 package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.google.common.collect.Lists;
 import java.util.Base64;
@@ -31,7 +31,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for ledger metadata.
@@ -41,7 +41,7 @@ public class LedgerMetadataTest {
     private static final byte[] passwd = "testPasswd".getBytes(UTF_8);
 
     @Test
-    public void testGetters() {
+    void getters() {
         List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
@@ -68,7 +68,7 @@ public class LedgerMetadataTest {
     }
 
     @Test
-    public void testToString() {
+    void testToString() {
         List<BookieId> ensemble = Lists.newArrayList(new BookieSocketAddress("192.0.2.1", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.2", 1234).toBookieId(),
                 new BookieSocketAddress("192.0.2.3", 1234).toBookieId());
@@ -80,8 +80,8 @@ public class LedgerMetadataTest {
                 .withId(100L)
                 .build();
 
-        assertTrue("toString should contain password value",
-                lm1.toString().contains(Base64.getEncoder().encodeToString(passwd)));
-        assertTrue("toSafeString should not contain password value", lm1.toSafeString().contains("OMITTED"));
+        assertTrue(lm1.toString().contains(Base64.getEncoder().encodeToString(passwd)),
+                "toString should contain password value");
+        assertTrue(lm1.toSafeString().contains("OMITTED"), "toSafeString should not contain password value");
     }
 }
