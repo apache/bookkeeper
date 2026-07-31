@@ -37,6 +37,7 @@ import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.Enumeration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -57,6 +58,7 @@ import org.apache.bookkeeper.client.BookKeeperTestClient;
 import org.apache.bookkeeper.client.ClientUtil;
 import org.apache.bookkeeper.client.EnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.LedgerEntry;
+import org.apache.bookkeeper.client.LedgerFragment;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicy;
@@ -1294,6 +1296,33 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         };
         testRepairedNotAdheringPlacementPolicyLedgerFragments(
                 RackawareEnsemblePlacementPolicy.class, checkReplicationStats);
+    }
+
+    /**
+     * Test the tryReadingFaultyEntries function, where firstEntryId > lastKnownEntryId
+     * and unableToReadEntriesForReplication not empty, there is a IllegalArgumentException.
+     * java.lang.IllegalArgumentException: inconsistent range
+     */
+    @Test
+    public void testTryReadingFaultyEntriesFromEmptyFragment() throws Exception {
+        LedgerHandle lh = bkc.createLedger(3, 3, BookKeeper.DigestType.CRC32,
+                TESTPASSWD);
+
+        HashSet<Integer> bookieIndexes = new HashSet<>();
+        bookieIndexes.add(0);
+        bookieIndexes.add(1);
+        bookieIndexes.add(2);
+        LedgerFragment fragment = new LedgerFragment(lh, 2, 1, bookieIndexes);
+
+        ReplicationWorker rw = new ReplicationWorker(baseConf);
+        rw.start();
+        rw.unableToReadEntriesForReplication.getUnchecked(lh.getId()).add(0L);
+
+        try {
+            rw.tryReadingFaultyEntries(lh, fragment);
+        } catch (IllegalArgumentException e) {
+            fail("should fail with exception: " + e);
+        }
     }
 
     private void testRepairedNotAdheringPlacementPolicyLedgerFragments(
