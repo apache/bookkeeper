@@ -22,9 +22,9 @@ Currently all the HTTP endpoints could be divided into these 5 components:
 * Description: Get heartbeat status for a specific bookie
 * Response: 
 
-| Code   | Description |
-|:-------|:------------|
-|200 | Successful operation |
+    | Code   | Description |
+    |:-------|:------------|
+    |200 | Successful operation |
 
 ## Config
 
@@ -234,6 +234,37 @@ Currently all the HTTP endpoints could be divided into these 5 components:
         }
         ```    
 
+### Endpoint: /api/v1/bookie/cluster_info
+1. Method: GET
+    * Description:  Get top-level info of this cluster.
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Response Body format:
+
+        ```json
+        {
+          "auditorElected" : false,
+          "auditorId" : "",
+          "clusterUnderReplicated" : false,
+          "ledgerReplicationEnabled" : true,
+          "totalBookiesCount" : 1,
+          "writableBookiesCount" : 1,
+          "readonlyBookiesCount" : 0,
+          "unavailableBookiesCount" : 0
+        }
+        ```    
+   `clusterUnderReplicated` is true if there is any underreplicated ledger known currently. 
+    Trigger audit to increase precision. Audit might not be possible if `auditorElected` is false or
+    `ledgerReplicationEnabled` is false.
+
+   `totalBookiesCount` = `writableBookiesCount` + `readonlyBookiesCount` + `unavailableBookiesCount`.
+
+
 ### Endpoint: /api/v1/bookie/last_log_mark
 1. Method: GET
     * Description:  Get the last log marker.
@@ -373,8 +404,91 @@ Currently all the HTTP endpoints could be divided into these 5 components:
         |503 | Bookie is not ready |
    * Body: &lt;empty&gt;
 
+### Endpoint: /api/v1/bookie/state/readonly
+1. Method: GET
+    * Description: Get bookie readOnly state.
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Body:
+       ```json
+       {
+          "readOnly" : false
+        }
+       ```
+
+2. Method: PUT
+    * Description: Set bookie readOnly state.
+    * Body:
+        ```json
+        {
+          "readOnly": true
+        }
+        ```
+    * Parameters:
+
+      | Name | Type | Required | Description |
+      |:-----|:-----|:---------|:------------|
+      | readOnly | Boolean | Yes |  Whether bookie readOnly state. |
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Body:
+        ```json
+        {
+          "readOnly": true
+        }
+        ```
+
 
 ## Auto recovery
+
+### Endpoint: /api/v1/autorecovery/status?enabled=&lt;boolean&gt;
+1. Method: GET
+    * Description:  Get autorecovery enable status with cluster.
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Response Body format:
+
+        ```json
+        {
+          "enabled": true
+        }
+        ```
+
+2. Method: PUT
+    * Description:  Set autorecovery enable status with cluster.
+    * Parameters:
+
+      | Name | Type | Required | Description                        |
+      |:-----|:---------|:-----------------------------------|:------------|
+      |enabled    | Boolean | Yes      | Whether autorecovery enable status |
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |404 | Not found |
+    * Body:
+        ```json
+        {
+          "enabled": true
+        }
+        ```
 
 ### Endpoint: /api/v1/autorecovery/bookie/
 1. Method: PUT
