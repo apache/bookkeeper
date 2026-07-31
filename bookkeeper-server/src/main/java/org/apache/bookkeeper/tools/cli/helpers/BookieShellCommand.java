@@ -44,6 +44,10 @@ public class BookieShellCommand<CliFlagsT extends CliFlags> implements Command {
 
     @Override
     public int runCmd(String[] args) throws Exception {
+        if (args.length <= 0) {
+            printUsage();
+            return -1;
+        }
         return bkCmd.apply(
             shellCmdName,
             conf,
