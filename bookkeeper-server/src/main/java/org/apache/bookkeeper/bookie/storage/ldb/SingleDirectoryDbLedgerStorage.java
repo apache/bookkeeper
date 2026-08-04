@@ -57,6 +57,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
+import org.apache.bookkeeper.bookie.EntryLogWriteException;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
@@ -132,6 +133,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
     private Checkpoint lastCheckpoint = Checkpoint.MIN;
+    private volatile LedgerDirsListener fatalErrorListener = new LedgerDirsListener() { };
 
     private final long writeCacheMaxSize;
     private final long readCacheMaxSize;
@@ -251,6 +253,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     }
     @Override
     public void setCheckpointer(Checkpointer checkpointer) { }
+
+    void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
+        if (fatalErrorListener != null) {
+            this.fatalErrorListener = fatalErrorListener;
+        }
+    }
 
     /**
      * Evict all the ledger info object that were not used recently.
@@ -530,6 +538,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         long startTime = System.nanoTime();
                         try {
                             flush();
+                        } catch (EntryLogWriteException e) {
+                            notifyFatalEntryLogWriteFailure(e);
                         } catch (IOException e) {
                             log.error().exception(e).log("Error during flush");
                         } finally {
@@ -562,6 +572,11 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         dbLedgerStorageStats.getRejectedWriteRequests().inc();
         recordFailedEvent(dbLedgerStorageStats.getThrottledWriteStats(), throttledStartTime);
         throw new OperationRejectedException();
+    }
+
+    private void notifyFatalEntryLogWriteFailure(EntryLogWriteException e) {
+        log.error("Fatal entry log write failure during background flush", e);
+        fatalErrorListener.fatalError();
     }
 
     @Override

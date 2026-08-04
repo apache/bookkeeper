@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
@@ -28,10 +29,15 @@ import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.EntryLogWriteException;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.TestBookieImpl;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -64,6 +70,8 @@ public class DbLedgerStorageWriteCacheTest {
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
+            private static final AtomicBoolean failNextFlushWithEntryLogWriteException = new AtomicBoolean(false);
+
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
                     LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
                     StatsLogger statsLogger,
@@ -75,29 +83,33 @@ public class DbLedgerStorageWriteCacheTest {
                       readAheadCacheBatchBytesSize);
             }
 
-          @Override
-          public void flush() throws IOException {
-              flushMutex.lock();
-              try {
-                  // Swap the write caches and block indefinitely to simulate a slow disk
-                  WriteCache tmp = writeCacheBeingFlushed;
-                  writeCacheBeingFlushed = writeCache;
-                  writeCache = tmp;
+            @Override
+            public void flush() throws IOException {
+                if (failNextFlushWithEntryLogWriteException.compareAndSet(true, false)) {
+                    throw new EntryLogWriteException("entry log flush failed", new IOException("injected"));
+                }
 
-                  // since the cache is switched, we can allow flush to be triggered
-                  hasFlushBeenTriggered.set(false);
+                flushMutex.lock();
+                try {
+                    // Swap the write caches and block indefinitely to simulate a slow disk
+                    WriteCache tmp = writeCacheBeingFlushed;
+                    writeCacheBeingFlushed = writeCache;
+                    writeCache = tmp;
 
-                  // Block the flushing thread
-                  try {
-                      Thread.sleep(1000);
-                  } catch (InterruptedException e) {
-                      Thread.currentThread().interrupt();
-                      return;
-                  }
-              } finally {
-                  flushMutex.unlock();
-              }
-          }
+                    // since the cache is switched, we can allow flush to be triggered
+                    hasFlushBeenTriggered.set(false);
+
+                    // Block the flushing thread
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
+                } finally {
+                    flushMutex.unlock();
+                }
+            }
         }
     }
 
@@ -116,6 +128,7 @@ public class DbLedgerStorageWriteCacheTest {
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
         conf.setProperty(DbLedgerStorage.MAX_THROTTLE_TIME_MILLIS, 1000);
         conf.setLedgerDirNames(new String[] { tmpDir.toString() });
+        MockedDbLedgerStorage.MockedSingleDirectoryDbLedgerStorage.failNextFlushWithEntryLogWriteException.set(false);
         Bookie bookie = new TestBookieImpl(conf);
 
         storage = (DbLedgerStorage) bookie.getLedgerStorage();
@@ -164,5 +177,37 @@ public class DbLedgerStorageWriteCacheTest {
         } catch (OperationRejectedException e) {
             // Expected
         }
+    }
+
+    @Test
+    public void writeCacheFullEntryLogWriteFailureTriggersFatalError() throws Exception {
+        storage.setMasterKey(4, "key".getBytes());
+        CountDownLatch fatalLatch = new CountDownLatch(1);
+        storage.setFatalErrorListener(new LedgerDirsListener() {
+            @Override
+            public void fatalError() {
+                fatalLatch.countDown();
+            }
+        });
+        MockedDbLedgerStorage.MockedSingleDirectoryDbLedgerStorage.failNextFlushWithEntryLogWriteException.set(true);
+
+        try {
+            for (int i = 0; i < 10; i++) {
+                storage.addEntry(newEntry(4, i));
+            }
+            fail("Should have thrown exception");
+        } catch (OperationRejectedException e) {
+            // Expected because the background flush failed before rotating the write cache.
+        }
+
+        assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
+    }
+
+    private static ByteBuf newEntry(long ledgerId, long entryId) {
+        ByteBuf entry = Unpooled.buffer(100 * 1024 + 2 * 8);
+        entry.writeLong(ledgerId);
+        entry.writeLong(entryId);
+        entry.writeZero(100 * 1024);
+        return entry;
     }
 }

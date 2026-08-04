@@ -223,6 +223,61 @@ public class SyncThreadTest {
         t.shutdown();
     }
 
+    @Test
+    public void testSyncThreadShutdownOnEntryLogWriteFailureDuringCheckpoint() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        final CountDownLatch fatalLatch = new CountDownLatch(1);
+        LedgerDirsListener listener = new LedgerDirsListener() {
+                @Override
+                public void fatalError() {
+                    fatalLatch.countDown();
+                }
+            };
+
+        LedgerStorage storage = new DummyLedgerStorage() {
+                @Override
+                public void checkpoint(Checkpoint checkpoint)
+                        throws IOException {
+                    throw new EntryLogWriteException(
+                            "entry log flush failed", new IOException("injected"));
+                }
+            };
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        t.startCheckpoint(Checkpoint.MAX);
+        assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
+        t.shutdown();
+    }
+
+    @Test
+    public void testSyncThreadShutdownOnEntryLogWriteFailureDuringFlush() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        final CountDownLatch fatalLatch = new CountDownLatch(1);
+        LedgerDirsListener listener = new LedgerDirsListener() {
+                @Override
+                public void fatalError() {
+                    fatalLatch.countDown();
+                }
+            };
+
+        LedgerStorage storage = new DummyLedgerStorage() {
+                @Override
+                public void flush() throws IOException {
+                    throw new EntryLogWriteException(
+                            "entry log flush failed", new IOException("injected"));
+                }
+            };
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        t.requestFlush().get(10, TimeUnit.SECONDS);
+        assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
+        t.shutdown();
+    }
+
     /**
      * Test that if the ledger storage throws
      * a disk full exception, the owner of the sync

@@ -146,6 +146,10 @@ class SyncThread implements Checkpointer {
             log.error().exception(e).log("No writeable ledger directories");
             dirsListener.allDisksFull(true);
             return;
+        } catch (EntryLogWriteException e) {
+            log.error("Fatal entry log write failure while flushing ledgers", e);
+            dirsListener.fatalError();
+            return;
         } catch (IOException e) {
             log.error().exception(e).log("Exception flushing ledgers");
             return;
@@ -176,6 +180,10 @@ class SyncThread implements Checkpointer {
         } catch (NoWritableLedgerDirException e) {
             log.error().exception(e).log("No writeable ledger directories");
             dirsListener.allDisksFull(true);
+            return;
+        } catch (EntryLogWriteException e) {
+            log.error("Fatal entry log write failure while checkpointing ledgers", e);
+            dirsListener.fatalError();
             return;
         } catch (IOException e) {
             log.error().exception(e).log("Exception flushing ledgers");
