@@ -32,6 +32,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
 
 public class FailOnFlushDbLedgerStorage extends DbLedgerStorage {
     private static final AtomicBoolean failNextFlushWithEntryLogWriteException = new AtomicBoolean(false);
+    private static final AtomicBoolean entryLogFlushFailed = new AtomicBoolean(false);
 
     public static void injectFailureOnNextFlush() {
         failNextFlushWithEntryLogWriteException.set(true);
@@ -39,6 +40,7 @@ public class FailOnFlushDbLedgerStorage extends DbLedgerStorage {
 
     public static void resetFailure() {
         failNextFlushWithEntryLogWriteException.set(false);
+        entryLogFlushFailed.set(false);
     }
 
     @Override
@@ -64,7 +66,8 @@ public class FailOnFlushDbLedgerStorage extends DbLedgerStorage {
 
         @Override
         public void flush() throws IOException {
-            if (failNextFlushWithEntryLogWriteException.compareAndSet(true, false)) {
+            if (entryLogFlushFailed.get() || failNextFlushWithEntryLogWriteException.compareAndSet(true, false)) {
+                entryLogFlushFailed.set(true);
                 throw new EntryLogWriteException("entry log flush failed", new IOException("injected"));
             }
             super.flush();

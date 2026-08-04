@@ -130,15 +130,18 @@ class SyncThread implements Checkpointer {
             long startTime = System.nanoTime();
             try {
                 flush();
+            } catch (EntryLogWriteException e) {
+                throw e;
             } catch (Throwable t) {
                 log.error().exception(t).log("Exception flushing ledgers");
             } finally {
                 syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
+            return null;
         });
     }
 
-    private void flush() {
+    private void flush() throws EntryLogWriteException {
         Checkpoint checkpoint = checkpointSource.newCheckpoint();
         try {
             ledgerStorage.flush();
@@ -149,7 +152,7 @@ class SyncThread implements Checkpointer {
         } catch (EntryLogWriteException e) {
             log.error("Fatal entry log write failure while flushing ledgers", e);
             dirsListener.fatalError();
-            return;
+            throw e;
         } catch (IOException e) {
             log.error().exception(e).log("Exception flushing ledgers");
             return;

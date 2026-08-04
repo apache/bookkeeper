@@ -59,11 +59,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.locks.Lock;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -1314,6 +1316,53 @@ public class DefaultEntryLogTest {
         assertEquals(1, ledgersMap.size(), "There should be only one entry in entryLogMetadata");
         assertEquals(0, Double.compare(1.0, entryLogMetadata.getUsage()), "Usage should be 1");
         assertEquals((entrySize + 4) * numOfEntries, ledgersMap.get(ledgerId), "Total size of entries");
+    }
+
+    @Test
+    public void testAppendLedgersMapFailureOnCacheRemovalTriggersFatalError() throws Exception {
+        int evictionPeriod = 1;
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setLedgerDirNames(createAndGetLedgerDirs(1));
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(evictionPeriod);
+        LedgerDirsManager ledgerDirsManager = new LedgerDirsManager(conf, conf.getLedgerDirs(),
+                new DiskChecker(conf.getDiskUsageThreshold(), conf.getDiskUsageWarnThreshold()));
+
+        CountDownLatch fatalLatch = new CountDownLatch(1);
+        ledgerDirsManager.addLedgerDirsListener(new LedgerDirsListener() {
+            @Override
+            public void fatalError() {
+                fatalLatch.countDown();
+            }
+        });
+
+        DefaultEntryLogger entryLogger = new DefaultEntryLogger(conf, ledgerDirsManager);
+        EntryLogManagerForEntryLogPerLedger entryLogManager = (EntryLogManagerForEntryLogPerLedger) entryLogger
+                .getEntryLogManager();
+
+        long ledgerId = 0L;
+        File tmpFile = File.createTempFile("entrylog", "failed-eviction");
+        tmpFile.deleteOnExit();
+        FileChannel fileChannel = new RandomAccessFile(tmpFile, "rw").getChannel();
+        BufferedLogChannel logChannel = new BufferedLogChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel, 10, 10,
+                0L, tmpFile, conf.getFlushIntervalInBytes());
+
+        try {
+            entryLogManager.setCurrentLogForLedgerAndAddToRotate(ledgerId, logChannel);
+
+            fileChannel.close();
+            Thread.sleep(evictionPeriod * 1000 + 100);
+            entryLogManager.doEntryLogMapCleanup();
+
+            assertTrue("Cache removal appendLedgersMap failure should trigger fatal error",
+                    fatalLatch.await(10, TimeUnit.SECONDS));
+            Assert.assertFalse("Failed log channel should not be added to rotated logs",
+                    entryLogManager.getRotatedLogChannels().contains(logChannel));
+        } finally {
+            logChannel.close();
+        }
     }
 
     /**

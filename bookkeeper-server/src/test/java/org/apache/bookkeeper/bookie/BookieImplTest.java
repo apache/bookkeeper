@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -161,6 +162,41 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
 
             assertTrue("Entry log flush failure should shut down the bookie",
                     shutdownLatch.await(10, TimeUnit.SECONDS));
+        } finally {
+            FailOnFlushDbLedgerStorage.resetFailure();
+            if (bookie.isRunning()) {
+                bookie.shutdown();
+            }
+        }
+    }
+
+    @Test
+    public void testStartupEntryLogFlushFailureStopsBookieBeforeRunning() throws Exception {
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setLedgerStorageClass(FailOnFlushDbLedgerStorage.class.getName());
+        conf.setJournalWriteData(false);
+        FailOnFlushDbLedgerStorage.resetFailure();
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf).build();
+        BookieImpl bookie = new TestBookieImpl(resources) {
+            @Override
+            int shutdown(int exitCode) {
+                int result = super.shutdown(exitCode);
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    shutdownLatch.countDown();
+                }
+                return result;
+            }
+        };
+
+        try {
+            FailOnFlushDbLedgerStorage.injectFailureOnNextFlush();
+            bookie.start();
+
+            assertTrue("Startup entry log flush failure should shut down the bookie",
+                    shutdownLatch.await(10, TimeUnit.SECONDS));
+            assertFalse("Bookie should not keep running after startup entry log flush failure", bookie.isRunning());
         } finally {
             FailOnFlushDbLedgerStorage.resetFailure();
             if (bookie.isRunning()) {
