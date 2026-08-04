@@ -571,6 +571,18 @@ public class DbLedgerStorage implements LedgerStorage {
     }
 
     @Override
+    public Map<String, Boolean> cancelEntryLocationCompaction(List<String> locations) {
+        HashMap<String, Boolean> cancelledCompactions = Maps.newHashMap();
+        for (SingleDirectoryDbLedgerStorage ledgerStorage : ledgerStorageList) {
+            String entryLocation = ledgerStorage.getEntryLocationDBPath().get(0);
+            if (locations.contains(entryLocation)) {
+                cancelledCompactions.put(entryLocation, ledgerStorage.cancelEntryLocationCompact());
+            }
+        }
+        return cancelledCompactions;
+    }
+
+    @Override
     public Map<String, Boolean> isEntryLocationCompacting(List<String> locations) {
         HashMap<String, Boolean> isCompacting = Maps.newHashMap();
         for (SingleDirectoryDbLedgerStorage ledgerStorage : ledgerStorageList) {

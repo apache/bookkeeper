@@ -272,6 +272,25 @@ public interface LedgerStorage {
         return false;
     }
 
+    /**
+     * Cancel running entry-location index compactions.
+     *
+     * @return whether a cancellation request was accepted for each entry-location database
+     */
+    default Map<String, Boolean> cancelEntryLocationCompaction() {
+        return cancelEntryLocationCompaction(getEntryLocationDBPath());
+    }
+
+    /**
+     * Cancel running entry-location index compactions for specified databases.
+     *
+     * @param locations entry-location database paths to cancel
+     * @return whether a cancellation request was accepted for each database
+     */
+    default Map<String, Boolean> cancelEntryLocationCompaction(List<String> locations) {
+        return Collections.emptyMap();
+    }
+
     default Map<String, Boolean> isEntryLocationCompacting(List<String> locations) {
         return Collections.emptyMap();
     }
