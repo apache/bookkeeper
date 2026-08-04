@@ -356,12 +356,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             // Append ledgers map at the end of entry log
             try {
                 logChannel.appendLedgersMap();
-            } catch (IOException e) {
-                log.error("Fatal entry log write failure while trying to appendLedgersMap "
-                        + "in cacheEntryRemoval callback", e);
-                for (LedgerDirsListener listener : ledgerDirsManager.getListeners()) {
-                    listener.fatalError();
-                }
+            } catch (IOException | RuntimeException e) {
+                notifyFatalEntryLogWriteFailure(
+                        "Fatal entry log write failure while trying to appendLedgersMap in cacheEntryRemoval callback",
+                        e);
                 return;
             }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());

@@ -56,6 +56,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLogWriteException;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
@@ -256,6 +257,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
         if (fatalErrorListener != null) {
             this.fatalErrorListener = fatalErrorListener;
+            if (entryLogger instanceof DefaultEntryLogger) {
+                ((DefaultEntryLogger) entryLogger).setFatalErrorListener(fatalErrorListener);
+            }
         }
     }
 
