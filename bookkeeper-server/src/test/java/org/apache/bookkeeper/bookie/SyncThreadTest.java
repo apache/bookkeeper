@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -273,7 +274,14 @@ public class SyncThreadTest {
                 }
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
-        t.requestFlush().get(10, TimeUnit.SECONDS);
+        Future<?> flush = t.requestFlush();
+        try {
+            flush.get(10, TimeUnit.SECONDS);
+            fail("Flush future should fail on entry log write failure");
+        } catch (ExecutionException e) {
+            assertTrue("Flush future should fail with entry log write failure",
+                    e.getCause() instanceof EntryLogWriteException);
+        }
         assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
