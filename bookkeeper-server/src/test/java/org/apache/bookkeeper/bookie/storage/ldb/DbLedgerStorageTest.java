@@ -35,7 +35,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BufferedChannel;
+import org.apache.bookkeeper.bookie.BufferedChannelBase;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSourceList;
@@ -53,6 +57,7 @@ import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -62,6 +67,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -265,6 +271,62 @@ public class DbLedgerStorageTest {
     }
 
     @Test
+    public void testPerLedgerEvictionFailurePropagatesToDbFatalErrorListener() throws Exception {
+        File perLedgerDir = File.createTempFile("bkTestPerLedger", ".dir");
+        perLedgerDir.delete();
+        perLedgerDir.mkdir();
+        File curDir = BookieImpl.getCurrentDirectory(perLedgerDir);
+        BookieImpl.checkDirectoryStructure(curDir);
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(1000);
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerDirNames(new String[] { perLedgerDir.toString() });
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(1);
+
+        BookieImpl bookie = new TestBookieImpl(conf);
+        DbLedgerStorage storage = (DbLedgerStorage) bookie.getLedgerStorage();
+        CountDownLatch fatalLatch = new CountDownLatch(1);
+        storage.setFatalErrorListener(new LedgerDirsListener() {
+            @Override
+            public void fatalError() {
+                fatalLatch.countDown();
+            }
+        });
+
+        try {
+            SingleDirectoryDbLedgerStorage singleDirStorage = storage.getLedgerStorageList().get(0);
+            DefaultEntryLogger entryLogger = (DefaultEntryLogger) singleDirStorage.getEntryLogger();
+            long ledgerId = 4L;
+            ByteBuf entry = Unpooled.buffer(1024);
+            try {
+                entry.writeLong(ledgerId);
+                entry.writeLong(1L);
+                entry.writeBytes("entry-1".getBytes());
+                entryLogger.addEntry(ledgerId, entry);
+            } finally {
+                ReferenceCountUtil.release(entry);
+            }
+
+            Object entryLogManager = getEntryLogManager(entryLogger);
+            BufferedChannel currentLogChannel = (BufferedChannel) invoke(entryLogManager,
+                    "getCurrentLogForLedger", new Class<?>[] { long.class }, ledgerId);
+            closeUnderlyingFileChannel(currentLogChannel);
+
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            invoke(entryLogManager, "doEntryLogMapCleanup", new Class<?>[] { });
+
+            assertTrue("Per-ledger eviction failure should propagate through DbLedgerStorage fatal listener",
+                    fatalLatch.await(10, TimeUnit.SECONDS));
+        } finally {
+            bookie.shutdown();
+            FileUtils.deleteDirectory(perLedgerDir);
+        }
+    }
+
+    @Test
     public void doubleDirectory() throws Exception {
         int gcWaitTime = 1000;
         File firstDir = new File(tmpDir, "dir1");
@@ -281,6 +343,25 @@ public class DbLedgerStorageTest {
         assertEquals(2, ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().size());
 
         bookie.shutdown();
+    }
+
+    private Object getEntryLogManager(DefaultEntryLogger entryLogger) throws Exception {
+        Method method = DefaultEntryLogger.class.getDeclaredMethod("getEntryLogManager");
+        method.setAccessible(true);
+        return method.invoke(entryLogger);
+    }
+
+    private void closeUnderlyingFileChannel(BufferedChannel channel) throws Exception {
+        Field fileChannelField = BufferedChannelBase.class.getDeclaredField("fileChannel");
+        fileChannelField.setAccessible(true);
+        ((FileChannel) fileChannelField.get(channel)).close();
+    }
+
+    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object... args)
+            throws Exception {
+        Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(target, args);
     }
 
     @Test

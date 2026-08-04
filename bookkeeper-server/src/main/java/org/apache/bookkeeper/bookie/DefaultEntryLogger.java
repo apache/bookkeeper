@@ -58,6 +58,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 import lombok.CustomLog;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -380,6 +381,10 @@ public class DefaultEntryLogger implements EntryLogger {
 
     EntryLogManager getEntryLogManager() {
         return entryLogManager;
+    }
+
+    public void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
+        entryLogManager.setFatalErrorListener(fatalErrorListener);
     }
 
     void addListener(EntryLogListener listener) {

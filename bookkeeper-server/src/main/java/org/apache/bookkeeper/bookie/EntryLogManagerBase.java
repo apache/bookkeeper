@@ -33,6 +33,7 @@ import java.util.List;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.EntryLogListener;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
@@ -42,6 +43,8 @@ abstract class EntryLogManagerBase implements EntryLogManager {
     final EntryLoggerAllocator entryLoggerAllocator;
     final LedgerDirsManager ledgerDirsManager;
     private final List<DefaultEntryLogger.EntryLogListener> listeners;
+    private static final LedgerDirsListener NOOP_FATAL_ERROR_LISTENER = new LedgerDirsListener() { };
+    private volatile LedgerDirsListener fatalErrorListener = NOOP_FATAL_ERROR_LISTENER;
     /**
      * The maximum size of a entry logger file.
      */
@@ -122,6 +125,21 @@ abstract class EntryLogManagerBase implements EntryLogManager {
 
     List<BufferedLogChannel> getRotatedLogChannels() {
         return rotatedLogChannels;
+    }
+
+    @Override
+    public void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
+        this.fatalErrorListener = fatalErrorListener != null ? fatalErrorListener : NOOP_FATAL_ERROR_LISTENER;
+    }
+
+    void notifyFatalEntryLogWriteFailure(String message, Throwable cause) {
+        log.error(message, cause);
+        fatalErrorListener.fatalError();
+        for (LedgerDirsListener listener : ledgerDirsManager.getListeners()) {
+            if (listener != fatalErrorListener) {
+                listener.fatalError();
+            }
+        }
     }
 
     @Override
