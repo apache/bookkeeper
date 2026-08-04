@@ -108,6 +108,21 @@ public class DbLedgerStorageTest {
         tmpDir.delete();
     }
 
+    private void addEntryAndFlush(long ledgerId, long entryId) throws Exception {
+        storage.setMasterKey(ledgerId, "key".getBytes());
+
+        ByteBuf entry = Unpooled.buffer(1024);
+        entry.writeLong(ledgerId);
+        entry.writeLong(entryId);
+        entry.writeLong(entryId - 1);
+        entry.writeBytes(("entry-" + entryId).getBytes());
+
+        storage.addEntry(entry);
+        storage.flush();
+
+        assertFalse(storage.isFlushRequired());
+    }
+
     @Test
     public void simple() throws Exception {
         assertEquals(false, storage.ledgerExists(3));
@@ -230,6 +245,57 @@ public class DbLedgerStorageTest {
         } catch (Bookie.NoLedgerException e) {
             // ok
         }
+    }
+
+    @Test
+    public void testFlushPersistsFencedMetadataWithoutPendingEntries() throws Exception {
+        long ledgerId = 1;
+        addEntryAndFlush(ledgerId, 0);
+
+        assertTrue(storage.setFenced(ledgerId));
+        assertFalse(storage.isFlushRequired());
+
+        storage.flush();
+        storage.shutdown();
+
+        Bookie restartedBookie = new TestBookieImpl(conf);
+        DbLedgerStorage restartedStorage = (DbLedgerStorage) restartedBookie.getLedgerStorage();
+        try {
+            assertTrue(restartedStorage.isFenced(ledgerId));
+        } finally {
+            restartedStorage.shutdown();
+        }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
+    }
+
+    @Test
+    public void testFlushPersistsExplicitLacMetadataWithoutPendingEntries() throws Exception {
+        long ledgerId = 1;
+        addEntryAndFlush(ledgerId, 0);
+
+        ByteBuf explicitLac = Unpooled.buffer(Long.BYTES * 2);
+        explicitLac.writeLong(ledgerId);
+        explicitLac.writeLong(0);
+        storage.setExplicitLac(ledgerId, explicitLac);
+        assertFalse(storage.isFlushRequired());
+
+        storage.flush();
+        storage.shutdown();
+
+        Bookie restartedBookie = new TestBookieImpl(conf);
+        DbLedgerStorage restartedStorage = (DbLedgerStorage) restartedBookie.getLedgerStorage();
+        ByteBuf recoveredExplicitLac = null;
+        try {
+            recoveredExplicitLac = restartedStorage.getExplicitLac(ledgerId);
+            Assert.assertNotNull(recoveredExplicitLac);
+            assertEquals(0, ByteBufUtil.compare(explicitLac, recoveredExplicitLac));
+        } finally {
+            ReferenceCountUtil.release(recoveredExplicitLac);
+            restartedStorage.shutdown();
+        }
+
+        storage = (DbLedgerStorage) new TestBookieImpl(conf).getLedgerStorage();
     }
 
     @Test
