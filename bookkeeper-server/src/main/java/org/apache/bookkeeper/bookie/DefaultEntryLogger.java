@@ -137,6 +137,7 @@ public class DefaultEntryLogger implements EntryLogger {
          * Updates the entry log file header with the offset and size of the map.
          */
         void appendLedgersMap() throws IOException {
+            checkWritable();
 
             long ledgerMapOffset = this.position();
 
@@ -205,7 +206,23 @@ public class DefaultEntryLogger implements EntryLogger {
             mapInfo.putLong(ledgerMapOffset);
             mapInfo.putInt(numberOfLedgers);
             mapInfo.flip();
-            this.fileChannel.write(mapInfo, LEDGERS_MAP_OFFSET_POSITION);
+            try {
+                writeFully(this.fileChannel, mapInfo, LEDGERS_MAP_OFFSET_POSITION);
+            } catch (IOException e) {
+                markWriteFailure(e);
+                throw e;
+            }
+        }
+
+        private static void writeFully(FileChannel fileChannel, ByteBuffer buffer, long position) throws IOException {
+            long writePosition = position;
+            while (buffer.hasRemaining()) {
+                int written = fileChannel.write(buffer, writePosition);
+                if (written <= 0) {
+                    throw new IOException("Unable to make progress while updating entry log header");
+                }
+                writePosition += written;
+            }
         }
     }
 
