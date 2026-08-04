@@ -294,10 +294,14 @@ public class DbLedgerStorageTest {
             DefaultEntryLogger entryLogger = (DefaultEntryLogger) singleDirStorage.getEntryLogger();
             long ledgerId = 4L;
             ByteBuf entry = Unpooled.buffer(1024);
-            entry.writeLong(ledgerId);
-            entry.writeLong(1L);
-            entry.writeBytes("entry-1".getBytes());
-            entryLogger.addEntry(ledgerId, entry);
+            try {
+                entry.writeLong(ledgerId);
+                entry.writeLong(1L);
+                entry.writeBytes("entry-1".getBytes());
+                entryLogger.addEntry(ledgerId, entry);
+            } finally {
+                ReferenceCountUtil.release(entry);
+            }
 
             Object entryLogManager = getEntryLogManager(entryLogger);
             BufferedChannel currentLogChannel = (BufferedChannel) invoke(entryLogManager,
