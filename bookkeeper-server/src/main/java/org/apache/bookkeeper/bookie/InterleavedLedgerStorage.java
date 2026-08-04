@@ -467,6 +467,8 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             } else {
                 entryLogger.flush();
             }
+        } catch (EntryLogWriteException e) {
+            throw e;
         } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
             throw e;
         } catch (IOException ioe) {

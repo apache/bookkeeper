@@ -317,6 +317,8 @@ public class SortedLedgerStorage
                     if (interleavedLedgerStorage.getEntryLogger().commitEntryMemTableFlush()) {
                         interleavedLedgerStorage.checkpointer.startCheckpoint(cp);
                     }
+                } catch (EntryLogWriteException e) {
+                    fatalEntryLogWriteFailure(e);
                 } catch (Exception e) {
                     stateManager.transitionToReadOnlyMode();
                     LOG.error("Exception thrown while flushing skip list cache.", e);
@@ -331,6 +333,18 @@ public class SortedLedgerStorage
         // we don't trigger any checkpoint logic when an entry log file is rotated, because entry log file rotation
         // can happen because compaction. in a sorted ledger storage, checkpoint should happen after the data is
         // flushed to the entry log file.
+    }
+
+    private void fatalEntryLogWriteFailure(EntryLogWriteException e) {
+        LOG.error("Fatal entry log write failure while flushing skip list cache.", e);
+        if (stateManager instanceof BookieStateManager) {
+            StateManager.ShutdownHandler shutdownHandler = ((BookieStateManager) stateManager).getShutdownHandler();
+            if (shutdownHandler != null) {
+                shutdownHandler.shutdown(ExitCode.BOOKIE_EXCEPTION);
+                return;
+            }
+        }
+        stateManager.transitionToReadOnlyMode();
     }
 
     BookieStateManager getStateManager(){

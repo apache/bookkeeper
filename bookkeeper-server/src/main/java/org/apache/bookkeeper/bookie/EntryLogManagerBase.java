@@ -73,13 +73,20 @@ abstract class EntryLogManagerBase implements EntryLogManager {
         ByteBuf sizeBuffer = sizeBufferForAdd.get();
         sizeBuffer.clear();
         sizeBuffer.writeInt(entry.readableBytes());
-        logChannel.write(sizeBuffer);
+        try {
+            logChannel.write(sizeBuffer);
 
-        long pos = logChannel.position();
-        logChannel.write(entry);
-        logChannel.registerWrittenEntry(ledger, entrySize);
+            long pos = logChannel.position();
+            logChannel.write(entry);
+            logChannel.registerWrittenEntry(ledger, entrySize);
 
-        return (logChannel.getLogId() << 32L) | pos;
+            return (logChannel.getLogId() << 32L) | pos;
+        } catch (EntryLogWriteException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new EntryLogWriteException(
+                    "Failed to write entry to entry log " + logChannel.getLogId() + " for ledger " + ledger, e);
+        }
     }
 
     boolean reachEntryLogLimit(BufferedLogChannel logChannel, long size) {
@@ -125,10 +132,30 @@ abstract class EntryLogManagerBase implements EntryLogManager {
 
     void flushLogChannel(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
         if (logChannel != null) {
-            logChannel.flushAndForceWrite(forceMetadata);
+            flushAndForceWrite(logChannel, forceMetadata);
             if (log.isDebugEnabled()) {
                 log.debug("Flush and sync current entry logger {}", logChannel.getLogId());
             }
+        }
+    }
+
+    void flushAndForceWrite(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
+        try {
+            logChannel.flushAndForceWrite(forceMetadata);
+        } catch (EntryLogWriteException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new EntryLogWriteException("Failed to flush entry log " + logChannel.getLogId(), e);
+        }
+    }
+
+    void flushAndForceWriteIfRegularFlush(BufferedLogChannel logChannel, boolean forceMetadata) throws IOException {
+        try {
+            logChannel.flushAndForceWriteIfRegularFlush(forceMetadata);
+        } catch (EntryLogWriteException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new EntryLogWriteException("Failed to flush entry log " + logChannel.getLogId(), e);
         }
     }
 
@@ -155,12 +182,27 @@ abstract class EntryLogManagerBase implements EntryLogManager {
         if (null != logChannel) {
 
             // flush the internal buffer back to filesystem but not sync disk
-            logChannel.flush();
+            try {
+                logChannel.flush();
 
-            // Append ledgers map at the end of entry log
-            logChannel.appendLedgersMap();
+                // Append ledgers map at the end of entry log
+                logChannel.appendLedgersMap();
+            } catch (EntryLogWriteException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new EntryLogWriteException(
+                        "Failed to rotate entry log " + logChannel.getLogId() + " for ledger " + ledgerId, e);
+            }
 
-            BufferedLogChannel newLogChannel = entryLoggerAllocator.createNewLog(selectDirForNextEntryLog());
+            File dirForNextEntryLog = selectDirForNextEntryLog();
+            BufferedLogChannel newLogChannel;
+            try {
+                newLogChannel = entryLoggerAllocator.createNewLog(dirForNextEntryLog);
+            } catch (EntryLogWriteException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new EntryLogWriteException("Failed to create a new entry log for ledger " + ledgerId, e);
+            }
             setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
             log.info("Flushing entry logger {} back to filesystem, pending for syncing entry loggers : {}.",
                     logChannel.getLogId(), rotatedLogChannels);
@@ -168,8 +210,16 @@ abstract class EntryLogManagerBase implements EntryLogManager {
                 listener.onRotateEntryLog();
             }
         } else {
-            setCurrentLogForLedgerAndAddToRotate(ledgerId,
-                    entryLoggerAllocator.createNewLog(selectDirForNextEntryLog()));
+            File dirForNextEntryLog = selectDirForNextEntryLog();
+            BufferedLogChannel newLogChannel;
+            try {
+                newLogChannel = entryLoggerAllocator.createNewLog(dirForNextEntryLog);
+            } catch (EntryLogWriteException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new EntryLogWriteException("Failed to create a new entry log for ledger " + ledgerId, e);
+            }
+            setCurrentLogForLedgerAndAddToRotate(ledgerId, newLogChannel);
         }
     }
 

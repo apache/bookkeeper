@@ -168,19 +168,31 @@ class EntryLoggerAllocator {
 
         BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
                 conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
-        logfileHeader.readerIndex(0);
-        logChannel.write(logfileHeader);
+        boolean success = false;
+        try {
+            logfileHeader.readerIndex(0);
+            logChannel.write(logfileHeader);
 
-        for (File f : ledgersDirs) {
-            setLastLogId(f, preallocatedLogId);
+            for (File f : ledgersDirs) {
+                setLastLogId(f, preallocatedLogId);
+            }
+
+            if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
+                recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
+            }
+
+            log.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
+            success = true;
+            return logChannel;
+        } finally {
+            if (!success) {
+                try {
+                    logChannel.close();
+                } catch (IOException closeError) {
+                    log.warn("Failed to close entry log file {} after allocation failure", newLogFile, closeError);
+                }
+            }
         }
-
-        if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
-            recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
-        }
-
-        log.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
-        return logChannel;
     }
 
 
