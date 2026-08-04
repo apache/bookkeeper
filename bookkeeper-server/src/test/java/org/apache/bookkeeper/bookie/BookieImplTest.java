@@ -27,29 +27,24 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
-import org.apache.bookkeeper.bookie.storage.ldb.SingleDirectoryDbLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.FailOnFlushDbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
-import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
-import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.PortManager;
@@ -144,7 +139,7 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         conf.setJournalWriteData(false);
         conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
         conf.setProperty("dbStorage_maxThrottleTimeMs", 1000);
-        FailOnFlushDbLedgerStorage.failNextFlushWithEntryLogWriteException.set(false);
+        FailOnFlushDbLedgerStorage.resetFailure();
 
         CountDownLatch shutdownLatch = new CountDownLatch(1);
         TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf).build();
@@ -161,13 +156,13 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
 
         try {
             bookie.start();
-            FailOnFlushDbLedgerStorage.failNextFlushWithEntryLogWriteException.set(true);
+            FailOnFlushDbLedgerStorage.injectFailureOnNextFlush();
             writeUntilCacheFlushIsTriggered(bookie, 10L, "masterKey".getBytes(StandardCharsets.UTF_8));
 
             assertTrue("Entry log flush failure should shut down the bookie",
                     shutdownLatch.await(10, TimeUnit.SECONDS));
         } finally {
-            FailOnFlushDbLedgerStorage.failNextFlushWithEntryLogWriteException.set(false);
+            FailOnFlushDbLedgerStorage.resetFailure();
             if (bookie.isRunning()) {
                 bookie.shutdown();
             }
@@ -260,37 +255,4 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         return bb;
     }
 
-    public static class FailOnFlushDbLedgerStorage extends DbLedgerStorage {
-        private static final AtomicBoolean failNextFlushWithEntryLogWriteException = new AtomicBoolean(false);
-
-        @Override
-        protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
-                LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-                EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
-                int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
-                throws IOException {
-            return new FailOnFlushSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager,
-                    indexDirsManager, entryLogger, statsLogger, allocator, writeCacheSize, readCacheSize,
-                    readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
-        }
-    }
-
-    private static class FailOnFlushSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
-        FailOnFlushSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
-                StatsLogger statsLogger, ByteBufAllocator allocator, long writeCacheSize, long readCacheSize,
-                int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
-                throws IOException {
-            super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger, statsLogger, allocator,
-                    writeCacheSize, readCacheSize, readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
-        }
-
-        @Override
-        public void flush() throws IOException {
-            if (FailOnFlushDbLedgerStorage.failNextFlushWithEntryLogWriteException.compareAndSet(true, false)) {
-                throw new EntryLogWriteException("entry log flush failed", new IOException("injected"));
-            }
-            super.flush();
-        }
-    }
 }
