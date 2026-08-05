@@ -147,6 +147,20 @@ public class SyncThreadTest {
         assertFalse("Shouldn't have failed anywhere", failedSomewhere.get());
     }
 
+    @Test
+    public void testSyncThreadShutdownIsIdempotent() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        LedgerDirsListener listener = new LedgerDirsListener() {};
+        LedgerStorage storage = new DummyLedgerStorage();
+
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        t.shutdown();
+        t.shutdown();
+    }
+
     /**
      * Test that sync thread suspension works.
      * i.e. when we suspend the syncthread, nothing

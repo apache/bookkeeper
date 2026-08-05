@@ -506,6 +506,19 @@ public class DefaultEntryLogTest {
         assertNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
     }
 
+    @Test
+    public void testCloseIsIdempotentWithPreAllocation() throws Exception {
+        entryLogger.close();
+
+        conf.setEntryLogFilePreAllocationEnabled(true);
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
+        ((EntryLogManagerBase) entryLogger.getEntryLogManager()).createNewLog(DefaultEntryLogger.UNASSIGNED_LEDGERID);
+        assertNotNull(entryLogger.getEntryLoggerAllocator().getPreallocationFuture());
+
+        entryLogger.close();
+        entryLogger.close();
+    }
+
     /**
      * Test the getEntryLogsSet() method.
      */
