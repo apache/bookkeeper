@@ -489,6 +489,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
         ledgerStorage.setStateManager(stateManager);
         ledgerStorage.setCheckpointSource(checkpointSource);
         ledgerStorage.setCheckpointer(syncThread);
+        if (isDbLedgerStorage) {
+            ((DbLedgerStorage) ledgerStorage).setFatalErrorListener(getLedgerDirsListener());
+        }
         ledgerStorage.registerLedgerDeletionListener(ledgerDeletionListener);
         handles = new HandleFactoryImpl(ledgerStorage);
 
@@ -979,6 +982,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx, masterKey);
             }
             success = true;
+        } catch (EntryLogWriteException e) {
+            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+            throw e;
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
@@ -1073,6 +1079,9 @@ public class BookieImpl extends BookieCriticalThread implements Bookie {
                 addEntryInternal(handle, entry, ackBeforeSync, cb, ctx, masterKey);
             }
             success = true;
+        } catch (EntryLogWriteException e) {
+            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+            throw e;
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);

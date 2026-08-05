@@ -26,6 +26,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
@@ -130,15 +131,18 @@ class SyncThread implements Checkpointer {
             long startTime = System.nanoTime();
             try {
                 flush();
+            } catch (EntryLogWriteException e) {
+                throw e;
             } catch (Throwable t) {
                 log.error("Exception flushing ledgers ", t);
             } finally {
                 syncExecutorTime.addLatency(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
             }
+            return null;
         });
     }
 
-    private void flush() {
+    private void flush() throws EntryLogWriteException {
         Checkpoint checkpoint = checkpointSource.newCheckpoint();
         try {
             ledgerStorage.flush();
@@ -146,6 +150,10 @@ class SyncThread implements Checkpointer {
             log.error("No writeable ledger directories", e);
             dirsListener.allDisksFull(true);
             return;
+        } catch (EntryLogWriteException e) {
+            log.error("Fatal entry log write failure while flushing ledgers", e);
+            dirsListener.fatalError();
+            throw e;
         } catch (IOException e) {
             log.error("Exception flushing ledgers", e);
             return;
@@ -176,6 +184,10 @@ class SyncThread implements Checkpointer {
         } catch (NoWritableLedgerDirException e) {
             log.error("No writeable ledger directories", e);
             dirsListener.allDisksFull(true);
+            return;
+        } catch (EntryLogWriteException e) {
+            log.error("Fatal entry log write failure while checkpointing ledgers", e);
+            dirsListener.fatalError();
             return;
         } catch (IOException e) {
             log.error("Exception flushing ledgers", e);
@@ -224,7 +236,13 @@ class SyncThread implements Checkpointer {
     // shutdown sync thread
     void shutdown() throws InterruptedException {
         log.info("Shutting down SyncThread");
-        requestFlush();
+        if (!executor.isShutdown()) {
+            try {
+                requestFlush();
+            } catch (RejectedExecutionException e) {
+                log.debug("Skipping final flush because SyncThread executor is shutting down", e);
+            }
+        }
 
         executor.shutdown();
         long start = System.currentTimeMillis();

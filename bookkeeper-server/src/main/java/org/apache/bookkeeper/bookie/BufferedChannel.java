@@ -71,6 +71,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     protected final AtomicLong unpersistedBytes;
 
     private boolean closed = false;
+    private volatile IOException writeFailure;
 
     // make constructor to be public for unit test
     public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity) throws IOException {
@@ -118,25 +119,31 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         int copied = 0;
         boolean shouldForceWrite = false;
         synchronized (this) {
+            checkWritable();
             int len = src.readableBytes();
-            while (copied < len) {
-                int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
-                writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
-                copied += bytesToCopy;
+            try {
+                while (copied < len) {
+                    int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
+                    writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
+                    copied += bytesToCopy;
 
-                // if we have run out of buffer space, we should flush to the
-                // file
-                if (!writeBuffer.isWritable()) {
-                    flush();
+                    // if we have run out of buffer space, we should flush to the
+                    // file
+                    if (!writeBuffer.isWritable()) {
+                        flush();
+                    }
                 }
-            }
-            position += copied;
-            if (doRegularFlushes) {
-                unpersistedBytes.addAndGet(copied);
-                if (unpersistedBytes.get() >= unpersistedBytesBound) {
-                    flush();
-                    shouldForceWrite = true;
+                position += copied;
+                if (doRegularFlushes) {
+                    unpersistedBytes.addAndGet(copied);
+                    if (unpersistedBytes.get() >= unpersistedBytesBound) {
+                        flush();
+                        shouldForceWrite = true;
+                    }
                 }
+            } catch (IOException e) {
+                markWriteFailure(e);
+                throw e;
             }
         }
         if (shouldForceWrite) {
@@ -170,6 +177,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public void flushAndForceWrite(boolean forceMetadata) throws IOException {
+        checkWritable();
         flush();
         forceWrite(forceMetadata);
     }
@@ -184,6 +192,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public void flushAndForceWriteIfRegularFlush(boolean forceMetadata) throws IOException {
+        checkWritable();
         if (doRegularFlushes) {
             flushAndForceWrite(forceMetadata);
         }
@@ -196,10 +205,19 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException if the write fails.
      */
     public synchronized void flush() throws IOException {
+        checkWritable();
         ByteBuffer toWrite = writeBuffer.internalNioBuffer(0, writeBuffer.writerIndex());
-        do {
-            fileChannel.write(toWrite);
-        } while (toWrite.hasRemaining());
+        try {
+            while (toWrite.hasRemaining()) {
+                int written = fileChannel.write(toWrite);
+                if (written <= 0) {
+                    throw new IOException("Unable to make progress while flushing buffered channel");
+                }
+            }
+        } catch (IOException e) {
+            markWriteFailure(e);
+            throw e;
+        }
         writeBuffer.clear();
         writeBufferStartPosition.set(fileChannel.position());
     }
@@ -211,6 +229,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public long forceWrite(boolean forceMetadata) throws IOException {
+        checkWritable();
         // This is the point up to which we had flushed to the file system page cache
         // before issuing this force write hence is guaranteed to be made durable by
         // the force write, any flush that happens after this may or may
@@ -237,7 +256,12 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
             }
         }
 
-        fileChannel.force(forceMetadata);
+        try {
+            fileChannel.force(forceMetadata);
+        } catch (IOException e) {
+            markWriteFailure(e);
+            throw e;
+        }
         return positionForceWrite;
     }
 
@@ -294,5 +318,18 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     long getUnpersistedBytes() {
         return unpersistedBytes.get();
+    }
+
+    final void checkWritable() throws IOException {
+        IOException failure = writeFailure;
+        if (failure != null) {
+            throw new IOException("BufferedChannel is in failed state", failure);
+        }
+    }
+
+    final void markWriteFailure(IOException e) {
+        if (writeFailure == null) {
+            writeFailure = e;
+        }
     }
 }
