@@ -126,6 +126,45 @@ public class BufferedChannelTest {
     }
 
     @Test
+    public void testPartialFlushFailurePoisonsBufferedChannelForTwoBufferWrite() throws Exception {
+        File newLogFile = File.createTempFile("test", "log");
+        newLogFile.deleteOnExit();
+        FileChannel delegate = new RandomAccessFile(newLogFile, "rw").getChannel();
+        PartialFailingFileChannel fileChannel = new PartialFailingFileChannel(delegate, 8);
+
+        BufferedChannel logChannel = new BufferedChannel(UnpooledByteBufAllocator.DEFAULT, fileChannel,
+                16, INTERNAL_BUFFER_READ_CAPACITY, 0);
+
+        try {
+            logChannel.write(Unpooled.wrappedBuffer(new byte[8]), Unpooled.wrappedBuffer(new byte[8]));
+            Assert.fail("Expected the internal flush to fail");
+        } catch (IOException expected) {
+            // Expected.
+        }
+
+        Assert.assertEquals(0, logChannel.position());
+        Assert.assertEquals(8, fileChannel.position());
+
+        try {
+            logChannel.write(Unpooled.wrappedBuffer(new byte[1]), Unpooled.wrappedBuffer(new byte[1]));
+            Assert.fail("Expected writes after a partial flush failure to fail");
+        } catch (IOException expected) {
+            // Expected.
+        }
+        try {
+            logChannel.flush();
+            Assert.fail("Expected flush after a partial flush failure to fail");
+        } catch (IOException expected) {
+            // Expected.
+        }
+
+        Assert.assertEquals(0, logChannel.position());
+        Assert.assertEquals(8, fileChannel.position());
+
+        logChannel.close();
+    }
+
+    @Test
     public void testPartialFlushFailurePreventsLedgersMapHeaderUpdate() throws Exception {
         File newLogFile = File.createTempFile("test", "log");
         newLogFile.deleteOnExit();

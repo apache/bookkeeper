@@ -79,6 +79,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.mutable.MutableLong;
@@ -354,25 +355,47 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void shutdown() throws InterruptedException {
+        InterruptedException interrupted = null;
+
         try {
             flush();
+        } catch (IOException e) {
+            log.error().exception(e).log("Error flushing db storage during shutdown");
+        } finally {
+            try {
+                gcThread.shutdown();
+            } catch (InterruptedException e) {
+                interrupted = e;
+                Thread.currentThread().interrupt();
+            }
 
-            gcThread.shutdown();
-            entryLogger.close();
+            try {
+                entryLogger.close();
+            } catch (IOException e) {
+                log.error().exception(e).log("Error closing entry logger during shutdown");
+            }
 
             cleanupExecutor.shutdown();
-            cleanupExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            try {
+                cleanupExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                if (interrupted == null) {
+                    interrupted = e;
+                }
+                Thread.currentThread().interrupt();
+            }
 
-            ledgerIndex.close();
-            entryLocationIndex.close();
+            IOUtils.close(log, ledgerIndex);
+            IOUtils.close(log, entryLocationIndex);
 
             writeCache.close();
             writeCacheBeingFlushed.close();
             readCache.close();
             executor.shutdown();
+        }
 
-        } catch (IOException e) {
-            log.error().exception(e).log("Error closing db storage");
+        if (interrupted != null) {
+            throw interrupted;
         }
     }
 
