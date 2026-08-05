@@ -150,7 +150,7 @@ class SyncThread implements Checkpointer {
             dirsListener.allDisksFull(true);
             return;
         } catch (EntryLogWriteException e) {
-            log.error("Fatal entry log write failure while flushing ledgers", e);
+            log.error().exception(e).log("Fatal entry log write failure while flushing ledgers");
             dirsListener.fatalError();
             throw e;
         } catch (IOException e) {
@@ -185,7 +185,7 @@ class SyncThread implements Checkpointer {
             dirsListener.allDisksFull(true);
             return;
         } catch (EntryLogWriteException e) {
-            log.error("Fatal entry log write failure while checkpointing ledgers", e);
+            log.error().exception(e).log("Fatal entry log write failure while checkpointing ledgers");
             dirsListener.fatalError();
             return;
         } catch (IOException e) {

@@ -133,7 +133,7 @@ abstract class EntryLogManagerBase implements EntryLogManager {
     }
 
     void notifyFatalEntryLogWriteFailure(String message, Throwable cause) {
-        log.error(message, cause);
+        log.error().exception(cause).log(message);
         fatalErrorListener.fatalError();
         for (LedgerDirsListener listener : ledgerDirsManager.getListeners()) {
             if (listener != fatalErrorListener) {

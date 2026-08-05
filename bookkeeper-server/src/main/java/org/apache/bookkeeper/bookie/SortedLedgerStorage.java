@@ -340,7 +340,7 @@ public class SortedLedgerStorage
     }
 
     private void fatalEntryLogWriteFailure(EntryLogWriteException e) {
-        LOG.error("Fatal entry log write failure while flushing skip list cache.", e);
+        log.error().exception(e).log("Fatal entry log write failure while flushing skip list cache.");
         if (stateManager instanceof BookieStateManager) {
             StateManager.ShutdownHandler shutdownHandler = ((BookieStateManager) stateManager).getShutdownHandler();
             if (shutdownHandler != null) {
