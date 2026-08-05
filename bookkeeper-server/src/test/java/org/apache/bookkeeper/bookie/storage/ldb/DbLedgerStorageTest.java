@@ -35,7 +35,9 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
@@ -46,6 +48,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
+import org.apache.bookkeeper.bookie.BufferedChannel;
+import org.apache.bookkeeper.bookie.BufferedChannelBase;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSourceList;
@@ -53,6 +57,7 @@ import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -62,6 +67,7 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -164,7 +170,7 @@ public class DbLedgerStorageTest {
         // Read from write cache
         assertTrue(storage.entryExists(4, 1));
         ByteBuf res = storage.getEntry(4, 1);
-        assertEquals(entry, res);
+        assertByteBufEqualsAndRelease(entry, res);
 
         storage.flush();
 
@@ -173,7 +179,7 @@ public class DbLedgerStorageTest {
         // Read from db
         assertTrue(storage.entryExists(4, 1));
         res = storage.getEntry(4, 1);
-        assertEquals(entry, res);
+        assertByteBufEqualsAndRelease(entry, res);
 
         try {
             storage.getEntry(4, 2);
@@ -192,7 +198,7 @@ public class DbLedgerStorageTest {
 
         // Read last entry in ledger
         res = storage.getEntry(4, BookieProtocol.LAST_ADD_CONFIRMED);
-        assertEquals(entry2, res);
+        assertByteBufEqualsAndRelease(entry2, res);
 
         // Read last add confirmed in ledger
         assertEquals(1L, storage.getLastAddConfirmed(4));
@@ -212,7 +218,7 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry4);
 
         res = storage.getEntry(4, 4);
-        assertEquals(entry4, res);
+        assertByteBufEqualsAndRelease(entry4, res);
 
         assertEquals(3, storage.getLastAddConfirmed(4));
 
@@ -261,7 +267,63 @@ public class DbLedgerStorageTest {
         ByteBuf res = storage.getEntry(4, 3);
         System.out.println("res:       " + ByteBufUtil.hexDump(res));
         System.out.println("newEntry3: " + ByteBufUtil.hexDump(newEntry3));
-        assertEquals(newEntry3, res);
+        assertByteBufEqualsAndRelease(newEntry3, res);
+    }
+
+    @Test
+    public void testPerLedgerEvictionFailurePropagatesToDbFatalErrorListener() throws Exception {
+        File perLedgerDir = File.createTempFile("bkTestPerLedger", ".dir");
+        perLedgerDir.delete();
+        perLedgerDir.mkdir();
+        File curDir = BookieImpl.getCurrentDirectory(perLedgerDir);
+        BookieImpl.checkDirectoryStructure(curDir);
+
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setGcWaitTime(1000);
+        conf.setLedgerStorageClass(DbLedgerStorage.class.getName());
+        conf.setLedgerDirNames(new String[] { perLedgerDir.toString() });
+        conf.setEntryLogFilePreAllocationEnabled(false);
+        conf.setEntryLogPerLedgerEnabled(true);
+        conf.setEntrylogMapAccessExpiryTimeInSeconds(1);
+
+        BookieImpl bookie = new TestBookieImpl(conf);
+        DbLedgerStorage storage = (DbLedgerStorage) bookie.getLedgerStorage();
+        CountDownLatch fatalLatch = new CountDownLatch(1);
+        storage.setFatalErrorListener(new LedgerDirsListener() {
+            @Override
+            public void fatalError() {
+                fatalLatch.countDown();
+            }
+        });
+
+        try {
+            SingleDirectoryDbLedgerStorage singleDirStorage = storage.getLedgerStorageList().get(0);
+            DefaultEntryLogger entryLogger = (DefaultEntryLogger) singleDirStorage.getEntryLogger();
+            long ledgerId = 4L;
+            ByteBuf entry = Unpooled.buffer(1024);
+            try {
+                entry.writeLong(ledgerId);
+                entry.writeLong(1L);
+                entry.writeBytes("entry-1".getBytes());
+                entryLogger.addEntry(ledgerId, entry);
+            } finally {
+                ReferenceCountUtil.release(entry);
+            }
+
+            Object entryLogManager = getEntryLogManager(entryLogger);
+            BufferedChannel currentLogChannel = (BufferedChannel) invoke(entryLogManager,
+                    "getCurrentLogForLedger", new Class<?>[] { long.class }, ledgerId);
+            closeUnderlyingFileChannel(currentLogChannel);
+
+            Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            invoke(entryLogManager, "doEntryLogMapCleanup", new Class<?>[] { });
+
+            assertTrue("Per-ledger eviction failure should propagate through DbLedgerStorage fatal listener",
+                    fatalLatch.await(10, TimeUnit.SECONDS));
+        } finally {
+            bookie.shutdown();
+            FileUtils.deleteDirectory(perLedgerDir);
+        }
     }
 
     @Test
@@ -281,6 +343,25 @@ public class DbLedgerStorageTest {
         assertEquals(2, ((DbLedgerStorage) bookie.getLedgerStorage()).getLedgerStorageList().size());
 
         bookie.shutdown();
+    }
+
+    private Object getEntryLogManager(DefaultEntryLogger entryLogger) throws Exception {
+        Method method = DefaultEntryLogger.class.getDeclaredMethod("getEntryLogManager");
+        method.setAccessible(true);
+        return method.invoke(entryLogger);
+    }
+
+    private void closeUnderlyingFileChannel(BufferedChannel channel) throws Exception {
+        Field fileChannelField = BufferedChannelBase.class.getDeclaredField("fileChannel");
+        fileChannelField.setAccessible(true);
+        ((FileChannel) fileChannelField.get(channel)).close();
+    }
+
+    private Object invoke(Object target, String methodName, Class<?>[] parameterTypes, Object... args)
+            throws Exception {
+        Method method = target.getClass().getDeclaredMethod(methodName, parameterTypes);
+        method.setAccessible(true);
+        return method.invoke(target, args);
     }
 
     @Test
@@ -311,7 +392,7 @@ public class DbLedgerStorageTest {
         storage.flush();
 
         ByteBuf response = storage.getEntry(1, 1);
-        assertEquals(newEntry1, response);
+        assertByteBufEqualsAndRelease(newEntry1, response);
     }
 
     @Test
@@ -333,7 +414,7 @@ public class DbLedgerStorageTest {
         }
 
         ByteBuf res = storage.getEntry(1, 2);
-        assertEquals(entry2, res);
+        assertByteBufEqualsAndRelease(entry2, res);
 
         ByteBuf entry1 = Unpooled.buffer(1024);
         entry1.writeLong(1); // ledger id
@@ -343,18 +424,18 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry1);
 
         res = storage.getEntry(1, 1);
-        assertEquals(entry1, res);
+        assertByteBufEqualsAndRelease(entry1, res);
 
         res = storage.getEntry(1, 2);
-        assertEquals(entry2, res);
+        assertByteBufEqualsAndRelease(entry2, res);
 
         storage.flush();
 
         res = storage.getEntry(1, 1);
-        assertEquals(entry1, res);
+        assertByteBufEqualsAndRelease(entry1, res);
 
         res = storage.getEntry(1, 2);
-        assertEquals(entry2, res);
+        assertByteBufEqualsAndRelease(entry2, res);
     }
 
     @Test
@@ -454,8 +535,8 @@ public class DbLedgerStorageTest {
         storage.addEntry(entry0);
         storage.addEntry(entry1);
 
-        assertEquals(entry0, storage.getEntry(1, 0));
-        assertEquals(entry1, storage.getEntry(1, 1));
+        assertByteBufEqualsAndRelease(entry0, storage.getEntry(1, 0));
+        assertByteBufEqualsAndRelease(entry1, storage.getEntry(1, 1));
 
         storage.flush();
     }
@@ -473,10 +554,13 @@ public class DbLedgerStorageTest {
         storage.flush();
         storage.setLimboState(1);
 
+        ByteBuf result = null;
         try {
-            storage.getEntry(1, 0);
+            result = storage.getEntry(1, 0);
         } catch (BookieException.DataUnknownException e) {
             fail("Should have been able to read entry");
+        } finally {
+            ReferenceCountUtil.release(result);
         }
     }
 
@@ -493,24 +577,30 @@ public class DbLedgerStorageTest {
         storage.flush();
         storage.setLimboState(1);
 
+        ByteBuf result = null;
         try {
-            storage.getEntry(1, 1);
+            result = storage.getEntry(1, 1);
         } catch (NoEntryException nee) {
             fail("Shouldn't have seen NoEntryException");
         } catch (BookieException.DataUnknownException e) {
             // expected
+        } finally {
+            ReferenceCountUtil.release(result);
         }
 
         storage.shutdown();
         Bookie restartedBookie = new TestBookieImpl(conf);
         DbLedgerStorage restartedStorage = (DbLedgerStorage) restartedBookie.getLedgerStorage();
         try {
+            result = null;
             try {
-                restartedStorage.getEntry(1, 1);
+                result = restartedStorage.getEntry(1, 1);
             } catch (NoEntryException nee) {
                 fail("Shouldn't have seen NoEntryException");
             } catch (BookieException.DataUnknownException e) {
                 // expected
+            } finally {
+                ReferenceCountUtil.release(result);
             }
         } finally {
             restartedStorage.shutdown();
@@ -532,21 +622,27 @@ public class DbLedgerStorageTest {
         storage.flush();
         storage.setLimboState(1);
 
+        ByteBuf result = null;
         try {
-            storage.getEntry(1, 1);
+            result = storage.getEntry(1, 1);
         } catch (NoEntryException nee) {
             fail("Shouldn't have seen NoEntryException");
         } catch (BookieException.DataUnknownException e) {
             // expected
+        } finally {
+            ReferenceCountUtil.release(result);
         }
 
         storage.clearLimboState(1);
+        result = null;
         try {
-            storage.getEntry(1, 1);
+            result = storage.getEntry(1, 1);
         } catch (NoEntryException nee) {
             // expected
         } catch (BookieException.DataUnknownException e) {
             fail("Should have seen NoEntryException");
+        } finally {
+            ReferenceCountUtil.release(result);
         }
     }
 
@@ -615,7 +711,7 @@ public class DbLedgerStorageTest {
         assertFalse(storage.entryExists(ledgerId, 1));
 
         // pull entry into readcache
-        storage.getEntry(ledgerId, 0);
+        ReferenceCountUtil.release(storage.getEntry(ledgerId, 0));
 
         // should come from read cache
         assertTrue(storage.entryExists(ledgerId, 0));
@@ -764,6 +860,14 @@ public class DbLedgerStorageTest {
         mark.readLogMark(bb);
 
         return mark;
+    }
+
+    private static void assertByteBufEqualsAndRelease(ByteBuf expected, ByteBuf actual) {
+        try {
+            assertEquals(expected, actual);
+        } finally {
+            ReferenceCountUtil.release(actual);
+        }
     }
 
     @Test
