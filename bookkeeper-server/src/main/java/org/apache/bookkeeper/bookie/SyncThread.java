@@ -26,6 +26,7 @@ import io.netty.util.concurrent.DefaultThreadFactory;
 import java.io.IOException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.AccessLevel;
@@ -235,7 +236,13 @@ class SyncThread implements Checkpointer {
     // shutdown sync thread
     void shutdown() throws InterruptedException {
         log.info("Shutting down SyncThread");
-        requestFlush();
+        if (!executor.isShutdown()) {
+            try {
+                requestFlush();
+            } catch (RejectedExecutionException e) {
+                log.debug().exception(e).log("Skipping final flush because SyncThread executor is shutting down");
+            }
+        }
 
         executor.shutdown();
         long start = System.currentTimeMillis();

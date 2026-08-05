@@ -56,6 +56,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
@@ -240,6 +241,7 @@ public class DefaultEntryLogger implements EntryLogger {
 
     final EntryLoggerAllocator entryLoggerAllocator;
     private final EntryLogManager entryLogManager;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private final CopyOnWriteArrayList<EntryLogListener> listeners = new CopyOnWriteArrayList<EntryLogListener>();
 
@@ -1230,6 +1232,10 @@ public class DefaultEntryLogger implements EntryLogger {
      */
     @Override
     public void close() {
+        if (!closed.compareAndSet(false, true)) {
+            log.debug("EntryLogger is already stopped");
+            return;
+        }
         // since logChannel is buffered channel, do flush when shutting down
         log.info("Stopping EntryLogger");
         try {

@@ -65,6 +65,7 @@ public class DbLedgerStorageEntryLogFlushFailureE2ETest extends BookKeeperCluste
             }
 
             assertNotNull("Client should observe a write failure after the entry log flush failure", clientFailure);
+            FailOnFlushDbLedgerStorage.resetFailure();
             Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
                     assertFalse("Bookie should be shut down after entry log flush failure", bookie.isRunning()));
         } finally {

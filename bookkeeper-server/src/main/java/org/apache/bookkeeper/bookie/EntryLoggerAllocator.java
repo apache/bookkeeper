@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.CustomLog;
@@ -265,7 +266,13 @@ class EntryLoggerAllocator {
      */
     void stop() {
         // wait until the preallocation finished.
-        allocatorExecutor.execute(this::closePreAllocateLog);
+        if (!allocatorExecutor.isShutdown()) {
+            try {
+                allocatorExecutor.execute(this::closePreAllocateLog);
+            } catch (RejectedExecutionException e) {
+                log.debug().exception(e).log("Skipping preallocated entry log cleanup because allocator is stopping");
+            }
+        }
         allocatorExecutor.shutdown();
         try {
             if (!allocatorExecutor.awaitTermination(5, TimeUnit.SECONDS)) {

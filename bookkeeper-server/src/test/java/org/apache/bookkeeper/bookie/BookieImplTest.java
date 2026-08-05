@@ -147,6 +147,9 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         BookieImpl bookie = new TestBookieImpl(resources) {
             @Override
             int shutdown(int exitCode) {
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    FailOnFlushDbLedgerStorage.resetFailure();
+                }
                 int result = super.shutdown(exitCode);
                 if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
                     shutdownLatch.countDown();
@@ -182,6 +185,9 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         BookieImpl bookie = new TestBookieImpl(resources) {
             @Override
             int shutdown(int exitCode) {
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    FailOnFlushDbLedgerStorage.resetFailure();
+                }
                 int result = super.shutdown(exitCode);
                 if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
                     shutdownLatch.countDown();
