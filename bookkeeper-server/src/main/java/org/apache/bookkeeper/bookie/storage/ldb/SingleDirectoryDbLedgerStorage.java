@@ -72,6 +72,7 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -152,6 +153,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private final String indexBaseDir;
 
     public SingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
+                                          LedgerManagerFactory ledgerManagerFactory,
                                           LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
                                           EntryLogger entryLogger, StatsLogger statsLogger, ByteBufAllocator allocator,
                                           long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize,
@@ -210,8 +212,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 TransientLedgerInfo.LEDGER_INFO_CACHING_TIME_MINUTES, TimeUnit.MINUTES);
 
         this.entryLogger = entryLogger;
-        gcThread = new GarbageCollectorThread(conf,
-                ledgerManager, ledgerDirsManager, this, entryLogger, ledgerIndexDirStatsLogger);
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager, this,
+                entryLogger, ledgerIndexDirStatsLogger);
 
         dbLedgerStorageStats = new DbLedgerStorageStats(
             ledgerIndexDirStatsLogger,

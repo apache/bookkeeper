@@ -62,6 +62,7 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
@@ -100,6 +101,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     // contain any active ledgers in them; and compacts the entry logs that
     // has lower remaining percentage to reclaim disk space.
     GarbageCollectorThread gcThread;
+    private LedgerManagerFactory ledgerManagerFactory;
 
     // this indicates that a write has happened since the last flush
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
@@ -164,6 +166,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public void setStateManager(StateManager stateManager) {}
 
     @Override
+    public void setLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
+        this.ledgerManagerFactory = ledgerManagerFactory;
+    }
+
+    @Override
     public void setCheckpointSource(CheckpointSource checkpointSource) {
         this.checkpointSource = checkpointSource;
     }
@@ -185,7 +192,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         this.entryLogger.addListener(this);
         ledgerCache = new LedgerCacheImpl(conf, activeLedgers,
                 null == indexDirsManager ? ledgerDirsManager : indexDirsManager, statsLogger);
-        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerDirsManager,
+        gcThread = new GarbageCollectorThread(conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager,
                                               this, entryLogger, statsLogger.scope("gc"));
         ledgerDirsManager.addLedgerDirsListener(getLedgerDirsListener());
         // Expose Stats
