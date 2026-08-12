@@ -207,10 +207,11 @@ public class ReadEntryProcessorTest {
     }
     
     /**
-     * Blocking request creation on the event loop can starve write completion that would release a read permit.
+     * Blocking request creation on the event loop can starve the write future
+     * that a throttled V2 read waits on before releasing a read permit.
      */
     @Test
-    public void testCreateDoesNotStarveWriteCompletionThatReleasesReadPermit() throws Exception {
+    public void testCreateDoesNotStarveV2WriteCompletionNeededToReleaseReadPermit() throws Exception {
         EventLoopGroup eventLoopGroup = new DefaultEventLoopGroup(1);
         ExecutorService service = Executors.newSingleThreadExecutor();
         Semaphore readsSemaphore = new Semaphore(1);
@@ -263,7 +264,7 @@ public class ReadEntryProcessorTest {
             eventLoop.execute(() -> writePromise.setSuccess());
 
             try {
-                assertTrue("write completion must not be starved behind a blocked read create",
+                assertTrue("V2 write future completion must not be starved behind a blocked read create",
                         writeCompleted.await(1, TimeUnit.SECONDS));
             } finally {
                 if (writeCompleted.getCount() > 0) {
