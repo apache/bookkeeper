@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -36,11 +37,47 @@ import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.CompactRangeOptions;
 import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
+import org.rocksdb.FlushOptions;
 import org.rocksdb.Options;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.Status;
 
 public class KeyValueStorageRocksDBTest {
+
+    @Test
+    public void testCancelledCompactRangeReturnsIncompleteStatus() throws Exception {
+        RocksDB.loadLibrary();
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-cancelled-compact").toFile();
+        try (Options options = new Options().setCreateIfMissing(true);
+                RocksDB rocksDB = RocksDB.open(options, tmpDir.toString());
+                CompactRangeOptions compactRangeOptions = new CompactRangeOptions().setCanceled(true)) {
+            rocksDB.put(new byte[] {1}, new byte[] {1});
+
+            RocksDBException exception = assertThrows(RocksDBException.class,
+                    () -> rocksDB.compactRange(rocksDB.getDefaultColumnFamily(), null, null, compactRangeOptions));
+            assertNotNull(exception.getStatus());
+            assertEquals(Status.Code.Incomplete, exception.getStatus().getCode());
+            assertTrue(KeyValueStorageRocksDB.isCompactionCancellationStatus(exception));
+        }
+    }
+
+    @Test
+    public void testCancelCompactionWhenNoCompactionIsRunning() throws Exception {
+        ServerConfiguration configuration = new ServerConfiguration();
+        File tmpDir = Files.createTempDirectory("bk-kv-rocksdbtest-cancel").toFile();
+        Files.createDirectory(Paths.get(tmpDir.toString(), "subDir"));
+        KeyValueStorageRocksDB rocksDB = new KeyValueStorageRocksDB(tmpDir.toString(), "subDir",
+                KeyValueStorageFactory.DbConfigType.EntryLocation, configuration);
+        try {
+            assertFalse(rocksDB.cancelCompaction());
+        } finally {
+            rocksDB.close();
+        }
+    }
 
     @Test
     public void testRocksDBInitiateWithBookieConfiguration() throws Exception {

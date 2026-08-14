@@ -21,10 +21,18 @@
 package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -230,5 +238,68 @@ public class EntryLocationIndexTest {
         assertEquals(0, idx.getLocation(12345, 1));
         assertEquals(1, lookupEntryLocationOpStats.getFailureCount());
         assertEquals(1, lookupEntryLocationOpStats.getSuccessCount());
+    }
+
+    @Test
+    public void testCancelCompaction() throws Exception {
+        CountDownLatch compactStarted = new CountDownLatch(1);
+        CountDownLatch allowCompactionToFinish = new CountDownLatch(1);
+        AtomicBoolean cancellationRequested = new AtomicBoolean();
+        KeyValueStorage storage = (KeyValueStorage) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] {KeyValueStorage.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("compact")) {
+                        compactStarted.countDown();
+                        allowCompactionToFinish.await();
+                    } else if (method.getName().equals("cancelCompaction")) {
+                        cancellationRequested.set(true);
+                        return true;
+                    }
+                    return null;
+                });
+
+        KeyValueStorageFactory storageFactory = (basePath, subPath, dbConfigType, conf) -> storage;
+        EntryLocationIndex index = new EntryLocationIndex(serverConfiguration, storageFactory, "test",
+                NullStatsLogger.INSTANCE);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<?> compaction = executor.submit(() -> {
+                index.compact();
+                return null;
+            });
+            assertTrue(compactStarted.await(10, TimeUnit.SECONDS));
+
+            assertTrue(index.cancelCompaction());
+            assertTrue(index.isCompacting());
+            assertTrue(cancellationRequested.get());
+
+            allowCompactionToFinish.countDown();
+            compaction.get(10, TimeUnit.SECONDS);
+            assertFalse(index.isCompacting());
+        } finally {
+            allowCompactionToFinish.countDown();
+            executor.shutdownNow();
+            index.close();
+        }
+    }
+
+    @Test
+    public void testCancelledCompactionIsHandledAsNormalCompletion() throws Exception {
+        KeyValueStorage storage = (KeyValueStorage) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[] {KeyValueStorage.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("compact")) {
+                        throw new EntryLocationIndexCompactionCancelledException(null);
+                    }
+                    return null;
+                });
+
+        KeyValueStorageFactory storageFactory = (basePath, subPath, dbConfigType, conf) -> storage;
+        EntryLocationIndex index = new EntryLocationIndex(serverConfiguration, storageFactory, "test",
+                NullStatsLogger.INSTANCE);
+        try {
+            index.compact();
+            assertFalse(index.isCompacting());
+        } finally {
+            index.close();
+        }
     }
 }

@@ -44,6 +44,8 @@ import org.apache.commons.lang3.StringUtils;
  * <p>The PUT method will trigger entry location compact on current bookie.
  *
  * <p>The GET method will get the entry location compact running or not.
+ *
+ * <p>The DELETE method will request cancellation of running entry location compactions.
  * Output would be like:
  *        {
  *           "/data1/bookkeeper/ledgers/current/locations" : "false",
@@ -128,10 +130,35 @@ public class TriggerLocationCompactService implements HttpEndpointService {
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;
+        } else if (HttpServer.Method.DELETE == request.getMethod()) {
+            Map<String, String> params = request.getParams();
+            String entryLocations = params == null ? "" : params.getOrDefault("entryLocations", "");
+            List<String> locations = entryLocationDBPath;
+            if (StringUtils.isNotBlank(entryLocations)) {
+                Set<String> specifiedLocations = Sets.newHashSet(entryLocations.trim().split(","));
+                if (!CollectionUtils.isSubCollection(specifiedLocations, entryLocationDBPath)) {
+                    String output = String.format("Specified cancel compact entryLocations: %s is invalid. "
+                                    + "Bookie entry location RocksDB path: %s.",
+                            entryLocations, entryLocationDBPath);
+                    response.setBody(JsonUtil.toJson(output));
+                    response.setCode(HttpServer.StatusCode.BAD_REQUEST);
+                    return response;
+                }
+                locations = Lists.newArrayList(specifiedLocations);
+            }
+            Map<String, Boolean> cancelledCompactions = ledgerStorage.cancelEntryLocationCompaction(locations);
+            log.info().attr("bookieId", bookieServer.getBookieId()).attr("locations", locations)
+                    .attr("cancelledCompactions", cancelledCompactions)
+                    .log("Requested entry location index RocksDB compaction cancellation");
+            String jsonResponse = JsonUtil.toJson(cancelledCompactions);
+            log.debug().attr("body", jsonResponse).log("output body");
+            response.setBody(jsonResponse);
+            response.setCode(HttpServer.StatusCode.OK);
+            return response;
         } else {
             response.setCode(HttpServer.StatusCode.METHOD_NOT_ALLOWED);
             response.setBody("Not found method. Should be PUT to trigger entry location compact,"
-                    + " Or GET to get entry location compact state.");
+                    + " GET to get entry location compact state, or DELETE to request its cancellation.");
             return response;
         }
     }
