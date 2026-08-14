@@ -628,8 +628,8 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             }
         }
         if (first != -1) {
-            for (int i = last + 1; i > first; i--) {
-                int swapWith = ThreadLocalRandom.current().nextInt(i);
+            for (int i = last; i > first; i--) {
+                int swapWith = ThreadLocalRandom.current().nextInt(first, i + 1);
                 writeSet.set(swapWith, writeSet.set(i, writeSet.get(swapWith)));
             }
         }
