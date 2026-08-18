@@ -38,6 +38,7 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.replication.Auditor;
 import org.apache.bookkeeper.replication.AutoRecoveryMain;
 import org.apache.bookkeeper.server.http.service.AutoRecoveryStatusService;
+import org.apache.bookkeeper.server.http.service.BookieCookieService;
 import org.apache.bookkeeper.server.http.service.BookieInfoService;
 import org.apache.bookkeeper.server.http.service.BookieIsReadyService;
 import org.apache.bookkeeper.server.http.service.BookieSanityService;
@@ -238,6 +239,8 @@ public class BKHttpServiceProvider implements HttpServiceProvider {
                 return new ResumeCompactionService(bookieServer);
             case TRIGGER_ENTRY_LOCATION_COMPACT:
                 return new TriggerLocationCompactService(bookieServer);
+            case BOOKIE_COOKIE:
+                return new BookieCookieService(configuration);
 
             // autorecovery
             case AUTORECOVERY_STATUS:
