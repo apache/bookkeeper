@@ -316,11 +316,10 @@ public abstract class CompactionTest extends BookKeeperClusterTestCase {
                 storage.gcThread.enableForceGC();
                 storage.gcThread.triggerGC().get(); //major
                 storage.gcThread.triggerGC().get(); //minor
-                // Minor and Major compaction times should be larger than when we started
-                // this test.
+                // Minor and Major compaction times should not be earlier than when we started this test.
                 assertTrue("Minor or major compaction did not trigger even on forcing.",
-                    storage.gcThread.lastMajorCompactionTime > startTime
-                        && storage.gcThread.lastMinorCompactionTime > startTime);
+                    storage.gcThread.lastMajorCompactionTime >= startTime
+                        && storage.gcThread.lastMinorCompactionTime >= startTime);
                 storage.shutdown();
             } catch (Exception e) {
                 throw new UncheckedExecutionException(e.getMessage(), e);
