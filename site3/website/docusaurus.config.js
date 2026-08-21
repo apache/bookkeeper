@@ -288,6 +288,10 @@ const config = {
         darkTheme: darkCodeTheme,
       },
 
+      colorMode: {
+        respectPrefersColorScheme: true
+      }
+
     }),
     customFields: variables
 };
