@@ -56,7 +56,9 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -137,6 +139,7 @@ public class DefaultEntryLogger implements EntryLogger {
          * Updates the entry log file header with the offset and size of the map.
          */
         void appendLedgersMap() throws IOException {
+            checkWritable();
 
             long ledgerMapOffset = this.position();
 
@@ -205,7 +208,23 @@ public class DefaultEntryLogger implements EntryLogger {
             mapInfo.putLong(ledgerMapOffset);
             mapInfo.putInt(numberOfLedgers);
             mapInfo.flip();
-            this.fileChannel.write(mapInfo, LEDGERS_MAP_OFFSET_POSITION);
+            try {
+                writeFully(this.fileChannel, mapInfo, LEDGERS_MAP_OFFSET_POSITION);
+            } catch (IOException e) {
+                markWriteFailure(e);
+                throw e;
+            }
+        }
+
+        private static void writeFully(FileChannel fileChannel, ByteBuffer buffer, long position) throws IOException {
+            long writePosition = position;
+            while (buffer.hasRemaining()) {
+                int written = fileChannel.write(buffer, writePosition);
+                if (written <= 0) {
+                    throw new IOException("Unable to make progress while updating entry log header");
+                }
+                writePosition += written;
+            }
         }
     }
 
@@ -223,6 +242,7 @@ public class DefaultEntryLogger implements EntryLogger {
 
     final EntryLoggerAllocator entryLoggerAllocator;
     private final EntryLogManager entryLogManager;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     private final CopyOnWriteArrayList<EntryLogListener> listeners = new CopyOnWriteArrayList<EntryLogListener>();
 
@@ -373,6 +393,10 @@ public class DefaultEntryLogger implements EntryLogger {
 
     EntryLogManager getEntryLogManager() {
         return entryLogManager;
+    }
+
+    public void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
+        entryLogManager.setFatalErrorListener(fatalErrorListener);
     }
 
     void addListener(EntryLogListener listener) {
@@ -1192,6 +1216,10 @@ public class DefaultEntryLogger implements EntryLogger {
      */
     @Override
     public void close() {
+        if (!closed.compareAndSet(false, true)) {
+            LOG.debug("EntryLogger is already stopped");
+            return;
+        }
         // since logChannel is buffered channel, do flush when shutting down
         LOG.info("Stopping EntryLogger");
         try {

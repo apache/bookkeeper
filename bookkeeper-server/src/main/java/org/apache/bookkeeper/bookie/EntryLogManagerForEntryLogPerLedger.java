@@ -356,8 +356,11 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             // Append ledgers map at the end of entry log
             try {
                 logChannel.appendLedgersMap();
-            } catch (Exception e) {
-                log.error("Got IOException while trying to appendLedgersMap in cacheEntryRemoval callback", e);
+            } catch (IOException | RuntimeException e) {
+                notifyFatalEntryLogWriteFailure(
+                        "Fatal entry log write failure while trying to appendLedgersMap in cacheEntryRemoval callback",
+                        e);
+                return;
             }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
             rotatedLogChannels.add(logChannel);
@@ -664,10 +667,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
              * logChannel, since Bookie must have turned to readonly mode and
              * the addEntry traffic would be from GC and it is ok to proceed in
              * this case.
-             */
+            */
             if ((diskFull && (!allDisksFull)) || reachEntryLogLimit || (logChannel == null)) {
                 if (logChannel != null) {
-                    logChannel.flushAndForceWriteIfRegularFlush(false);
+                    flushAndForceWriteIfRegularFlush(logChannel, false);
                 }
                 createNewLog(ledgerId,
                     ": diskFull = " + diskFull + ", allDisksFull = " + allDisksFull
@@ -683,7 +686,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     @Override
     public void flushRotatedLogs() throws IOException {
         for (BufferedLogChannel channel : rotatedLogChannels) {
-            channel.flushAndForceWrite(true);
+            flushAndForceWrite(channel, true);
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.
