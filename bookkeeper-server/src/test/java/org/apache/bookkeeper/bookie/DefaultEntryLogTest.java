@@ -1612,8 +1612,8 @@ public class DefaultEntryLogTest {
             Assert.assertEquals("Number of rotated entrylogs", numOfActiveLedgers, rotatedLogs.size());
 
             /*
-             * Since newlog is created for all slots, so they are moved to rotated logs and hence unpersistedBytes of all
-             * the slots should be just EntryLogger.LOGFILE_HEADER_SIZE
+             * Since newlog is created for all slots, so they are moved to rotated logs and hence unpersistedBytes
+             * of all the slots should be just EntryLogger.LOGFILE_HEADER_SIZE
              *
              */
             for (long i = 0; i < numOfActiveLedgers; i++) {
@@ -1947,8 +1947,8 @@ public class DefaultEntryLogTest {
 
             /*
              * since ledgerDirForLedger2 is added to filleddirs, all the dirs are full. If all the dirs are full then it
-             * will continue to use current entrylogs for new entries instead of creating new one. So for all the ledgers
-             * ledgerdirs should be same as before - ledgerDirForLedger2
+             * will continue to use current entrylogs for new entries instead of creating new one. So for all the
+             * ledgers ledgerdirs should be same as before - ledgerDirForLedger2
              */
             ledgerDirsManager.addToFilledDirs(ledgerDirForLedger2);
             addEntryAndValidateFolders(entryLogger, entryLogManager, 4, ledgerDirForLedger2, true, ledgerDirForLedger2,
