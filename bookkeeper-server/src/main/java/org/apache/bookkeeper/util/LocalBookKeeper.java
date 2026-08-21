@@ -531,7 +531,7 @@ public class LocalBookKeeper implements AutoCloseable {
             LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                     conf, diskChecker, NullStatsLogger.INSTANCE, ledgerDirsManager);
             LedgerStorage storage = BookieResources.createLedgerStorage(
-                    conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+                    conf, ledgerManager, lmFactory, ledgerDirsManager, indexDirsManager,
                     NullStatsLogger.INSTANCE, allocator);
 
             CookieValidation cookieValidation = new LegacyCookieValidation(conf, registrationManager);

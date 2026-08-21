@@ -38,6 +38,7 @@ import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.IteratorUtility;
@@ -67,6 +68,11 @@ public class SortedLedgerStorage
     @VisibleForTesting
     protected SortedLedgerStorage(InterleavedLedgerStorage ils) {
         interleavedLedgerStorage = ils;
+    }
+
+    @Override
+    public void setLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
+        interleavedLedgerStorage.setLedgerManagerFactory(ledgerManagerFactory);
     }
 
     @Override
