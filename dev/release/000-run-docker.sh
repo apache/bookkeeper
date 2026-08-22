@@ -49,7 +49,8 @@ fi
 
 docker buildx build --platform linux/amd64 -t "${IMAGE_NAME}-${USER_NAME}" - <<UserSpecificDocker
 FROM ${IMAGE_NAME}
-RUN if ! getent group ${GROUP_ID} > /dev/null; then groupadd --non-unique -g ${GROUP_ID} ${USER_NAME}; fi && \
+RUN if getent passwd ${USER_ID} > /dev/null && [ "\$(getent passwd ${USER_ID} | cut -d: -f1)" != "${USER_NAME}" ]; then userdel -r -f \$(getent passwd ${USER_ID} | cut -d: -f1) 2>/dev/null || true; fi && \
+  if ! getent group ${GROUP_ID} > /dev/null; then groupadd --non-unique -g ${GROUP_ID} ${USER_NAME}; fi && \
   if ! getent passwd ${USER_NAME} > /dev/null; then useradd -l -g ${GROUP_ID} -u ${USER_ID} -k /root -m ${USER_NAME}; fi && \
   ([ "$(dirname "$HOME")" = "/home" ] || ln -s /home $(dirname "$HOME")) && \
   mkdir -p /gpg && chown ${USER_ID}:${GROUP_ID} /gpg && chmod 700 /gpg
