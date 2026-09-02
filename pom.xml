@@ -174,7 +174,7 @@
     <junit5.version>5.10.2</junit5.version>
     <assertj-core.version>3.27.7</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <libthrift.version>0.23.0</libthrift.version>
+    <libthrift.version>0.24.0</libthrift.version>
     <lombok.version>1.18.42</lombok.version>
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
