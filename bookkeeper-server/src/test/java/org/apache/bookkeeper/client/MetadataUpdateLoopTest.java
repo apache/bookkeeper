@@ -19,6 +19,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.spy;
@@ -46,8 +50,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.tuple.Triple;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +64,7 @@ public class MetadataUpdateLoopTest {
      * Test that we can update the metadata using the update loop.
      */
     @Test
-    public void testBasicUpdate() throws Exception {
+    void basicUpdate() throws Exception {
         try (LedgerManager lm = new MockLedgerManager()) {
             long ledgerId = 1234L;
             LedgerMetadata initMeta = LedgerMetadataBuilder.create()
@@ -92,8 +95,8 @@ public class MetadataUpdateLoopTest {
                     reference::compareAndSet);
             loop.run().get();
 
-            Assert.assertNotEquals(reference.get(), writtenMetadata);
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), newAddress);
+            assertNotEquals(reference.get(), writtenMetadata);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), newAddress);
         }
     }
 
@@ -102,7 +105,7 @@ public class MetadataUpdateLoopTest {
      * both will eventually succeed, and both updates will be reflected in the final metadata.
      */
     @Test
-    public void testConflictOnWrite() throws Exception {
+    void conflictOnWrite() throws Exception {
         try (BlockableMockLedgerManager lm = spy(new BlockableMockLedgerManager())) {
             lm.blockWrites();
 
@@ -149,16 +152,16 @@ public class MetadataUpdateLoopTest {
             Versioned<LedgerMetadata> l1meta = loop1.get();
             Versioned<LedgerMetadata> l2meta = loop2.get();
 
-            Assert.assertEquals(l1meta, reference1.get());
-            Assert.assertEquals(l2meta, reference2.get());
+            assertEquals(l1meta, reference1.get());
+            assertEquals(l2meta, reference2.get());
 
-            Assert.assertEquals(l1meta.getVersion().compare(l2meta.getVersion()), Version.Occurred.BEFORE);
+            assertEquals(Version.Occurred.BEFORE, l1meta.getVersion().compare(l2meta.getVersion()));
 
-            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b2);
-            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(1), b1);
+            assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b2);
+            assertEquals(l1meta.getValue().getEnsembleAt(0L).get(1), b1);
 
-            Assert.assertEquals(l2meta.getValue().getEnsembleAt(0L).get(0), b2);
-            Assert.assertEquals(l2meta.getValue().getEnsembleAt(0L).get(1), b3);
+            assertEquals(l2meta.getValue().getEnsembleAt(0L).get(0), b2);
+            assertEquals(l2meta.getValue().getEnsembleAt(0L).get(1), b3);
 
             verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -170,7 +173,7 @@ public class MetadataUpdateLoopTest {
      * try to write again, as the value is now correct.
      */
     @Test
-    public void testConflictOnWriteBothWritingSame() throws Exception {
+    void conflictOnWriteBothWritingSame() throws Exception {
         try (BlockableMockLedgerManager lm = spy(new BlockableMockLedgerManager())) {
             lm.blockWrites();
 
@@ -210,11 +213,11 @@ public class MetadataUpdateLoopTest {
 
             lm.releaseWrites();
 
-            Assert.assertEquals(loop1.get(), loop2.get());
-            Assert.assertEquals(loop1.get(), reference.get());
+            assertEquals(loop1.get(), loop2.get());
+            assertEquals(loop1.get(), reference.get());
 
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b1);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b1);
 
             verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -225,7 +228,7 @@ public class MetadataUpdateLoopTest {
      * updating the local value.
      */
     @Test
-    public void testConflictOnLocalUpdate() throws Exception {
+    void conflictOnLocalUpdate() throws Exception {
         try (DeferCallbacksMockLedgerManager lm = spy(new DeferCallbacksMockLedgerManager(1))) {
             long ledgerId = 1234L;
             BookieId b0 = BookieId.parse("0.0.0.0:3181");
@@ -263,14 +266,14 @@ public class MetadataUpdateLoopTest {
                         return LedgerMetadataBuilder.from(currentMetadata).replaceEnsembleEntry(0L, ensemble).build();
                     },
                     reference::compareAndSet).run();
-            Assert.assertEquals(loop2.get(), reference.get());
+            assertEquals(loop2.get(), reference.get());
 
             lm.runDeferred();
 
-            Assert.assertEquals(loop1.get(), reference.get());
+            assertEquals(loop1.get(), reference.get());
 
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b3);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L).get(0), b2);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L).get(1), b3);
 
             verify(lm, times(3)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -290,7 +293,7 @@ public class MetadataUpdateLoopTest {
      * and that the final metadata reflects all the updates.
      */
     @Test
-    public void testHammer() throws Exception {
+    void hammer() throws Exception {
         try (NonDeterministicMockLedgerManager lm = new NonDeterministicMockLedgerManager()) {
             long ledgerId = 1234L;
 
@@ -326,7 +329,7 @@ public class MetadataUpdateLoopTest {
 
             loops.forEach((l) -> l.join());
 
-            Assert.assertEquals(reference.get().getValue().getEnsembleAt(0L), replacementBookies);
+            assertEquals(reference.get().getValue().getEnsembleAt(0L), replacementBookies);
         }
     }
 
@@ -335,7 +338,7 @@ public class MetadataUpdateLoopTest {
      * The other will throw an exception.
      */
     @Test
-    public void testNewestValueCannotBeUsedAfterReadBack() throws Exception {
+    void newestValueCannotBeUsedAfterReadBack() throws Exception {
         try (BlockableMockLedgerManager lm = spy(new BlockableMockLedgerManager())) {
             lm.blockWrites();
 
@@ -355,10 +358,8 @@ public class MetadataUpdateLoopTest {
                     ledgerId,
                     reference::get,
                     (currentMetadata) -> !currentMetadata.isClosed(),
-                    (currentMetadata) -> {
-                        return LedgerMetadataBuilder.from(currentMetadata)
-                            .withClosedState().withLastEntryId(10L).withLength(100L).build();
-                    },
+                    (currentMetadata) -> LedgerMetadataBuilder.from(currentMetadata)
+                            .withClosedState().withLastEntryId(10L).withLength(100L).build(),
                     reference::compareAndSet).run();
             CompletableFuture<Versioned<LedgerMetadata>> loop2 = new MetadataUpdateLoop(
                     lm,
@@ -382,13 +383,13 @@ public class MetadataUpdateLoopTest {
             Versioned<LedgerMetadata> l1meta = loop1.get();
             try {
                 loop2.get();
-                Assert.fail("Update loop should have failed");
+                fail("Update loop should have failed");
             } catch (ExecutionException ee) {
-                Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
+                assertEquals(BKException.BKLedgerClosedException.class, ee.getCause().getClass());
             }
-            Assert.assertEquals(l1meta, reference.get());
-            Assert.assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b0);
-            Assert.assertTrue(l1meta.getValue().isClosed());
+            assertEquals(l1meta, reference.get());
+            assertEquals(l1meta.getValue().getEnsembleAt(0L).get(0), b0);
+            assertTrue(l1meta.getValue().isClosed());
 
             verify(lm, times(2)).writeLedgerMetadata(anyLong(), any(), any());
         }
@@ -482,7 +483,7 @@ public class MetadataUpdateLoopTest {
 
         synchronized void releaseWrites() {
             blocking = false;
-            reqs.forEach((r) -> {
+            reqs.forEach((r) ->
                     super.writeLedgerMetadata(r.getLedgerId(), r.getMetadata(),
                                               r.getCurrentVersion())
                         .whenComplete((written, exception) -> {
@@ -491,8 +492,7 @@ public class MetadataUpdateLoopTest {
                                 } else {
                                     r.getPromise().complete(written);
                                 }
-                            });
-                });
+                            }));
         }
 
         @Override

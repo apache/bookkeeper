@@ -20,10 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,28 +83,28 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         /*
          * Check if has recovered properly.
          */
-        assertEquals("Has not recovered correctly", numEntries - 1, afterlh.getLastAddConfirmed());
-        assertEquals("Has not set the length correctly", length, afterlh.getLength());
+        assertEquals(numEntries - 1, afterlh.getLastAddConfirmed(), "Has not recovered correctly");
+        assertEquals(length, afterlh.getLength(), "Has not set the length correctly");
     }
 
     @Test
-    public void testLedgerRecovery() throws Exception {
+    void ledgerRecovery() throws Exception {
         testInternal(100);
 
     }
 
     @Test
-    public void testEmptyLedgerRecoveryOne() throws Exception {
+    void emptyLedgerRecoveryOne() throws Exception {
         testInternal(1);
     }
 
     @Test
-    public void testEmptyLedgerRecovery() throws Exception {
+    void emptyLedgerRecovery() throws Exception {
         testInternal(0);
     }
 
     @Test
-    public void testLedgerRecoveryWithWrongPassword() throws Exception {
+    void ledgerRecoveryWithWrongPassword() throws Exception {
         // Create a ledger
         byte[] ledgerPassword = "aaaa".getBytes();
         LedgerHandle lh = bkc.createLedger(digestType, ledgerPassword);
@@ -128,7 +128,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testLedgerRecoveryWithNotEnoughBookies() throws Exception {
+    void ledgerRecoveryWithNotEnoughBookies() throws Exception {
         int numEntries = 3;
 
         // Create a ledger
@@ -165,7 +165,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testLedgerRecoveryWithSlowBookie() throws Exception {
+    void testLedgerRecoveryWithSlowBookie() throws Exception {
         for (int i = 0; i < 3; i++) {
             LOG.info("TestLedgerRecoveryWithAckQuorum @ slow bookie {}", i);
             ledgerRecoveryWithSlowBookie(3, 3, 2, 1, i);
@@ -235,7 +235,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * 8. Ledger recovery starts (ledger is now unavailable)
      */
     @Test
-    public void testLedgerRecoveryWithRollingRestart() throws Exception {
+    void ledgerRecoveryWithRollingRestart() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
         for (int i = 0; i < (numBookies * 3) + 1; i++) {
             lhbefore.addEntry("data".getBytes());
@@ -288,15 +288,15 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
                                     }
                                 }
                             }, null);
-        assertTrue("Open call should have completed", openLatch.await(5, TimeUnit.SECONDS));
-        assertFalse("Open should not have succeeded", returnCode.get() == BKException.Code.OK);
+        assertTrue(openLatch.await(5, TimeUnit.SECONDS), "Open call should have completed");
+        assertFalse(returnCode.get() == BKException.Code.OK, "Open should not have succeeded");
 
         startAndAddBookie(conf2);
 
         LedgerHandle lhafter = bkc.openLedger(lhbefore.getId(), digestType,
                 "".getBytes());
-        assertEquals("Fenced ledger should have correct lastAddConfirmed",
-                     lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed());
+        assertEquals(lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed()
+            , "Fenced ledger should have correct lastAddConfirmed");
     }
 
     /**
@@ -313,7 +313,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * 8. Another client trying to recover the same ledger.
      */
     @Test
-    public void testBookieFailureDuringRecovery() throws Exception {
+    void bookieFailureDuringRecovery() throws Exception {
         LedgerHandle lhbefore = bkc.createLedger(numBookies, 2, digestType, "".getBytes());
         for (int i = 0; i < (numBookies * 3) + 1; i++) {
             lhbefore.addEntry("data".getBytes());
@@ -348,8 +348,8 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         startNewBookie();
         LedgerHandle lhafter = bkc.openLedger(lhbefore.getId(), digestType,
                 "".getBytes());
-        assertEquals("Fenced ledger should have correct lastAddConfirmed",
-                     lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed());
+        assertEquals(lhbefore.getLastAddConfirmed(), lhafter.getLastAddConfirmed()
+            , "Fenced ledger should have correct lastAddConfirmed");
     }
 
     /**
@@ -357,7 +357,7 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
      * recovery add.
      */
     @Test
-    public void testEnsembleChangeDuringRecovery() throws Exception {
+    void ensembleChangeDuringRecovery() throws Exception {
         LedgerHandle lh = bkc.createLedger(numBookies, 2, 2, digestType, "".getBytes());
         int numEntries = (numBookies * 3) + 1;
         final AtomicInteger numPendingAdds = new AtomicInteger(numEntries);
@@ -398,8 +398,9 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
         // two dead bookies are put in the ensemble which would cause ensemble
         // change
         LedgerHandle recoveredLh = bkc.openLedger(lh.getId(), digestType, "".getBytes());
-        assertEquals("Fenced ledger should have correct lastAddConfirmed", lh.getLastAddConfirmed(),
-                recoveredLh.getLastAddConfirmed());
+        assertEquals(lh.getLastAddConfirmed(),
+                recoveredLh.getLastAddConfirmed(),
+                "Fenced ledger should have correct lastAddConfirmed");
     }
 
     private void startDeadBookie(ServerConfiguration conf) throws Exception {
@@ -415,12 +416,12 @@ public class LedgerRecoveryTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testBatchRecoverySize3() throws Exception {
+    void batchRecoverySize3() throws Exception {
         batchRecovery(3);
     }
 
     @Test
-    public void testBatchRecoverySize13() throws Exception {
+    void batchRecoverySize13() throws Exception {
         batchRecovery(13);
     }
 
