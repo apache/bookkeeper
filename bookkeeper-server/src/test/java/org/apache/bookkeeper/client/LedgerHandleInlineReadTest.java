@@ -34,13 +34,9 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
-import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.MockBookieClient;
-import org.apache.bookkeeper.proto.MockBookies;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,18 +49,13 @@ public class LedgerHandleInlineReadTest {
     private static final BookieId b2 = new BookieSocketAddress("b2", 3181).toBookieId();
     private static final BookieId b3 = new BookieSocketAddress("b3", 3181).toBookieId();
 
-    private OrderedExecutor pool;
     private MockClientContext clientCtx;
     private LedgerHandle lh;
     private final AtomicReference<Thread> readIssuedOn = new AtomicReference<>();
 
     @Before
     public void setup() throws Exception {
-        pool = OrderedExecutor.newBuilder().name("inline-read-test").numThreads(1).build();
-        MockBookies mockBookies = new MockBookies();
-        clientCtx = MockClientContext.create(mockBookies)
-                .setMainWorkerPool(pool)
-                .setBookieClient(new MockBookieClient(pool, mockBookies));
+        clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                 LedgerMetadataBuilder.create().newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
         lh = new LedgerHandle(clientCtx, 10L, md, BookKeeper.DigestType.CRC32C, ClientUtil.PASSWD,
@@ -77,11 +68,6 @@ public class LedgerHandleInlineReadTest {
             readIssuedOn.compareAndSet(null, Thread.currentThread());
             return FutureUtils.value(null);
         });
-    }
-
-    @After
-    public void teardown() throws Exception {
-        pool.shutdown();
     }
 
     @Test(timeout = 30000)

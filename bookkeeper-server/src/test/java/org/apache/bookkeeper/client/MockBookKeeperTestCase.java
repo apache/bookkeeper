@@ -210,7 +210,7 @@ public abstract class MockBookKeeperTestCase {
 
                 @Override
                 public OrderedExecutor getMainWorkerPool() {
-                    return scheduler;
+                    return executor;
                 }
 
                 @Override

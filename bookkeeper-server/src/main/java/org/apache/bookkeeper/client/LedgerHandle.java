@@ -48,7 +48,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +103,7 @@ public class LedgerHandle implements WriteHandle {
     final byte[] ledgerKey;
     private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
-    final ExecutorService executor;
+    final SingleThreadExecutor executor;
     long lastAddPushed;
     boolean notSupportBatch;
 
@@ -214,7 +213,8 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
-        this.executor = clientCtx.getMainWorkerPool().chooseThread(ledgerId);
+        // The main worker pool is a plain OrderedExecutor, whose threads are SingleThreadExecutor instances
+        this.executor = (SingleThreadExecutor) clientCtx.getMainWorkerPool().chooseThread(ledgerId);
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
@@ -1100,7 +1100,7 @@ public class LedgerHandle implements WriteHandle {
             if (isHandleWritable()) {
                 // Ledger handle in read/write mode: submit to OSE for ordered execution, unless the
                 // caller is already on the ledger's thread.
-                executeOrRun(op);
+                executor.executeOrRun(op);
             } else {
                 // Read-only ledger handle: bypass OSE and execute read directly in client thread.
                 // This avoids a context-switch to OSE thread and thus reduces latency.
@@ -1281,7 +1281,7 @@ public class LedgerHandle implements WriteHandle {
             if (isHandleWritable()) {
                 // Ledger handle in read/write mode: submit to OSE for ordered execution, unless the
                 // caller is already on the ledger's thread.
-                executeOrRun(op);
+                executor.executeOrRun(op);
             } else {
                 // Read-only ledger handle: bypass OSE and execute read directly in client thread.
                 // This avoids a context-switch to OSE thread and thus reduces latency.
@@ -2513,19 +2513,6 @@ public class LedgerHandle implements WriteHandle {
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
         executor.execute(runnable);
-    }
-
-    /**
-     * Execute the task in the thread pinned to the ledger, inline when the caller is already on it.
-     * @param runnable
-     * @throws RejectedExecutionException
-     */
-    void executeOrRun(Runnable runnable) throws RejectedExecutionException {
-        if (executor instanceof SingleThreadExecutor) {
-            ((SingleThreadExecutor) executor).executeOrRun(runnable);
-        } else {
-            executor.execute(runnable);
-        }
     }
 
     @VisibleForTesting

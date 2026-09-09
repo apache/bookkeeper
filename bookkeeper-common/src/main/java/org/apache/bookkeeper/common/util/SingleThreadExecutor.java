@@ -120,7 +120,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 for (int i = 0; i < n; i++) {
                     Runnable task = localTasks[i];
                     localTasks[i] = null;
-                    if (!safeRunTask(task)) {
+                    if (!runQueuedTask(task)) {
                         return;
                     }
                 }
@@ -129,7 +129,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
             // Clear the queue in orderly shutdown
             Runnable task;
             while ((task = queue.poll()) != null) {
-                safeRunTask(task);
+                runQueuedTask(task);
             }
         } catch (InterruptedException ie) {
             // Exit loop when interrupted
@@ -142,9 +142,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         }
     }
 
-    private boolean safeRunTask(Runnable r) {
+    private boolean runQueuedTask(Runnable r) {
         try {
-            return runTask(r);
+            return safeRunTask(r);
         } finally {
             decrementPendingTaskCount(1);
         }
@@ -155,7 +155,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
      *
      * @return false when the task was interrupted
      */
-    private boolean runTask(Runnable r) {
+    private boolean safeRunTask(Runnable r) {
         try {
             r.run();
             tasksCompleted.increment();
@@ -249,7 +249,7 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     public void executeOrRun(Runnable r) {
         if (isCurrentThread()) {
             tasksCount.increment();
-            runTask(r);
+            safeRunTask(r);
         } else {
             execute(r);
         }

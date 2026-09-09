@@ -56,7 +56,8 @@ public class MockClientContext implements ClientContext {
 
     static MockClientContext create(MockBookies mockBookies) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
-        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-executor").numThreads(1).build();
+        OrderedExecutor executor = OrderedExecutor.newBuilder().name("mock-executor").numThreads(1).build();
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-scheduler").numThreads(1).build();
         MockRegistrationClient regClient = new MockRegistrationClient();
         EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
         BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
@@ -71,9 +72,9 @@ public class MockClientContext implements ClientContext {
                 .setBookieWatcher(bookieWatcherImpl)
                 .setPlacementPolicy(placementPolicy)
                 .setRegistrationClient(regClient)
-                .setBookieClient(new MockBookieClient(scheduler, mockBookies))
+                .setBookieClient(new MockBookieClient(executor, mockBookies))
                 .setByteBufAllocator(UnpooledByteBufAllocator.DEFAULT)
-                .setMainWorkerPool(scheduler)
+                .setMainWorkerPool(executor)
                 .setScheduler(scheduler)
                 .setClientStats(BookKeeperClientStats.newInstance(NullStatsLogger.INSTANCE))
                 .setIsClientClosed(() -> false);
