@@ -79,6 +79,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
+import org.apache.bookkeeper.common.util.SingleThreadExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -1097,8 +1098,9 @@ public class LedgerHandle implements WriteHandle {
             }
 
             if (isHandleWritable()) {
-                // Ledger handle in read/write mode: submit to OSE for ordered execution.
-                executeOrdered(op);
+                // Ledger handle in read/write mode: submit to OSE for ordered execution, unless the
+                // caller is already on the ledger's thread.
+                executeOrRun(op);
             } else {
                 // Read-only ledger handle: bypass OSE and execute read directly in client thread.
                 // This avoids a context-switch to OSE thread and thus reduces latency.
@@ -1277,8 +1279,9 @@ public class LedgerHandle implements WriteHandle {
             }
 
             if (isHandleWritable()) {
-                // Ledger handle in read/write mode: submit to OSE for ordered execution.
-                executeOrdered(op);
+                // Ledger handle in read/write mode: submit to OSE for ordered execution, unless the
+                // caller is already on the ledger's thread.
+                executeOrRun(op);
             } else {
                 // Read-only ledger handle: bypass OSE and execute read directly in client thread.
                 // This avoids a context-switch to OSE thread and thus reduces latency.
@@ -2510,6 +2513,19 @@ public class LedgerHandle implements WriteHandle {
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
         executor.execute(runnable);
+    }
+
+    /**
+     * Execute the task in the thread pinned to the ledger, inline when the caller is already on it.
+     * @param runnable
+     * @throws RejectedExecutionException
+     */
+    void executeOrRun(Runnable runnable) throws RejectedExecutionException {
+        if (executor instanceof SingleThreadExecutor) {
+            ((SingleThreadExecutor) executor).executeOrRun(runnable);
+        } else {
+            executor.execute(runnable);
+        }
     }
 
     @VisibleForTesting

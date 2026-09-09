@@ -20,6 +20,8 @@ package org.apache.bookkeeper.common.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -30,6 +32,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BrokenBarrierException;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.Future;
@@ -38,6 +42,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import lombok.Cleanup;
 import org.awaitility.Awaitility;
 import org.junit.Test;
@@ -368,5 +373,82 @@ public class TestSingleThreadExecutor {
         latch.countDown();
 
         future.get();
+    }
+
+    @Test
+    public void testIsCurrentThread() throws Exception {
+        @Cleanup("shutdown")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        assertFalse(ste.isCurrentThread());
+        Callable<Boolean> onExecutorThread = ste::isCurrentThread;
+        assertTrue(ste.submit(onExecutorThread).get(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testExecuteOrRunInlineOnOwnThread() throws Exception {
+        @Cleanup("shutdown")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        // From the executor thread the task runs before executeOrRun returns, ahead of the queued task
+        List<String> events = Collections.synchronizedList(new ArrayList<>());
+        CompletableFuture<List<String>> seenBeforeReturn = new CompletableFuture<>();
+        ste.execute(() -> {
+            ste.execute(() -> events.add("queued"));
+            ste.executeOrRun(() -> events.add("inline"));
+            seenBeforeReturn.complete(new ArrayList<>(events));
+        });
+
+        assertEquals(Lists.newArrayList("inline"), seenBeforeReturn.get(10, TimeUnit.SECONDS));
+        Awaitility.await().until(() -> events.size() == 2);
+        assertEquals(Lists.newArrayList("inline", "queued"), events);
+        Awaitility.await().until(() -> ste.getCompletedTasksCount() == 3);
+        assertEquals(3, ste.getSubmittedTasksCount());
+        assertEquals(0, ste.getQueuedTasksCount());
+    }
+
+    @Test
+    public void testExecuteOrRunFromOtherThreadIsQueued() throws Exception {
+        @Cleanup("shutdown")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        // Hold the executor thread so that a queued task cannot run yet
+        CountDownLatch release = new CountDownLatch(1);
+        ste.execute(() -> {
+            try {
+                release.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        });
+
+        AtomicReference<Thread> ranOn = new AtomicReference<>();
+        ste.executeOrRun(() -> ranOn.set(Thread.currentThread()));
+        assertNull(ranOn.get());
+
+        release.countDown();
+        Awaitility.await().until(() -> ranOn.get() != null);
+        assertNotSame(Thread.currentThread(), ranOn.get());
+        Callable<Boolean> ranOnExecutorThread = () -> ranOn.get() == Thread.currentThread();
+        assertTrue(ste.submit(ranOnExecutorThread).get(10, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testExecuteOrRunInlineFailureIsIsolated() throws Exception {
+        @Cleanup("shutdown")
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        CompletableFuture<Boolean> submitterCompleted = new CompletableFuture<>();
+        ste.execute(() -> {
+            ste.executeOrRun(() -> {
+                throw new RuntimeException("test");
+            });
+            submitterCompleted.complete(true);
+        });
+
+        assertTrue(submitterCompleted.get(10, TimeUnit.SECONDS));
+        Awaitility.await().until(() -> ste.getCompletedTasksCount() == 1);
+        assertEquals(1, ste.getFailedTasksCount());
+        assertEquals(2, ste.getSubmittedTasksCount());
     }
 }

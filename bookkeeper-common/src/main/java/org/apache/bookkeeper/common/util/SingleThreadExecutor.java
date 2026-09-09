@@ -144,6 +144,19 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     private boolean safeRunTask(Runnable r) {
         try {
+            return runTask(r);
+        } finally {
+            decrementPendingTaskCount(1);
+        }
+    }
+
+    /**
+     * Runs a task, logging and counting a failure instead of propagating it.
+     *
+     * @return false when the task was interrupted
+     */
+    private boolean runTask(Runnable r) {
+        try {
             r.run();
             tasksCompleted.increment();
         } catch (Throwable t) {
@@ -154,8 +167,6 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
                 tasksFailed.increment();
                 log.error().exception(t).log("Error while running task");
             }
-        } finally {
-            decrementPendingTaskCount(1);
         }
 
         return true;
@@ -218,6 +229,30 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
     @Override
     public void execute(Runnable r) {
         executeRunnableOrList(r, null);
+    }
+
+    /**
+     * Whether the calling thread is the thread of this executor.
+     */
+    public boolean isCurrentThread() {
+        return Thread.currentThread() == runner;
+    }
+
+    /**
+     * Runs the task inline when called from this executor's own thread, otherwise submits it like
+     * {@link #execute(Runnable)}.
+     *
+     * <p>The inline run bypasses the queue: a task submitted this way from the executor thread runs before the
+     * tasks already queued, nested inside the task that submitted it. Use it only where that reordering is
+     * acceptable. Failures are logged and counted like those of queued tasks.
+     */
+    public void executeOrRun(Runnable r) {
+        if (isCurrentThread()) {
+            tasksCount.increment();
+            runTask(r);
+        } else {
+            execute(r);
+        }
     }
 
     @VisibleForTesting
