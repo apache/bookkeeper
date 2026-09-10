@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.util.ByteBufList;
 
@@ -34,8 +35,9 @@ class BatchedReadCompletion extends CompletionValue {
                                  final BookkeeperInternalCallbacks.BatchedReadEntryCallback originalCallback,
                                  final Object originalCtx,
                                  long ledgerId, final long entryId,
-                                 PerChannelBookieClient perChannelBookieClient) {
-        super("BatchedRead", originalCtx, ledgerId, entryId, perChannelBookieClient);
+                                 PerChannelBookieClient perChannelBookieClient,
+                                 Executor callbackExecutor) {
+        super("BatchedRead", originalCtx, ledgerId, entryId, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readTimeoutOpLogger;
         this.cb = (rc, ledgerId1, startEntryId, bufList, ctx) -> {

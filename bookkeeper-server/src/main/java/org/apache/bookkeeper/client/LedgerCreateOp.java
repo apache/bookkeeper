@@ -75,6 +75,7 @@ class LedgerCreateOp {
     final OpStatsLogger createOpLogger;
     final BookKeeperClientStats clientStats;
     final Logger parentLogger;
+    final Object orderingKey;
     boolean adv = false;
     boolean generateLedgerId = true;
 
@@ -107,15 +108,20 @@ class LedgerCreateOp {
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats) {
         this(bk, ensembleSize, writeQuorumSize, ackQuorumSize, digestType, passwd, cb, ctx,
-                customMetadata, writeFlags, clientStats, null);
+                customMetadata, writeFlags, clientStats, null, null);
     }
 
+    /**
+     * @param orderingKey key selecting the worker thread that runs every callback of the created handle;
+     *                    {@code null} selects it by ledger id
+     */
     LedgerCreateOp(
             BookKeeper bk, int ensembleSize, int writeQuorumSize, int ackQuorumSize, DigestType digestType,
             byte[] passwd, CreateCallback cb, Object ctx, final Map<String, byte[]> customMetadata,
             EnumSet<WriteFlag> writeFlags,
             BookKeeperClientStats clientStats,
-            Logger parentLogger) {
+            Logger parentLogger,
+            Object orderingKey) {
         this.bk = bk;
         this.metadataFormatVersion = bk.getConf().getLedgerMetadataFormatVersion();
         this.ensembleSize = ensembleSize;
@@ -131,6 +137,7 @@ class LedgerCreateOp {
         this.createOpLogger = clientStats.getCreateOpLogger();
         this.clientStats = clientStats;
         this.parentLogger = parentLogger;
+        this.orderingKey = orderingKey;
     }
 
     /**
@@ -255,10 +262,10 @@ class LedgerCreateOp {
             try {
                 if (adv) {
                     lh = new LedgerHandleAdv(bk.getClientCtx(), ledgerId, writtenMetadata,
-                                             digestType, passwd, writeFlags, parentLogger);
+                                             digestType, passwd, writeFlags, parentLogger, orderingKey);
                 } else {
                     lh = new LedgerHandle(bk.getClientCtx(), ledgerId, writtenMetadata, digestType, passwd, writeFlags,
-                                          parentLogger);
+                                          parentLogger, orderingKey);
                 }
             } catch (GeneralSecurityException e) {
                 log.error()
@@ -317,6 +324,7 @@ class LedgerCreateOp {
             org.apache.bookkeeper.client.api.DigestType.CRC32;
         private Map<String, byte[]> builderCustomMetadata = Collections.emptyMap();
         private Logger builderParentLogger;
+        private Object builderOrderingKey;
 
         CreateBuilderImpl(BookKeeper bk) {
             this.bk = bk;
@@ -368,6 +376,12 @@ class LedgerCreateOp {
         @Override
         public CreateBuilder withLoggerContext(Logger parentLogger) {
             this.builderParentLogger = parentLogger;
+            return this;
+        }
+
+        @Override
+        public CreateBuilder withOrderingKey(Object orderingKey) {
+            this.builderOrderingKey = orderingKey;
             return this;
         }
 
@@ -437,7 +451,7 @@ class LedgerCreateOp {
             LedgerCreateOp op = new LedgerCreateOp(bk, builderEnsembleSize,
                 builderWriteQuorumSize, builderAckQuorumSize, DigestType.fromApiDigestType(builderDigestType),
                 builderPassword, cb, null, builderCustomMetadata, builderWriteFlags,
-                bk.getClientCtx().getClientStats(), builderParentLogger);
+                bk.getClientCtx().getClientStats(), builderParentLogger, builderOrderingKey);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -464,6 +478,12 @@ class LedgerCreateOp {
         @Override
         public CreateAdvBuilder withLedgerId(long ledgerId) {
             builderLedgerId = ledgerId;
+            return this;
+        }
+
+        @Override
+        public CreateAdvBuilder withOrderingKey(Object orderingKey) {
+            parent.builderOrderingKey = orderingKey;
             return this;
         }
 
@@ -499,7 +519,7 @@ class LedgerCreateOp {
                     parent.builderPassword, cb, null, parent.builderCustomMetadata,
                     parent.builderWriteFlags,
                     parent.bk.getClientCtx().getClientStats(),
-                    parent.builderParentLogger);
+                    parent.builderParentLogger, parent.builderOrderingKey);
             ReentrantReadWriteLock closeLock = parent.bk.getCloseLock();
             closeLock.readLock().lock();
             try {

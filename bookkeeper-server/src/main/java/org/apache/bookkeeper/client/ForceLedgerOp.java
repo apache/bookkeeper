@@ -55,7 +55,7 @@ class ForceLedgerOp implements Runnable, ForceLedgerCallback {
     }
 
     void sendForceLedgerRequest(int bookieIndex) {
-        bookieClient.forceLedger(currentEnsemble.get(bookieIndex), lh.ledgerId, this, bookieIndex);
+        bookieClient.forceLedger(currentEnsemble.get(bookieIndex), lh.ledgerId, this, bookieIndex, lh.executor);
     }
 
     @Override

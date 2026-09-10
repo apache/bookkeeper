@@ -30,7 +30,9 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.RateLimiter;
+import com.google.common.util.concurrent.SettableFuture;
 import io.github.merlimat.slog.Logger;
 import io.github.merlimat.slog.LoggerBuilder;
 import io.netty.buffer.ByteBuf;
@@ -46,6 +48,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.RejectedExecutionException;
@@ -190,6 +193,20 @@ public class LedgerHandle implements WriteHandle {
                  EnumSet<WriteFlag> writeFlags,
                  Logger parentLogger)
             throws GeneralSecurityException, NumberFormatException {
+        this(clientCtx, ledgerId, versionedMetadata, digestType, password, writeFlags, parentLogger, null);
+    }
+
+    /**
+     * @param orderingKey key selecting the worker thread that runs every callback of this handle;
+     *                    {@code null} selects it by ledger id
+     */
+    LedgerHandle(ClientContext clientCtx,
+                 long ledgerId, Versioned<LedgerMetadata> versionedMetadata,
+                 BookKeeper.DigestType digestType, byte[] password,
+                 EnumSet<WriteFlag> writeFlags,
+                 Logger parentLogger,
+                 Object orderingKey)
+            throws GeneralSecurityException, NumberFormatException {
         LoggerBuilder builder = Logger.get(LedgerHandle.class).with();
         if (parentLogger != null) {
             builder = builder.ctx(parentLogger);
@@ -213,8 +230,13 @@ public class LedgerHandle implements WriteHandle {
         this.pendingAddsSequenceHead = lastAddConfirmed;
 
         this.ledgerId = ledgerId;
-        // The main worker pool is a plain OrderedExecutor, whose threads are SingleThreadExecutor instances
-        this.executor = (SingleThreadExecutor) clientCtx.getMainWorkerPool().chooseThread(ledgerId);
+        // Two calls on purpose: chooseThread(long) hashes the raw id while chooseThread(Object) goes through
+        // hashCode(), and Long.hashCode folds the high bits. Boxing the id would move ledgers with ids >= 2^31
+        // to a different thread than the other ledger-id keyed dispatches (e.g. OrderedGenericCallback).
+        // The main worker pool is a plain OrderedExecutor, whose threads are SingleThreadExecutor instances.
+        this.executor = (SingleThreadExecutor) (orderingKey == null
+                ? clientCtx.getMainWorkerPool().chooseThread(ledgerId)
+                : clientCtx.getMainWorkerPool().chooseThread(orderingKey));
 
         if (clientCtx.getConf().enableStickyReads
                 && getLedgerMetadata().getEnsembleSize() == getLedgerMetadata().getWriteQuorumSize()) {
@@ -1002,7 +1024,7 @@ public class LedgerHandle implements WriteHandle {
         batchReadEntriesInternalAsync(startEntry, maxCount, maxSize, false)
                 .whenCompleteAsync((entries, error) -> completeBatchReadUnconfirmed(
                         startEntry, lastEntry, entries, error, future),
-                        clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+                        executor);
         return future;
     }
 
@@ -1177,7 +1199,7 @@ public class LedgerHandle implements WriteHandle {
                             cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
                         }
                     }
-                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+                    }, executor);
         } else {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
         }
@@ -1211,7 +1233,7 @@ public class LedgerHandle implements WriteHandle {
                                 cb.readComplete(Code.UnexpectedConditionException, LedgerHandle.this, null, ctx);
                             }
                         }
-                    }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+                    }, executor);
         } else {
             cb.readComplete(Code.ClientClosedException, LedgerHandle.this, null, ctx);
         }
@@ -1818,6 +1840,7 @@ public class LedgerHandle implements WriteHandle {
                                 ledgerId,
                                 getCurrentEnsemble(),
                                 ledgerKey,
+                                executor,
                                 innercb).initiate();
     }
 
@@ -2427,7 +2450,7 @@ public class LedgerHandle implements WriteHandle {
                             unsetSuccessAndSendWriteRequest(newEnsemble, replaced);
                         }
                     }
-            }, clientCtx.getMainWorkerPool().chooseThread(ledgerId));
+            }, executor);
     }
 
     void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, final Set<Integer> bookies) {
@@ -2513,6 +2536,23 @@ public class LedgerHandle implements WriteHandle {
      */
     void executeOrdered(Runnable runnable) throws RejectedExecutionException {
         executor.execute(runnable);
+    }
+
+    /**
+     * Run the task in the thread pinned to the ledger, exposing its result as a future.
+     * @param task
+     * @throws RejectedExecutionException
+     */
+    <T> ListenableFuture<T> submitOrdered(Callable<T> task) throws RejectedExecutionException {
+        SettableFuture<T> future = SettableFuture.create();
+        executeOrdered(() -> {
+            try {
+                future.set(task.call());
+            } catch (Throwable t) {
+                future.setException(t);
+            }
+        });
+        return future;
     }
 
     @VisibleForTesting

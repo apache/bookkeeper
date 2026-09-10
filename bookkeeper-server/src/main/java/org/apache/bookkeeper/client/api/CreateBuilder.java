@@ -141,4 +141,22 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
         return this;
     }
 
+    /**
+     * Set the key used to select the client worker thread on which every callback of the resulting
+     * {@link WriteHandle} runs (add, read and close completions, as well as the completion of this create
+     * operation). By default the thread is selected by ledger id.
+     *
+     * <p>The thread is resolved with {@link org.apache.bookkeeper.common.util.OrderedExecutor#chooseThread(Object)}
+     * on the client's main worker pool, so an application that already runs its own per-entity work on
+     * {@code bookKeeper.getMainWorkerPool().chooseThread(key)} can pass the same key here and have the ledger's
+     * callbacks delivered on that very thread, avoiding a cross-thread hop per completion.
+     *
+     * @param orderingKey the ordering key; {@code null} (the default) selects the thread by ledger id
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withOrderingKey(Object orderingKey) {
+        return this;
+    }
+
 }

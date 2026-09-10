@@ -95,7 +95,7 @@ public abstract class ReadOpBase implements Runnable {
     }
 
     public void submit() {
-        clientCtx.getMainWorkerPool().executeOrdered(lh.ledgerId, this);
+        lh.executeOrdered(this);
     }
 
     @Override
@@ -256,7 +256,7 @@ public abstract class ReadOpBase implements Runnable {
          */
         @Override
         public ListenableFuture<Boolean> issueSpeculativeRequest() {
-            return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
+            return lh.submitOrdered(new Callable<Boolean>() {
                 @Override
                 public Boolean call() throws Exception {
                     if (!isComplete() && null != maybeSendSpeculativeRead(heardFromHostsBitSet)) {

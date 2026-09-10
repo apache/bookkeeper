@@ -23,6 +23,7 @@ package org.apache.bookkeeper.client.api;
 import static org.apache.bookkeeper.common.concurrent.FutureUtils.result;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.anyLong;
 import static org.mockito.Mockito.doAnswer;
@@ -130,7 +131,7 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
             return null;
         }).when(bookieClient).readEntry(any(BookieId.class),
                 anyLong(), anyLong(), any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
-                any(), anyInt(), any());
+                any(), anyInt(), any(), anyBoolean(), any());
         // Mock read lac.
         doAnswer(invocation -> {
             long ledgerId = (long) invocation.getArguments()[1];
@@ -141,7 +142,7 @@ public class BookKeeperBuildersOpenLedgerTest extends MockBookKeeperTestCase {
             return null;
         }).when(bookieClient).readLac(any(BookieId.class),
                 anyLong(), any(BookkeeperInternalCallbacks.ReadLacCallback.class),
-                any());
+                any(), any());
     }
 
     private void resetBKClient() throws Exception {

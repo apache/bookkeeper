@@ -20,6 +20,7 @@ package org.apache.bookkeeper.client;
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.List;
+import java.util.concurrent.Executor;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.BKDigestMatchException;
 import org.apache.bookkeeper.net.BookieId;
@@ -39,6 +40,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
     private final byte[] ledgerKey;
     private final BookieClient bookieClient;
     private final DigestManager digestManager;
+    private final Executor callbackExecutor;
     private int numResponsesPending;
     private RecoveryData maxRecoveredData;
     private volatile boolean completed = false;
@@ -62,6 +64,21 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                                List<BookieId> ensemble,
                                byte[] ledgerKey,
                                LastConfirmedDataCallback cb) {
+        this(bookieClient, schedule, digestManager, ledgerId, ensemble, ledgerKey, null, cb);
+    }
+
+    /**
+     * @param callbackExecutor executor running the read callbacks; {@code null} uses the worker thread
+     *                         selected by ledger id
+     */
+    public ReadLastConfirmedOp(BookieClient bookieClient,
+                               DistributionSchedule schedule,
+                               DigestManager digestManager,
+                               long ledgerId,
+                               List<BookieId> ensemble,
+                               byte[] ledgerKey,
+                               Executor callbackExecutor,
+                               LastConfirmedDataCallback cb) {
         this.cb = cb;
         this.bookieClient = bookieClient;
         this.maxRecoveredData = new RecoveryData(LedgerHandle.INVALID_ENTRY_ID, 0);
@@ -71,6 +88,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
         this.ledgerId = ledgerId;
         this.ledgerKey = ledgerKey;
         this.digestManager = digestManager;
+        this.callbackExecutor = callbackExecutor;
     }
 
     public void initiate() {
@@ -78,7 +96,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
             bookieClient.readEntry(currentEnsemble.get(i),
                                    ledgerId,
                                    BookieProtocol.LAST_ADD_CONFIRMED,
-                                   this, i, BookieProtocol.FLAG_NONE);
+                                   this, i, BookieProtocol.FLAG_NONE, null, false, callbackExecutor);
         }
     }
 
@@ -88,7 +106,7 @@ class ReadLastConfirmedOp implements ReadEntryCallback {
                                    ledgerId,
                                    BookieProtocol.LAST_ADD_CONFIRMED,
                                    this, i, BookieProtocol.FLAG_DO_FENCING,
-                                   ledgerKey);
+                                   ledgerKey, false, callbackExecutor);
         }
     }
 

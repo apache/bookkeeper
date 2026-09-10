@@ -546,6 +546,10 @@ public abstract class MockBookKeeperTestCase {
         stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
                 any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
                 any(), anyInt(), any(), anyBoolean());
+
+        stub.when(bookieClient).readEntry(any(), anyLong(), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadEntryCallback.class),
+                any(), anyInt(), any(), anyBoolean(), any());
     }
 
     protected void setupBookieClientBatchReadEntry() {
@@ -624,6 +628,8 @@ public abstract class MockBookKeeperTestCase {
                 any(), any(), anyInt(), any());
         stub.when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
                 any(), any(), anyInt(), any(), anyBoolean());
+        stub.when(bookieClient).batchReadEntries(any(BookieId.class), anyLong(), anyLong(), anyInt(), anyLong(),
+                any(), any(), anyInt(), any(), anyBoolean(), any());
     }
 
     @SuppressWarnings("unchecked")
@@ -651,6 +657,9 @@ public abstract class MockBookKeeperTestCase {
         stub.when(bookieClient).readLac(any(BookieId.class), anyLong(),
                 any(BookkeeperInternalCallbacks.ReadLacCallback.class),
                 any());
+        stub.when(bookieClient).readLac(any(BookieId.class), anyLong(),
+                any(BookkeeperInternalCallbacks.ReadLacCallback.class),
+                any(), any());
     }
 
     private byte[] extractEntryPayload(long ledgerId, long entryId, ByteBufList toSend)
@@ -726,6 +735,11 @@ public abstract class MockBookKeeperTestCase {
                 anyLong(), any(ByteBufList.class),
                 any(BookkeeperInternalCallbacks.WriteCallback.class),
                 any(), anyInt(), anyBoolean(), any(EnumSet.class));
+        stub.when(bookieClient).addEntry(any(BookieId.class),
+                anyLong(), any(byte[].class),
+                anyLong(), any(ByteBufList.class),
+                any(BookkeeperInternalCallbacks.WriteCallback.class),
+                any(), anyInt(), anyBoolean(), any(EnumSet.class), any());
     }
 
     @SuppressWarnings("unchecked")
@@ -767,6 +781,10 @@ public abstract class MockBookKeeperTestCase {
                 anyLong(),
                 any(BookkeeperInternalCallbacks.ForceLedgerCallback.class),
                 any());
+        stub.when(bookieClient).forceLedger(any(BookieId.class),
+                anyLong(),
+                any(BookkeeperInternalCallbacks.ForceLedgerCallback.class),
+                any(), any());
     }
 
 }

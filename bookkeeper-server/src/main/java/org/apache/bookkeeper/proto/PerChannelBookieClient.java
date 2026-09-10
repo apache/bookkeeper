@@ -76,6 +76,7 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicLong;
@@ -681,14 +682,14 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
     }
 
     void writeLac(final long ledgerId, final byte[] masterKey, final long lac, ByteBufList toSend, WriteLacCallback cb,
-            Object ctx) {
+            Object ctx, Executor callbackExecutor) {
         final long txnId = getTxnId();
         final CompletionKey completionKey = new TxnCompletionKey(txnId,
                                                                 OperationType.WRITE_LAC);
         // writeLac is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                               new WriteLacCompletion(completionKey, cb,
-                                                     ctx, ledgerId, this));
+                                                     ctx, ledgerId, this, callbackExecutor));
 
         // Build the request
         Request writeLacRequest = new Request();
@@ -708,10 +709,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         writeAndFlush(channel, completionKey, writeLacRequest, false, releaseBody, releaseBody);
     }
 
-    void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx) {
+    void forceLedger(final long ledgerId, ForceLedgerCallback cb, Object ctx, Executor callbackExecutor) {
         if (useV2WireProtocol) {
                 log.error("force is not allowed with v2 protocol");
-                executor.executeOrdered(ledgerId, () -> {
+                executeOrdered(executor, callbackExecutor, ledgerId, () -> {
                     cb.forceLedgerComplete(BKException.Code.IllegalOpException, ledgerId, bookieId, ctx);
                 });
                 return;
@@ -722,7 +723,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         // force is mostly like addEntry hence uses addEntryTimeout
         completionObjects.put(completionKey,
                               new ForceLedgerCompletion(completionKey, cb,
-                                                     ctx, ledgerId, this));
+                                                     ctx, ledgerId, this, callbackExecutor));
 
         // Build the request
         Request forceLedgerRequest = new Request();
@@ -755,9 +756,12 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
      *          allowFastFail flag
      * @param writeFlags
      *          WriteFlags
+     * @param callbackExecutor
+     *          Executor running the callback, or null for the worker thread selected by ledgerId
      */
     void addEntry(final long ledgerId, byte[] masterKey, final long entryId, ReferenceCounted toSend, WriteCallback cb,
-                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags) {
+                  Object ctx, final int options, boolean allowFastFail, final EnumSet<WriteFlag> writeFlags,
+                  Executor callbackExecutor) {
         Object request = null;
         CompletionKey completionKey = null;
         Runnable cleanupActionFailedBeforeWrite = null;
@@ -819,13 +823,13 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
 
         putCompletionKeyValue(completionKey,
                               AddCompletion.acquireAddCompletion(completionKey,
-                                                   cb, ctx, ledgerId, entryId, this));
+                                                   cb, ctx, ledgerId, entryId, this, callbackExecutor));
         // addEntry times out on backpressure
         writeAndFlush(channel, completionKey, request, allowFastFail, cleanupActionFailedBeforeWrite,
                 cleanupActionAfterWrite);
     }
 
-    public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx) {
+    public void readLac(final long ledgerId, ReadLacCallback cb, Object ctx, Executor callbackExecutor) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
@@ -848,7 +852,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
         putCompletionKeyValue(completionKey,
                               new ReadLacCompletion(completionKey, cb,
-                                                    ctx, ledgerId, this));
+                                                    ctx, ledgerId, this, callbackExecutor));
         writeAndFlush(channel, completionKey, request);
     }
 
@@ -878,9 +882,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                           final long timeOutInMillis,
                                           final boolean piggyBackEntry,
                                           ReadEntryCallback cb,
-                                          Object ctx) {
+                                          Object ctx,
+                                          Executor callbackExecutor) {
         readEntryInternal(ledgerId, entryId, previousLAC, timeOutInMillis,
-                          piggyBackEntry, cb, ctx, (short) 0, null, false);
+                          piggyBackEntry, cb, ctx, (short) 0, null, false, callbackExecutor);
     }
 
     /**
@@ -892,9 +897,10 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                           Object ctx,
                           int flags,
                           byte[] masterKey,
-                          boolean allowFastFail) {
+                          boolean allowFastFail,
+                          Executor callbackExecutor) {
         readEntryInternal(ledgerId, entryId, null, null, false,
-                          cb, ctx, (short) flags, masterKey, allowFastFail);
+                          cb, ctx, (short) flags, masterKey, allowFastFail, callbackExecutor);
     }
 
     private void readEntryInternal(final long ledgerId,
@@ -906,7 +912,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                    final Object ctx,
                                    int flags,
                                    byte[] masterKey,
-                                   boolean allowFastFail) {
+                                   boolean allowFastFail,
+                                   Executor callbackExecutor) {
         Object request = null;
         CompletionKey completionKey = null;
         if (useV2WireProtocol) {
@@ -970,7 +977,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             request = readEntryRequest;
         }
 
-        ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId, this);
+        ReadCompletion readCompletion = new ReadCompletion(completionKey, cb, ctx, ledgerId, entryId, this,
+                callbackExecutor);
         putCompletionKeyValue(completionKey, readCompletion);
 
         writeAndFlush(channel, completionKey, request, allowFastFail, null, null);
@@ -984,10 +992,11 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                             Object ctx,
                             int flags,
                             byte[] masterKey,
-                            boolean allowFastFail) {
+                            boolean allowFastFail,
+                            Executor callbackExecutor) {
 
         batchReadEntriesInternal(ledgerId, startEntryId, maxCount, maxSize, null, null, false,
-                cb, ctx, (short) flags, masterKey, allowFastFail);
+                cb, ctx, (short) flags, masterKey, allowFastFail, callbackExecutor);
     }
 
     private void batchReadEntriesInternal(final long ledgerId,
@@ -1001,7 +1010,8 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                                      final Object ctx,
                                      int flags,
                                      byte[] masterKey,
-                                     boolean allowFastFail) {
+                                     boolean allowFastFail,
+                                     Executor callbackExecutor) {
         Object request;
         CompletionKey completionKey;
         final long txnId = getTxnId();
@@ -1013,7 +1023,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
             throw new UnsupportedOperationException("Unsupported batch read entry operation for v3 protocol.");
         }
         BatchedReadCompletion readCompletion = new BatchedReadCompletion(
-                completionKey, cb, ctx, ledgerId, startEntryId, this);
+                completionKey, cb, ctx, ledgerId, startEntryId, this, callbackExecutor);
         putCompletionKeyValue(completionKey, readCompletion);
 
         writeAndFlush(channel, completionKey, request, allowFastFail, null, null);
@@ -1382,6 +1392,18 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
         }
     }
 
+    /**
+     * Runs {@code r} on the thread owning the callbacks of a ledger: the caller-supplied
+     * {@code callbackExecutor} when present, otherwise the worker thread {@code executor} selects by ledger id.
+     */
+    static void executeOrdered(OrderedExecutor executor, Executor callbackExecutor, long ledgerId, Runnable r) {
+        if (callbackExecutor != null) {
+            callbackExecutor.execute(r);
+        } else {
+            executor.executeOrdered(ledgerId, r);
+        }
+    }
+
     private void readV2Response(final BookieProtocol.Response response) {
         OperationType operationType = getOperationType(response.getOpCode());
         StatusCode status = getStatusCodeFromErrorCode(response.errorCode);
@@ -1402,8 +1424,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .log("Unexpected response received from bookie");
             response.release();
         } else {
-            long orderingKey = completionValue.ledgerId;
-            executor.executeOrdered(orderingKey,
+            completionValue.executeOrdered(
                     ReadV2ResponseCallback.create(completionValue, response.ledgerId, response.entryId,
                                                   status, response));
         }
@@ -1518,8 +1539,7 @@ public class PerChannelBookieClient extends ChannelInboundHandlerAdapter {
                     .attr("txnId", () -> header.getTxnId())
                     .log("Unexpected response received from bookie");
         } else {
-            long orderingKey = completionValue.ledgerId;
-            executor.executeOrdered(orderingKey, new Runnable() {
+            completionValue.executeOrdered(new Runnable() {
                 @Override
                 public void run() {
                     completionValue.restoreMdcContext();

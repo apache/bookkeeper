@@ -52,7 +52,8 @@ public class PendingWriteLacOpTest implements AsyncCallback.AddLacCallback {
         mockClientContext = mock(ClientContext.class);
         mockBookieClient = mock(BookieClient.class);
         doNothing().when(mockBookieClient).writeLac(any(BookieId.class), anyLong(), any(byte[].class), anyLong(),
-                any(ByteBufList.class), any(BookkeeperInternalCallbacks.WriteLacCallback.class), any(Object.class));
+                any(ByteBufList.class), any(BookkeeperInternalCallbacks.WriteLacCallback.class), any(Object.class),
+                any());
         when(mockClientContext.getBookieClient()).thenReturn(mockBookieClient);
         callbackInvoked = false;
     }

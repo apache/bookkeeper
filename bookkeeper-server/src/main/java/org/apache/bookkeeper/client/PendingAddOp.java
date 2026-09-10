@@ -148,7 +148,7 @@ class PendingAddOp implements WriteCallback {
 
         clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
                                              lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
-                                             flags, allowFailFast, lh.writeFlags);
+                                             flags, allowFailFast, lh.writeFlags, lh.executor);
         ++pendingWriteRequests;
     }
 

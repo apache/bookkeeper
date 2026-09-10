@@ -505,7 +505,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
      */
     @Override
     public ListenableFuture<Boolean> issueSpeculativeRequest() {
-        return clientCtx.getMainWorkerPool().submitOrdered(lh.getId(), new Callable<Boolean>() {
+        return lh.submitOrdered(new Callable<Boolean>() {
             @Override
             public Boolean call() throws Exception {
                 if (!requestComplete.get() && !request.isComplete()
@@ -554,7 +554,7 @@ class ReadLastConfirmedAndEntryOp implements BookkeeperInternalCallbacks.ReadEnt
             prevEntryId,
             timeOutInMillis,
             true,
-            this, new ReadLastConfirmedAndEntryContext(bookieIndex, to));
+            this, new ReadLastConfirmedAndEntryContext(bookieIndex, to), lh.executor);
         this.numResponsesPending++;
     }
 

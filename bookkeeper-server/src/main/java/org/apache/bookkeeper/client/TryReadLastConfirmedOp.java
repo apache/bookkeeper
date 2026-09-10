@@ -59,7 +59,7 @@ class TryReadLastConfirmedOp implements ReadEntryCallback {
             bookieClient.readEntry(currentEnsemble.get(i),
                                    lh.ledgerId,
                                    BookieProtocol.LAST_ADD_CONFIRMED,
-                                   this, i, BookieProtocol.FLAG_NONE);
+                                   this, i, BookieProtocol.FLAG_NONE, null, false, lh.executor);
         }
     }
 

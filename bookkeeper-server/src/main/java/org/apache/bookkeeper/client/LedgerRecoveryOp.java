@@ -96,6 +96,7 @@ class LedgerRecoveryOp implements ReadEntryListener, AddCallback {
                                                             lh.ledgerId,
                                                             lh.getCurrentEnsemble(),
                                                             lh.ledgerKey,
+                                                            lh.executor,
                 new ReadLastConfirmedOp.LastConfirmedDataCallback() {
                     @Override
                     public void readLastConfirmedDataComplete(int rc, RecoveryData data) {

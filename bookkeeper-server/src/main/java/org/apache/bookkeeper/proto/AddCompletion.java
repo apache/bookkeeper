@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.util.Recycler;
+import java.util.concurrent.Executor;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -35,9 +36,11 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
                                               final BookkeeperInternalCallbacks.WriteCallback originalCallback,
                                               final Object originalCtx,
                                               final long ledgerId, final long entryId,
-                                              PerChannelBookieClient perChannelBookieClient) {
+                                              PerChannelBookieClient perChannelBookieClient,
+                                              Executor callbackExecutor) {
         AddCompletion completion = ADD_COMPLETION_RECYCLER.get();
-        completion.reset(key, originalCallback, originalCtx, ledgerId, entryId, perChannelBookieClient);
+        completion.reset(key, originalCallback, originalCtx, ledgerId, entryId, perChannelBookieClient,
+                callbackExecutor);
         return completion;
     }
 
@@ -55,7 +58,8 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
                final BookkeeperInternalCallbacks.WriteCallback originalCallback,
                final Object originalCtx,
                final long ledgerId, final long entryId,
-               PerChannelBookieClient perChannelBookieClient) {
+               PerChannelBookieClient perChannelBookieClient,
+               Executor callbackExecutor) {
         this.key = key;
         this.originalCallback = originalCallback;
         this.ctx = originalCtx;
@@ -66,6 +70,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
         this.opLogger = perChannelBookieClient.addEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.addTimeoutOpLogger;
         this.perChannelBookieClient = perChannelBookieClient;
+        this.callbackExecutor = callbackExecutor;
         this.mdcContextMap = perChannelBookieClient.preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
     }
 
@@ -75,6 +80,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
         this.opLogger = null;
         this.timeoutOpLogger = null;
         this.perChannelBookieClient = null;
+        this.callbackExecutor = null;
         this.mdcContextMap = null;
         handle.recycle(this);
     }

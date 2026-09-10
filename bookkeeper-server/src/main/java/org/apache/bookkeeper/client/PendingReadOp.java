@@ -181,10 +181,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         if (isRecoveryRead) {
             int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
+                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey, false, lh.executor);
         } else {
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
+                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE, null, false,
+                    lh.executor);
         }
     }
 

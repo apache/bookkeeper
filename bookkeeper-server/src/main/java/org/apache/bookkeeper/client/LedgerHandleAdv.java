@@ -65,7 +65,15 @@ public class LedgerHandleAdv extends LedgerHandle implements WriteAdvHandle {
                     BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags,
                     Logger parentLogger)
             throws GeneralSecurityException, NumberFormatException {
-        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags, parentLogger);
+        this(clientCtx, ledgerId, metadata, digestType, password, writeFlags, parentLogger, null);
+    }
+
+    LedgerHandleAdv(ClientContext clientCtx,
+                    long ledgerId, Versioned<LedgerMetadata> metadata,
+                    BookKeeper.DigestType digestType, byte[] password, EnumSet<WriteFlag> writeFlags,
+                    Logger parentLogger, Object orderingKey)
+            throws GeneralSecurityException, NumberFormatException {
+        super(clientCtx, ledgerId, metadata, digestType, password, writeFlags, parentLogger, orderingKey);
         pendingAddOps = new PriorityBlockingQueue<PendingAddOp>(10, new PendingOpsComparator());
     }
 

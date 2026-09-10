@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ReadCompletion extends CompletionValue {
@@ -35,8 +36,9 @@ class ReadCompletion extends CompletionValue {
                           final BookkeeperInternalCallbacks.ReadEntryCallback originalCallback,
                           final Object originalCtx,
                           long ledgerId, final long entryId,
-                          PerChannelBookieClient perChannelBookieClient) {
-        super("Read", originalCtx, ledgerId, entryId, perChannelBookieClient);
+                          PerChannelBookieClient perChannelBookieClient,
+                          Executor callbackExecutor) {
+        super("Read", originalCtx, ledgerId, entryId, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readTimeoutOpLogger;
         this.cb = (rc, ledgerId1, entryId1, buffer, ctx) -> {

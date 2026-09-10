@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ForceLedgerCompletion extends CompletionValue {
@@ -30,9 +31,10 @@ class ForceLedgerCompletion extends CompletionValue {
                                  final BookkeeperInternalCallbacks.ForceLedgerCallback originalCallback,
                                  final Object originalCtx,
                                  final long ledgerId,
-                                 PerChannelBookieClient perChannelBookieClient) {
+                                 PerChannelBookieClient perChannelBookieClient,
+                                 Executor callbackExecutor) {
         super("ForceLedger",
-                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.forceLedgerOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.forceLedgerTimeoutOpLogger;
         this.cb = (rc, ledgerId1, addr, ctx) -> {

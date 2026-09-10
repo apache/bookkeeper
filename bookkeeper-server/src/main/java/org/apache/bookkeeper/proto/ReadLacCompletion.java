@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ReadLacCompletion extends CompletionValue {
@@ -31,8 +32,9 @@ class ReadLacCompletion extends CompletionValue {
     public ReadLacCompletion(final CompletionKey key,
                              BookkeeperInternalCallbacks.ReadLacCallback originalCallback,
                              final Object ctx, final long ledgerId,
-                             PerChannelBookieClient perChannelBookieClient) {
-        super("ReadLAC", ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                             PerChannelBookieClient perChannelBookieClient,
+                             Executor callbackExecutor) {
+        super("ReadLAC", ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readLacOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readLacTimeoutOpLogger;
         this.cb = new BookkeeperInternalCallbacks.ReadLacCallback() {

@@ -73,7 +73,7 @@ class PendingWriteLacOp implements WriteLacCallback {
 
     void sendWriteLacRequest(int bookieIndex, ByteBufList toSend) {
         clientCtx.getBookieClient().writeLac(currentEnsemble.get(bookieIndex),
-                                             lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
+                                             lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex, lh.executor);
     }
 
     void initiate(ByteBufList toSend) {

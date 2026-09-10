@@ -24,6 +24,7 @@ package org.apache.bookkeeper.proto;
 import io.github.merlimat.slog.Event;
 import io.netty.channel.Channel;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
@@ -43,16 +44,26 @@ abstract class CompletionValue {
     protected OpStatsLogger timeoutOpLogger;
     protected Map<String, String> mdcContextMap;
     protected PerChannelBookieClient perChannelBookieClient;
+    /** Executor running the callback; {@code null} means the worker thread selected by ledger id. */
+    protected Executor callbackExecutor;
 
     public CompletionValue(String operationName,
                            Object ctx,
                            long ledgerId, long entryId, PerChannelBookieClient perChannelBookieClient) {
+        this(operationName, ctx, ledgerId, entryId, perChannelBookieClient, null);
+    }
+
+    public CompletionValue(String operationName,
+                           Object ctx,
+                           long ledgerId, long entryId, PerChannelBookieClient perChannelBookieClient,
+                           Executor callbackExecutor) {
         this.operationName = operationName;
         this.ctx = ctx;
         this.ledgerId = ledgerId;
         this.entryId = entryId;
         this.startTime = MathUtils.nowInNano();
         this.perChannelBookieClient = perChannelBookieClient;
+        this.callbackExecutor = callbackExecutor;
         if (perChannelBookieClient != null) {
             this.mdcContextMap = perChannelBookieClient.preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
         }
@@ -154,8 +165,16 @@ abstract class CompletionValue {
         // no-op
     }
 
+    /**
+     * Runs {@code r} on the thread owning the callbacks of this operation: the caller-supplied executor when
+     * present, otherwise the worker thread selected by ledger id.
+     */
+    void executeOrdered(Runnable r) {
+        PerChannelBookieClient.executeOrdered(perChannelBookieClient.executor, callbackExecutor, ledgerId, r);
+    }
+
     protected void errorOutAndRunCallback(final Runnable callback) {
-        perChannelBookieClient.executor.executeOrdered(ledgerId, () -> {
+        executeOrdered(() -> {
             String bAddress = "null";
             Channel c = perChannelBookieClient.channel;
             if (c != null && c.remoteAddress() != null) {

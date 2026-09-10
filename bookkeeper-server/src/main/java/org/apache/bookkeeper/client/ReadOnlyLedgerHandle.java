@@ -105,7 +105,17 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
                          boolean watchImmediately,
                          Logger parentLogger)
             throws GeneralSecurityException, NumberFormatException {
-        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE, parentLogger);
+        this(clientCtx, ledgerId, metadata, digestType, password, watchImmediately, parentLogger, null);
+    }
+
+    ReadOnlyLedgerHandle(ClientContext clientCtx,
+                         long ledgerId, Versioned<LedgerMetadata> metadata,
+                         BookKeeper.DigestType digestType, byte[] password,
+                         boolean watchImmediately,
+                         Logger parentLogger,
+                         Object orderingKey)
+            throws GeneralSecurityException, NumberFormatException {
+        super(clientCtx, ledgerId, metadata, digestType, password, WriteFlag.NONE, parentLogger, orderingKey);
         if (watchImmediately) {
             registerLedgerMetadataListener();
         }
@@ -177,7 +187,7 @@ class ReadOnlyLedgerHandle extends LedgerHandle implements LedgerMetadataListene
 
         if (Version.Occurred.BEFORE == occurred) { // the metadata is updated
             try {
-                clientCtx.getMainWorkerPool().executeOrdered(ledgerId, new MetadataUpdater(newMetadata));
+                executeOrdered(new MetadataUpdater(newMetadata));
             } catch (RejectedExecutionException ree) {
                 log.error()
                         .attr("newMetadata", newMetadata)

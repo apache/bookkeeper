@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.net.BookieId;
 
@@ -31,9 +32,10 @@ class WriteLacCompletion extends CompletionValue {
                               final BookkeeperInternalCallbacks.WriteLacCallback originalCallback,
                               final Object originalCtx,
                               final long ledgerId,
-                              PerChannelBookieClient perChannelBookieClient) {
+                              PerChannelBookieClient perChannelBookieClient,
+                              Executor callbackExecutor) {
         super("WriteLAC",
-                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.writeLacOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.writeLacTimeoutOpLogger;
         this.cb = new BookkeeperInternalCallbacks.WriteLacCallback() {

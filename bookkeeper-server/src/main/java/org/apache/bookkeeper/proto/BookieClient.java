@@ -24,6 +24,7 @@ import io.netty.util.ReferenceCounted;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.BatchedReadEntryCallback;
@@ -38,6 +39,12 @@ import org.apache.bookkeeper.util.ByteBufList;
 
 /**
  * Low level client for talking to bookies.
+ *
+ * <p>The callback of a ledger operation runs on the client worker thread selected by the ledger id, unless
+ * the caller passes a {@code callbackExecutor}: then every completion of that request (response, failure and
+ * timeout) is submitted to that executor instead, which lets a ledger handle keep all of its callbacks on the
+ * single thread it was assigned. The overloads without {@code callbackExecutor} are equivalent to passing
+ * {@code null}.
  */
 public interface BookieClient {
     long PENDINGREQ_NOTWRITABLE_MASK = 0x01L << 62;
@@ -95,8 +102,20 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
+    default void forceLedger(BookieId address, long ledgerId,
+                             ForceLedgerCallback cb, Object ctx) {
+        forceLedger(address, ledgerId, cb, ctx, null);
+    }
+
+    /**
+     * Send a force request to the server, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #forceLedger(BookieId, long, ForceLedgerCallback, Object)
+     */
     void forceLedger(BookieId address, long ledgerId,
-                     ForceLedgerCallback cb, Object ctx);
+                     ForceLedgerCallback cb, Object ctx, Executor callbackExecutor);
 
     /**
      * Read the last add confirmed for ledger {@code ledgerId} from the bookie at
@@ -107,7 +126,18 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
-    void readLac(BookieId address, long ledgerId, ReadLacCallback cb, Object ctx);
+    default void readLac(BookieId address, long ledgerId, ReadLacCallback cb, Object ctx) {
+        readLac(address, ledgerId, cb, ctx, null);
+    }
+
+    /**
+     * Read the last add confirmed, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #readLac(BookieId, long, ReadLacCallback, Object)
+     */
+    void readLac(BookieId address, long ledgerId, ReadLacCallback cb, Object ctx, Executor callbackExecutor);
 
     /**
      * Explicitly write the last add confirmed for ledger {@code ledgerId} to the bookie at
@@ -121,8 +151,20 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
+    default void writeLac(BookieId address, long ledgerId, byte[] masterKey,
+                          long lac, ByteBufList toSend, WriteLacCallback cb, Object ctx) {
+        writeLac(address, ledgerId, masterKey, lac, toSend, cb, ctx, null);
+    }
+
+    /**
+     * Explicitly write the last add confirmed, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #writeLac(BookieId, long, byte[], long, ByteBufList, WriteLacCallback, Object)
+     */
     void writeLac(BookieId address, long ledgerId, byte[] masterKey,
-                  long lac, ByteBufList toSend, WriteLacCallback cb, Object ctx);
+                  long lac, ByteBufList toSend, WriteLacCallback cb, Object ctx, Executor callbackExecutor);
 
     /**
      * Add an entry for ledger {@code ledgerId} on the bookie at address {@code address}.
@@ -140,9 +182,23 @@ public interface BookieClient {
      * @param writeFlags a set of write flags
      *                   {@link org.apache.bookkeeper.client.api.WriteFlag}
      */
+    default void addEntry(BookieId address, long ledgerId, byte[] masterKey,
+                          long entryId, ReferenceCounted toSend, WriteCallback cb, Object ctx,
+                          int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags) {
+        addEntry(address, ledgerId, masterKey, entryId, toSend, cb, ctx, options, allowFastFail, writeFlags, null);
+    }
+
+    /**
+     * Add an entry, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #addEntry(BookieId, long, byte[], long, ReferenceCounted, WriteCallback, Object, int, boolean, EnumSet)
+     */
     void addEntry(BookieId address, long ledgerId, byte[] masterKey,
                   long entryId, ReferenceCounted toSend, WriteCallback cb, Object ctx,
-                  int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags);
+                  int options, boolean allowFastFail, EnumSet<WriteFlag> writeFlags,
+                  Executor callbackExecutor);
 
     /**
      * Read entry with a null masterkey, disallowing failfast.
@@ -177,9 +233,22 @@ public interface BookieClient {
      * @param allowFastFail fail the read immediately if the channel is non-writable
      *                      {@link #isWritable(BookieId,long)}
      */
+    default void readEntry(BookieId address, long ledgerId, long entryId,
+                           ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
+                           boolean allowFastFail) {
+        readEntry(address, ledgerId, entryId, cb, ctx, flags, masterKey, allowFastFail, null);
+    }
+
+    /**
+     * Read an entry, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #readEntry(BookieId, long, long, ReadEntryCallback, Object, int, byte[], boolean)
+     */
     void readEntry(BookieId address, long ledgerId, long entryId,
                    ReadEntryCallback cb, Object ctx, int flags, byte[] masterKey,
-                   boolean allowFastFail);
+                   boolean allowFastFail, Executor callbackExecutor);
 
     /**
      * Batch read entries with a null masterkey, disallowing failfast.
@@ -218,9 +287,23 @@ public interface BookieClient {
      * @param allowFastFail fail the read immediately if the channel is non-writable
      *                      {@link #isWritable(BookieId,long)}
      */
+    default void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
+            int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
+            int flags, byte[] masterKey, boolean allowFastFail) {
+        batchReadEntries(address, ledgerId, startEntryId, maxCount, maxSize, cb, ctx, flags, masterKey,
+                allowFastFail, null);
+    }
+
+    /**
+     * Batch read entries, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #batchReadEntries(BookieId, long, long, int, long, BatchedReadEntryCallback, Object, int, byte[], boolean)
+     */
     void batchReadEntries(BookieId address, long ledgerId, long startEntryId,
             int maxCount, long maxSize, BatchedReadEntryCallback cb, Object ctx,
-            int flags, byte[] masterKey, boolean allowFastFail);
+            int flags, byte[] masterKey, boolean allowFastFail, Executor callbackExecutor);
 
     /**
      * Send a long poll request to bookie, waiting for the last add confirmed
@@ -236,6 +319,25 @@ public interface BookieClient {
      * @param cb the callback notified when the request completes
      * @param ctx a context object passed to the callback on completion
      */
+    default void readEntryWaitForLACUpdate(BookieId address,
+                                           long ledgerId,
+                                           long entryId,
+                                           long previousLAC,
+                                           long timeOutInMillis,
+                                           boolean piggyBackEntry,
+                                           ReadEntryCallback cb,
+                                           Object ctx) {
+        readEntryWaitForLACUpdate(address, ledgerId, entryId, previousLAC, timeOutInMillis, piggyBackEntry, cb, ctx,
+                null);
+    }
+
+    /**
+     * Send a long poll request to bookie, running the callback on {@code callbackExecutor}.
+     *
+     * @param callbackExecutor executor on which the callback is run; {@code null} runs it on the client
+     *                         worker thread selected by {@code ledgerId}
+     * @see #readEntryWaitForLACUpdate(BookieId, long, long, long, long, boolean, ReadEntryCallback, Object)
+     */
     void readEntryWaitForLACUpdate(BookieId address,
                                    long ledgerId,
                                    long entryId,
@@ -243,7 +345,8 @@ public interface BookieClient {
                                    long timeOutInMillis,
                                    boolean piggyBackEntry,
                                    ReadEntryCallback cb,
-                                   Object ctx);
+                                   Object ctx,
+                                   Executor callbackExecutor);
 
     /**
      * Read information about the bookie, from the bookie.
