@@ -240,13 +240,17 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
 
     /**
      * Runs the task inline when called from this executor's own thread, otherwise submits it like
-     * {@link #execute(Runnable)}.
+     * {@link #execute(Runnable)}. Like {@code execute}, it rejects the task once the executor is shut down.
      *
      * <p>The inline run bypasses the queue: a task submitted this way from the executor thread runs before the
      * tasks already queued, nested inside the task that submitted it. Use it only where that reordering is
      * acceptable. Failures are logged and counted like those of queued tasks.
      */
     public void executeOrRun(Runnable r) {
+        if (state != State.Running) {
+            throw new RejectedExecutionException("Executor is shutting down");
+        }
+
         if (isCurrentThread()) {
             tasksCount.increment();
             safeRunTask(r);

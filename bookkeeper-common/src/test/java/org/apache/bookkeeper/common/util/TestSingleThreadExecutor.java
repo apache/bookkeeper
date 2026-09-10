@@ -434,6 +434,29 @@ public class TestSingleThreadExecutor {
     }
 
     @Test
+    public void testExecuteOrRunRejectedAfterShutdown() throws Exception {
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+
+        // Shut down from the executor thread itself: the inline path must reject like execute() does
+        CompletableFuture<Boolean> rejectedInline = new CompletableFuture<>();
+        ste.execute(() -> {
+            ste.shutdown();
+            try {
+                ste.executeOrRun(() -> {
+                });
+                rejectedInline.complete(false);
+            } catch (RejectedExecutionException e) {
+                rejectedInline.complete(true);
+            }
+        });
+        assertTrue(rejectedInline.get(10, TimeUnit.SECONDS));
+
+        ste.awaitTermination(10, TimeUnit.SECONDS);
+        assertThrows(RejectedExecutionException.class, () -> ste.executeOrRun(() -> {
+        }));
+    }
+
+    @Test
     public void testExecuteOrRunInlineFailureIsIsolated() throws Exception {
         @Cleanup("shutdown")
         SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);

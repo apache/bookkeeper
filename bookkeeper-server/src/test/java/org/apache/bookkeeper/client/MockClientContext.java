@@ -57,7 +57,8 @@ public class MockClientContext implements ClientContext {
     static MockClientContext create(MockBookies mockBookies) throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         OrderedExecutor executor = OrderedExecutor.newBuilder().name("mock-executor").numThreads(1).build();
-        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder().name("mock-scheduler").numThreads(1).build();
+        OrderedScheduler scheduler = OrderedScheduler.newSchedulerBuilder()
+                .name("mock-scheduler").numThreads(1).build();
         MockRegistrationClient regClient = new MockRegistrationClient();
         EnsemblePlacementPolicy placementPolicy = new DefaultEnsemblePlacementPolicy();
         BookieWatcherImpl bookieWatcherImpl = new BookieWatcherImpl(conf, placementPolicy,
