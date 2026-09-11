@@ -281,7 +281,7 @@ Apache Software License, Version 2.
 - lib/com.beust-jcommander-1.82.jar [24]
 - lib/org.apache.datasketches-datasketches-java-7.0.1.jar [25]
 - lib/org.apache.datasketches-datasketches-memory-4.1.0.jar [27]
-- lib/at.yawk.lz4-lz4-java-1.10.2.jar [26]
+- lib/at.yawk.lz4-lz4-java-1.11.1.jar [26]
 - lib/com.google.code.gson-gson-2.12.1.jar [29]
 - lib/io.grpc-grpc-api-1.79.0.jar [33]
 - lib/io.grpc-grpc-context-1.79.0.jar [33]
@@ -367,7 +367,7 @@ Apache Software License, Version 2.
 [23] Source available at https://github.com/facebook/rocksdb/tree/v9.9.3
 [24] Source available at https://github.com/cbeust/jcommander/tree/1.82
 [25] Source available at https://github.com/apache/datasketches-java/tree/7.0.1
-[26] Source available at https://github.com/yawkat/lz4-java/tree/v1.10.2
+[26] Source available at https://github.com/yawkat/lz4-java/tree/v1.11.1
 [27] Source available at https://github.com/apache/datasketches-memory/tree/4.1.0
 [29] Source available at https://github.com/google/gson/tree/gson-parent-2.12.1
 [33] Source available at https://github.com/grpc/grpc-java/tree/v1.79.0

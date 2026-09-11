@@ -248,7 +248,7 @@ Apache Software License, Version 2.
 - lib/org.apache.zookeeper-zookeeper-jute-3.9.5.jar [20]
 - lib/org.apache.zookeeper-zookeeper-3.9.5-tests.jar [20]
 - lib/com.beust-jcommander-1.82.jar [23]
-- lib/at.yawk.lz4-lz4-java-1.10.2.jar [25]
+- lib/at.yawk.lz4-lz4-java-1.11.1.jar [25]
 - lib/com.google.code.gson-gson-2.12.1.jar [28]
 - lib/io.grpc-grpc-api-1.79.0.jar [32]
 - lib/io.grpc-grpc-context-1.79.0.jar [32]
@@ -292,7 +292,7 @@ Apache Software License, Version 2.
 [19] Source available at https://github.com/apache/commons-lang/tree/LANG_3_6
 [20] Source available at https://github.com/apache/zookeeper/tree/release-3.8.0
 [23] Source available at https://github.com/cbeust/jcommander/tree/1.82
-[25] Source available at https://github.com/yawkat/lz4-java/tree/v1.10.2
+[25] Source available at https://github.com/yawkat/lz4-java/tree/v1.11.1
 [28] Source available at https://github.com/google/gson/tree/gson-parent-2.12.1
 [32] Source available at https://github.com/grpc/grpc-java/tree/v1.79.0
 [33] Source available at https://github.com/apache/curator/tree/apache-curator-5.7.1
