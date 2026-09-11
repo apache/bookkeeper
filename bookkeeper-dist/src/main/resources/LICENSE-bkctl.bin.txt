@@ -243,7 +243,7 @@ Apache Software License, Version 2.
 - lib/org.apache.commons-commons-collections4-4.1.jar [18]
 - lib/org.apache.commons-commons-configuration2-2.15.0.jar [7]
 - lib/org.apache.commons-commons-lang3-3.20.0.jar [55]
-- lib/org.apache.commons-commons-text-1.13.1.jar [56]
+- lib/org.apache.commons-commons-text-1.15.0.jar [56]
 - lib/org.apache.zookeeper-zookeeper-3.9.5.jar [20]
 - lib/org.apache.zookeeper-zookeeper-jute-3.9.5.jar [20]
 - lib/org.apache.zookeeper-zookeeper-3.9.5-tests.jar [20]
@@ -311,7 +311,7 @@ Apache Software License, Version 2.
 [52] Source available at https://github.com/carrotsearch/hppc/tree/0.9.1
 [53] Source available at https://github.com/LMAX-Exchange/disruptor/releases/tag/4.0.0
 [55] Source available at https://github.com/apache/commons-lang/tree/rel/commons-lang-3.20.0
-[56] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.13.1
+[56] Source available at https://github.com/apache/commons-text/tree/rel/commons-text-1.15.0
 [57] Source available at https://github.com/apache/commons-beanutils/tree/rel/commons-beanutils-1.11.0
 [59] Source available at https://github.com/merlimat/slog/tree/v0.9.9
 ------------------------------------------------------------------------------------
