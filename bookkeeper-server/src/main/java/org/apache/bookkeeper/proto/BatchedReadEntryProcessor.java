@@ -42,7 +42,6 @@ public class BatchedReadEntryProcessor extends ReadEntryProcessor {
         rep.fenceThreadPool = fenceThreadPool;
         rep.throttleReadResponses = throttleReadResponses;
         rep.maxBatchReadSize = maxBatchReadSize;
-        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
         return rep;
     }
 
