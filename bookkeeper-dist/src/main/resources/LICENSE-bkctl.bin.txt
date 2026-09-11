@@ -550,10 +550,10 @@ Bundled as
 Source available at https://github.com/qos-ch/slf4j/tree/v_2.0.12
 ------------------------------------------------------------------------------------
 This product bundles the bouncycastle Library.
-For license details, see deps/bouncycastle-1.0.2.3/LICENSE.html
+For license details, see deps/bouncycastle/LICENSE.html
 
 Bundled as
-  - lib/org.bouncycastle-bc-fips-1.0.2.5.jar
+  - lib/org.bouncycastle-bc-fips-1.0.2.6.jar
 ------------------------------------------------------------------------------------
 
 This product uses the annotations from The Checker Framework, which are licensed under
