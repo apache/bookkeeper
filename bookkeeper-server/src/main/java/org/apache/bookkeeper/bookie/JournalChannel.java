@@ -29,18 +29,17 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.util.PageCacheUtil;
 import org.apache.bookkeeper.util.ZeroBuffer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Simple wrapper around FileChannel to add versioning
  * information to the file.
  */
+@CustomLog
 class JournalChannel implements Closeable {
-    private static final Logger LOG = LoggerFactory.getLogger(JournalChannel.class);
 
     static final long MB = 1024 * 1024L;
     final BookieFileChannel channel;
@@ -175,11 +174,12 @@ class JournalChannel implements Closeable {
             throw new IOException("Invalid journal format to write : version = " + formatVersionToWrite);
         }
 
-        LOG.info("Opening journal {}", fn);
+        log.info().attr("journal", fn).log("Opening journal");
         if (!channel.fileExists(fn)) { // create new journal file to write, write version
             if (!fn.createNewFile()) {
-                LOG.error("Journal file {}, that shouldn't exist, already exists. "
-                          + " is there another bookie process running?", fn);
+                log.error().attr("journal", fn)
+                    .log("Journal file, that shouldn't exist, already exists."
+                          + " is there another bookie process running?");
                 throw new IOException("File " + fn
                         + " suddenly appeared, is another bookie process running?");
             }
@@ -219,7 +219,7 @@ class JournalChannel implements Closeable {
                         + " Expected between (%d) and (%d), got (%d)",
                         MIN_COMPAT_JOURNAL_FORMAT_VERSION, CURRENT_JOURNAL_FORMAT_VERSION,
                         formatVersion);
-                LOG.error(err);
+                log.error(err);
                 throw new IOException(err);
             }
 
@@ -236,7 +236,7 @@ class JournalChannel implements Closeable {
                     fc.position(position);
                 }
             } catch (IOException e) {
-                LOG.error("Bookie journal file can seek to position :", e);
+                log.error().exception(e).log("Bookie journal file can seek to position");
                 throw e;
             }
         }
@@ -266,7 +266,10 @@ class JournalChannel implements Closeable {
 
     public static void renameJournalFile(File source, File target) throws IOException {
         if (source == null || target == null || !source.renameTo(target)) {
-            LOG.error("Failed to rename file {} to {}", source, target);
+            log.error()
+                    .attr("source", source)
+                    .attr("target", target)
+                    .log("Failed to rename file");
             throw new IOException("Failed to rename file " + source + " to " + target);
         }
     }
@@ -305,9 +308,7 @@ class JournalChannel implements Closeable {
     }
 
     public void forceWrite(boolean forceMetadata) throws IOException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Journal ForceWrite");
-        }
+        log.debug("Journal ForceWrite");
         long newForceWritePosition = bc.forceWrite(forceMetadata);
         //
         // For POSIX_FADV_DONTNEED, we want to drop from the beginning

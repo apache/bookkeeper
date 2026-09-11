@@ -30,7 +30,7 @@ import java.nio.file.NoSuchFileException;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
 import org.apache.bookkeeper.statelib.impl.Constants;
 import org.apache.distributedlog.DLSN;
@@ -48,7 +48,7 @@ import org.apache.distributedlog.util.Utils;
 /**
  * Dlog based checkpoint store.
  */
-@Slf4j
+@CustomLog
 public class DLCheckpointStore implements CheckpointStore {
 
     private final Namespace namespace;
@@ -119,7 +119,7 @@ public class DLCheckpointStore implements CheckpointStore {
 
     @Override
     public void rename(String srcLog, String dstLog) throws IOException {
-        log.info("Renaming {} to {}", srcLog, dstLog);
+        log.info().attr("srcLog", srcLog).attr("dstLog", dstLog).log("Renaming");
         try {
             namespace.renameLog(srcLog, dstLog).get();
         } catch (InterruptedException e) {

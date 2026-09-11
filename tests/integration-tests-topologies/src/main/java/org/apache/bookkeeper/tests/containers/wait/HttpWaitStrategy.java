@@ -31,6 +31,7 @@ import java.net.URI;
 import java.net.URL;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import lombok.CustomLog;
 import org.rnorth.ducttape.TimeoutException;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
@@ -38,9 +39,8 @@ import org.testcontainers.containers.wait.strategy.AbstractWaitStrategy;
 /**
  * An wait strategy to wait for http ports.
  */
+@CustomLog
 public class HttpWaitStrategy extends AbstractWaitStrategy {
-    @java.lang.SuppressWarnings("all")
-    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(HttpWaitStrategy.class);
     /**
      * Authorization HTTP header.
      */
@@ -129,7 +129,11 @@ public class HttpWaitStrategy extends AbstractWaitStrategy {
         final String containerName = waitStrategyTarget.getContainerInfo().getName();
         final int livenessCheckPort = waitStrategyTarget.getMappedPort(port);
         final String uri = buildLivenessUri(livenessCheckPort).toString();
-        log.info("{}: Waiting for {} seconds for URL: {}", containerName, startupTimeout.getSeconds(), uri);
+        log.info()
+                .attr("container", containerName)
+                .attr("seconds", startupTimeout.getSeconds())
+                .attr("url", uri)
+                .log("Waiting for URL");
         // try to connect to the URL
         try {
             retryUntilSuccess((int) startupTimeout.getSeconds(), TimeUnit.SECONDS, () -> {

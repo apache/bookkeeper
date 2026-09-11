@@ -21,22 +21,19 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.net.URI;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.zookeeper.RetryPolicy;
 import org.apache.distributedlog.ZooKeeperClient.Credentials;
 import org.apache.distributedlog.ZooKeeperClient.DigestCredentials;
 import org.apache.distributedlog.impl.BKNamespaceDriver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Builder to build zookeeper client.
  */
+@CustomLog
 public class ZooKeeperClientBuilder {
-
-    static final Logger LOG = LoggerFactory.getLogger(ZooKeeperClientBuilder.class);
 
     /**
      * Create a zookeeper client builder to build zookeeper clients.

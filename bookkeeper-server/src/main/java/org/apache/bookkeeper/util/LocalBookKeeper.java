@@ -36,6 +36,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
@@ -66,14 +67,12 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.Op;
 import org.apache.zookeeper.ZooDefs.Ids;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Local Bookkeeper.
  */
+@CustomLog
 public class LocalBookKeeper implements AutoCloseable {
-    protected static final Logger LOG = LoggerFactory.getLogger(LocalBookKeeper.class);
     public static final int CONNECTION_TIMEOUT = 30000;
 
     private static String newMetadataServiceUri(String zkServers, int port, String layout, String ledgerPath) {
@@ -97,8 +96,9 @@ public class LocalBookKeeper implements AutoCloseable {
         this.zkHost = zkHost;
         this.zkPort = zkPort;
         this.dirsToCleanUp = new ArrayList<>();
-        LOG.info("Running {} bookie(s) on zk ensemble = '{}:{}'.", this.numberOfBookies,
-                zooKeeperDefaultHost, zooKeeperDefaultPort);
+        log.info().attr("numberOfBookies", this.numberOfBookies)
+                .attr("zkHost", zooKeeperDefaultHost).attr("zkPort", zooKeeperDefaultPort)
+                .log("Running bookies on zk ensemble");
     }
 
     private static String zooKeeperDefaultHost = "127.0.0.1";
@@ -130,20 +130,18 @@ public class LocalBookKeeper implements AutoCloseable {
     }
 
     public static ZooKeeperServerShim runZookeeper(int maxCC, int zookeeperPort, File zkDir) throws IOException {
-        LOG.info("Starting ZK server");
+        log.info("Starting ZK server");
         ZooKeeperServerShim server = ZooKeeperServerShimFactory.createServer(zkDir, zkDir, zookeeperPort, maxCC);
         server.start();
 
         boolean b = waitForServerUp(InetAddress.getLoopbackAddress().getHostAddress() + ":" + zookeeperPort,
           CONNECTION_TIMEOUT);
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("ZooKeeper server up: {}", b);
-        }
+        log.debug().attr("serverUp", b).log("ZooKeeper server up");
         return server;
     }
 
     private void initializeZookeeper() throws IOException {
-        LOG.info("Instantiate ZK Client");
+        log.info("Instantiate ZK Client");
         //initialize the zk client with values
         try (ZooKeeperClient zkc = ZooKeeperClient.newBuilder()
                     .connectString(zkHost + ":" + zkPort)
@@ -163,11 +161,11 @@ public class LocalBookKeeper implements AutoCloseable {
             // No need to create an entry for each requested bookie anymore as the
             // BookieServers will register themselves with ZooKeeper on startup.
         } catch (KeeperException e) {
-            LOG.error("Exception while creating znodes", e);
+            log.error().exception(e).log("Exception while creating znodes");
             throw new IOException("Error creating znodes : ", e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while creating znodes", e);
+            log.error().exception(e).log("Interrupted while creating znodes");
             throw new IOException("Error creating znodes : ", e);
         }
     }
@@ -180,7 +178,7 @@ public class LocalBookKeeper implements AutoCloseable {
 
     private void runBookies()
             throws Exception {
-        LOG.info("Starting Bookie(s)");
+        log.info("Starting Bookie(s)");
         // Create Bookie Servers (B1, B2, B3)
 
         if (localBookiesConfigDir.exists() && localBookiesConfigDir.isFile()) {
@@ -378,7 +376,7 @@ public class LocalBookKeeper implements AutoCloseable {
             try {
                 numBookies = Integer.parseInt(args[0]);
             } catch (NumberFormatException nfe) {
-                LOG.error("Unrecognized number-of-bookies: {}", args[0]);
+                log.error().attr("numBookies", args[0]).log("Unrecognized number-of-bookies");
                 usage();
                 System.exit(-1);
             }
@@ -389,10 +387,13 @@ public class LocalBookKeeper implements AutoCloseable {
                 String confFile = args[1];
                 try {
                     conf.loadConf(new File(confFile).toURI().toURL());
-                    LOG.info("Using configuration file {}", confFile);
+                    log.info().attr("confFile", confFile).log("Using configuration file");
                 } catch (Exception e) {
                     // load conf failed
-                    LOG.warn("Error loading configuration file {}", confFile, e);
+                    log.warn()
+                            .attr("confFile", confFile)
+                            .exception(e)
+                            .log("Error loading configuration file");
                 }
             }
 
@@ -420,7 +421,7 @@ public class LocalBookKeeper implements AutoCloseable {
                 }
             }
         } catch (Exception e) {
-            LOG.error("Exiting LocalBookKeeper because of exception in main method", e);
+            log.error().exception(e).log("Exiting LocalBookKeeper because of exception in main method");
             /*
              * This is needed because, some non-daemon thread (probably in ZK or
              * some other dependent service) is preventing the JVM from exiting, though
@@ -450,12 +451,15 @@ public class LocalBookKeeper implements AutoCloseable {
 
                 String line = reader.readLine();
                 if (line != null && line.startsWith("Zookeeper version:")) {
-                    LOG.info("Server UP");
+                    log.info("Server UP");
                     return true;
                 }
             } catch (IOException e) {
                 // ignore as this is expected
-                LOG.info("server " + hp + " not up " + e);
+                log.info()
+                        .attr("server", hp)
+                        .exception(e)
+                        .log("Server not up");
             }
 
             if (System.currentTimeMillis() > start + timeout) {

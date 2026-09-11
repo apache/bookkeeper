@@ -56,6 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAccessor;
@@ -104,15 +105,12 @@ import org.apache.distributedlog.metadata.LogSegmentMetadataStoreUpdater;
 import org.apache.distributedlog.metadata.MetadataUpdater;
 import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *DistributedLogTool.
 */
+@CustomLog
  public class DistributedLogTool extends Tool {
-
-    private static final Logger logger = LoggerFactory.getLogger(DistributedLogTool.class);
 
     static final List<String> EMPTY_LIST = Lists.newArrayList();
 
@@ -1132,7 +1130,10 @@ import org.slf4j.LoggerFactory;
                         }
                         ++count;
                         if (count % 1000 == 0) {
-                            logger.info("read {} records from {}...", count, getStreamName());
+                            log.info()
+                                    .attr("count", count)
+                                    .attr("streamName", getStreamName())
+                                    .log("read records from...");
                         }
                         preRecord = record;
                         record = reader.readNext(false);
@@ -1156,7 +1157,6 @@ import org.slf4j.LoggerFactory;
             return "count <start> <end>";
         }
     }
-
 
     /**
      * Command used to delete a given stream.
@@ -1769,7 +1769,6 @@ import org.slf4j.LoggerFactory;
 
         protected abstract int runBKCmd(ZooKeeperClient zkc, BookKeeperClient bkc) throws Exception;
     }
-
 
     /**
      * Per Ledger Command, which parse common options for per ledger. e.g. ledger id.

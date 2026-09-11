@@ -81,8 +81,8 @@ public class LocationClientTest extends StreamClusterTestBase {
         log.info("Response : rw endpoint = {}", endpoint);
         assertTrue(getInternalStreamEndpoints().contains(endpoint));
 
-        assertEquals(1, oneResponse.getEndpoint().getRoEndpointCount());
-        endpoint = oneResponse.getEndpoint().getRoEndpoint(0);
+        assertEquals(1, oneResponse.getEndpoint().getRoEndpointsCount());
+        endpoint = oneResponse.getEndpoint().getRoEndpointAt(0);
         log.info("Response : ro endpoint = {}", endpoint);
         assertTrue(getInternalStreamEndpoints().contains(endpoint));
     }

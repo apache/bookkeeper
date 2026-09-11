@@ -35,12 +35,11 @@ public class TestHashStreamRanges {
     public void testConstructor() {
         NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
         for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-            RangeProperties props = RangeProperties.newBuilder()
+            RangeProperties props = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey)
                 .setStartHashKey(hashKey)
-                .setEndHashKey(hashKey)
-                .build();
+                .setEndHashKey(hashKey);
             ranges.put(hashKey, props);
         }
 

@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
 import org.apache.bookkeeper.statelib.api.checkpoint.CheckpointStore;
@@ -51,7 +51,7 @@ import org.rocksdb.Checkpoint;
 /**
  * TestStateStore is a helper class for testing various statestore operations.
  */
-@Slf4j
+@CustomLog
 public class TestStateStore {
 
     private final String dbName;

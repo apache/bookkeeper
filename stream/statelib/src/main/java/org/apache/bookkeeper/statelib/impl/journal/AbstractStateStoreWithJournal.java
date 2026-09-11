@@ -33,8 +33,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.AsyncStateStore;
@@ -60,7 +60,7 @@ import org.apache.distributedlog.util.Utils;
 /**
  * An abstract implementation of {@link AsyncStateStore} with journal.
  */
-@Slf4j
+@CustomLog
 public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends StateStore> implements AsyncStateStore {
 
     // local state store instance
@@ -161,7 +161,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         try {
             validateStoreSpec(spec);
         } catch (IllegalArgumentException e) {
-            log.error("Fail to init state store due to : ", e);
+            log.error().exception(e).log("Fail to init state store");
             return FutureUtils.exception(e);
         }
         this.spec = spec;
@@ -205,7 +205,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
             return initializeLocalStore(spec)
                 .thenComposeAsync(ignored -> initializeJournalWriter(spec), writeIOScheduler)
                 .thenComposeAsync(endDLSN -> {
-                    log.info("Successfully write a barrier record for mvcc store {} at {}", name, endDLSN);
+                    log.info().attr("name", name).attr("endDLSN", endDLSN)
+                        .log("Successfully write a barrier record for mvcc store");
                     return replayJournal(endDLSN);
                 }, writeIOScheduler);
         }
@@ -213,9 +214,9 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
 
     private CompletableFuture<Void> initializeLocalStore(StateStoreSpec spec) {
         return executeWriteIO(() -> {
-            log.info("Initializing the local state for mvcc store {}", name());
+            log.info().attr("name", name()).log("Initializing the local state for mvcc store");
             localStore.init(spec);
-            log.info("Initialized the local state for mvcc store {}", name());
+            log.info().attr("name", name()).log("Initialized the local state for mvcc store");
             commandProcessor = newCommandProcessor();
             return null;
         });
@@ -243,8 +244,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                 if (nextRevision < 0) {
                     nextRevision = 0L;
                 }
-                log.info("Initialized the journal writer for mvcc store {} : last revision = {}",
-                    name(), nextRevision);
+                log.info().attr("name", name()).attr("lastRevision", nextRevision)
+                    .log("Initialized the journal writer for mvcc store");
             }
             return writeCommandBuf(newCatchupMarker());
         }, writeIOScheduler);
@@ -261,8 +262,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                 if (nextRevision < 0) {
                     nextRevision = 0L;
                 }
-                log.info("Initialized the journal writer for writing catchup marker to mvcc store {} :"
-                    + " last revision = {}", name(), nextRevision);
+                log.info().attr("name", name()).attr("lastRevision", nextRevision)
+                    .log("Initialized the journal writer for writing catchup marker to mvcc store");
             }
             return writeCommandBuf(newCatchupMarker());
         }).thenCompose(dlsn -> {
@@ -322,7 +323,8 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                         return null;
                     });
 
-                log.info("Successfully open the journal reader for mvcc store {} : end dlsn = {}", name(), endDLSN);
+                log.info().attr("name", name()).attr("endDLSN", endDLSN)
+                    .log("Successfully open the journal reader for mvcc store");
                 replayJournal(r, endDLSN, replayFuture, lastRevision);
                 return replayFuture;
             }, writeIOScheduler);
@@ -376,33 +378,35 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         return new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN record) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Received command record {} @ {} to replay at mvcc store {}",
-                        record, record.getDlsn(), name());
-                }
+                log.debug().attr("record", record)
+                    .attr("dlsn", record.getDlsn())
+                    .attr("name", name())
+                    .log("Received command record to replay at mvcc store");
                 try {
-                    if (log.isDebugEnabled()) {
-                        log.debug("Applying command transaction {} - record {} @ {} to mvcc store {}",
-                            record.getTransactionId(), record, record.getDlsn(), name());
-                    }
+                    log.debug().attr("txid", record.getTransactionId())
+                        .attr("record", record)
+                        .attr("dlsn", record.getDlsn())
+                        .attr("name", name())
+                        .log("Applying command transaction to mvcc store");
                     commandProcessor.applyCommand(record.getTransactionId(), record.getPayloadBuf(), localStore);
 
                     if (record.getDlsn().compareTo(endDLSN) >= 0) {
-                        log.info("Finished replaying journal for state store {}", name());
+                        log.info().attr("name", name()).log("Finished replaying journal for state store");
                         markInitialized(reader);
                         FutureUtils.complete(future, null);
                         return;
                     }
 
-                    if (log.isDebugEnabled()) {
-                        log.debug("Read next record after {} at mvcc store {}",
-                            record.getDlsn(), name());
-                    }
+                    log.debug().attr("dlsn", record.getDlsn())
+                        .attr("name", name())
+                        .log("Read next record at mvcc store");
                     // read next record
                     replayJournal(reader, endDLSN, future);
                 } catch (Exception e) {
-                    log.error("Exception is thrown when applying command record {} @ {} to mvcc store {}",
-                        record, record.getDlsn(), name());
+                    log.error().attr("record", record)
+                        .attr("dlsn", record.getDlsn())
+                        .attr("name", name())
+                        .log("Exception is thrown when applying command record to mvcc store");
                     FutureUtils.completeExceptionally(future, e);
                 }
             }
@@ -425,16 +429,16 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         reader.readNext().whenComplete(new FutureEventListener<LogRecordWithDLSN>() {
             @Override
             public void onSuccess(LogRecordWithDLSN record) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Received command record {} @ {} to replay at mvcc store {}",
-                        record, record.getDlsn(), name());
-                }
+                log.debug().attr("record", record)
+                    .attr("dlsn", record.getDlsn())
+                    .attr("name", name())
+                    .log("Received command record to replay at mvcc store");
                 try {
                     commandProcessor.applyCommand(record.getTransactionId(), record.getPayloadBuf(), localStore);
                     // read next record
                     replayLoop(reader);
                 } catch (StateStoreRuntimeException e) {
-                    log.error("Fail to reply command record {}", record, e);
+                    log.error().attr("record", record).exception(e).log("Fail to reply command record");
                     // TODO: handle state store exception
                 }
             }
@@ -459,12 +463,12 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         // cancel checkpoint task
         if (null != checkpointTask) {
             if (!checkpointTask.cancel(true)) {
-                log.warn("Fail to cancel checkpoint task of state store {}", name());
+                log.warn().attr("name", name()).log("Fail to cancel checkpoint task of state store");
             }
         }
         // wait until last checkpoint task completed
         writeIOScheduler.submit(() -> {
-            log.info("closing async state store {}", name);
+            log.info().attr("name", name).log("closing async state store");
             FutureUtils.ensure(
                 // close the log streams
                 Utils.closeSequence(
@@ -473,7 +477,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
                     getWriter(),
                     logManager
                 ).thenRun(() -> {
-                    log.info("Successfully close the log stream of state store {}", name);
+                    log.info().attr("name", name).log("Successfully close the log stream of state store");
                 }),
                 // close the local state store
                 () -> {
@@ -507,7 +511,7 @@ public abstract class AbstractStateStoreWithJournal<LocalStateStoreT extends Sta
         try {
             localStore.flush();
         } catch (StateStoreException e) {
-            log.warn("Fail to flush local state store {}", name(), e);
+            log.warn().attr("name", name()).exception(e).log("Fail to flush local state store");
         }
         // close the local store
         localStore.close();

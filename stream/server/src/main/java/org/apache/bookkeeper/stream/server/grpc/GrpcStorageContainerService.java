@@ -15,7 +15,7 @@
 package org.apache.bookkeeper.stream.server.grpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetStorageContainerEndpointResponse;
@@ -28,7 +28,7 @@ import org.apache.bookkeeper.stream.storage.api.StorageContainerStore;
 /**
  * Grpc based storage container service.
  */
-@Slf4j
+@CustomLog
 class GrpcStorageContainerService extends StorageContainerServiceImplBase {
 
     private final StorageContainerStore storageContainerStore;
@@ -40,28 +40,24 @@ class GrpcStorageContainerService extends StorageContainerServiceImplBase {
     @Override
     public void getStorageContainerEndpoint(GetStorageContainerEndpointRequest request,
                                             StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-        GetStorageContainerEndpointResponse.Builder responseBuilder = GetStorageContainerEndpointResponse.newBuilder()
+        GetStorageContainerEndpointResponse response = new GetStorageContainerEndpointResponse()
             .setStatusCode(StatusCode.SUCCESS);
         for (int i = 0; i < request.getRequestsCount(); i++) {
             Endpoint endpoint = storageContainerStore
                 .getRoutingService()
-                .getStorageContainer(request.getRequests(i).getStorageContainer());
-            OneStorageContainerEndpointResponse.Builder oneRespBuilder;
+                .getStorageContainer(request.getRequestAt(i).getStorageContainer());
+            OneStorageContainerEndpointResponse oneResp = response.addResponse();
             if (null != endpoint) {
-                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-                    .setStatusCode(StatusCode.SUCCESS)
-                    .setEndpoint(
-                        StorageContainerEndpoint.newBuilder()
-                            .setRwEndpoint(endpoint)
-                            .addRoEndpoint(endpoint)
-                            .setRevision(0L));
+                oneResp.setStatusCode(StatusCode.SUCCESS);
+                StorageContainerEndpoint sce = oneResp.setEndpoint();
+                sce.setRwEndpoint().copyFrom(endpoint);
+                sce.addRoEndpoint().copyFrom(endpoint);
+                sce.setRevision(0L);
             } else {
-                oneRespBuilder = OneStorageContainerEndpointResponse.newBuilder()
-                    .setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
+                oneResp.setStatusCode(StatusCode.INTERNAL_SERVER_ERROR);
             }
-            responseBuilder = responseBuilder.addResponses(oneRespBuilder);
         }
-        responseObserver.onNext(responseBuilder.build());
+        responseObserver.onNext(response);
         responseObserver.onCompleted();
     }
 

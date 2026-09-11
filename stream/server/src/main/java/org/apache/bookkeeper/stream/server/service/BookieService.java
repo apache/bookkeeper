@@ -24,9 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.BookieResources;
@@ -56,7 +56,7 @@ import org.apache.bookkeeper.util.DiskChecker;
  * a {@link org.apache.bookkeeper.proto.BookieServer}.
  */
 @Accessors(fluent = true)
-@Slf4j
+@CustomLog
 public class BookieService extends AbstractLifecycleComponent<BookieConfiguration> {
 
     @Getter
@@ -146,14 +146,14 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             try {
                 ledgerManager.close();
             } catch (Exception e) {
-                log.error("Error shutting down ledger manager", e);
+                log.error().exception(e).log("Error shutting down ledger manager");
             }
         }
         if (lmFactory != null) {
             try {
                 lmFactory.close();
             } catch (Exception e) {
-                log.error("Error shutting down ledger manager factory", e);
+                log.error().exception(e).log("Error shutting down ledger manager factory");
             }
         }
         if (null != metadataDriver) {
@@ -185,7 +185,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
             componentInfoPublisher.publishEndpoint(endpoint);
 
         } catch (UnknownHostException err) {
-            log.error("Cannot compute local address", err);
+            log.error().exception(err).log("Cannot compute local address");
         }
     }
 }

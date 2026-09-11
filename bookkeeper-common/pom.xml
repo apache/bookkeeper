@@ -66,20 +66,24 @@
     </dependency>
     <dependency>
       <groupId>org.jctools</groupId>
-      <artifactId>jctools-core</artifactId>
+      <artifactId>jctools-core-jdk11</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-lang3</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.netty.incubator</groupId>
-      <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-classes-io_uring</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-io_uring</artifactId>
       <classifier>linux-x86_64</classifier>
     </dependency>
     <dependency>
-      <groupId>io.netty.incubator</groupId>
-      <artifactId>netty-incubator-transport-native-io_uring</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-transport-native-io_uring</artifactId>
       <classifier>linux-aarch_64</classifier>
     </dependency>
     <dependency>

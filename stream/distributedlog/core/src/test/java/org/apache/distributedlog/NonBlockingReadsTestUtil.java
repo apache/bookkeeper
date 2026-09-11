@@ -23,23 +23,18 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.LogEmptyException;
 import org.apache.distributedlog.exceptions.LogNotFoundException;
 import org.apache.distributedlog.exceptions.LogReadException;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Utils for non blocking reads tests.
  */
+@CustomLog
 class NonBlockingReadsTestUtil {
-
-    static final Logger LOG = LoggerFactory.getLogger(NonBlockingReadsTestUtil.class);
 
     static final long DEFAULT_SEGMENT_SIZE = 1000;
 
@@ -63,12 +58,12 @@ class NonBlockingReadsTestUtil {
             } catch (LogNotFoundException lnfe) {
             } catch (LogEmptyException lee) {
             } catch (IOException ioe) {
-                LOG.error("Failed to open reader reading from {}", dlm.getStreamName());
+                log.error().attr("stream", dlm.getStreamName()).log("Failed to open reader reading from stream");
                 throw ioe;
             }
         }
         try {
-            LOG.info("Created reader reading from {}", dlm.getStreamName());
+            log.info().attr("stream", dlm.getStreamName()).log("Created reader reading from stream");
             if (forceStall) {
                 reader.getReadHandler().disableReadAheadLogSegmentsNotification();
             }
@@ -134,15 +129,11 @@ class NonBlockingReadsTestUtil {
                 Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 TimeUnit.MILLISECONDS.sleep(300);
                 writer.abort();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Recovering Segments");
-                }
+                log.debug("Recovering Segments");
                 BKLogWriteHandler blplm = ((BKDistributedLogManager) (dlm)).createWriteHandler(true);
                 Utils.ioResult(blplm.recoverIncompleteLogSegments());
                 Utils.ioResult(blplm.asyncClose());
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Recovered Segments");
-                }
+                log.debug("Recovered Segments");
             } else {
                 Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(txId++)));
                 writer.closeAndComplete();

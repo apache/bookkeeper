@@ -17,16 +17,15 @@
  */
 package org.apache.distributedlog;
 
+import lombok.CustomLog;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for RollLogSegments.
  */
+@CustomLog
 public class TestTxnId extends TestDistributedLogBase {
-    private static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
 
     @Test
     public void testRecoveryAfterBookieCrash() throws Exception {
@@ -70,7 +69,7 @@ public class TestTxnId extends TestDistributedLogBase {
              BKAsyncLogWriter writer = dlm.startAsyncLogSegmentNonPartitioned()) {
             long firstTxid = dlm.getLastTxId() + 1;
             for (int i = 0; i < 20; i++) {
-                logger.info("Writing entry {}", i);
+                log.info().attr("entry", i).log("Writing entry");
                 writer.write(DLMTestUtil.getLogRecordInstance(firstTxid + i, 100000)).join();
                 Thread.sleep(100);
             }

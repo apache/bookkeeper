@@ -25,22 +25,21 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.replication.ReplicationException.BKAuditException;
 import org.apache.zookeeper.AsyncCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Preparing bookie vs its corresponding ledgers. This will always look up the
  * ledgermanager for ledger metadata and will generate indexes.
  */
+@CustomLog
 public class BookieLedgerIndexer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BookieLedgerIndexer.class);
     private final LedgerManager ledgerManager;
 
     public BookieLedgerIndexer(LedgerManager ledgerManager) {
@@ -75,10 +74,12 @@ public class BookieLedgerIndexer {
                                     iterCallback.processResult(BKException.Code.OK, null, null);
                                 } else if (BKException.getExceptionCode(exception)
                                            == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
-                                    LOG.info("Ignoring replication of already deleted ledger {}", ledgerId);
+                                    log.info()
+                                            .attr("ledgerId", ledgerId)
+                                            .log("Ignoring replication of already deleted ledger");
                                     iterCallback.processResult(BKException.Code.OK, null, null);
                                 } else {
-                                    LOG.warn("Unable to read the ledger: {} information", ledgerId);
+                                    log.warn().attr("ledgerId", ledgerId).log("Unable to read the ledger information");
                                     iterCallback.processResult(BKException.getExceptionCode(exception), null, null);
                                 }
                             });

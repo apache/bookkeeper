@@ -33,6 +33,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -61,15 +62,12 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test ZK based log segment metadata store.
  */
+@CustomLog
 public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestZKLogSegmentMetadataStore.class);
 
     private static final  int zkSessionTimeoutMs = 2000;
 
@@ -371,7 +369,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
             public void onSegmentsUpdated(Versioned<List<String>> segments) {
-                logger.info("Received segments : {}", segments);
+                log.info().attr("segments", segments).log("Received segments");
                 segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
@@ -394,7 +392,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         assertEquals("List of segments should be same",
                 children, firstSegmentList);
 
-        logger.info("Create another {} segments.", numSegments);
+        log.info().attr("numSegments", numSegments).log("Create another segments");
 
         // create another log segment, it should trigger segment list updated
         Transaction<Object> anotherCreateTxn = lsmStore.transaction();
@@ -405,7 +403,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Utils.ioResult(anotherCreateTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
-        logger.info("All log segments become {}", newChildren);
+        log.info().attr("newChildren", newChildren).log("All log segments become");
         while (numNotifications.get() < 2) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
@@ -437,7 +435,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
             public void onSegmentsUpdated(Versioned<List<String>> segments) {
-                logger.info("Received segments : {}", segments);
+                log.info().attr("segments", segments).log("Received segments");
                 segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
@@ -509,7 +507,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
             public void onSegmentsUpdated(Versioned<List<String>> segments) {
-                logger.info("Received segments : {}", segments);
+                log.info().attr("segments", segments).log("Received segments");
                 segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }
@@ -536,7 +534,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         ZooKeeperClientUtils.expireSession(zkc,
                 BKNamespaceDriver.getZKServersFromDLUri(uri), conf.getZKSessionTimeoutMilliseconds());
 
-        logger.info("Create another {} segments.", numSegments);
+        log.info().attr("numSegments", numSegments).log("Create another segments");
 
         // create another log segment, it should trigger segment list updated
         Transaction<Object> anotherCreateTxn = lsmStore.transaction();
@@ -547,7 +545,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         Utils.ioResult(anotherCreateTxn.execute());
         List<String> newChildren = zkc.get().getChildren(rootPath, false);
         Collections.sort(newChildren);
-        logger.info("All log segments become {}", newChildren);
+        log.info().attr("newChildren", newChildren).log("All log segments become");
         while (numNotifications.get() < 2) {
             TimeUnit.MILLISECONDS.sleep(10);
         }
@@ -580,7 +578,7 @@ public class TestZKLogSegmentMetadataStore extends TestDistributedLogBase {
         LogSegmentNamesListener listener = new LogSegmentNamesListener() {
             @Override
             public void onSegmentsUpdated(Versioned<List<String>> segments) {
-                logger.info("Received segments : {}", segments);
+                log.info().attr("segments", segments).log("Received segments");
                 segmentLists.add(segments.getValue());
                 numNotifications.incrementAndGet();
             }

@@ -37,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Supplier;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.WeightedRandomSelection.WeightedObject;
 import org.apache.bookkeeper.net.BookieId;
@@ -53,12 +54,10 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.annotations.StatsDoc;
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 abstract class TopologyAwareEnsemblePlacementPolicy implements
         ITopologyAwareEnsemblePlacementPolicy<BookieNode> {
-    static final Logger LOG = LoggerFactory.getLogger(TopologyAwareEnsemblePlacementPolicy.class);
     public static final String REPP_DNS_RESOLVER_CLASS = "reppDnsResolverClass";
     protected final Map<BookieId, BookieNode> knownBookies = new HashMap<BookieId, BookieNode>();
     protected final Map<BookieId, BookieNode> historyBookies = new HashMap<BookieId, BookieNode>();
@@ -214,12 +213,14 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                             int maxAllowedSum) {
                 if (remainingRacksOrRegions.isEmpty() || (subsetSize <= 0)) {
                     if (maxAllowedSum < 0) {
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace(
-                                    "CHECK FAILED: RacksOrRegions Included {} Remaining {}, subsetSize {}, "
-                                    + "maxAllowedSum {}",
-                                    includedRacksOrRegions, remainingRacksOrRegions, subsetSize, maxAllowedSum);
-                        }
+
+                        log.trace()
+                        .attr("includedRacksOrRegions", includedRacksOrRegions)
+                        .attr("remainingRacksOrRegions", remainingRacksOrRegions)
+                        .attr("subsetSize", subsetSize)
+                        .attr("maxAllowedSum", maxAllowedSum)
+                        .log("CHECK FAILED: RacksOrRegions");
+
                     }
                     return (maxAllowedSum >= 0);
                 }
@@ -232,12 +233,14 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                     }
 
                     if (currentAllocation > maxAllowedSum) {
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace(
-                                    "CHECK FAILED: RacksOrRegions Included {} Candidate {}, subsetSize {}, "
-                                    + "maxAllowedSum {}",
-                                    includedRacksOrRegions, rackOrRegion, subsetSize, maxAllowedSum);
-                        }
+
+                        log.trace()
+                        .attr("includedRacksOrRegions", includedRacksOrRegions)
+                        .attr("rackOrRegion", rackOrRegion)
+                        .attr("subsetSize", subsetSize)
+                        .attr("maxAllowedSum", maxAllowedSum)
+                        .log("CHECK FAILED: RacksOrRegions");
+
                         return false;
                     } else {
                         Set<String> remainingElements = new HashSet<String>(remainingRacksOrRegions);
@@ -276,11 +279,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 // find sets that contain this candidateRackOrRegion
                 Integer currentAllocation = allocationToRacksOrRegions.get(candidateRackOrRegion);
                 if (currentAllocation == null) {
-                    LOG.info("Detected a region that was not initialized {}", candidateRackOrRegion);
+                    log.info()
+                            .attr("candidateRackOrRegion", candidateRackOrRegion)
+                            .log("Detected a region that was not initialized");
                     if (candidateRackOrRegion.equals(NetworkTopology.DEFAULT_REGION)) {
-                        LOG.error("Failed to resolve network location {}", candidate);
+                        log.error().attr("candidate", candidate).log("Failed to resolve network location");
                     } else if (!racksOrRegions.contains(candidateRackOrRegion)) {
-                        LOG.error("Unknown region detected {}", candidateRackOrRegion);
+                        log.error().attr("candidateRackOrRegion", candidateRackOrRegion).log("Unknown region detected");
                     }
                     allocationToRacksOrRegions.put(candidateRackOrRegion, 0);
                     currentAllocation = 0;
@@ -563,8 +568,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             if (rNames != null && rNames.size() == names.size()) {
                 for (int i = 0; i < rNames.size(); ++i) {
                     if (rNames.get(i) == null) {
-                        LOG.warn("Failed to resolve network location for {}, using default rack for it : {}.",
-                                names.get(i), defaultRack);
+                        log.warn()
+                                .attr("bookie", names.get(i))
+                                .attr("defaultRack", defaultRack)
+                                .log("Failed to resolve network location, using default rack");
                         failedToResolveNetworkLocationCounter.inc();
                         rNames.set(i, defaultRack);
                     }
@@ -572,8 +579,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 return rNames;
             }
 
-            LOG.warn("Failed to resolve network location for {}, using default rack for them : {}.", names,
-                    defaultRack);
+            log.warn()
+                    .attr("names", names)
+                    .attr("defaultRack", defaultRack)
+                    .log("Failed to resolve network location, using default rack");
             rNames = new ArrayList<>(names.size());
 
             for (int i = 0; i < names.size(); ++i) {
@@ -658,10 +667,13 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
             joinedBookies = Sets.difference(writableBookies, oldBookieSet).immutableCopy();
             // dead bookies.
             deadBookies = Sets.difference(leftBookies, readOnlyBookies).immutableCopy();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Cluster changed : left bookies are {}, joined bookies are {}, while dead bookies are {}.",
-                        leftBookies, joinedBookies, deadBookies);
-            }
+
+            log.debug()
+            .attr("leftBookies", leftBookies)
+            .attr("joinedBookies", joinedBookies)
+            .attr("deadBookies", deadBookies)
+            .log("Cluster changed");
+
             handleBookiesThatLeft(leftBookies);
             handleBookiesThatJoined(joinedBookies);
             if (this.isWeighted && (leftBookies.size() > 0 || joinedBookies.size() > 0)) {
@@ -693,12 +705,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
                     bookiesLeftCounter.registerSuccessfulValue(1L);
 
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Cluster changed : bookie {} left from cluster.", addr);
-                    }
+
+                    log.debug().attr("bookieAddr", addr).log("Cluster changed: bookie left cluster");
+
                 }
             } catch (Throwable t) {
-                LOG.error("Unexpected exception while handling leaving bookie {}", addr, t);
+                log.error()
+                        .attr("bookieAddr", addr)
+                        .exception(t)
+                        .log("Unexpected exception while handling leaving bookie");
                 if (bookiesLeftCounter != null) {
                     bookiesLeftCounter.registerFailedValue(1L);
                 }
@@ -726,12 +741,15 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
 
                 bookiesJoinedCounter.registerSuccessfulValue(1L);
 
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Cluster changed : bookie {} joined the cluster.", addr);
-                }
+
+                log.debug().attr("bookieAddr", addr).log("Cluster changed: bookie joined the cluster");
+
             } catch (Throwable t) {
                 // topology.add() throws unchecked exception
-                LOG.error("Unexpected exception while handling joining bookie {}", addr, t);
+                log.error()
+                        .attr("bookieAddr", addr)
+                        .exception(t)
+                        .log("Unexpected exception while handling joining bookie");
 
                 bookiesJoinedCounter.registerFailedValue(1L);
                 // no need to re-throw; we want to process the rest of the bookies
@@ -758,7 +776,10 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                         }
                     }
                 } catch (IllegalArgumentException | NetworkTopologyImpl.InvalidTopologyException e) {
-                    LOG.error("Failed to update bookie rack info: {} ", bookieAddress, e);
+                    log.error()
+                            .exception(e)
+                            .attr("bookieAddr", bookieAddress)
+                            .log("Failed to update bookie rack info");
                 }
             });
         } finally {
@@ -785,7 +806,7 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
     @Override
     public void updateBookieInfo(Map<BookieId, BookieInfo> bookieInfoMap) {
         if (!isWeighted) {
-            LOG.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
+            log.info("bookieFreeDiskInfo callback called even without weighted placement policy being used.");
             return;
         }
         rwLock.writeLock().lock();
@@ -825,8 +846,11 @@ abstract class TopologyAwareEnsemblePlacementPolicy implements
                 return historyBookie.getNetworkLocation();
             }
             String defaultRack = getDefaultRack();
-            LOG.error("Cannot resolve bookieId {} to a network address, resolving as {}. {}", addr,
-                    defaultRack, err.getMessage());
+            log.error()
+                    .attr("bookieAddr", addr)
+                    .attr("defaultRack", defaultRack)
+                    .exceptionMessage(err)
+                    .log("Cannot resolve bookieId to a network address");
             return defaultRack;
         }
     }

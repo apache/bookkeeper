@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
@@ -53,15 +54,12 @@ import org.apache.distributedlog.exceptions.EndOfLogSegmentException;
 import org.apache.distributedlog.exceptions.ReadCancelledException;
 import org.apache.distributedlog.injector.AsyncFailureInjector;
 import org.apache.distributedlog.logsegment.LogSegmentEntryReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * BookKeeper ledger based log segment entry reader.
  */
+@CustomLog
 public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader, AsyncCallback.OpenCallback {
-
-    private static final Logger logger = LoggerFactory.getLogger(BKLogSegmentEntryReader.class);
 
     private class CacheEntry implements Runnable, AsyncCallback.ReadCallback,
             AsyncCallback.ReadLastConfirmedAndEntryCallback {
@@ -455,8 +453,9 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
                 lh.asyncClose(new AsyncCallback.CloseCallback() {
                     @Override
                     public void closeComplete(int rc, LedgerHandle lh, Object ctx) {
-                        logger.debug("Close the open ledger {} since the log segment reader is already closed",
-                                lh.getId());
+                        log.debug()
+                                .attr("ledgerId", lh.getId())
+                                .log("Close the open ledger since the log segment reader is already closed");
                     }
                 }, null);
                 return;
@@ -605,7 +604,6 @@ public class BKLogSegmentEntryReader implements Runnable, LogSegmentEntryReader,
             issueRead(entry);
         }
     }
-
 
     private void issueRead(CacheEntry cacheEntry) {
         if (isClosed()) {

@@ -17,9 +17,10 @@
 #
 # Description:
 # This GitHub Actions workflow enables rerunning CI via PR/Issue comments using the /bkbot command.
-# Supported commands: /bkbot rerun [keyword]
+# Supported commands: /bkbot rerun [keyword], /bkbot rerun-failure
 # - /bkbot rerun           => Rerun the latest run of each workflow under the same head SHA, limited to runs with a conclusion of failure/cancelled/timed_out/skipped (entire run).
 # - /bkbot rerun <keyword> => Regardless of workflow/job status, fetch all jobs in the latest runs, match by name, and rerun each matching job.
+# - /bkbot rerun-failure   => Fetch all jobs in the latest runs, and rerun only the failed/cancelled/timed_out/skipped jobs (job-level rerun, keeps passed jobs).
 # Logging instructions:
 # - Jobs that are failed/cancelled/timed_out/skipped are scanned from all the latest workflow runs (including those in progress), thus jobs fail/skipped during progress can be captured.
 # Triggering condition: When a new comment is created containing /bkbot.
@@ -50,6 +51,8 @@ jobs:
             //   If workflow is still running, cannot rerun whole workflow, just suggest using "/bkbot rerun jobname"
             // - /bkbot rerun jobname
             //   Matches job.name by keyword, reruns matching jobs (regardless of current state, failures are logged)
+            // - /bkbot rerun-failure
+            //   Reruns only the failed/cancelled/timed_out/skipped jobs across all latest runs (job-level rerun)
             // - /bkbot stop or /bkbot cancel
             //   Cancels all still running (queued/in_progress) workflow runs associated with the current PR
 
@@ -69,9 +72,9 @@ jobs:
             const sub = (parts[1] || '').toLowerCase();
             const arg = parts.length > 2 ? parts.slice(2).join(' ') : '';
 
-            const supported = ['rerun', 'stop', 'cancel'];
+            const supported = ['rerun', 'rerun-failure', 'stop', 'cancel'];
             if (!supported.includes(sub)) {
-              console.log(`Unsupported command '${sub}'. Supported: '/bkbot rerun [jobName?]', '/bkbot stop', '/bkbot cancel'.`);
+              console.log(`Unsupported command '${sub}'. Supported: '/bkbot rerun [jobName?]', '/bkbot rerun-failure', '/bkbot stop', '/bkbot cancel'.`);
               return;
             }
 
@@ -263,7 +266,42 @@ jobs:
               return;
             }
 
-            // Command 3: /bkbot stop or /bkbot cancel
+            // Command 3: /bkbot rerun-failure
+            if (sub === 'rerun-failure') {
+              const failConclusions = new Set(['failure', 'timed_out', 'cancelled', 'skipped']);
+              let totalJobs = 0;
+              let failedJobs = 0;
+              let rerunOk = 0;
+
+              console.log('Mode: job-level re-run for failed/cancelled/timed_out/skipped jobs.');
+              for (const r of latestRuns) {
+                let jobs = [];
+                try {
+                  jobs = await listAllJobs(r.id);
+                } catch (e) {
+                  console.log(`Failed to list jobs for ${runKey(r)}: ${e.message}`);
+                  continue;
+                }
+                totalJobs += jobs.length;
+                for (const j of jobs) {
+                  if (failConclusions.has(j.conclusion)) {
+                    failedJobs++;
+                    console.log(`Found failed job '${j.name}' (conclusion=${j.conclusion}) in run '${r.name}'`);
+                    const ok = await rerunJob(j, r);
+                    if (ok) rerunOk++;
+                  }
+                }
+              }
+
+              if (failedJobs === 0) {
+                console.error(`No failed/cancelled/timed_out/skipped jobs found across ${totalJobs} total jobs.`);
+              } else {
+                console.log(`Finished. Scanned ${totalJobs} job(s); found ${failedJobs} failed job(s); successfully requested re-run for ${rerunOk} job(s).`);
+              }
+              return;
+            }
+
+            // Command 4: /bkbot stop or /bkbot cancel
             if (sub === 'stop' || sub === 'cancel') {
               console.log('Mode: cancel running workflow runs (queued/in_progress).');
 

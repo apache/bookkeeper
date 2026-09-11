@@ -20,8 +20,8 @@ package org.apache.bookkeeper.statelib;
 
 import java.util.function.Supplier;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.NoArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Evolving;
 import org.apache.bookkeeper.statelib.api.kv.KVAsyncStore;
@@ -37,7 +37,7 @@ import org.apache.distributedlog.api.namespace.Namespace;
  */
 @Public
 @Evolving
-@Slf4j
+@CustomLog
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class StateStores {
 

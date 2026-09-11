@@ -41,12 +41,16 @@ public class TestStreamMetadataCache {
 
     private final RootRangeClient scClient = mock(RootRangeClient.class);
     private final StreamMetadataCache cache = new StreamMetadataCache(scClient);
-    private final StreamProperties props = StreamProperties.newBuilder()
-        .setStorageContainerId(1234L)
-        .setStreamId(2345L)
-        .setStreamName("test-stream")
-        .setStreamConf(DEFAULT_STREAM_CONF)
-        .build();
+    private final StreamProperties props = newStreamProperties();
+
+    private static StreamProperties newStreamProperties() {
+        StreamProperties props = new StreamProperties();
+        props.setStorageContainerId(1234L);
+        props.setStreamId(2345L);
+        props.setStreamName("test-stream");
+        props.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return props;
+    }
 
     @Test
     public void testGetStreamProperties() throws Exception {

@@ -25,6 +25,7 @@ import io.netty.buffer.DuplicatedByteBuf;
 import java.util.Random;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 @Slf4j
@@ -100,6 +101,51 @@ public class Java9IntHashTest {
         bTotal.release();
         b1.release();
         b2.release();
+    }
+
+    /**
+     * The three ways {@link Java9IntHash#resume(int, ByteBuf, int, int)} can reach the data, checked
+     * against {@link Java8IntHash} as an independent implementation of the same algorithm.
+     *
+     * <p>The direct path is the one worth pinning: it is the only caller of the JDK's
+     * {@code updateDirectByteBuffer}, whose {@code (int, long, int, int)int} shape has to be matched
+     * exactly by the method handle invocation. Getting that wrong is not a compile error — it fails
+     * at runtime with a {@code WrongMethodTypeException} — and none of the other cases would catch
+     * it, since they take the {@code updateBytes} path instead.
+     */
+    @Test
+    public void matchesJava8ImplementationOnEveryBufferKind() {
+        Assume.assumeTrue("java.util.zip.CRC32C is not reachable, so Java9IntHash is not in use",
+                Java9IntHash.HAS_JAVA9_CRC32C);
+
+        byte[] data = new byte[8192];
+        new Random(42).nextBytes(data);
+
+        ByteBuf direct = ByteBufAllocator.DEFAULT.directBuffer(data.length);
+        ByteBuf heap = ByteBufAllocator.DEFAULT.heapBuffer(data.length);
+        try {
+            direct.writeBytes(data);
+            heap.writeBytes(data);
+            Assert.assertTrue("expected a buffer with a memory address to cover the direct path",
+                    direct.hasMemoryAddress());
+
+            Java9IntHash java9 = new Java9IntHash();
+            Java8IntHash java8 = new Java8IntHash();
+
+            Assert.assertEquals(java8.calculate(direct), java9.calculate(direct));
+            Assert.assertEquals(java8.calculate(heap), java9.calculate(heap));
+            Assert.assertEquals(java8.calculate(new NoArrayNoMemoryAddrByteBuff(heap)),
+                    java9.calculate(new NoArrayNoMemoryAddrByteBuff(heap)));
+
+            // Resuming has to agree too: it is the incremental form the ledger write path uses.
+            int half = data.length / 2;
+            int java9Resumed = java9.resume(java9.calculate(direct.slice(0, half)),
+                    direct.slice(half, data.length - half));
+            Assert.assertEquals(java8.calculate(direct), java9Resumed);
+        } finally {
+            direct.release();
+            heap.release();
+        }
     }
 
     public static class NoArrayNoMemoryAddrByteBuff extends DuplicatedByteBuf {

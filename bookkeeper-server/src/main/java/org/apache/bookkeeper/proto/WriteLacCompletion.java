@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.net.BookieId;
 
@@ -31,9 +32,10 @@ class WriteLacCompletion extends CompletionValue {
                               final BookkeeperInternalCallbacks.WriteLacCallback originalCallback,
                               final Object originalCtx,
                               final long ledgerId,
-                              PerChannelBookieClient perChannelBookieClient) {
+                              PerChannelBookieClient perChannelBookieClient,
+                              Executor callbackExecutor) {
         super("WriteLAC",
-                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.writeLacOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.writeLacTimeoutOpLogger;
         this.cb = new BookkeeperInternalCallbacks.WriteLacCallback() {
@@ -61,15 +63,17 @@ class WriteLacCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.WriteLacResponse writeLacResponse = response.getWriteLacResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
-                ? writeLacResponse.getStatus() : response.getStatus();
-        long ledgerId = writeLacResponse.getLedgerId();
-
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledger", ledgerId);
+    public void handleV3Response(Response response) {
+        StatusCode status;
+        if (response.getStatus() == StatusCode.EOK && response.hasWriteLacResponse()) {
+            status = response.getWriteLacResponse().getStatus();
+        } else {
+            // Error responses may not carry a populated WriteLacResponse;
+            // fall back to the request's recorded ledgerId.
+            status = response.getStatus();
         }
+
+        logEvent(status).log("Got response from bookie");
         int rc = convertStatus(status, BKException.Code.WriteException);
         cb.writeLacComplete(rc, ledgerId, perChannelBookieClient.bookieId, ctx);
     }

@@ -35,6 +35,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.not;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.File;
@@ -53,7 +54,6 @@ import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.junit.jupiter.api.AfterEach;
@@ -66,7 +66,7 @@ import org.junit.jupiter.api.condition.OS;
  */
 @DisabledOnOs(OS.WINDOWS)
 public class TestTransactionalEntryLogCompactor {
-    private static final Slogger slog = Slogger.CONSOLE;
+    private static final Logger LOG = Logger.get(TestTransactionalEntryLogCompactor.class);
 
     private final TmpDirs tmpDirs = new TmpDirs();
     private static final long deadLedger = 1L;
@@ -537,7 +537,7 @@ public class TestTransactionalEntryLogCompactor {
         curDir.mkdirs();
 
         return new DirectEntryLogger(
-                curDir, new EntryLogIdsImpl(newDirsManager(ledgerDir), slog),
+                curDir, new EntryLogIdsImpl(newDirsManager(ledgerDir), LOG),
                 new NativeIOImpl(),
                 ByteBufAllocator.DEFAULT,
                 MoreExecutors.newDirectExecutorService(),
@@ -549,7 +549,7 @@ public class TestTransactionalEntryLogCompactor {
                 4 * 1024, // read buffer size
                 1, // numReadThreads
                 300, // max fd cache time in seconds
-                slog, NullStatsLogger.INSTANCE) {
+                LOG, NullStatsLogger.INSTANCE) {
             @Override
             public CompactionEntryLog newCompactionLog(long logToCompact) throws IOException {
                 return override.apply(super.newCompactionLog(logToCompact));

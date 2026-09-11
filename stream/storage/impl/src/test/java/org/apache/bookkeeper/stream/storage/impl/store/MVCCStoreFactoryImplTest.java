@@ -32,7 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.Duration;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.mvcc.MVCCAsyncStore;
@@ -56,7 +56,7 @@ import org.junit.rules.TemporaryFolder;
 /**
  * Unit test of {@link MVCCStoreFactoryImpl}.
  */
-@Slf4j
+@CustomLog
 public class MVCCStoreFactoryImplTest {
 
     @Rule
@@ -122,8 +122,11 @@ public class MVCCStoreFactoryImplTest {
         try (MVCCAsyncStore<byte[], byte[]> store = FutureUtils.result(
             factory.openStore(scId, streamId, rangeId, 0))) {
 
-            log.info("Open store (scId = {}, streamId = {}, rangeId = {}) to test",
-                scId, streamId, rangeId);
+            log.info()
+                .attr("scId", scId)
+                .attr("streamId", streamId)
+                .attr("rangeId", rangeId)
+                .log("Open store to test");
 
             String storeName = String.format(
                 "%s/%s/%s",

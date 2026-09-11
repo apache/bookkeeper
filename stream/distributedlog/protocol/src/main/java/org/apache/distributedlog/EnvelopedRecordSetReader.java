@@ -24,7 +24,7 @@ import static org.apache.distributedlog.LogRecordSet.VERSION;
 import io.netty.buffer.ByteBuf;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.distributedlog.io.CompressionCodec;
 import org.apache.distributedlog.io.CompressionCodec.Type;
 import org.apache.distributedlog.io.CompressionUtils;
@@ -32,7 +32,7 @@ import org.apache.distributedlog.io.CompressionUtils;
 /**
  * Record reader to read records from an enveloped entry buffer.
  */
-@Slf4j
+@CustomLog
 class EnvelopedRecordSetReader implements LogRecordSet.Reader {
 
     private final long logSegmentSeqNo;

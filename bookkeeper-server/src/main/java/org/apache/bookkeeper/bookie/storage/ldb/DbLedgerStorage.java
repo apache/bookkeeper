@@ -27,6 +27,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.util.concurrent.DefaultThreadFactory;
@@ -42,7 +43,7 @@ import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
@@ -64,7 +65,6 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
-import org.apache.bookkeeper.slogger.slf4j.Slf4jSlogger;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -77,7 +77,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Implementation of LedgerStorage that uses RocksDB to keep the indexes for entries stored in EntryLogs.
  */
-@Slf4j
+@CustomLog
 public class DbLedgerStorage implements LedgerStorage {
 
     public static final String WRITE_CACHE_MAX_SIZE_MB = "dbStorage_writeCacheMaxSizeMb";
@@ -159,9 +159,9 @@ public class DbLedgerStorage implements LedgerStorage {
         this.numberOfDirs = ledgerDirsManager.getAllLedgerDirs().size();
 
         log.info("Started Db Ledger Storage");
-        log.info(" - Number of directories: {}", numberOfDirs);
-        log.info(" - Write cache size: {} MB", writeCacheMaxSize / MB);
-        log.info(" - Read Cache: {} MB", readCacheMaxSize / MB);
+        log.info().attr("numberOfDirs", numberOfDirs).log(" - Number of directories");
+        log.info().attr("writeCacheSizeMb", writeCacheMaxSize / MB).log(" - Write cache size");
+        log.info().attr("readCacheSizeMb", readCacheMaxSize / MB).log(" - Read Cache");
 
         if (readCacheMaxSize + writeCacheMaxSize > PlatformDependent.estimateMaxDirectMemory()) {
             throw new IOException("Read and write cache sizes exceed the configured max direct memory size");
@@ -213,7 +213,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     conf,
                     DIRECT_IO_ENTRYLOGGER_MAX_FD_CACHE_TIME_SECONDS,
                     DEFAULT_DIRECT_IO_MAX_FD_CACHE_TIME_SECONDS);
-                Slf4jSlogger slog = new Slf4jSlogger(DbLedgerStorage.class);
+                Logger log = Logger.get(DbLedgerStorage.class);
                 entryLoggerWriteExecutor = Executors.newSingleThreadExecutor(
                     new DefaultThreadFactory("EntryLoggerWrite"));
                 entryLoggerFlushExecutor = Executors.newSingleThreadExecutor(
@@ -224,7 +224,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     numReadThreads = conf.getServerNumIOThreads();
                 }
 
-                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, slog),
+                entrylogger = new DirectEntryLogger(ledgerDir, new EntryLogIdsImpl(ldm, log),
                     new NativeIOImpl(),
                     allocator, entryLoggerWriteExecutor, entryLoggerFlushExecutor,
                     conf.getEntryLogSizeLimit(),
@@ -234,7 +234,7 @@ public class DbLedgerStorage implements LedgerStorage {
                     readBufferSize,
                     numReadThreads,
                     maxFdCacheTimeSeconds,
-                    slog, statsLogger);
+                    log, statsLogger);
             } else {
                 entrylogger = new DefaultEntryLogger(conf, ldm, null, statsLogger, allocator);
             }

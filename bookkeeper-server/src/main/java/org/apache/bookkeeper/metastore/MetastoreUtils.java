@@ -22,17 +22,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.metastore.MSException.Code;
 import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provides utilities for metastore.
  */
+@CustomLog
 public class MetastoreUtils {
-
-    private static final Logger logger = LoggerFactory.getLogger(MetastoreUtils.class);
 
     static class MultiMetastoreCallback<T> implements MetastoreCallback<T> {
 
@@ -105,13 +103,15 @@ public class MetastoreUtils {
         SyncMetastoreCallback<MetastoreCursor> openCb = new SyncMetastoreCallback<MetastoreCursor>();
         table.openCursor(MetastoreTable.NON_FIELDS, openCb, null);
         MetastoreCursor cursor = openCb.getResult();
-        logger.info("Open cursor for table {} to clean entries.", table.getName());
+        log.info().attr("table", table.getName()).log("Open cursor to clean entries");
 
         List<String> keysToClean = new ArrayList<String>(numEntriesPerScan);
         int numEntriesRemoved = 0;
         while (cursor.hasMoreEntries()) {
-            logger.info("Fetching next {} entries from table {} to clean.",
-                         numEntriesPerScan, table.getName());
+            log.info()
+                    .attr("numEntries", numEntriesPerScan)
+                    .attr("table", table.getName())
+                    .log("Fetching next entries to clean");
             Iterator<MetastoreTableItem> iter = cursor.readEntries(numEntriesPerScan);
             keysToClean.clear();
             while (iter.hasNext()) {
@@ -123,7 +123,7 @@ public class MetastoreUtils {
                 continue;
             }
 
-            logger.info("Issuing deletes to delete keys {}", keysToClean);
+            log.info().attr("keys", keysToClean).log("Issuing deletes");
             // issue deletes to delete batch of keys
             MultiMetastoreCallback<Void> mcb = new MultiMetastoreCallback<Void>(keysToClean.size());
             for (String key : keysToClean) {
@@ -131,9 +131,12 @@ public class MetastoreUtils {
             }
             mcb.waitUntilAllFinished();
             numEntriesRemoved += keysToClean.size();
-            logger.info("Removed {} entries from table {}.", numEntriesRemoved, table.getName());
+            log.info()
+                    .attr("numEntriesRemoved", numEntriesRemoved)
+                    .attr("table", table.getName())
+                    .log("Removed entries");
         }
 
-        logger.info("Finished cleaning up table {}.", table.getName());
+        log.info().attr("table", table.getName()).log("Finished cleaning up table");
     }
 }

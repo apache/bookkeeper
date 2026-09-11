@@ -22,6 +22,7 @@ package org.apache.bookkeeper.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import io.netty.buffer.ByteBuf;
@@ -40,9 +41,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -69,8 +73,8 @@ import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
-import org.apache.bookkeeper.proto.DataFormats;
+import org.apache.bookkeeper.proto.GetBookieInfoRequest;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat;
 import org.apache.bookkeeper.proto.PerChannelBookieClient;
 import org.apache.bookkeeper.proto.PerChannelBookieClientPool;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -79,6 +83,7 @@ import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.IOUtils;
+import org.apache.bookkeeper.util.PortManager;
 import org.awaitility.Awaitility;
 import org.awaitility.reflect.WhiteboxImpl;
 import org.junit.After;
@@ -318,8 +323,8 @@ public class BookieClientTest {
         TestStatsLogger statsLogger = statsProvider.getStatsLogger("");
         BookieClient bc = new BookieClientImpl(clientConf, new NioEventLoopGroup(), UnpooledByteBufAllocator.DEFAULT,
                 executor, scheduler, statsLogger, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
-        long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
-                | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
+        long flags = GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
+                | GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
         class CallbackObj {
             int rc;
@@ -341,11 +346,11 @@ public class BookieClientTest {
                 CallbackObj obj = (CallbackObj) ctx;
                 obj.rc = rc;
                 if (rc == Code.OK) {
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
+                    if ((obj.requested & GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
                         obj.freeDiskSpace = bInfo.getFreeDiskSpace();
                     }
                     if ((obj.requested
-                            & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
+                            & GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE) != 0) {
                         obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
                     }
                 }
@@ -381,7 +386,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -443,7 +448,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -509,7 +514,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
 
         final int entries = 10;
@@ -560,7 +565,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {
@@ -627,7 +632,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {
@@ -697,7 +702,7 @@ public class BookieClientTest {
         byte[] passwd = new byte[20];
         Arrays.fill(passwd, (byte) 'a');
         DigestManager digestManager = DigestManager.instantiate(1, passwd,
-                DataFormats.LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
+                LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, true);
         byte[] masterKey = DigestManager.generateMasterKey(passwd);
         byte[] kbData = new byte[1024];
         for (int i = 0; i < 1024; i++) {
@@ -915,5 +920,75 @@ public class BookieClientTest {
         testDataRefCnfWhenReconnect(false, true, false, false, 10);
         testDataRefCnfWhenReconnect(false, true,  true, false, 10);
         testDataRefCnfWhenReconnect(false, true, false, true, 10);
+    }
+
+    @Test
+    public void testCallbackExecutorV3() throws Exception {
+        testCallbackExecutor(false);
+    }
+
+    @Test
+    public void testCallbackExecutorV2() throws Exception {
+        testCallbackExecutor(true);
+    }
+
+    /**
+     * With a callback executor, responses and connection failures alike are dispatched on that executor
+     * rather than on the worker thread selected by ledger id.
+     */
+    private void testCallbackExecutor(boolean useV2WireProtocol) throws Exception {
+        ClientConfiguration conf = new ClientConfiguration().setUseV2WireProtocol(useV2WireProtocol);
+        BookieClient bc = new BookieClientImpl(conf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT,
+                executor, scheduler, NullStatsLogger.INSTANCE, BookieSocketAddress.LEGACY_BOOKIEID_RESOLVER);
+        ExecutorService callbackExecutor = Executors.newSingleThreadExecutor(
+                new DefaultThreadFactory("callback-executor"));
+        try {
+            CompletableFuture<Thread> executorThread = new CompletableFuture<>();
+            callbackExecutor.execute(() -> executorThread.complete(Thread.currentThread()));
+            Thread callbackThread = executorThread.get(10, TimeUnit.SECONDS);
+
+            byte[] passwd = new byte[20];
+            Arrays.fill(passwd, (byte) 'a');
+            BookieId addr = bs.getBookieId();
+            DigestManager digestManager = DigestManager.instantiate(1, passwd,
+                    LedgerMetadataFormat.DigestType.CRC32C, ByteBufAllocator.DEFAULT, useV2WireProtocol);
+            ByteBuf data = Unpooled.buffer(4);
+            data.writeInt(1);
+            ReferenceCounted content = digestManager.computeDigestAndPackageForSending(1, 0, 4, data,
+                    DigestManager.generateMasterKey(passwd), BookieProtocol.FLAG_NONE);
+
+            CompletableFuture<Thread> addThread = new CompletableFuture<>();
+            bc.addEntry(addr, 1, passwd, 1, content, (rc, ledgerId, entryId, address, ctx) -> complete(addThread, rc),
+                    null, BookieProtocol.FLAG_NONE, false, WriteFlag.NONE, callbackExecutor);
+            assertSame(callbackThread, addThread.get(10, TimeUnit.SECONDS));
+            content.release();
+
+            CompletableFuture<Thread> readThread = new CompletableFuture<>();
+            bc.readEntry(addr, 1, 1, (rc, ledgerId, entryId, buffer, ctx) -> complete(readThread, rc), null,
+                    BookieProtocol.FLAG_NONE, null, false, callbackExecutor);
+            assertSame(callbackThread, readThread.get(10, TimeUnit.SECONDS));
+
+            // Nothing listens on this port: the connection failure completes the read on the executor too.
+            BookieId unreachable = new BookieSocketAddress("127.0.0.1", PortManager.nextFreePort()).toBookieId();
+            AtomicInteger failedRc = new AtomicInteger(Code.OK);
+            CompletableFuture<Thread> failedReadThread = new CompletableFuture<>();
+            bc.readEntry(unreachable, 1, 1, (rc, ledgerId, entryId, buffer, ctx) -> {
+                failedRc.set(rc);
+                failedReadThread.complete(Thread.currentThread());
+            }, null, BookieProtocol.FLAG_NONE, null, false, callbackExecutor);
+            assertSame(callbackThread, failedReadThread.get(10, TimeUnit.SECONDS));
+            assertTrue(failedRc.get() != Code.OK);
+        } finally {
+            bc.close();
+            callbackExecutor.shutdown();
+        }
+    }
+
+    private static void complete(CompletableFuture<Thread> future, int rc) {
+        if (rc == Code.OK) {
+            future.complete(Thread.currentThread());
+        } else {
+            future.completeExceptionally(BKException.create(rc));
+        }
     }
 }

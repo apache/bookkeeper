@@ -18,8 +18,6 @@
 
 package org.apache.bookkeeper.statelib.impl;
 
-import com.google.protobuf.ByteString;
-
 /**
  * Bytes related utils.
  */
@@ -41,23 +39,6 @@ public class Bytes {
             | ((long) memory[index + 5] & 0xff) << 16
             | ((long) memory[index + 6] & 0xff) << 8
             | (long) memory[index + 7] & 0xff;
-    }
-
-    /**
-     * Get a long number from a {@link ByteString}.
-     *
-     * @param bs byte string
-     * @return the long number.
-     */
-    public static long toLong(ByteString bs) {
-        return ((long) bs.byteAt(0) & 0xff) << 56
-            | ((long) bs.byteAt(1) & 0xff) << 48
-            | ((long) bs.byteAt(2) & 0xff) << 40
-            | ((long) bs.byteAt(3) & 0xff) << 32
-            | ((long) bs.byteAt(4) & 0xff) << 24
-            | ((long) bs.byteAt(5) & 0xff) << 16
-            | ((long) bs.byteAt(6) & 0xff) << 8
-            | (long) bs.byteAt(7) & 0xff;
     }
 
     /**

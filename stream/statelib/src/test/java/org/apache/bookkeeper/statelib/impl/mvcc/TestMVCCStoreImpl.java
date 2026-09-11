@@ -29,7 +29,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.CompareResult;
 import org.apache.bookkeeper.api.kv.op.OpType;
 import org.apache.bookkeeper.api.kv.op.RangeOp;
@@ -57,7 +57,7 @@ import org.junit.rules.TestName;
 /**
  * Unit test of {@link MVCCStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestMVCCStoreImpl {
 
     @Rule

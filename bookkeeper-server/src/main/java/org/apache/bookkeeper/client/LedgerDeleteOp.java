@@ -21,17 +21,18 @@
 
 package org.apache.bookkeeper.client;
 
+import io.github.merlimat.slog.Logger;
+import io.github.merlimat.slog.LoggerBuilder;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.DeleteCallback;
 import org.apache.bookkeeper.client.SyncCallbackUtils.SyncDeleteCallback;
 import org.apache.bookkeeper.client.api.DeleteBuilder;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.versioning.Version;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates asynchronous ledger delete operation.
@@ -39,7 +40,7 @@ import org.slf4j.LoggerFactory;
  */
 class LedgerDeleteOp {
 
-    static final Logger LOG = LoggerFactory.getLogger(LedgerDeleteOp.class);
+    private final Logger log;
 
     final BookKeeper bk;
     final long ledgerId;
@@ -62,6 +63,16 @@ class LedgerDeleteOp {
      */
     LedgerDeleteOp(BookKeeper bk, BookKeeperClientStats clientStats,
                    long ledgerId, DeleteCallback cb, Object ctx) {
+        this(bk, clientStats, ledgerId, cb, ctx, null);
+    }
+
+    LedgerDeleteOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                   long ledgerId, DeleteCallback cb, Object ctx, Logger parentLogger) {
+        LoggerBuilder builder = Logger.get(LedgerDeleteOp.class).with();
+        if (parentLogger != null) {
+            builder = builder.ctx(parentLogger);
+        }
+        this.log = builder.attr("ledgerId", ledgerId).build();
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -79,6 +90,7 @@ class LedgerDeleteOp {
         bk.getLedgerManager().removeLedgerMetadata(ledgerId, Version.ANY)
             .whenCompleteAsync((ignore, exception) -> {
                     if (exception != null) {
+                        log.debug().exception(exception).log("Failed to delete ledger");
                         deleteOpLogger.registerFailedEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
                     } else {
                         deleteOpLogger.registerSuccessfulEvent(MathUtils.elapsedNanos(startTime), TimeUnit.NANOSECONDS);
@@ -92,9 +104,11 @@ class LedgerDeleteOp {
         return String.format("LedgerDeleteOp(%d)", ledgerId);
     }
 
+    @CustomLog
     static class DeleteBuilderImpl  implements DeleteBuilder {
 
         private Long builderLedgerId;
+        private Logger builderParentLogger;
         private final BookKeeper bk;
 
         DeleteBuilderImpl(BookKeeper bk) {
@@ -108,6 +122,12 @@ class LedgerDeleteOp {
         }
 
         @Override
+        public DeleteBuilder withLoggerContext(Logger parentLogger) {
+            this.builderParentLogger = parentLogger;
+            return this;
+        }
+
+        @Override
         public CompletableFuture<Void> execute() {
             CompletableFuture<Void> future = new CompletableFuture<>();
             SyncDeleteCallback result = new SyncDeleteCallback(future);
@@ -117,7 +137,7 @@ class LedgerDeleteOp {
 
         private boolean validate() {
             if (builderLedgerId == null || builderLedgerId < 0) {
-                LOG.error("invalid ledgerId {} < 0", builderLedgerId);
+                log.error().attr("ledgerId", builderLedgerId).log("invalid ledgerId < 0");
                 return false;
             }
             return true;
@@ -128,7 +148,8 @@ class LedgerDeleteOp {
                 cb.deleteComplete(BKException.Code.IncorrectParameterException, null);
                 return;
             }
-            LedgerDeleteOp op = new LedgerDeleteOp(bk, bk.getClientCtx().getClientStats(), ledgerId, cb, null);
+            LedgerDeleteOp op = new LedgerDeleteOp(bk, bk.getClientCtx().getClientStats(), ledgerId, cb, null,
+                    builderParentLogger);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {

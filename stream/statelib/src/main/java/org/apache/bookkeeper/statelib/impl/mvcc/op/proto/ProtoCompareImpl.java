@@ -22,7 +22,6 @@ import static org.apache.bookkeeper.statelib.impl.Constants.INVALID_REVISION;
 import static org.apache.bookkeeper.statelib.impl.mvcc.MVCCUtils.toApiCompareResult;
 import static org.apache.bookkeeper.statelib.impl.mvcc.MVCCUtils.toApiCompareTarget;
 
-import com.google.protobuf.ByteString;
 import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import lombok.AccessLevel;
@@ -93,10 +92,11 @@ public class ProtoCompareImpl implements CompareOp<byte[], byte[]> {
         if (null != key) {
             return key;
         }
-        if (ByteString.EMPTY == request.getKey()) {
+        byte[] reqKey = request.getKey();
+        if (reqKey == null || reqKey.length == 0) {
             key = null;
         } else {
-            key = request.getKey().toByteArray();
+            key = reqKey;
         }
         return key;
     }
@@ -106,10 +106,11 @@ public class ProtoCompareImpl implements CompareOp<byte[], byte[]> {
         if (null != value) {
             return value;
         }
-        if (ByteString.EMPTY == request.getValue()) {
+        byte[] reqValue = request.getValue();
+        if (reqValue == null || reqValue.length == 0) {
             value = null;
         } else {
-            value = request.getValue().toByteArray();
+            value = reqValue;
         }
         return value;
     }

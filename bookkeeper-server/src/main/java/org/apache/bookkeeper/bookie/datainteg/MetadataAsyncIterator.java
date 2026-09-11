@@ -30,7 +30,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -39,7 +39,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * An rxjava ledger metadata iterator.
  */
-@Slf4j
+@CustomLog
 public class MetadataAsyncIterator {
     private final Scheduler scheduler;
     private final LedgerManager ledgerManager;
@@ -107,7 +107,10 @@ public class MetadataAsyncIterator {
             .thenCompose((metadata) -> consumer.apply(ledgerId, metadata))
             .exceptionally((e) -> {
                     Throwable realException = unwrap(e);
-                    log.warn("Got exception processing ledger {}", ledgerId, realException);
+                    log.warn()
+                            .exception(realException)
+                            .attr("ledgerId", ledgerId)
+                            .log("Got exception processing ledger");
                     if (realException instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException) {
                         return null;
                     } else {

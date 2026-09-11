@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.Bytes;
 import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
@@ -53,17 +53,24 @@ import org.junit.Test;
 /**
  * Unit test for {@link RootRangeStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestRootRangeStoreImpl extends MVCCAsyncStoreTestBase {
 
-    private final NamespaceConfiguration namespaceConf =
-        NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+    private final NamespaceConfiguration namespaceConf = newNamespaceConf();
 
-    private final StreamConfiguration streamConf =
-        StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .build();
+    private static NamespaceConfiguration newNamespaceConf() {
+        NamespaceConfiguration conf = new NamespaceConfiguration();
+        conf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
+
+    private final StreamConfiguration streamConf = newStreamConf();
+
+    private static StreamConfiguration newStreamConf() {
+        StreamConfiguration conf = new StreamConfiguration();
+        conf.copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
 
 
     private RootRangeStoreImpl rootRangeStore;

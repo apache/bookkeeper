@@ -35,20 +35,17 @@ import org.junit.Test;
  */
 public class TestStorageServerChannelManager {
 
-    private final Endpoint endpoint1 = Endpoint.newBuilder()
+    private final Endpoint endpoint1 = new Endpoint()
         .setHostname("127.0.0.1")
-        .setPort(80)
-        .build();
+        .setPort(80);
     private final StorageServerChannel channel1 = mock(StorageServerChannel.class);
-    private final Endpoint endpoint2 = Endpoint.newBuilder()
+    private final Endpoint endpoint2 = new Endpoint()
         .setHostname("127.0.0.2")
-        .setPort(8080)
-        .build();
+        .setPort(8080);
     private final StorageServerChannel channel2 = mock(StorageServerChannel.class);
-    private final Endpoint endpoint3 = Endpoint.newBuilder()
+    private final Endpoint endpoint3 = new Endpoint()
         .setHostname("127.0.0.3")
-        .setPort(8181)
-        .build();
+        .setPort(8181);
 
     private final StorageServerChannelManager channelManager =
         new StorageServerChannelManager((endpoint) -> {

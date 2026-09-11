@@ -23,21 +23,18 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Test Cases related to sequence ids.
  */
+@CustomLog
 public class TestSequenceID extends TestDistributedLogBase {
-
-    private static final Logger logger = LoggerFactory.getLogger(TestSequenceID.class);
 
     @Test(timeout = 60000)
     public void testCompleteV4LogSegmentAsV4() throws Exception {
@@ -143,7 +140,7 @@ public class TestSequenceID extends TestDistributedLogBase {
 
                         @Override
                         public void onFailure(Throwable cause) {
-                            logger.error("Encountered exception on reading next : ", cause);
+                            log.error().exception(cause).log("Encountered exception on reading next");
                         }
                     });
                 }

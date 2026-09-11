@@ -22,7 +22,7 @@ import io.grpc.ServerInterceptors;
 import io.grpc.ServerServiceDefinition;
 import io.grpc.inprocess.InProcessServerBuilder;
 import java.io.IOException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.grpc.proxy.ProxyHandlerRegistry;
 import org.apache.bookkeeper.common.grpc.stats.MonitoringServerInterceptor;
@@ -36,7 +36,7 @@ import org.apache.bookkeeper.stream.storage.impl.grpc.GrpcServices;
 /**
  * KeyRange Server.
  */
-@Slf4j
+@CustomLog
 public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfiguration> {
 
     public static GrpcServer build(GrpcServerSpec spec) {
@@ -109,7 +109,7 @@ public class GrpcServer extends AbstractLifecycleComponent<StorageServerConfigur
         try {
             grpcServer.start();
         } catch (IOException e) {
-            log.error("Failed to start grpc server", e);
+            log.error().exception(e).log("Failed to start grpc server");
             throw new StorageServerRuntimeException("Failed to start grpc server", e);
         }
     }

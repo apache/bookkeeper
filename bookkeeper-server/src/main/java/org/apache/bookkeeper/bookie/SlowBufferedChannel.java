@@ -64,6 +64,12 @@ public class SlowBufferedChannel extends BufferedChannel {
     }
 
     @Override
+    public synchronized void write(ByteBuf src1, ByteBuf src2) throws IOException {
+        delayMs(addDelay);
+        super.write(src1, src2);
+    }
+
+    @Override
     public void flush() throws IOException {
         delayMs(flushDelay);
         super.flush();

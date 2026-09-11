@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -36,14 +37,12 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.bookkeeper.util.SnapshotMap;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan all entries in the entry log and rebuild the index file for one ledger.
  */
+@CustomLog
 public class InterleavedStorageRegenerateIndexOp {
-    private static final Logger LOG = LoggerFactory.getLogger(InterleavedStorageRegenerateIndexOp.class);
 
     private final ServerConfiguration conf;
     private final Set<Long> ledgerIds;
@@ -85,7 +84,7 @@ public class InterleavedStorageRegenerateIndexOp {
     }
 
     public void initiate(boolean dryRun) throws IOException {
-        LOG.info("Starting index rebuilding");
+        log.info("Starting index rebuilding");
 
         DiskChecker diskChecker = BookieResources.createDiskChecker(conf);
         LedgerDirsManager ledgerDirsManager = BookieResources.createLedgerDirsManager(
@@ -107,11 +106,11 @@ public class InterleavedStorageRegenerateIndexOp {
         int completedEntryLogs = 0;
         long startTime = System.nanoTime();
 
-        LOG.info("Scanning {} entry logs", totalEntryLogs);
+        log.info().attr("totalEntryLogs", totalEntryLogs).log("Scanning entry logs");
 
         Map<Long, RecoveryStats> stats = new HashMap<>();
         for (long entryLogId : entryLogs) {
-            LOG.info("Scanning {}", entryLogId);
+            log.info().attr("entryLogId", entryLogId).log("Scanning");
             entryLogger.scanEntryLog(entryLogId, new EntryLogScanner() {
                 @Override
                 public void process(long ledgerId, long offset, ByteBuf entry) throws IOException {
@@ -121,11 +120,12 @@ public class InterleavedStorageRegenerateIndexOp {
 
                     // Actual location indexed is pointing past the entry size
                     long location = (entryLogId << 32L) | (offset + 4);
-
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Rebuilding {}:{} at location {} / {}", ledgerId, entryId, location >> 32,
-                                location & (Integer.MAX_VALUE - 1));
-                    }
+                    log.debug()
+                            .attr("ledgerId", ledgerId)
+                            .attr("entryId", entryId)
+                            .attr("32", location >> 32)
+                            .attr("value", location & (Integer.MAX_VALUE - 1))
+                            .log("Rebuilding entry");
 
                     if (!ledgerCache.ledgerExists(ledgerId)) {
                         ledgerCache.setMasterKey(ledgerId, masterKey);
@@ -143,24 +143,32 @@ public class InterleavedStorageRegenerateIndexOp {
             ledgerCache.flushLedger(true);
 
             ++completedEntryLogs;
-            LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId), completedEntryLogs,
-                    totalEntryLogs);
+            log.info()
+                    .attr("value", Long.toHexString(entryLogId))
+                    .attr("completedEntryLogs", completedEntryLogs)
+                    .attr("totalEntryLogs", totalEntryLogs)
+                    .log("Completed scanning of log .log -- /");
         }
 
-        LOG.info("Rebuilding indices done");
+        log.info("Rebuilding indices done");
         for (long ledgerId : ledgerIds) {
             RecoveryStats ledgerStats = stats.get(ledgerId);
             if (ledgerStats == null || ledgerStats.getNumEntries() == 0) {
-                LOG.info(" {} - No entries found", ledgerId);
+                log.info().attr("ledgerId", ledgerId).log("- No entries found");
             } else {
-                LOG.info(" {} - Found {} entries, from {} to {}", ledgerId,
-                         ledgerStats.getNumEntries(), ledgerStats.getFirstEntry(), ledgerStats.getLastEntry());
+                log.info()
+                        .attr("ledgerId", ledgerId)
+                        .attr("numEntries", ledgerStats.getNumEntries())
+                        .attr("firstEntry", ledgerStats.getFirstEntry())
+                        .attr("lastEntry", ledgerStats.getLastEntry())
+                        .log("Found entries");
             }
         }
-        LOG.info("Total time: {}", DurationFormatUtils.formatDurationHMS(
-                         TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
+        log.info()
+                .attr("value", DurationFormatUtils.formatDurationHMS(
+                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)))
+                .log("Total time");
     }
-
 
     static class DryRunLedgerCache implements LedgerCache {
         @Override

@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.PrintStream;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.bookie.Cookie.Builder;
 import org.apache.bookkeeper.discover.RegistrationManager;
@@ -37,7 +36,6 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * A command that generate cookie.
  */
-@Slf4j
 public class GenerateCookieCommand extends CookieCommand<Flags> {
 
     private static final String NAME = "generate";

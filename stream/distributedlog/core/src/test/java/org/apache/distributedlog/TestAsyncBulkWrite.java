@@ -17,7 +17,6 @@
  */
 package org.apache.distributedlog;
 
-
 import static org.apache.distributedlog.DLMTestUtil.validateFutureFailed;
 import static org.apache.distributedlog.DLMTestUtil.validateFutureSucceededAndGetResult;
 import static org.apache.distributedlog.LogRecord.MAX_LOGRECORDSET_SIZE;
@@ -30,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.distributedlog.api.DistributedLogManager;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteCancelledException;
@@ -39,18 +39,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * Test cases for bulk writes.
  */
+@CustomLog
 public class TestAsyncBulkWrite extends TestDistributedLogBase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestAsyncBulkWrite.class);
 
     @Rule
     public TestName runtime = new TestName();

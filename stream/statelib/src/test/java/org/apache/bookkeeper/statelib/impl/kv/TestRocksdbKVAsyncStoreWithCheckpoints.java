@@ -38,7 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
@@ -64,7 +64,7 @@ import org.junit.rules.TestName;
 /**
  * Unit test of {@link RocksdbKVStore}.
  */
-@Slf4j
+@CustomLog
 public class TestRocksdbKVAsyncStoreWithCheckpoints extends TestDistributedLogBase {
 
     private static URI uri;

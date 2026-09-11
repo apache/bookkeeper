@@ -45,10 +45,9 @@ import org.junit.Before;
  */
 public abstract class GrpcClientTestBase {
 
-    protected static final Endpoint ENDPOINT = Endpoint.newBuilder()
+    protected static final Endpoint ENDPOINT = new Endpoint()
         .setHostname("127.0.0.1")
-        .setPort(4181)
-        .build();
+        .setPort(4181);
 
     protected String serverName;
     protected final MutableHandlerRegistry serviceRegistry = new MutableHandlerRegistry();
@@ -86,19 +85,16 @@ public abstract class GrpcClientTestBase {
             public void getStorageContainerEndpoint(
                     GetStorageContainerEndpointRequest request,
                     StreamObserver<GetStorageContainerEndpointResponse> responseObserver) {
-                GetStorageContainerEndpointResponse.Builder respBuilder =
-                    GetStorageContainerEndpointResponse.newBuilder();
-                respBuilder.setStatusCode(StatusCode.SUCCESS);
+                GetStorageContainerEndpointResponse resp = new GetStorageContainerEndpointResponse();
+                resp.setStatusCode(StatusCode.SUCCESS);
                 for (OneStorageContainerEndpointRequest oneReq : request.getRequestsList()) {
-                    OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-                        .setEndpoint(StorageContainerEndpoint.newBuilder()
-                            .setStorageContainerId(oneReq.getStorageContainer())
-                            .setRevision(oneReq.getRevision() + 1)
-                            .setRwEndpoint(ENDPOINT))
-                        .build();
-                    respBuilder.addResponses(oneResp);
+                    OneStorageContainerEndpointResponse oneResp = resp.addResponse();
+                    StorageContainerEndpoint endpoint = oneResp.setEndpoint();
+                    endpoint.setStorageContainerId(oneReq.getStorageContainer());
+                    endpoint.setRevision(oneReq.getRevision() + 1);
+                    endpoint.setRwEndpoint().copyFrom(ENDPOINT);
                 }
-                responseObserver.onNext(respBuilder.build());
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

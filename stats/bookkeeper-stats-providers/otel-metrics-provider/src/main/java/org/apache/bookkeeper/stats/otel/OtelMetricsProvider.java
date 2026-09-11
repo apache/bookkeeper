@@ -22,14 +22,13 @@ import io.netty.util.internal.PlatformDependent;
 import io.opentelemetry.api.OpenTelemetry;
 import io.opentelemetry.api.common.Attributes;
 import io.opentelemetry.api.metrics.Meter;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.Classes;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.Cpu;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.GarbageCollector;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.MemoryPools;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.Threads;
-import io.opentelemetry.instrumentation.runtimemetrics.java8.internal.ExperimentalBufferPools;
+import io.opentelemetry.instrumentation.runtimetelemetry.RuntimeTelemetry;
+import io.opentelemetry.instrumentation.runtimetelemetry.RuntimeTelemetryBuilder;
+import io.opentelemetry.instrumentation.runtimetelemetry.internal.Experimental;
+import io.opentelemetry.instrumentation.runtimetelemetry.internal.Internal;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 import io.opentelemetry.sdk.metrics.Aggregation;
+import io.opentelemetry.sdk.metrics.ExplicitBucketHistogramOptions;
 import io.opentelemetry.sdk.metrics.InstrumentSelector;
 import io.opentelemetry.sdk.metrics.InstrumentType;
 import io.opentelemetry.sdk.metrics.View;
@@ -43,13 +42,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.commons.configuration2.Configuration;
 // CHECKSTYLE.ON: IllegalImport
 
-@Slf4j
+@CustomLog
 public class OtelMetricsProvider implements StatsProvider {
 
     private static final String METER_NAME = "org.apache.bookkeeper";
@@ -83,7 +82,10 @@ public class OtelMetricsProvider implements StatsProvider {
                                                 .setType(InstrumentType.HISTOGRAM)
                                                 .build(),
                                         View.builder()
-                                                .setAggregation(Aggregation.explicitBucketHistogram(histogramBuckets))
+                                                .setAggregation(Aggregation.explicitBucketHistogram(
+                                                        ExplicitBucketHistogramOptions.builder()
+                                                                .setBucketBoundaries(histogramBuckets)
+                                                                .build()))
                                                 .build())
 
                 ).build();
@@ -95,13 +97,12 @@ public class OtelMetricsProvider implements StatsProvider {
     public void start(Configuration conf) {
         boolean exposeDefaultJVMMetrics = conf.getBoolean("exposeDefaultJVMMetrics", true);
         if (exposeDefaultJVMMetrics) {
-            // Include standard JVM stats
-            MemoryPools.registerObservers(openTelemetry);
-            ExperimentalBufferPools.registerObservers(openTelemetry);
-            Classes.registerObservers(openTelemetry);
-            Cpu.registerObservers(openTelemetry);
-            Threads.registerObservers(openTelemetry);
-            GarbageCollector.registerObservers(openTelemetry, true);
+            // Include standard JVM stats (memory pools, classes, CPU, threads, GC)
+            // plus experimental buffer pool metrics, with GC cause attribute capture.
+            RuntimeTelemetryBuilder runtimeTelemetryBuilder = RuntimeTelemetry.builder(openTelemetry);
+            Experimental.setEmitExperimentalMetrics(runtimeTelemetryBuilder, true);
+            Internal.setCaptureGcCause(runtimeTelemetryBuilder, true);
+            runtimeTelemetryBuilder.build();
 
             meter.gaugeBuilder("process.runtime.jvm.memory.direct_bytes_used")
                     .buildWithCallback(odm -> odm.record(getDirectMemoryUsage.get()));
@@ -136,7 +137,7 @@ public class OtelMetricsProvider implements StatsProvider {
                 field.setAccessible(true);
                 tmpDirectMemoryUsage = (AtomicLong) field.get(null);
             } catch (Throwable t) {
-                log.warn("Failed to access netty DIRECT_MEMORY_COUNTER field {}", t.getMessage());
+                log.warn().exceptionMessage(t).log("Failed to access netty DIRECT_MEMORY_COUNTER field");
             }
             directMemoryUsage = tmpDirectMemoryUsage;
             getDirectMemoryUsage = () -> directMemoryUsage != null ? directMemoryUsage.get() : Double.NaN;

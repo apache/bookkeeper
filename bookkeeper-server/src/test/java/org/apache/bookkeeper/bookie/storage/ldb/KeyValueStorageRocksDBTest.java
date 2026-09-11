@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.bookie.storage.ldb;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -27,11 +28,18 @@ import static org.junit.Assert.assertTrue;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.rocksdb.BlockBasedTableConfig;
 import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
@@ -41,6 +49,53 @@ import org.rocksdb.DBOptions;
 import org.rocksdb.Options;
 
 public class KeyValueStorageRocksDBTest {
+
+    @Rule
+    public final TemporaryFolder temporaryFolder = new TemporaryFolder();
+
+    @Test
+    public void testCompatibleSstFormatWithAndWithoutConfigurationFiles() throws Exception {
+        for (boolean useConfigurationFile : new boolean[]{false, true}) {
+            for (KeyValueStorageFactory.DbConfigType type : KeyValueStorageFactory.DbConfigType.values()) {
+                File directory = temporaryFolder.newFolder();
+                ServerConfiguration configuration = new ServerConfiguration();
+                // Explicit nonexistent paths ensure that the fallback does not load local operator settings.
+                String defaultConf = new File(directory, "default.conf").toString();
+                String ledgerConf = new File(directory, "ledger.conf").toString();
+                String entryConf = new File(directory, "entry.conf").toString();
+                if (useConfigurationFile) {
+                    defaultConf = getClass().getClassLoader().getResource("conf/default_rocksdb.conf").getPath();
+                    ledgerConf = getClass().getClassLoader().getResource("conf/ledger_metadata_rocksdb.conf").getPath();
+                    entryConf = getClass().getClassLoader().getResource("conf/entry_location_rocksdb.conf").getPath();
+                }
+                configuration.setDefaultRocksDBConf(defaultConf);
+                configuration.setLedgerMetadataRocksdbConf(ledgerConf);
+                configuration.setEntryLocationRocksdbConf(entryConf);
+                byte[] key = new byte[]{1};
+                byte[] value = new byte[]{2};
+                try (KeyValueStorageRocksDB storage = new KeyValueStorageRocksDB(
+                        directory.toString(), "db", type, configuration)) {
+                    storage.put(key, value);
+                    storage.sync();
+                    storage.compact();
+                    assertArrayEquals(value, storage.get(key));
+                    List<Path> ssts;
+                    try (Stream<Path> files = Files.list(directory.toPath().resolve("db"))) {
+                        ssts = files.filter(path -> path.toString().endsWith(".sst")).collect(Collectors.toList());
+                    }
+                    assertTrue("Compaction must produce an SST", !ssts.isEmpty());
+                    for (Path sst : ssts) {
+                        byte[] bytes = Files.readAllBytes(sst);
+                        // The footer stores a little-endian format version before the 8-byte magic number.
+                        // TableProperties.getFormatVersion() is not the block-based table footer version.
+                        int format = ByteBuffer.wrap(bytes, bytes.length - 12, 4)
+                                .order(ByteOrder.LITTLE_ENDIAN).getInt();
+                        assertEquals("SST must be readable by RocksDB 7.9.2: " + sst, 5, format);
+                    }
+                }
+            }
+        }
+    }
 
     @Test
     public void testRocksDBInitiateWithBookieConfiguration() throws Exception {

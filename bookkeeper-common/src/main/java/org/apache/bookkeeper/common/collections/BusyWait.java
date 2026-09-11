@@ -21,14 +21,14 @@ package org.apache.bookkeeper.common.collections;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import lombok.CustomLog;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * Utility class to use "Thread.onSpinWait()" when available.
  */
 @UtilityClass
-@Slf4j
+@CustomLog
 public class BusyWait {
 
     /**
@@ -54,9 +54,7 @@ public class BusyWait {
             handle = MethodHandles.lookup().findStatic(Thread.class, "onSpinWait", MethodType.methodType(void.class));
         } catch (Throwable t) {
             // Ignore
-            if (log.isDebugEnabled()) {
-                log.debug("Unable to use 'onSpinWait' from JVM", t);
-            }
+            log.debug().exception(t).log("Unable to use 'onSpinWait' from JVM");
         }
 
         ON_SPIN_WAIT = handle;

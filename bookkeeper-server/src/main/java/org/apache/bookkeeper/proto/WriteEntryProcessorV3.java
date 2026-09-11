@@ -21,26 +21,19 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.EnumSet;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
-    private static final Logger logger = LoggerFactory.getLogger(WriteEntryProcessorV3.class);
 
     public WriteEntryProcessorV3(Request request, BookieRequestHandler requestHandler,
                                  BookieRequestProcessor requestProcessor) {
@@ -55,21 +48,21 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         long ledgerId = addRequest.getLedgerId();
         long entryId = addRequest.getEntryId();
 
-        final AddResponse.Builder addResponse = AddResponse.newBuilder()
+        final AddResponse addResponse = new AddResponse()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId);
 
         if (!isVersionCompatible()) {
             addResponse.setStatus(StatusCode.EBADVERSION);
-            return addResponse.build();
+            return addResponse;
         }
 
         if (requestProcessor.getBookie().isReadOnly()
             && !(RequestUtils.isHighPriority(request)
                     && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
-            logger.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
+            log.warn("BookieServer is running as readonly mode, so rejecting the request from the client!");
             addResponse.setStatus(StatusCode.EREADONLY);
-            return addResponse.build();
+            return addResponse;
         }
 
         BookkeeperInternalCallbacks.WriteCallback wcb = new BookkeeperInternalCallbacks.WriteCallback() {
@@ -97,11 +90,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
                         break;
                 }
                 addResponse.setStatus(status);
-                Response.Builder response = Response.newBuilder()
-                        .setHeader(getHeader())
-                        .setStatus(addResponse.getStatus())
-                        .setAddResponse(addResponse);
-                Response resp = response.build();
+                Response resp = new Response();
+                resp.setHeader().copyFrom(getHeader());
+                resp.setStatus(addResponse.getStatus());
+                resp.setAddResponse().copyFrom(addResponse);
                 sendResponse(status, resp, requestProcessor.getRequestStats().getAddRequestStats());
             }
         };
@@ -113,8 +105,8 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         }
         final boolean ackBeforeSync = writeFlags.contains(WriteFlag.DEFERRED_SYNC);
         StatusCode status = null;
-        byte[] masterKey = addRequest.getMasterKey().toByteArray();
-        ByteBuf entryToAdd = Unpooled.wrappedBuffer(addRequest.getBody().asReadOnlyByteBuffer());
+        byte[] masterKey = addRequest.getMasterKey();
+        ByteBuf entryToAdd = addRequest.getBodySlice();
         try {
             if (RequestUtils.hasFlag(addRequest, AddRequest.Flag.RECOVERY_ADD)) {
                 requestProcessor.getBookie().recoveryAddEntry(entryToAdd, wcb,
@@ -128,25 +120,38 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
             // Avoid to log each occurrence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
-            if (logger.isDebugEnabled()) {
-                logger.debug("Operation rejected while writing {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Operation rejected while writing");
             status = StatusCode.ETOOMANYREQUESTS;
         } catch (IOException e) {
-            logger.error("Error writing entry:{} to ledger:{}",
-                    entryId, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Error writing entry to ledger");
             status = StatusCode.EIO;
         } catch (BookieException.LedgerFencedException | BookieException.LedgerFencedAndDeletedException e) {
-            logger.error("Ledger fenced/deleted while writing entry:{} to ledger:{}",
-                    entryId, ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger fenced/deleted while writing entry to ledger");
             status = StatusCode.EFENCED;
         } catch (BookieException e) {
-            logger.error("Unauthorized access to ledger:{} while writing entry:{}",
-                    ledgerId, entryId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .log("Unauthorized access to ledger while writing entry");
             status = StatusCode.EUA;
         } catch (Throwable t) {
-            logger.error("Unexpected exception while writing {}@{} : ",
-                    entryId, ledgerId, t);
+            log.error()
+                    .exception(t)
+                    .attr("entryId", entryId)
+                    .attr("ledgerId", ledgerId)
+                    .log("Unexpected exception while writing");
             // some bad request which cause unexpected exception
             status = StatusCode.EBADREQ;
         }
@@ -155,7 +160,7 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         // doesn't return a response back to the caller.
         if (!status.equals(StatusCode.EOK)) {
             addResponse.setStatus(status);
-            return addResponse.build();
+            return addResponse;
         }
         return null;
     }
@@ -167,11 +172,10 @@ class WriteEntryProcessorV3 extends PacketProcessorBaseV3 {
         AddResponse addResponse = getAddResponse();
         if (null != addResponse) {
             // This means there was an error and we should send this back.
-            Response.Builder response = Response.newBuilder()
-                    .setHeader(getHeader())
-                    .setStatus(addResponse.getStatus())
-                    .setAddResponse(addResponse);
-            Response resp = response.build();
+            Response resp = new Response();
+            resp.setHeader().copyFrom(getHeader());
+            resp.setStatus(addResponse.getStatus());
+            resp.setAddResponse().copyFrom(addResponse);
             sendResponse(addResponse.getStatus(), resp,
                          requestProcessor.getRequestStats().getAddRequestStats());
         }

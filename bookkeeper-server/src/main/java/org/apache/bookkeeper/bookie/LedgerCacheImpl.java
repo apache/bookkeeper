@@ -27,20 +27,19 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 import java.util.PrimitiveIterator.OfLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implementation of LedgerCache interface.
  * This class serves two purposes.
  */
+@CustomLog
 public class LedgerCacheImpl implements LedgerCache {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerCacheImpl.class);
 
     private final IndexInMemPageMgr indexPageManager;
     private final IndexPersistenceMgr indexPersistenceManager;
@@ -135,9 +134,7 @@ public class LedgerCacheImpl implements LedgerCache {
      */
     @Override
     public void deleteLedger(long ledgerId) throws IOException {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Deleting ledgerId: {}", ledgerId);
-        }
+        log.debug().attr("ledgerId", ledgerId).log("Deleting ledger");
 
         indexPageManager.removePagesForLedger(ledgerId);
         indexPersistenceManager.removeLedger(ledgerId);

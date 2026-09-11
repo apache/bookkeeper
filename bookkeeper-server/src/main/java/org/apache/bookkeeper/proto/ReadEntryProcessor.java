@@ -27,18 +27,17 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.ReadRequest;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
+@CustomLog
 class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
-    private static final Logger LOG = LoggerFactory.getLogger(ReadEntryProcessor.class);
 
     protected ExecutorService fenceThreadPool;
     protected boolean throttleReadResponses;
@@ -58,13 +57,10 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
 
     @Override
     protected void processPacket() {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Received new read request: {}", request);
-        }
+        log.debug().attr("request", request).log("Received new read request");
         if (!requestHandler.ctx().channel().isOpen()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Dropping read request for closed channel: {}", requestHandler.ctx().channel());
-            }
+            log.debug().attr("channel", () -> requestHandler.ctx().channel())
+                    .log("Dropping read request for closed channel");
             requestProcessor.onReadRequestFinish();
             recycle();
             return;
@@ -75,55 +71,68 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         try {
             CompletableFuture<Boolean> fenceResult = null;
             if (request.isFencing()) {
-                LOG.warn("Ledger: {}  fenced by: {}", request.getLedgerId(),
-                        requestHandler.ctx().channel().remoteAddress());
+                log.warn().attr("ledgerId", request.getLedgerId())
+                        .attr("fencedBy", requestHandler.ctx().channel().remoteAddress())
+                        .log("Ledger fenced");
 
                 if (request.hasMasterKey()) {
                     fenceResult = requestProcessor.getBookie().fenceLedger(request.getLedgerId(),
                             request.getMasterKey());
                 } else {
-                    LOG.error("Password not provided, Not safe to fence {}", request.getLedgerId());
+                    log.error().attr("ledgerId", request.getLedgerId()).log("Password not provided, Not safe to fence");
                     throw BookieException.create(BookieException.Code.UnauthorizedAccessException);
                 }
             }
             data = readData();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("##### Read entry ##### -- ref-count: {}",  data.refCnt());
-            }
+            final ReferenceCounted dataRef = data;
+            log.debug().attr("refCount", () -> dataRef.refCnt()).log("Read entry");
             if (fenceResult != null) {
                 handleReadResultForFenceRead(fenceResult, data, startTimeNanos);
                 return;
             }
         } catch (Bookie.NoLedgerException | BookieException.LedgerFencedAndDeletedException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Error reading");
             errorCode = BookieProtocol.ENOLEDGER;
         } catch (Bookie.NoEntryException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Error reading");
             errorCode = BookieProtocol.ENOENTRY;
         } catch (IOException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Error reading {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Error reading");
             errorCode = BookieProtocol.EIO;
         } catch (BookieException.DataUnknownException e) {
-            LOG.error("Ledger {} is in an unknown state", request.getLedgerId(), e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", request.getLedgerId())
+                    .log("Ledger is in an unknown state");
             errorCode = BookieProtocol.EUNKNOWNLEDGERSTATE;
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", request.getLedgerId())
+                    .log("Unauthorized access to ledger");
             errorCode = BookieProtocol.EUA;
         } catch (Throwable t) {
-            LOG.error("Unexpected exception reading at {}:{} : {}", request.getLedgerId(), request.getEntryId(),
-                      t.getMessage(), t);
+            log.error()
+                    .exception(t)
+                    .attr("ledgerId", request.getLedgerId())
+                    .attr("entryId", request.getEntryId())
+                    .log("Unexpected exception reading");
             errorCode = BookieProtocol.EBADREQ;
         }
 
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Read entry rc = {} for {}", errorCode, request);
-        }
+        log.trace()
+                .attr("rc", errorCode)
+                .attr("request", request)
+                .log("Read entry");
         sendResponse(data, errorCode, startTimeNanos);
     }
 
@@ -171,7 +180,7 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
 
                 @Override
                 public void onFailure(Throwable t) {
-                    LOG.error("Error processing fence request", t);
+                    log.error().exception(t).log("Error processing fence request");
                     // if failed to fence, fail the read request to make it retry.
                     sendResponse(data, BookieProtocol.EIO, startTimeNanos);
                 }
@@ -183,11 +192,20 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
                 return;
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                LOG.error("Interrupting fence read entry {}", request, ie);
+                log.error()
+                        .exception(ie)
+                        .attr("request", request)
+                        .log("Interrupting fence read entry");
             } catch (ExecutionException ee) {
-                LOG.error("Failed to fence read entry {}", request, ee.getCause());
+                log.error()
+                        .exception(ee.getCause())
+                        .attr("request", request)
+                        .log("Failed to fence read entry");
             } catch (TimeoutException te) {
-                LOG.error("Timeout to fence read entry {}", request, te);
+                log.error()
+                        .exception(te)
+                        .attr("request", request)
+                        .log("Timeout to fence read entry");
             }
             sendResponse(data, BookieProtocol.EIO, startTimeNanos);
         }

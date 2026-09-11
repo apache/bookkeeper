@@ -30,6 +30,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.feature.SettableFeature;
@@ -39,17 +40,13 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.common.config.ConcurrentBaseConfiguration;
 import org.apache.distributedlog.common.config.ConfigurationListener;
 import org.apache.distributedlog.common.config.ConfigurationSubscription;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Feature Provider based dynamic configuration.
  */
+@CustomLog
 public class DynamicConfigurationFeatureProvider extends AbstractFeatureProvider
         implements ConfigurationListener {
-    private static final Logger logger = LoggerFactory.getLogger(DynamicConfigurationFeatureProvider.class);
-
 
     private final ConcurrentBaseConfiguration featuresConf;
     private ConfigurationSubscription featuresConfSubscription;
@@ -112,7 +109,10 @@ public class DynamicConfigurationFeatureProvider extends AbstractFeatureProvider
             int availability = conf.getInt(featureName, 0);
             if (availability != feature.getValue().availability()) {
                 feature.getValue().set(availability);
-                logger.info("Reload feature {}={}", featureName, availability);
+                log.info()
+                        .attr("feature", featureName)
+                        .attr("availability", availability)
+                        .log("Reload feature");
             }
         }
     }

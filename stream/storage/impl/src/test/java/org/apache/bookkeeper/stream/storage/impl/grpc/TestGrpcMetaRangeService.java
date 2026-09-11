@@ -49,14 +49,11 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        GetActiveRangesRequest request = GetActiveRangesRequest
-            .newBuilder()
-            .setStreamId(23456L)
-            .build();
+        GetActiveRangesRequest request = new GetActiveRangesRequest()
+            .setStreamId(23456L);
 
-        GetActiveRangesResponse response = GetActiveRangesResponse.newBuilder()
-            .setCode(StatusCode.SUCCESS)
-            .build();
+        GetActiveRangesResponse response = new GetActiveRangesResponse()
+            .setCode(StatusCode.SUCCESS);
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             CompletableFuture.completedFuture(response));
@@ -76,14 +73,11 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        GetActiveRangesRequest request = GetActiveRangesRequest
-            .newBuilder()
-            .setStreamId(23456L)
-            .build();
+        GetActiveRangesRequest request = new GetActiveRangesRequest()
+            .setStreamId(23456L);
 
-        GetActiveRangesResponse response = GetActiveRangesResponse.newBuilder()
-            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-            .build();
+        GetActiveRangesResponse response = new GetActiveRangesResponse()
+            .setCode(StatusCode.INTERNAL_SERVER_ERROR);
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -103,10 +97,8 @@ public class TestGrpcMetaRangeService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcMetaRangeService grpcService = new GrpcMetaRangeService(rangeService);
 
-        GetActiveRangesRequest request = GetActiveRangesRequest
-            .newBuilder()
-            .setStreamId(23456L)
-            .build();
+        GetActiveRangesRequest request = new GetActiveRangesRequest()
+            .setStreamId(23456L);
 
         when(rangeService.getActiveRanges(request)).thenReturn(
             FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));

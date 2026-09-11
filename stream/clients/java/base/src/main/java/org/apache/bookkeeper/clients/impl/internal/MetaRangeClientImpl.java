@@ -23,7 +23,7 @@ import static org.apache.bookkeeper.stream.protocol.util.ProtoUtils.createGetAct
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannelManager;
 import org.apache.bookkeeper.clients.impl.internal.api.HashStreamRanges;
@@ -37,7 +37,7 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 /**
  * A default implementation for {@link MetaRangeClient}.
  */
-@Slf4j
+@CustomLog
 class MetaRangeClientImpl implements MetaRangeClient {
 
     private final StreamProperties streamProps;

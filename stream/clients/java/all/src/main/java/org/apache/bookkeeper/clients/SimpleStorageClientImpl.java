@@ -28,12 +28,13 @@ import io.grpc.ManagedChannel;
 import io.netty.buffer.ByteBuf;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.exceptions.ApiException;
 import org.apache.bookkeeper.api.kv.PTable;
 import org.apache.bookkeeper.api.kv.Table;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.grpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.clients.impl.kv.ByteBufTableImpl;
 import org.apache.bookkeeper.clients.impl.kv.PByteBufSimpleTableImpl;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
@@ -43,14 +44,12 @@ import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.common.util.SharedResourceManager.Resource;
 import org.apache.bookkeeper.stream.proto.StorageType;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 
 /**
  * The implementation of {@link StorageClient} client.
  */
-@Slf4j
+@CustomLog
 public class SimpleStorageClientImpl extends SimpleClientBase implements StorageClient {
 
     private static final String COMPONENT_NAME = SimpleStorageClientImpl.class.getSimpleName();
@@ -63,7 +62,7 @@ public class SimpleStorageClientImpl extends SimpleClientBase implements Storage
         super(settings);
         this.defaultNamespace = namespaceName;
         this.rootRangeService = GrpcUtils.configureGrpcStub(
-            RootRangeServiceGrpc.newFutureStub(channel),
+            RootRangeServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 
@@ -74,7 +73,7 @@ public class SimpleStorageClientImpl extends SimpleClientBase implements Storage
         super(settings, schedulerResource, channel, false);
         this.defaultNamespace = namespaceName;
         this.rootRangeService = GrpcUtils.configureGrpcStub(
-            RootRangeServiceGrpc.newFutureStub(channel),
+            RootRangeServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 
@@ -117,8 +116,11 @@ public class SimpleStorageClientImpl extends SimpleClientBase implements Storage
         ).thenCompose(resp -> {
             if (StatusCode.SUCCESS == resp.getCode()) {
                 StreamProperties streamProps = resp.getStreamProps();
-                log.info("Retrieved table properties for table {}/{} : {}",
-                    namespaceName, streamName, streamProps);
+                log.info()
+                    .attr("namespace", namespaceName)
+                    .attr("streamName", streamName)
+                    .attr("streamProps", streamProps)
+                    .log("Retrieved table properties for table");
                 if (StorageType.TABLE != streamProps.getStreamConf().getStorageType()) {
                     return FutureUtils.exception(new ApiException(
                         "Can't open a non-table storage entity : " + streamProps.getStreamConf().getStorageType()));

@@ -23,9 +23,12 @@ package org.apache.bookkeeper.client;
 
 import static org.apache.bookkeeper.client.BookKeeper.DigestType.fromApiDigestType;
 
+import io.github.merlimat.slog.Logger;
+import io.github.merlimat.slog.LoggerBuilder;
 import java.security.GeneralSecurityException;
 import java.util.Arrays;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.bookkeeper.client.AsyncCallback.OpenCallback;
@@ -37,18 +40,18 @@ import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.ReadHandle;
 import org.apache.bookkeeper.client.impl.OpenBuilderBase;
 import org.apache.bookkeeper.common.util.MathUtils;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.util.OrderedGenericCallback;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates the ledger open operation.
  *
  */
 class LedgerOpenOp {
-    static final Logger LOG = LoggerFactory.getLogger(LedgerOpenOp.class);
+
+    private final Logger log;
 
     final BookKeeper bk;
     final long ledgerId;
@@ -75,6 +78,8 @@ class LedgerOpenOp {
 
     final DigestType suggestedDigestType;
     final boolean enableDigestAutodetection;
+    final Logger parentLogger;
+    final Object orderingKey;
 
     /**
      * Constructor.
@@ -89,6 +94,21 @@ class LedgerOpenOp {
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
                         long ledgerId, DigestType digestType, byte[] passwd,
                         OpenCallback cb, Object ctx) {
+        this(bk, clientStats, ledgerId, digestType, passwd, cb, ctx, null, null);
+    }
+
+    /**
+     * @param orderingKey key selecting the worker thread that runs every callback of the opened handle;
+     *                    {@code null} selects it by ledger id
+     */
+    public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
+                        long ledgerId, DigestType digestType, byte[] passwd,
+                        OpenCallback cb, Object ctx, Logger parentLogger, Object orderingKey) {
+        LoggerBuilder builder = Logger.get(LedgerOpenOp.class).with();
+        if (parentLogger != null) {
+            builder = builder.ctx(parentLogger);
+        }
+        this.log = builder.attr("ledgerId", ledgerId).build();
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.passwd = passwd;
@@ -97,10 +117,13 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = bk.getConf().getEnableDigestTypeAutodetection();
         this.suggestedDigestType = digestType;
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.parentLogger = parentLogger;
+        this.orderingKey = orderingKey;
     }
 
     public LedgerOpenOp(BookKeeper bk, BookKeeperClientStats clientStats,
                         long ledgerId, OpenCallback cb, Object ctx) {
+        this.log = Logger.get(LedgerOpenOp.class).with().attr("ledgerId", ledgerId).build();
         this.bk = bk;
         this.ledgerId = ledgerId;
         this.cb = cb;
@@ -111,6 +134,8 @@ class LedgerOpenOp {
         this.enableDigestAutodetection = false;
         this.suggestedDigestType = bk.conf.getBookieRecoveryDigestType();
         this.openOpLogger = clientStats.getOpenOpLogger();
+        this.parentLogger = null;
+        this.orderingKey = null;
     }
 
     /**
@@ -123,7 +148,8 @@ class LedgerOpenOp {
          * Asynchronously read the ledger metadata node.
          */
         bk.getLedgerManager().readLedgerMetadata(ledgerId)
-                .thenAcceptAsync(this::openWithMetadata, bk.getScheduler().chooseThread(ledgerId))
+                .thenAcceptAsync(this::openWithMetadata, orderingKey == null
+                        ? bk.getScheduler().chooseThread(ledgerId) : bk.getScheduler().chooseThread(orderingKey))
                 .exceptionally(exception -> {
                     openComplete(BKException.getExceptionCode(exception), null);
                     return null;
@@ -180,14 +206,14 @@ class LedgerOpenOp {
 
             if (metadata.hasPassword()) {
                 if (!Arrays.equals(passwd, metadata.getPassword())) {
-                    LOG.error("Provided passwd does not match that in metadata");
+                    log.error("Provided passwd does not match that in metadata");
                     openComplete(BKException.Code.UnauthorizedAccessException, null);
                     return;
                 }
                 // if `digest auto detection` is enabled, ignore the suggested digest type, this allows digest type
                 // changes. e.g. moving from `crc32` to `crc32c`.
                 if (suggestedDigestType != fromApiDigestType(metadata.getDigestType()) && !enableDigestAutodetection) {
-                    LOG.error("Provided digest does not match that in metadata");
+                    log.error("Provided digest does not match that in metadata");
                     openComplete(BKException.Code.DigestMatchException, null);
                     return;
                 }
@@ -213,13 +239,14 @@ class LedgerOpenOp {
             // Therefore, if a user needs to the feature that update metadata automatically, he will set
             // "keepUpdateMetadata" to "true",
             lh = new ReadOnlyLedgerHandle(bk.getClientCtx(), ledgerId, versionedMetadata, digestType,
-                                          passwd, watchImmediately);
+                                          passwd, watchImmediately, parentLogger, orderingKey);
         } catch (GeneralSecurityException e) {
-            LOG.error("Security exception while opening ledger: " + ledgerId, e);
+            log.error().exception(e).attr("ledgerId", ledgerId).log("Security exception while opening ledger");
             openComplete(BKException.Code.DigestNotInitializedException, null);
             return;
         } catch (NumberFormatException e) {
-            LOG.error("Incorrectly entered parameter throttle: " + bk.getConf().getThrottleValue(), e);
+            log.error().exception(e).attr("throttle", bk.getConf().getThrottleValue())
+                    .log("Incorrectly entered parameter throttle");
             openComplete(BKException.Code.IncorrectParameterException, null);
             return;
         }
@@ -231,33 +258,7 @@ class LedgerOpenOp {
         }
 
         if (doRecovery) {
-            lh.recover(new OrderedGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
-                @Override
-                public void safeOperationComplete(int rc, Void result) {
-                    if (rc == BKException.Code.OK) {
-                        openComplete(BKException.Code.OK, lh);
-                        if (!watchImmediately && keepUpdateMetadata) {
-                            lh.registerLedgerMetadataListener();
-                        }
-                    } else {
-                        closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
-                            if (ex != null) {
-                                LOG.error("Ledger {} close failed", ledgerId, ex);
-                            }
-                            if (rc == BKException.Code.UnauthorizedAccessException
-                                    || rc == BKException.Code.TimeoutException) {
-                                openComplete(bk.getReturnRc(rc), null);
-                            } else {
-                                openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
-                            }
-                        });
-                    }
-                }
-                @Override
-                public String toString() {
-                    return String.format("Recover(%d)", ledgerId);
-                }
-            });
+            lh.recover(recoveryCallback(watchImmediately));
         } else {
             lh.asyncReadLastConfirmed(new ReadLastConfirmedCallback() {
                 @Override
@@ -266,14 +267,18 @@ class LedgerOpenOp {
                     if (rc == BKException.Code.TimeoutException) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
-                                LOG.error("Ledger {} close failed", ledgerId, ex);
+                                log.error()
+                                        .exception(ex)
+                                        .log("Ledger close failed");
                             }
                             openComplete(bk.getReturnRc(rc), null);
                         });
                     } else if (rc != BKException.Code.OK) {
                         closeLedgerHandleAsync().whenComplete((r, ex) -> {
                             if (ex != null) {
-                                LOG.error("Ledger {} close failed", ledgerId, ex);
+                                log.error()
+                                        .exception(ex)
+                                        .log("Ledger close failed");
                             }
                             openComplete(bk.getReturnRc(BKException.Code.ReadException), null);
                         });
@@ -284,6 +289,57 @@ class LedgerOpenOp {
                 }
             }, null);
 
+        }
+    }
+
+    /**
+     * Callback completing the open once recovery is done, run on the handle's thread. Without an ordering key
+     * this is the ledger-id keyed {@link OrderedGenericCallback}; with one, the completion is submitted to the
+     * handle's executor, which is the thread selected by that key.
+     */
+    private GenericCallback<Void> recoveryCallback(boolean watchImmediately) {
+        if (orderingKey == null) {
+            return new OrderedGenericCallback<Void>(bk.getMainWorkerPool(), ledgerId) {
+                @Override
+                public void safeOperationComplete(int rc, Void result) {
+                    recoveryComplete(rc, watchImmediately);
+                }
+
+                @Override
+                public String toString() {
+                    return String.format("Recover(%d)", ledgerId);
+                }
+            };
+        }
+        return (rc, result) -> {
+            try {
+                lh.executeOrdered(() -> recoveryComplete(rc, watchImmediately));
+            } catch (RejectedExecutionException ree) {
+                log.warn().exception(ree).log("Failed to submit recovery completion callback");
+            }
+        };
+    }
+
+    private void recoveryComplete(int rc, boolean watchImmediately) {
+        if (rc == BKException.Code.OK) {
+            openComplete(BKException.Code.OK, lh);
+            if (!watchImmediately && keepUpdateMetadata) {
+                lh.registerLedgerMetadataListener();
+            }
+        } else {
+            closeLedgerHandleAsync().whenComplete((ignore, ex) -> {
+                if (ex != null) {
+                    log.error()
+                            .exception(ex)
+                            .log("Ledger close failed");
+                }
+                if (rc == BKException.Code.UnauthorizedAccessException
+                        || rc == BKException.Code.TimeoutException) {
+                    openComplete(bk.getReturnRc(rc), null);
+                } else {
+                    openComplete(bk.getReturnRc(BKException.Code.LedgerRecoveryException), null);
+                }
+            });
         }
     }
 
@@ -326,7 +382,7 @@ class LedgerOpenOp {
 
             LedgerOpenOp op = new LedgerOpenOp(bk, bk.getClientCtx().getClientStats(),
                                                ledgerId, fromApiDigestType(digestType),
-                                               password, cb, null);
+                                               password, cb, null, parentLogger, orderingKey);
             ReentrantReadWriteLock closeLock = bk.getCloseLock();
             closeLock.readLock().lock();
             try {
@@ -335,7 +391,11 @@ class LedgerOpenOp {
                     return;
                 }
                 if (recovery) {
-                    op.initiate();
+                    if (keepUpdateMetadata) {
+                        op.initiateWithKeepUpdateMetadata();
+                    } else {
+                        op.initiate();
+                    }
                 } else {
                     op.initiateWithoutRecovery();
                 }

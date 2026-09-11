@@ -197,10 +197,10 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
 
         assertLogWithMdc("ledger_add_entry", "No writable ledger dirs below diskUsageThreshold");
         assertLogWithMdc("ledger_add_entry", "All ledger directories are non writable and no reserved space");
-        assertLogWithMdc("ledger_add_entry", "Error writing entry:0 to ledger:0");
-        assertLogWithMdc("ledger_add_entry", "Add for failed on bookie");
-        assertLogWithMdc("ledger_add_entry", "Failed to find 1 bookies");
-        assertLogWithMdc("ledger_add_entry", "Closing ledger 0 due to NotEnoughBookiesException");
+        assertLogWithMdc("ledger_add_entry", "Error writing entry to ledger");
+        assertLogWithMdc("ledger_add_entry", "Operation failed on bookie");
+        assertLogWithMdc("ledger_add_entry", "Failed to find bookies");
+        assertLogWithMdc("ledger_add_entry", "Closing ledger");
     }
 
     @Test
@@ -215,7 +215,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
             // expected, pass
         }
 
-        assertLogWithMdc("ledger_add_duplicate_entry", "Trying to re-add duplicate entryid:0");
+        assertLogWithMdc("ledger_add_duplicate_entry", "Trying to re-add duplicate entryId");
         assertLogWithMdc("ledger_add_duplicate_entry", "Write of ledger entry to quorum failed");
     }
 
@@ -229,7 +229,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKReadException e) {
             // pass
         }
-        assertLogWithMdc("ledger_read_entry", "ReadEntries exception on ledgerId:0 firstEntry:100 lastEntry:100");
+        assertLogWithMdc("ledger_read_entry", "ReadEntries exception");
     }
 
     @Test
@@ -246,7 +246,7 @@ public class MdcContextTest extends BookKeeperClusterTestCase {
         } catch (BKException.BKReadException e) {
             // pass
         }
-        assertLogWithMdc("ledger_read_entry", "ReadEntries exception on ledgerId:0 firstEntry:100 lastEntry:100");
+        assertLogWithMdc("ledger_read_entry", "ReadEntries exception");
     }
 
 }

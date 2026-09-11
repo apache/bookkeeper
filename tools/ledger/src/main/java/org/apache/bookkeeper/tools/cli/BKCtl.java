@@ -20,7 +20,7 @@ package org.apache.bookkeeper.tools.cli;
 
 import java.util.Iterator;
 import java.util.ServiceLoader;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.tools.common.BKFlags;
 import org.apache.bookkeeper.tools.framework.Cli;
 import org.apache.bookkeeper.tools.framework.CliSpec;
@@ -29,7 +29,7 @@ import org.apache.bookkeeper.tools.framework.CommandGroup;
 /**
  * <b>bkctl</b> interacts and operates the <i>Apache BookKeeper</i> cluster.
  */
-@Slf4j
+@CustomLog
 public class BKCtl {
 
     public static final String NAME = "bkctl";

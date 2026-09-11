@@ -57,6 +57,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
 import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.bookie.storage.EntryLogger;
@@ -70,8 +71,6 @@ import org.apache.bookkeeper.util.LedgerDirUtil;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap.BiConsumerLong;
 import org.apache.commons.lang3.tuple.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This class manages the writing of the bookkeeper entries. All the new
@@ -80,8 +79,8 @@ import org.slf4j.LoggerFactory;
  * the actual ledger entry. The entry log files created by this class are
  * identified by a long.
  */
+@CustomLog
 public class DefaultEntryLogger implements EntryLogger {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogger.class);
 
     @VisibleForTesting
     static final int UNINITIALIZED_LOG_ID = -0xDEAD;
@@ -337,8 +336,10 @@ public class DefaultEntryLogger implements EntryLogger {
             long lastLogFileFromFile = getLastLogIdFromFile(dir);
             long lastLogIdInDir = getLastLogIdInDir(dir);
             if (lastLogFileFromFile < lastLogIdInDir) {
-                LOG.info("The lastLogFileFromFile is {}, the lastLogIdInDir is {}, "
-                        + "use lastLogIdInDir as the lastLogId.", lastLogFileFromFile, lastLogIdInDir);
+                log.info()
+                        .attr("lastLogFileFromFile", lastLogFileFromFile)
+                        .attr("lastLogIdInDir", lastLogIdInDir)
+                        .log("Using lastLogIdInDir as the lastLogId");
                 lastLogId = lastLogIdInDir;
             } else {
                 lastLogId = lastLogFileFromFile;
@@ -440,7 +441,7 @@ public class DefaultEntryLogger implements EntryLogger {
             try {
                 fileChannel.close();
             } catch (IOException e) {
-                LOG.warn("Exception while closing channel for log file:" + logId);
+                log.warn().attr("logId", logId).log("Exception while closing channel for log file");
             }
         }
     }
@@ -523,12 +524,11 @@ public class DefaultEntryLogger implements EntryLogger {
         try {
             entryLogFile = findFile(entryLogId);
         } catch (FileNotFoundException e) {
-            LOG.error("Trying to delete an entryLog file that could not be found: "
-                    + entryLogId + ".log");
+            log.error().attr("entryLogId", entryLogId).log("Trying to delete an entryLog file that could not be found");
             return true;
         }
         if (!entryLogFile.delete()) {
-            LOG.warn("Could not delete entry log file {}", entryLogFile);
+            log.warn().attr("entryLogFile", entryLogFile).log("Could not delete entry log file");
             return false;
         }
         return true;
@@ -649,9 +649,10 @@ public class DefaultEntryLogger implements EntryLogger {
             if (compactionLogChannel != null) {
                 compactionLogChannel.appendLedgersMap();
                 compactionLogChannel.flushAndForceWrite(false);
-                LOG.info("Flushed compaction log file {} with logId {}.",
-                    compactionLogChannel.getLogFile(),
-                    compactionLogChannel.getLogId());
+                log.info()
+                        .attr("logFile", compactionLogChannel.getLogFile())
+                        .attr("logId", compactionLogChannel.getLogId())
+                        .log("Flushed compaction log file");
                 // since this channel is only used for writing, after flushing the channel,
                 // we had to close the underlying file channel. Otherwise, we might end up
                 // leaking fds which cause the disk spaces could not be reclaimed.
@@ -678,14 +679,18 @@ public class DefaultEntryLogger implements EntryLogger {
         synchronized (compactionLogLock) {
             if (compactionLogChannel != null) {
                 if (compactionLogChannel.getLogFile().exists() && !compactionLogChannel.getLogFile().delete()) {
-                    LOG.warn("Could not delete compaction log file {}", compactionLogChannel.getLogFile());
+                    log.warn()
+                            .attr("logFile", compactionLogChannel.getLogFile())
+                            .log("Could not delete compaction log file");
                 }
 
                 try {
                     compactionLogChannel.close();
                 } catch (IOException e) {
-                    LOG.error("Failed to close file channel for compaction log {}", compactionLogChannel.getLogId(),
-                            e);
+                    log.error()
+                            .exception(e)
+                            .attr("logId", compactionLogChannel.getLogId())
+                            .log("Failed to close file channel for compaction log");
                 }
                 compactionLogChannel = null;
             }
@@ -696,11 +701,9 @@ public class DefaultEntryLogger implements EntryLogger {
         return offset >> 32L;
     }
 
-
     static long posForOffset(long location) {
         return location & 0xffffffffL;
     }
-
 
     /**
      * Exception type for representing lookup errors.  Useful for disambiguating different error
@@ -809,11 +812,14 @@ public class DefaultEntryLogger implements EntryLogger {
 
         // entrySize does not include the ledgerId
         if (entrySize > maxSaneEntrySize) {
-            LOG.warn("Sanity check failed for entry size of " + entrySize + " at location " + pos + " in "
-                    + entryLogId);
+            log.warn()
+                    .attr("entrySize", entrySize)
+                    .attr("position", pos)
+                    .attr("entryLogId", entryLogId)
+                    .log("Sanity check failed for entry size");
         }
         if (entrySize < MIN_SANE_ENTRY_SIZE) {
-            LOG.error("Read invalid entry length {}", entrySize);
+            log.error().attr("entrySize", entrySize).log("Read invalid entry length");
             throw new EntryLookupException.InvalidEntryLengthException(ledgerId, entryId, entryLogId, pos);
         }
 
@@ -836,12 +842,10 @@ public class DefaultEntryLogger implements EntryLogger {
         return internalReadEntry(-1L, -1L, location, false /* validateEntry */);
     }
 
-
     private ByteBuf internalReadEntry(long ledgerId, long entryId, long location, boolean validateEntry)
             throws IOException, Bookie.NoEntryException {
         long entryLogId = logIdForOffset(location);
         long pos = posForOffset(location);
-
 
         BufferedReadChannel fc = null;
         int entrySize = -1;
@@ -887,7 +891,10 @@ public class DefaultEntryLogger implements EntryLogger {
 
             int headerVersion = headers.readInt();
             if (headerVersion < HEADER_V0 || headerVersion > HEADER_CURRENT_VERSION) {
-                LOG.info("Unknown entry log header version for log {}: {}", entryLogId, headerVersion);
+                log.info()
+                        .attr("entryLogId", entryLogId)
+                        .attr("headerVersion", headerVersion)
+                        .log("Unknown entry log header version");
             }
 
             long ledgersMapOffset = headers.readLong();
@@ -993,7 +1000,7 @@ public class DefaultEntryLogger implements EntryLogger {
         try {
             bc = getChannelForLogId(entryLogId);
         } catch (IOException e) {
-            LOG.warn("Failed to get channel to scan entry log: " + entryLogId + ".log");
+            log.warn().attr("entryLogId", entryLogId).log("Failed to get channel to scan entry log");
             throw e;
         }
         // Start the read position in the current entry log file to be after
@@ -1012,7 +1019,7 @@ public class DefaultEntryLogger implements EntryLogger {
                     break;
                 }
                 if (readFromLogChannel(entryLogId, bc, headerBuffer, pos) != headerBuffer.capacity()) {
-                    LOG.warn("Short read for entry size from entrylog {}", entryLogId);
+                    log.warn().attr("entryLogId", entryLogId).log("Short read for entry size from entrylog");
                     return;
                 }
                 long offset = pos;
@@ -1037,8 +1044,12 @@ public class DefaultEntryLogger implements EntryLogger {
                 data.capacity(entrySize);
                 int rc = readFromLogChannel(entryLogId, bc, data, pos);
                 if (rc != entrySize) {
-                    LOG.warn("Short read for ledger entry from entryLog {}@{} ({} != {})",
-                            entryLogId, pos, rc, entrySize);
+                    log.warn()
+                            .attr("entryLogId", entryLogId)
+                            .attr("pos", pos)
+                            .attr("rc", rc)
+                            .attr("entrySize", entrySize)
+                            .log("Short read for ledger entry from entryLog");
                     return;
                 }
                 // process the entry
@@ -1059,10 +1070,16 @@ public class DefaultEntryLogger implements EntryLogger {
         try {
             return extractEntryLogMetadataFromIndex(entryLogId);
         } catch (FileNotFoundException fne) {
-            LOG.warn("Cannot find entry log file {}.log : {}", Long.toHexString(entryLogId), fne.getMessage());
+            log.warn()
+                    .attr("entryLog", Long.toHexString(entryLogId) + ".log")
+                    .exceptionMessage(fne)
+                    .log("Cannot find entry log file");
             throw fne;
         } catch (Throwable e) {
-            LOG.info("Failed to get ledgers map index from: {}.log : {}", entryLogId, e.getMessage());
+            log.info()
+                    .attr("entryLogId", entryLogId)
+                    .exceptionMessage(e)
+                    .log("Failed to get ledgers map index");
 
             // Fall-back to scanning
             return extractEntryLogMetadataByScanning(entryLogId, throttler);
@@ -1080,10 +1097,10 @@ public class DefaultEntryLogger implements EntryLogger {
             // The index was not stored in the log file (possibly because the bookie crashed before flushing it)
             throw new IOException("No ledgers map index found on entryLogId " + entryLogId);
         }
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Recovering ledgers maps for log {} at offset: {}", entryLogId, header.ledgersMapOffset);
-        }
+        log.debug()
+                .attr("entryLogId", entryLogId)
+                .attr("ledgersMapOffset", header.ledgersMapOffset)
+                .log("Recovering ledgers maps");
 
         BufferedReadChannel bc = getChannelForLogId(entryLogId);
 
@@ -1126,11 +1143,11 @@ public class DefaultEntryLogger implements EntryLogger {
                 for (int i = 0; i < ledgersCount; i++) {
                     long ledgerId = ledgersMap.readLong();
                     long size = ledgersMap.readLong();
-
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Recovering ledgers maps for log {} -- Found ledger: {} with size: {}",
-                                entryLogId, ledgerId, size);
-                    }
+                    log.debug()
+                            .attr("entryLogId", entryLogId)
+                            .attr("ledgerId", ledgerId)
+                            .attr("size", size)
+                            .log("Recovering ledgers maps for log");
                     meta.addLedgerSize(ledgerId, size);
                 }
                 if (ledgersMap.isReadable()) {
@@ -1179,10 +1196,10 @@ public class DefaultEntryLogger implements EntryLogger {
                 return ledgerId >= 0;
             }
         });
-
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Retrieved entry log meta data entryLogId: {}, meta: {}", entryLogId, meta);
-        }
+        log.debug()
+                .attr("entryLogId", entryLogId)
+                .attr("meta", meta)
+                .log("Retrieved entry log meta data");
         return meta;
     }
 
@@ -1192,7 +1209,7 @@ public class DefaultEntryLogger implements EntryLogger {
     @Override
     public void close() {
         // since logChannel is buffered channel, do flush when shutting down
-        LOG.info("Stopping EntryLogger");
+        log.info("Stopping EntryLogger");
         try {
             flush();
             for (FileChannel fc : logid2FileChannel.values()) {
@@ -1209,15 +1226,17 @@ public class DefaultEntryLogger implements EntryLogger {
             }
         } catch (IOException ie) {
             // we have no idea how to avoid io exception during shutting down, so just ignore it
-            LOG.error("Error flush entry log during shutting down, which may cause entry log corrupted.", ie);
+            log.error()
+                    .exception(ie)
+                    .log("Error flush entry log during shutting down, which may cause entry log corrupted.");
         } finally {
             for (FileChannel fc : logid2FileChannel.values()) {
-                IOUtils.close(LOG, fc);
+                IOUtils.close(log, fc);
             }
 
             entryLogManager.forceClose();
             synchronized (compactionLogLock) {
-                IOUtils.close(LOG, compactionLogChannel);
+                IOUtils.close(log, compactionLogChannel);
             }
         }
         // shutdown the pre-allocation thread
@@ -1238,7 +1257,10 @@ public class DefaultEntryLogger implements EntryLogger {
         try {
             return Long.parseLong(fileName, 16);
         } catch (Exception nfe) {
-            LOG.error("Invalid log file name {} found when trying to convert to logId.", fileName, nfe);
+            log.error()
+                    .exception(nfe)
+                    .attr("fileName", fileName)
+                    .log("Invalid log file name found when trying to convert to logId.");
         }
         return INVALID_LID;
     }
@@ -1340,7 +1362,7 @@ public class DefaultEntryLogger implements EntryLogger {
             removeCurCompactionLog();
             if (compactedLogFile.exists()) {
                 if (!compactedLogFile.delete()) {
-                    LOG.warn("Could not delete file: {}", compactedLogFile);
+                    log.warn().attr("compactedLogFile", compactedLogFile).log("Could not delete file");
                 }
             }
         }
@@ -1367,12 +1389,12 @@ public class DefaultEntryLogger implements EntryLogger {
         public void finalizeAndCleanup() {
             if (compactedLogFile.exists()) {
                 if (!compactedLogFile.delete()) {
-                    LOG.warn("Could not delete file: {}", compactedLogFile);
+                    log.warn().attr("compactedLogFile", compactedLogFile).log("Could not delete file");
                 }
             }
             if (compactingLogFile.exists()) {
                 if (!compactingLogFile.delete()) {
-                    LOG.warn("Could not delete file: {}", compactingLogFile);
+                    log.warn().attr("compactingLogFile", compactingLogFile).log("Could not delete file");
                 }
             }
         }
@@ -1409,7 +1431,7 @@ public class DefaultEntryLogger implements EntryLogger {
             if (compactingPhaseFiles != null) {
                 for (File file : compactingPhaseFiles) {
                     if (file.delete()) {
-                        LOG.info("Deleted failed compaction file {}", file);
+                        log.info().attr("file", file).log("Deleted failed compaction file");
                     }
                 }
             }
@@ -1417,8 +1439,9 @@ public class DefaultEntryLogger implements EntryLogger {
                     file -> file.getName().endsWith(TransactionalEntryLogCompactor.COMPACTED_SUFFIX));
             if (compactedPhaseFiles != null) {
                 for (File compactedFile : compactedPhaseFiles) {
-                    LOG.info("Found compacted log file {} has partially flushed index, recovering index.",
-                             compactedFile);
+                    log.info()
+                            .attr("compactedFile", compactedFile)
+                            .log("Found compacted log file has partially flushed index, recovering index.");
 
                     File compactingLogFile = new File(compactedFile.getParentFile(), "doesntexist");
                     long compactionLogId = -1L;
@@ -1437,9 +1460,13 @@ public class DefaultEntryLogger implements EntryLogger {
                     }
 
                     if (!valid) {
-                        LOG.info("Invalid compacted file found ({}), deleting", compactedFile);
+                        log.info()
+                                .attr("compactedFile", compactedFile)
+                                .log("Invalid compacted file found (), deleting");
                         if (!compactedFile.delete()) {
-                            LOG.warn("Couldn't delete invalid compacted file ({})", compactedFile);
+                            log.warn()
+                                    .attr("compactedFile", compactedFile)
+                                    .log("Couldn't delete invalid compacted file");
                         }
                         continue;
                     }

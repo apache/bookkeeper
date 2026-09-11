@@ -43,9 +43,8 @@ class CreateNamespaceProcessor
 
     @Override
     protected CreateNamespaceResponse failRequest(StatusCode code) {
-        return CreateNamespaceResponse.newBuilder()
-            .setCode(code)
-            .build();
+        return new CreateNamespaceResponse()
+            .setCode(code);
     }
 
     @Override

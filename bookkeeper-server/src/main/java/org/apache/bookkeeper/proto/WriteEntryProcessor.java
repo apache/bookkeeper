@@ -22,21 +22,19 @@ import io.netty.buffer.ByteBuf;
 import io.netty.util.Recycler;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.OperationRejectedException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol.ParsedAddRequest;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Processes add entry requests.
  */
+@CustomLog
 class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implements WriteCallback {
-
-    private static final Logger LOG = LoggerFactory.getLogger(WriteEntryProcessor.class);
 
     long startTimeNanos;
 
@@ -58,7 +56,7 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
     protected void processPacket() {
         if (requestProcessor.getBookie().isReadOnly()
             && !(request.isHighPriority() && requestProcessor.getBookie().isAvailableForHighPriorityWrites())) {
-            LOG.warn("BookieServer is running in readonly mode,"
+            log.warn("BookieServer is running in readonly mode,"
                     + " so rejecting the request from the client!");
             sendWriteReqResponse(BookieProtocol.EREADONLY,
                          ResponseBuilder.buildErrorResponse(BookieProtocol.EREADONLY, request),
@@ -83,23 +81,34 @@ class WriteEntryProcessor extends PacketProcessorBase<ParsedAddRequest> implemen
             requestProcessor.getRequestStats().getAddEntryRejectedCounter().inc();
             // Avoid to log each occurrence of this exception as this can happen when the ledger storage is
             // unable to keep up with the write rate.
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Operation rejected while writing {}", request, e);
-            }
+            log.debug()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Operation rejected while writing");
             rc = BookieProtocol.ETOOMANYREQUESTS;
         } catch (IOException e) {
-            LOG.error("Error writing {}", request, e);
+            log.error()
+                    .exception(e)
+                    .attr("request", request)
+                    .log("Error writing");
             rc = BookieProtocol.EIO;
         } catch (BookieException.LedgerFencedException | BookieException.LedgerFencedAndDeletedException lfe) {
-            LOG.warn("Write attempt on fenced/deleted ledger {} by client {}", request.getLedgerId(),
-                    requestHandler.ctx().channel().remoteAddress());
+            log.warn().attr("ledgerId", request.getLedgerId())
+                    .attr("clientAddress", requestHandler.ctx().channel().remoteAddress())
+                    .log("Write attempt on fenced/deleted ledger");
             rc = BookieProtocol.EFENCED;
         } catch (BookieException e) {
-            LOG.error("Unauthorized access to ledger {}", request.getLedgerId(), e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", request.getLedgerId())
+                    .log("Unauthorized access to ledger");
             rc = BookieProtocol.EUA;
         } catch (Throwable t) {
-            LOG.error("Unexpected exception while writing {}@{} : {}",
-                      request.ledgerId, request.entryId, t.getMessage(), t);
+            log.error()
+                    .exception(t)
+                    .attr("ledgerId", request.ledgerId)
+                    .attr("entryId", request.entryId)
+                    .log("Unexpected exception while writing");
             // some bad request which cause unexpected exception
             rc = BookieProtocol.EBADREQ;
         }

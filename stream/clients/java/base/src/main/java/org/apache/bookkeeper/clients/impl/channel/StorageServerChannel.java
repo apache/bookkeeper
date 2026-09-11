@@ -28,19 +28,15 @@ import java.util.Optional;
 import java.util.function.Function;
 import javax.annotation.concurrent.GuardedBy;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.grpc.MetaRangeServiceFutureStub;
+import org.apache.bookkeeper.clients.grpc.RootRangeServiceFutureStub;
+import org.apache.bookkeeper.clients.grpc.StorageContainerServiceFutureStub;
+import org.apache.bookkeeper.clients.grpc.TableServiceFutureStub;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerClientInterceptor;
 import org.apache.bookkeeper.clients.resolver.EndpointResolver;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
 import org.apache.bookkeeper.common.grpc.stats.MonitoringClientInterceptor;
 import org.apache.bookkeeper.stream.proto.common.Endpoint;
-import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
-import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceFutureStub;
-import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceFutureStub;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.StorageContainerServiceGrpc.StorageContainerServiceFutureStub;
 
 /**
  * A channel connected to a range server.
@@ -135,7 +131,7 @@ public class StorageServerChannel implements AutoCloseable {
     public synchronized RootRangeServiceFutureStub getRootRangeService() {
         if (null == rootRangeService) {
             rootRangeService = GrpcUtils.configureGrpcStub(
-                RootRangeServiceGrpc.newFutureStub(channel),
+                RootRangeServiceFutureStub.newFutureStub(channel),
                 token);
         }
         return rootRangeService;
@@ -144,7 +140,7 @@ public class StorageServerChannel implements AutoCloseable {
     public synchronized MetaRangeServiceFutureStub getMetaRangeService() {
         if (null == metaRangeService) {
             metaRangeService = GrpcUtils.configureGrpcStub(
-                MetaRangeServiceGrpc.newFutureStub(channel),
+                MetaRangeServiceFutureStub.newFutureStub(channel),
                 token);
         }
         return metaRangeService;
@@ -153,7 +149,7 @@ public class StorageServerChannel implements AutoCloseable {
     public synchronized StorageContainerServiceFutureStub getStorageContainerService() {
         if (null == scService) {
             scService = GrpcUtils.configureGrpcStub(
-                StorageContainerServiceGrpc.newFutureStub(channel),
+                StorageContainerServiceFutureStub.newFutureStub(channel),
                 token);
         }
         return scService;
@@ -162,7 +158,7 @@ public class StorageServerChannel implements AutoCloseable {
     public synchronized TableServiceFutureStub getTableService() {
         if (null == kvService) {
             kvService = GrpcUtils.configureGrpcStub(
-                TableServiceGrpc.newFutureStub(channel),
+                TableServiceFutureStub.newFutureStub(channel),
                 token);
         }
         return kvService;

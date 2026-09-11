@@ -167,9 +167,8 @@ public class GrpcStatsIntegrationTest {
     @Test
     public void testUnary() {
         long sequence = ThreadLocalRandom.current().nextLong();
-        PingRequest request = PingRequest.newBuilder()
-            .setSequence(sequence)
-            .build();
+        PingRequest request = new PingRequest()
+            .setSequence(sequence);
         PongResponse response = client.pingPong(request);
         assertEquals(sequence, response.getLastSequence());
         assertEquals(1, response.getNumPingReceived());
@@ -188,9 +187,8 @@ public class GrpcStatsIntegrationTest {
     @Test
     public void testServerStreaming() {
         long sequence = ThreadLocalRandom.current().nextLong(100000);
-        PingRequest request = PingRequest.newBuilder()
-            .setSequence(sequence)
-            .build();
+        PingRequest request = new PingRequest()
+            .setSequence(sequence);
         Iterator<PongResponse> respIter = client.lotsOfPongs(request);
         int count = 0;
         while (respIter.hasNext()) {
@@ -234,9 +232,8 @@ public class GrpcStatsIntegrationTest {
         });
 
         for (int i = 0; i < numPings; i++) {
-            PingRequest request = PingRequest.newBuilder()
-                .setSequence(sequence + i)
-                .build();
+            PingRequest request = new PingRequest()
+                .setSequence(sequence + i);
             pinger.onNext(request);
         }
         pinger.onCompleted();
@@ -287,9 +284,8 @@ public class GrpcStatsIntegrationTest {
         final LinkedBlockingQueue<PingRequest> reqQueue = new LinkedBlockingQueue<>();
         for (int i = 0; i < numPings; i++) {
             final long sequence = ThreadLocalRandom.current().nextLong(100000);
-            PingRequest request = PingRequest.newBuilder()
-                .setSequence(sequence)
-                .build();
+            PingRequest request = new PingRequest()
+                .setSequence(sequence);
             reqQueue.put(request);
             pinger.onNext(request);
         }

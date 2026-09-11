@@ -35,6 +35,7 @@ package org.apache.bookkeeper.clients.impl.kv;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import org.apache.bookkeeper.clients.exceptions.InternalServerException;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.container.StorageContainerChannel;
@@ -51,30 +52,32 @@ class TxnRequestProcessor<RespT>
     extends ListenableFutureRpcProcessor<TxnRequest, TxnResponse, RespT> {
 
     public static <T> TxnRequestProcessor<T> of(
-        TxnRequest request,
+        Supplier<TxnRequest> requestSupplier,
         Function<TxnResponse, T> responseFunc,
         StorageContainerChannel channel,
         ScheduledExecutorService executor,
         Policy backoffPolicy) {
-        return new TxnRequestProcessor<>(request, responseFunc, channel, executor, backoffPolicy);
+        return new TxnRequestProcessor<>(requestSupplier, responseFunc, channel, executor, backoffPolicy);
     }
 
-    private final TxnRequest request;
+    private final Supplier<TxnRequest> requestSupplier;
     private final Function<TxnResponse, RespT> responseFunc;
 
-    private TxnRequestProcessor(TxnRequest request,
+    private TxnRequestProcessor(Supplier<TxnRequest> requestSupplier,
                                 Function<TxnResponse, RespT> respFunc,
                                 StorageContainerChannel channel,
                                 ScheduledExecutorService executor,
                                 Policy backoffPolicy) {
         super(channel, executor, backoffPolicy);
-        this.request = request;
+        this.requestSupplier = requestSupplier;
         this.responseFunc = respFunc;
     }
 
     @Override
     protected TxnRequest createRequest() {
-        return request;
+        // Serializing a request drains the ByteBuf slices stored in it, so a request instance
+        // must not be reused across RPC attempts: build a fresh request for every attempt.
+        return requestSupplier.get();
     }
 
     @Override

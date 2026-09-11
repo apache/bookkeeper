@@ -20,13 +20,14 @@
  */
 package org.apache.bookkeeper.util;
 
-import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
@@ -36,7 +37,6 @@ import org.apache.logging.log4j.core.appender.NullAppender;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.mockito.ArgumentCaptor;
 import org.slf4j.Marker;
 import org.slf4j.event.KeyValuePair;
 import org.slf4j.event.Level;
@@ -48,13 +48,10 @@ import org.slf4j.event.LoggingEvent;
 public class LoggerOutput implements TestRule {
 
     private NullAppender logAppender;
-    private ArgumentCaptor<LogEvent> logEventCaptor;
+    private List<LogEvent> capturedEvents;
     private final List<Consumer<List<LoggingEvent>>> logEventExpectations = new ArrayList<>();
 
     public void expect(Consumer<List<LoggingEvent>> expectation) {
-        if (logEventCaptor == null) {
-            logEventCaptor = ArgumentCaptor.forClass(LogEvent.class);
-        }
         logEventExpectations.add(expectation);
     }
 
@@ -67,14 +64,24 @@ public class LoggerOutput implements TestRule {
                 LoggerContext lc = (LoggerContext) LogManager.getContext(false);
                 logAppender = spy(NullAppender.createAppender(UUID.randomUUID().toString()));
                 logAppender.start();
+                capturedEvents = new CopyOnWriteArrayList<>();
+                // Snapshot each event eagerly via toImmutable(): some logging
+                // backends (e.g. slog's Log4j2Logger) reuse a thread-local
+                // MutableLogEvent across calls, so capturing the reference
+                // alone would have all captured events alias to the last
+                // emit on each thread.
+                doAnswer(invocation -> {
+                    LogEvent event = invocation.getArgument(0);
+                    capturedEvents.add(event.toImmutable());
+                    return null;
+                }).when(logAppender).append(any(LogEvent.class));
                 lc.getConfiguration().addAppender(logAppender);
                 lc.getRootLogger().addAppender(lc.getConfiguration().getAppender(logAppender.getName()));
                 lc.updateLoggers();
                 try {
                     base.evaluate();
                     if (!logEventExpectations.isEmpty()) {
-                        verify(logAppender, atLeastOnce()).append(logEventCaptor.capture());
-                        List<LoggingEvent> logEvents = logEventCaptor.getAllValues().stream()
+                        List<LoggingEvent> logEvents = capturedEvents.stream()
                                 .map(LoggerOutput::toSlf4j)
                                 .collect(Collectors.toList());
                         for (Consumer<List<LoggingEvent>> expectation : logEventExpectations) {
@@ -85,7 +92,7 @@ public class LoggerOutput implements TestRule {
                     lc.getRootLogger().removeAppender(lc.getConfiguration().getAppender(logAppender.getName()));
                     lc.updateLoggers();
                     logEventExpectations.clear();
-                    logEventCaptor = null;
+                    capturedEvents = null;
                 }
             }
         };

@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.clients.impl.kv;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +36,6 @@ import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.PutResponse;
-import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.junit.Test;
@@ -56,16 +54,13 @@ public class PutRequestProcessorTest extends GrpcClientTestBase {
     }
 
     protected PutResponse newSuccessResponse() {
-        return PutResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .build())
-            .build();
+        PutResponse resp = new PutResponse();
+        resp.setHeader().setCode(StatusCode.SUCCESS);
+        return resp;
     }
 
     protected PutRequest newRequest() {
-        return PutRequest.newBuilder()
-            .build();
+        return new PutRequest();
     }
 
     @Test
@@ -109,7 +104,7 @@ public class PutRequestProcessorTest extends GrpcClientTestBase {
             scheduler,
             ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         assertEquals("test", FutureUtils.result(processor.process()));
-        assertSame(request, receivedRequest.get());
+        assertEquals(request, receivedRequest.get());
     }
 
 }

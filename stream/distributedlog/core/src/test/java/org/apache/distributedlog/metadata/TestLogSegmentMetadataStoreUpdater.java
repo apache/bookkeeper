@@ -25,6 +25,7 @@ import static org.junit.Assert.fail;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.distributedlog.DLMTestUtil;
 import org.apache.distributedlog.DLSN;
@@ -42,17 +43,12 @@ import org.apache.zookeeper.ZooDefs;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test update for {@link LogSegmentMetadataStore}s.
  */
+@CustomLog
 public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestLogSegmentMetadataStoreUpdater.class);
 
     private ZooKeeperClient zkc;
     private OrderedScheduler scheduler;
@@ -98,14 +94,14 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
             LogSegmentMetadata segment =
                     DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
             completedLogSegments.put(((long) i), segment);
-            LOG.info("Create completed segment {} : {}", segment.getZkPath(), segment);
+            log.info().attr("zkPath", segment.getZkPath()).attr("segment", segment).log("Create completed segment");
             segment.write(zkc);
         }
         // Create a smaller inprogress log segment
         long inprogressSeqNo = 3;
         LogSegmentMetadata segment =
                 DLMTestUtil.inprogressLogSegment(ledgerPath, inprogressSeqNo, 5 * 100, inprogressSeqNo);
-        LOG.info("Create inprogress segment {} : {}", segment.getZkPath(), segment);
+        log.info().attr("zkPath", segment.getZkPath()).attr("segment", segment).log("Create inprogress segment");
         segment.write(zkc);
 
         Map<Long, LogSegmentMetadata> segmentList = readLogSegments(ledgerPath);
@@ -245,7 +241,7 @@ public class TestLogSegmentMetadataStoreUpdater extends ZooKeeperClusterTestCase
             LogSegmentMetadata segment =
                     DLMTestUtil.completedLogSegment(ledgerPath, i, (i - 1) * 100, i * 100 - 1, 100, i, 100, 0);
             completedLogSegments.put(((long) i), segment);
-            LOG.info("Create completed segment {} : {}", segment.getZkPath(), segment);
+            log.info().attr("zkPath", segment.getZkPath()).attr("segment", segment).log("Create completed segment");
             segment.write(zkc);
         }
 

@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.health;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -29,17 +30,12 @@ import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Command to enable or disable health check in the cluster.
  */
+@CustomLog
 public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthCheckCommand.HealthCheckFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(SwitchOfHealthCheckCommand.class);
 
     private static final String NAME = "switch";
     private static final String DESC = "Enables or disables health check in the cluster. Default is enabled.";
@@ -86,27 +82,27 @@ public class SwitchOfHealthCheckCommand extends BookieCommand<SwitchOfHealthChec
                 boolean isEnable = driver.isHealthCheckEnabled().get();
 
                 if (flags.status) {
-                    LOG.info("EnableHealthCheck is " + (isEnable ? "enabled." : "disabled."));
+                    log.info().attr("status", isEnable ? "enabled" : "disabled").log("EnableHealthCheck status");
                     return null;
                 }
 
                 if (flags.enable) {
                     if (isEnable) {
-                        LOG.warn("HealthCheck already enabled. Doing nothing");
+                        log.warn("HealthCheck already enabled. Doing nothing");
                     } else {
-                        LOG.info("Enable HealthCheck");
+                        log.info("Enable HealthCheck");
                         driver.enableHealthCheck().get();
                     }
                 } else {
                     if (!isEnable) {
-                        LOG.warn("HealthCheck already disabled. Doing nothing");
+                        log.warn("HealthCheck already disabled. Doing nothing");
                     } else {
-                        LOG.info("Disable HealthCheck");
+                        log.info("Disable HealthCheck");
                         driver.disableHealthCheck().get();
                     }
                 }
             } catch (Exception e) {
-                LOG.error("exception", e);
+                log.error().exception(e).log("exception");
                 throw new UncheckedExecutionException(e);
             }
             return null;

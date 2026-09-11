@@ -26,7 +26,7 @@ import com.github.dockerjava.api.model.Frame;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.tests.integration.utils.DockerUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.testcontainers.containers.GenericContainer;
@@ -34,7 +34,7 @@ import org.testcontainers.containers.GenericContainer;
 /**
  * A base container provides chaos capability.
  */
-@Slf4j
+@CustomLog
 public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends GenericContainer<SelfT> {
 
     static class LogContainerResultCb extends ResultCallback.Adapter<Frame> {
@@ -100,13 +100,27 @@ public class ChaosContainer<SelfT extends ChaosContainer<SelfT>> extends Generic
     public ExecResult execCmd(String... cmd) throws Exception {
         String cmdString = StringUtils.join(cmd, " ");
 
-        log.info("DOCKER.exec({}:{}): Executing ...", this.getContainerId(), cmdString);
+        log.info()
+                .attr("containerId", this.getContainerId())
+                .attr("cmd", cmdString)
+                .log("DOCKER.exec: Executing");
 
         ExecResult result = execInContainer(cmd);
 
-        log.info("Docker.exec({}:{}): Done", this.getContainerId(), cmdString);
-        log.info("Docker.exec({}:{}): Stdout -\n{}", this.getContainerId(), cmdString, result.getStdout());
-        log.info("Docker.exec({}:{}): Stderr -\n{}", this.getContainerId(), cmdString, result.getStderr());
+        log.info()
+                .attr("containerId", this.getContainerId())
+                .attr("cmd", cmdString)
+                .log("Docker.exec: Done");
+        log.info()
+                .attr("containerId", this.getContainerId())
+                .attr("cmd", cmdString)
+                .attr("stdout", result.getStdout())
+                .log("Docker.exec: Stdout");
+        log.info()
+                .attr("containerId", this.getContainerId())
+                .attr("cmd", cmdString)
+                .attr("stderr", result.getStderr())
+                .log("Docker.exec: Stderr");
 
         return result;
     }

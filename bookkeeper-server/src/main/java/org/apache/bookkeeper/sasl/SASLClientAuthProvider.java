@@ -26,19 +26,18 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.slf4j.LoggerFactory;
 
 /**
  * SASL Client Authentication Provider.
  */
+@CustomLog
 public class SASLClientAuthProvider implements ClientAuthProvider {
-
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SASLClientAuthProvider.class);
 
     private SaslClientState client;
     private final AuthCallbacks.GenericCallback<Void> completeCb;
@@ -56,11 +55,12 @@ public class SASLClientAuthProvider implements ClientAuthProvider {
                 hostname = InetAddress.getLocalHost().getHostName();
             }
             client = new SaslClientState(hostname, subject);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("SASLClientAuthProvider Boot " + client + " for " + hostname);
-            }
+            log.debug()
+                    .attr("client", client)
+                    .attr("hostname", hostname)
+                    .log("SASLClientAuthProvider Boot");
         } catch (IOException error) {
-            LOG.error("Error while booting SASL client", error);
+            log.error().exception(error).log("Error while booting SASL client");
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
     }
@@ -75,7 +75,7 @@ public class SASLClientAuthProvider implements ClientAuthProvider {
                 cb.operationComplete(BKException.Code.OK, AuthToken.wrap(new byte[0]));
             }
         } catch (SaslException err) {
-            LOG.error("Error on SASL client", err);
+            log.error().exception(err).log("Error on SASL client");
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
     }
@@ -97,7 +97,7 @@ public class SASLClientAuthProvider implements ClientAuthProvider {
                 completeCb.operationComplete(BKException.Code.OK, null);
             }
         } catch (SaslException err) {
-            LOG.error("Error on SASL client", err);
+            log.error().exception(err).log("Error on SASL client");
             completeCb.operationComplete(BKException.Code.UnauthorizedAccessException, null);
         }
 

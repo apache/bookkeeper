@@ -27,6 +27,7 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException.BKLedgerExistException;
@@ -41,20 +42,18 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Print the metadata for a ledger.
  */
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+@CustomLog
 public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.LedgerMetadataFlag> {
 
     private static final String NAME = "show";
     private static final String DESC = "Print the metadata for a ledger, or optionally dump to a file.";
     private static final String DEFAULT = "";
     private static final long DEFAULT_ID = -1L;
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerMetaDataCommand.class);
 
     private LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
     private LedgerIdFormatter ledgerIdFormatter;
@@ -117,7 +116,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     private boolean handler(ServerConfiguration conf, LedgerMetadataFlag flag)
         throws MetadataException, ExecutionException {
         if (flag.ledgerId == DEFAULT_ID) {
-            LOG.error("Must specific a ledger id");
+            log.error("Must specific a ledger id");
             return false;
         }
         runFunctionWithLedgerManagerFactory(conf, mFactory -> {
@@ -137,7 +136,7 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
                             throw be;
                         }
                         m.writeLedgerMetadata(flag.ledgerId, md, new LongVersion(-1L)).join();
-                        LOG.info("successfully updated ledger metadata {}", flag.ledgerId);
+                        log.info().attr("metadata", flag.ledgerId).log("successfully updated ledger metadata");
                     }
                 } else {
                     printLedgerMetadata(flag.ledgerId, m.readLedgerMetadata(flag.ledgerId).get().getValue(), true);
@@ -151,9 +150,9 @@ public class LedgerMetaDataCommand extends BookieCommand<LedgerMetaDataCommand.L
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        LOG.info("ledgerID: {}", ledgerIdFormatter.formatLedgerId(ledgerId));
+        log.info().attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId)).log("ledgerID");
         if (printMeta) {
-            LOG.info("{}", md.toString());
+            log.info().attr("metadata", md.toString()).log("log entry");
         }
     }
 }

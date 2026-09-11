@@ -24,7 +24,7 @@ package org.apache.bookkeeper.proto;
 class TxnCompletionKey extends CompletionKey {
     final long txnId;
 
-    public TxnCompletionKey(long txnId, BookkeeperProtocol.OperationType operationType) {
+    public TxnCompletionKey(long txnId, OperationType operationType) {
         super(operationType);
         this.txnId = txnId;
     }

@@ -73,7 +73,7 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, Increm
         if (null != key) {
             return key;
         }
-        key = req.getKey().toByteArray();
+        key = req.getKey();
         return key;
     }
 
@@ -90,6 +90,6 @@ public class ProtoIncrementOpImpl implements IncrementOp<byte[], byte[]>, Increm
 
     @Override
     public boolean getTotal() {
-        return req.getGetTotal();
+        return req.isGetTotal();
     }
 }

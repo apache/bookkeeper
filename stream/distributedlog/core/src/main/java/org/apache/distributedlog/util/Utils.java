@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.Nullable;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.versioning.LongVersion;
@@ -55,7 +55,7 @@ import org.apache.zookeeper.data.Stat;
 /**
  * Basic Utilities.
  */
-@Slf4j
+@CustomLog
 public class Utils {
 
     /**
@@ -748,7 +748,10 @@ public class Utils {
             ioResult(abortable.asyncAbort());
         } catch (Exception ioe) {
             if (swallowIOException) {
-                log.warn("IOException thrown while aborting Abortable {} : ", abortable, ioe);
+                log.warn()
+                        .attr("abortable", abortable)
+                        .exception(ioe)
+                        .log("IOException thrown while aborting Abortable");
             } else {
                 throw ioe;
             }

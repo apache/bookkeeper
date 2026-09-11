@@ -68,7 +68,6 @@
     <module>bookkeeper-dist</module>
     <module>shaded</module>
     <module>microbenchmarks</module>
-    <module>bookkeeper-slogger</module>
     <module>tests</module>
     <module>native-io</module>
     <module>testtools</module>
@@ -148,7 +147,7 @@
     <commons-configuration2.version>2.12.0</commons-configuration2.version>
     <commons-beanutils.version>1.11.0</commons-beanutils.version>
     <commons-compress.version>1.27.1</commons-compress.version>
-    <commons-lang3.version>3.17.0</commons-lang3.version>
+    <commons-lang3.version>3.20.0</commons-lang3.version>
     <commons-logging.version>1.3.5</commons-logging.version>
     <commons-io.version>2.19.0</commons-io.version>
     <bouncycastle.version>1.0.2.6</bouncycastle.version>
@@ -167,7 +166,7 @@
     <hdrhistogram.version>2.1.10</hdrhistogram.version>
     <jackson.version>2.17.1</jackson.version>
     <jcommander.version>1.82</jcommander.version>
-    <jetty.version>12.1.7</jetty.version>
+    <jetty.version>12.1.10</jetty.version>
     <jmh.version>1.37</jmh.version>
     <jmock.version>2.8.2</jmock.version>
     <junit.version>4.13.2</junit.version>
@@ -175,33 +174,33 @@
     <junit5.version>5.10.2</junit5.version>
     <assertj-core.version>3.27.7</assertj-core.version>
     <awaitility.version>4.2.0</awaitility.version>
-    <libthrift.version>0.14.2</libthrift.version>
+    <libthrift.version>0.23.0</libthrift.version>
     <lombok.version>1.18.42</lombok.version>
     <log4j.version>2.23.1</log4j.version>
     <lz4-java.version>1.10.2</lz4-java.version>
     <mockito.version>4.11.0</mockito.version>
-    <netty.version>4.1.130.Final</netty.version>
-    <netty-iouring.version>0.0.26.Final</netty-iouring.version>
+    <netty.version>4.2.15.Final</netty.version>
     <prometheus.version>0.15.0</prometheus.version>
-    <datasketches.version>0.8.3</datasketches.version>
+    <datasketches.version>7.0.1</datasketches.version>
     <httpclient.version>4.5.13</httpclient.version>
     <httpcore.version>4.4.15</httpcore.version>
     <protobuf.version>4.34.0</protobuf.version>
     <protoc.version>${protobuf.version}</protoc.version>
     <protoc-gen-grpc-java.version>${grpc.version}</protoc-gen-grpc-java.version>
     <reflections.version>0.9.11</reflections.version>
-    <rocksdb.version>9.9.3</rocksdb.version>
+    <rocksdb.version>10.10.1.1</rocksdb.version>
     <shrinkwrap.version>3.3.0</shrinkwrap.version>
     <slf4j.version>2.0.12</slf4j.version>
+    <slog.version>0.9.9</slog.version>
     <snakeyaml.version>2.0</snakeyaml.version>
     <spotbugs-annotations.version>4.6.0</spotbugs-annotations.version>
     <spotless.version>2.43.0</spotless.version>
     <javax-annotations-api.version>1.3.2</javax-annotations-api.version>
     <testcontainers.version>1.19.4</testcontainers.version>
-    <vertx.version>4.5.24</vertx.version>
+    <vertx.version>4.5.27</vertx.version>
     <zookeeper.version>3.9.5</zookeeper.version>
     <snappy.version>1.1.10.5</snappy.version>
-    <jctools.version>4.0.5</jctools.version>
+    <jctools.version>4.0.6</jctools.version>
     <hppc.version>0.9.1</hppc.version>
     <!-- plugin dependencies -->
     <apache-rat-plugin.version>0.16.1</apache-rat-plugin.version>
@@ -221,21 +220,24 @@
     <nar-maven-plugin.version>3.10.1</nar-maven-plugin.version>
     <os-maven-plugin.version>1.7.1</os-maven-plugin.version>
     <protobuf-maven-plugin.version>0.6.1</protobuf-maven-plugin.version>
+    <lightproto-maven-plugin.version>0.7.0</lightproto-maven-plugin.version>
     <puppycrawl.checkstyle.version>9.3</puppycrawl.checkstyle.version>
     <spotbugs-maven-plugin.version>4.7.3.2</spotbugs-maven-plugin.version>
     <build-helper-maven-plugin.version>3.6.0</build-helper-maven-plugin.version>
     <forkCount.variable>1</forkCount.variable>
     <servlet-api.version>4.0.0</servlet-api.version>
     <rxjava.version>3.0.1</rxjava.version>
-    <otel.version>1.56.0</otel.version>
-    <otel.instrumentation.version>2.21.0</otel.instrumentation.version>
-    <otel.semconv.version>1.37.0</otel.semconv.version>
-    <otel.contrib.version>1.52.0</otel.contrib.version>
+    <otel.version>1.61.0</otel.version>
+    <otel.instrumentation.version>2.27.0</otel.instrumentation.version>
+    <otel.semconv.version>1.41.0</otel.semconv.version>
+    <otel.contrib.version>1.56.0</otel.contrib.version>
     <okhttp3.version>5.3.1</okhttp3.version>
     <!-- use okio version that matches the okhttp3 version -->
     <okio.version>3.16.3</okio.version>
     <UBUNTU_MIRROR>http://archive.ubuntu.com/ubuntu/</UBUNTU_MIRROR>
     <UBUNTU_SECURITY_MIRROR>http://security.ubuntu.com/ubuntu/</UBUNTU_SECURITY_MIRROR>
+    <!-- skip javadoc generation by default, use -Pdelombok to activate -->
+    <maven.javadoc.skip>true</maven.javadoc.skip>
   </properties>
 
   <!-- dependency definitions -->
@@ -274,6 +276,11 @@
       </dependency>
 
       <!-- logging dependencies -->
+      <dependency>
+        <groupId>io.github.merlimat.slog</groupId>
+        <artifactId>slog</artifactId>
+        <version>${slog.version}</version>
+      </dependency>
       <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-bom</artifactId>
@@ -408,6 +415,7 @@
         <artifactId>libthrift</artifactId>
         <version>${libthrift.version}</version>
         <exclusions>
+          <!-- Only TJSON/TMemory APIs are used; exclude HTTP/servlet transports and their transitives -->
           <exclusion>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
@@ -415,6 +423,26 @@
           <exclusion>
             <groupId>javax.annotation</groupId>
             <artifactId>javax.annotation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jakarta.annotation</groupId>
+            <artifactId>jakarta.annotation-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -426,76 +454,14 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-x86_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-native-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-        <classifier>linux-aarch_64</classifier>
-      </dependency>
-      <dependency>
-        <groupId>io.netty.incubator</groupId>
-        <artifactId>netty-incubator-transport-classes-io_uring</artifactId>
-        <version>${netty-iouring.version}</version>
-      </dependency>
 
-      <!-- grpc dependencies -->
+      <!-- grpc dependencies: grpc-bom enforces a single version across all io.grpc:* artifacts -->
       <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-bom</artifactId>
         <version>${grpc.version}</version>
         <type>pom</type>
         <scope>import</scope>
-      </dependency>
-      <!-- exclude dependencies from grpc-all -->
-      <dependency>
-        <groupId>io.grpc</groupId>
-        <artifactId>grpc-all</artifactId>
-        <version>${grpc.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-testing</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-netty</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-okhttp</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.squareup.okhttp</groupId>
-            <artifactId>okhttp</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>com.squareup.okio</groupId>
-            <artifactId>okio</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-servlet</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>io.grpc</groupId>
-            <artifactId>grpc-servlet-jakarta</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <!-- used by jetcd-core-shaded -->
@@ -641,6 +607,11 @@
         <artifactId>jctools-core</artifactId>
         <version>${jctools.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.jctools</groupId>
+        <artifactId>jctools-core-jdk11</artifactId>
+        <version>${jctools.version}</version>
+      </dependency>
 
       <!-- dropwizard metrics, for stats and for ZooKeeper server -->
       <dependency>
@@ -683,8 +654,8 @@
       </dependency>
       <!-- data-sketches -->
       <dependency>
-        <groupId>com.yahoo.datasketches</groupId>
-        <artifactId>sketches-core</artifactId>
+        <groupId>org.apache.datasketches</groupId>
+        <artifactId>datasketches-java</artifactId>
         <version>${datasketches.version}</version>
       </dependency>
       <!-- opentelemetry -->
@@ -906,6 +877,10 @@
 
     <!-- compilation dependencies (available at all classpaths) -->
     <dependency>
+      <groupId>io.github.merlimat.slog</groupId>
+      <artifactId>slog</artifactId>
+    </dependency>
+    <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
@@ -1035,8 +1010,6 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
           <configuration>
-            <!-- skip javadoc generation by default, use -Pdelombok to activate -->
-            <skip>true</skip>
             <doclint>none</doclint>
           </configuration>
         </plugin>
@@ -1234,6 +1207,9 @@
 
             <!-- test resources -->
             <exclude>**/test_conf_2.conf</exclude>
+
+            <!-- zig -->
+            <exclude>**/.zig-cache/**</exclude>
           </excludes>
           <consoleOutput>true</consoleOutput>
         </configuration>
@@ -1325,6 +1301,7 @@
       <id>delombok</id>
       <properties>
         <src.dir>${project.build.directory}/generated-sources/delombok</src.dir>
+        <maven.javadoc.skip>false</maven.javadoc.skip>
       </properties>
       <build>
         <plugins>
@@ -1355,14 +1332,6 @@
                 </configuration>
               </execution>
             </executions>
-          </plugin>
-          <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <configuration>
-              <!-- activate javadoc generation -->
-              <skip>false</skip>
-            </configuration>
           </plugin>
         </plugins>
       </build>

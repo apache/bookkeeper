@@ -43,7 +43,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.coder.StringUtf8Coder;
 import org.apache.bookkeeper.common.kv.KV;
 import org.apache.bookkeeper.statelib.api.StateStoreSpec;
@@ -67,7 +67,7 @@ import org.rocksdb.Checkpoint;
 /**
  * Unit test of {@link RocksCheckpointer}.
  */
-@Slf4j
+@CustomLog
 public class RocksCheckpointerTest {
 
     @Rule
@@ -269,8 +269,9 @@ public class RocksCheckpointerTest {
         ByteStreams.readFully(fileIn, checkpointMetadataBytes);
 
         // verify the checkpointed metadata exists
-        CheckpointMetadata metadata = CheckpointMetadata.parseFrom(checkpointMetadataBytes);
-        assertArrayEquals(txid, metadata.getTxid().toByteArray());
+        CheckpointMetadata metadata = new CheckpointMetadata();
+        metadata.parseFrom(checkpointMetadataBytes);
+        assertArrayEquals(txid, metadata.getTxid());
         verifyCheckpointMetadata(checkpointedDir, metadata);
         verifyRemoteFiles(checkpointId, checkpointedDir);
 
@@ -321,7 +322,7 @@ public class RocksCheckpointerTest {
             localDir,
             checkpointStore);
         assertNotNull(metadata);
-        assertArrayEquals("checkpoint-2".getBytes(UTF_8), metadata.getTxid().toByteArray());
+        assertArrayEquals("checkpoint-2".getBytes(UTF_8), metadata.getTxid());
 
         for (int i = 0; i < 3; i++) {
             String checkpoint = checkpointIds.get(i);
@@ -610,7 +611,7 @@ public class RocksCheckpointerTest {
             localDir,
             checkpointStore);
         assertNotNull(metadata);
-        assertArrayEquals("checkpoint-2".getBytes(UTF_8), metadata.getTxid().toByteArray());
+        assertArrayEquals("checkpoint-2".getBytes(UTF_8), metadata.getTxid());
 
         for (int i = 0; i < 3; i++) {
             String checkpoint = checkpointIds.get(i);
@@ -656,7 +657,7 @@ public class RocksCheckpointerTest {
             localDir,
             checkpointStore);
         assertNotNull(metadata);
-        assertArrayEquals("checkpoint-0".getBytes(UTF_8), metadata.getTxid().toByteArray());
+        assertArrayEquals("checkpoint-0".getBytes(UTF_8), metadata.getTxid());
 
         String checkpoint = checkpointIds.get(0);
         assertTrue(new File(localCheckpointsDir, checkpoint).exists());

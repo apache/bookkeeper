@@ -21,6 +21,7 @@ package org.apache.bookkeeper.tools.cli.commands.autorecovery;
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -32,15 +33,13 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to Setter and Getter for LostBookieRecoveryDelay value (in seconds) in metadata store.
  */
+@CustomLog
 public class LostBookieRecoveryDelayCommand extends BookieCommand<LostBookieRecoveryDelayCommand.LBRDFlags> {
 
-    static final Logger LOG = LoggerFactory.getLogger(LostBookieRecoveryDelayCommand.class);
 
     private static final String NAME = "lostbookierecoverydelay";
     private static final String DESC =
@@ -94,7 +93,7 @@ public class LostBookieRecoveryDelayCommand extends BookieCommand<LostBookieReco
         }
 
         if ((!getter && !setter) || (getter && setter)) {
-            LOG.error("One and only one of -get and -set must be specified");
+            log.error("One and only one of -get and -set must be specified");
             return false;
         }
         ClientConfiguration adminConf = new ClientConfiguration(conf);
@@ -102,12 +101,12 @@ public class LostBookieRecoveryDelayCommand extends BookieCommand<LostBookieReco
         try {
             if (getter) {
                 int lostBookieRecoveryDelay = admin.getLostBookieRecoveryDelay();
-                LOG.info("LostBookieRecoveryDelay value in ZK: {}", lostBookieRecoveryDelay);
+                log.info().attr("delay", lostBookieRecoveryDelay).log("LostBookieRecoveryDelay value in ZK");
             } else {
                 int lostBookieRecoveryDelay = flags.set;
                 admin.setLostBookieRecoveryDelay(lostBookieRecoveryDelay);
-                LOG.info("Successfully set LostBookieRecoveryDelay value in ZK: {}",
-                        lostBookieRecoveryDelay);
+                log.info().attr("delay", lostBookieRecoveryDelay)
+                        .log("Successfully set LostBookieRecoveryDelay value in ZK");
             }
         } finally {
             if (admin != null) {

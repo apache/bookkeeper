@@ -26,12 +26,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.util.List;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * A stack of {@link LifecycleComponent}s.
  */
-@Slf4j
+@CustomLog
 public class LifecycleComponentStack implements LifecycleComponent {
 
     public static Builder newBuilder() {
@@ -124,9 +124,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
     @Override
     public void publishInfo(ComponentInfoPublisher componentInfoPublisher) {
         components.forEach(component -> {
-            if (log.isDebugEnabled()) {
-                log.debug("calling publishInfo on {} ", component);
-            }
+            log.debug().attr("component", component).log("calling publishInfo");
             component.publishInfo(componentInfoPublisher);
         });
     }
@@ -134,9 +132,7 @@ public class LifecycleComponentStack implements LifecycleComponent {
     @Override
     public void start() {
         components.forEach(component -> {
-            if (log.isDebugEnabled()) {
-                log.debug("calling publishInfo on {} ", component);
-            }
+            log.debug().attr("component", component).log("calling publishInfo");
             component.publishInfo(componentInfoPublisher);
         });
         componentInfoPublisher.startupFinished();

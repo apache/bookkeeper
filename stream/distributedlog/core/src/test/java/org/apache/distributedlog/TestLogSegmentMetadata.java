@@ -17,13 +17,13 @@
  */
 package org.apache.distributedlog;
 
-
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import lombok.CustomLog;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataBuilder;
 import org.apache.distributedlog.LogSegmentMetadata.LogSegmentMetadataVersion;
 import org.apache.distributedlog.LogSegmentMetadata.TruncationStatus;
@@ -32,17 +32,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Test {@link LogSegmentMetadata}.
  */
+@CustomLog
 public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
-
-    static final Logger LOG = LoggerFactory.getLogger(TestLogSegmentMetadata.class);
 
     static final int TEST_REGION_ID = 0xf - 1;
 
@@ -97,7 +92,6 @@ public class TestLogSegmentMetadata extends ZooKeeperClusterTestCase {
             // Expected
         }
     }
-
 
     @Test(timeout = 60000)
     public void testMutateTruncationStatus() {

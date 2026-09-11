@@ -35,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.distributedlog.exceptions.LogRecordTooLongException;
 import org.apache.distributedlog.exceptions.WriteException;
 import org.apache.distributedlog.io.CompressionCodec;
@@ -45,7 +45,7 @@ import org.apache.distributedlog.io.CompressionUtils;
 /**
  * {@link ByteBuf} based log record set writer.
  */
-@Slf4j
+@CustomLog
 class EnvelopedRecordSetWriter implements LogRecordSet.Writer {
 
     private final ByteBuf buffer;

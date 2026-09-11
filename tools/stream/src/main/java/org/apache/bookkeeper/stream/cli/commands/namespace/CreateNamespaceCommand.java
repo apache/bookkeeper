@@ -65,12 +65,9 @@ public class CreateNamespaceCommand extends AdminCommand<Flags> {
         String namespaceName = flags.arguments.get(0);
 
         try {
-            NamespaceProperties nsProps = result(
-                admin.createNamespace(
-                    namespaceName,
-                    NamespaceConfiguration.newBuilder()
-                        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-                        .build()));
+            NamespaceConfiguration nsConf = new NamespaceConfiguration();
+            nsConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+            NamespaceProperties nsProps = result(admin.createNamespace(namespaceName, nsConf));
             spec.console().println("Successfully created namespace '" + namespaceName + "':");
             spec.console().println(nsProps);
         } catch (NamespaceExistsException nee) {

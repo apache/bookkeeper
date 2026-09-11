@@ -18,7 +18,6 @@
 package org.apache.bookkeeper.clients.impl.kv;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +36,6 @@ import org.apache.bookkeeper.clients.utils.ClientConstants;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementResponse;
-import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceImplBase;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 import org.junit.Test;
@@ -56,16 +54,13 @@ public class IncrementRequestProcessorTest extends GrpcClientTestBase {
     }
 
     protected IncrementResponse newSuccessResponse() {
-        return IncrementResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .build())
-            .build();
+        IncrementResponse resp = new IncrementResponse();
+        resp.setHeader().setCode(StatusCode.SUCCESS);
+        return resp;
     }
 
     protected IncrementRequest newRequest() {
-        return IncrementRequest.newBuilder()
-            .build();
+        return new IncrementRequest();
     }
 
     @Test
@@ -109,7 +104,7 @@ public class IncrementRequestProcessorTest extends GrpcClientTestBase {
             scheduler,
             ClientConstants.DEFAULT_INFINIT_BACKOFF_POLICY);
         assertEquals("test", FutureUtils.result(processor.process()));
-        assertSame(request, receivedRequest.get());
+        assertEquals(request, receivedRequest.get());
     }
 
 }

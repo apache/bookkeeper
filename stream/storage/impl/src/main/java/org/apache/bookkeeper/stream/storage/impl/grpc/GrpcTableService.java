@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -38,7 +38,7 @@ import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
 /**
  * The gRPC protocol based k/v service.
  */
-@Slf4j
+@CustomLog
 public class GrpcTableService extends TableServiceImplBase {
 
     private final RangeStoreService rangeStore;
@@ -55,12 +55,11 @@ public class GrpcTableService extends TableServiceImplBase {
             new ResponseHandler<RangeResponse>(responseObserver) {
                 @Override
                 protected RangeResponse createErrorResp(Throwable cause) {
-                    return RangeResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder()
-                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                            .setRoutingHeader(request.getHeader())
-                            .build())
-                        .build();
+                    RangeResponse resp = new RangeResponse();
+                    ResponseHeader header = resp.setHeader();
+                    header.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    header.setRoutingHeader().copyFrom(request.getHeader());
+                    return resp;
                 }
             });
     }
@@ -72,12 +71,11 @@ public class GrpcTableService extends TableServiceImplBase {
             new ResponseHandler<PutResponse>(responseObserver) {
                 @Override
                 protected PutResponse createErrorResp(Throwable cause) {
-                    return PutResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder()
-                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                            .setRoutingHeader(request.getHeader())
-                            .build())
-                        .build();
+                    PutResponse resp = new PutResponse();
+                    ResponseHeader header = resp.setHeader();
+                    header.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    header.setRoutingHeader().copyFrom(request.getHeader());
+                    return resp;
                 }
             });
     }
@@ -89,12 +87,11 @@ public class GrpcTableService extends TableServiceImplBase {
             new ResponseHandler<DeleteRangeResponse>(responseObserver) {
                 @Override
                 protected DeleteRangeResponse createErrorResp(Throwable cause) {
-                    return DeleteRangeResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder()
-                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                            .setRoutingHeader(request.getHeader())
-                            .build())
-                        .build();
+                    DeleteRangeResponse resp = new DeleteRangeResponse();
+                    ResponseHeader header = resp.setHeader();
+                    header.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    header.setRoutingHeader().copyFrom(request.getHeader());
+                    return resp;
                 }
             });
     }
@@ -106,12 +103,11 @@ public class GrpcTableService extends TableServiceImplBase {
             new ResponseHandler<TxnResponse>(responseObserver) {
                 @Override
                 protected TxnResponse createErrorResp(Throwable cause) {
-                    return TxnResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder()
-                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                            .setRoutingHeader(request.getHeader())
-                            .build())
-                        .build();
+                    TxnResponse resp = new TxnResponse();
+                    ResponseHeader header = resp.setHeader();
+                    header.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    header.setRoutingHeader().copyFrom(request.getHeader());
+                    return resp;
                 }
             });
     }
@@ -123,12 +119,11 @@ public class GrpcTableService extends TableServiceImplBase {
             new ResponseHandler<IncrementResponse>(responseObserver) {
                 @Override
                 protected IncrementResponse createErrorResp(Throwable cause) {
-                    return IncrementResponse.newBuilder()
-                        .setHeader(ResponseHeader.newBuilder()
-                            .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                            .setRoutingHeader(request.getHeader())
-                            .build())
-                        .build();
+                    IncrementResponse resp = new IncrementResponse();
+                    ResponseHeader header = resp.setHeader();
+                    header.setCode(StatusCode.INTERNAL_SERVER_ERROR);
+                    header.setRoutingHeader().copyFrom(request.getHeader());
+                    return resp;
                 }
             });
     }

@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.IntStream;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.PutOp;
 import org.apache.bookkeeper.api.kv.options.Options;
 import org.apache.bookkeeper.api.kv.result.Code;
@@ -60,7 +60,7 @@ import org.junit.rules.TemporaryFolder;
 /**
  * Unit test of {@link MVCCAsyncBytesStoreImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
 
     @Rule
@@ -438,14 +438,14 @@ public class TestMVCCAsyncBytesStoreImpl extends TestDistributedLogBase {
                 try {
                     result(store.putIfAbsent(getKey(i), getValue(100 + i)));
                 } catch (Exception e) {
-                    log.error("Failed to put kv pair ({})", i, e);
+                    log.error().attr("i", i).exception(e).log("Failed to put kv pair");
                 }
             });
 
-        log.info("Closing the store '{}' ...", streamName);
+        log.info().attr("streamName", streamName).log("Closing the store ...");
         // close the store
         store.close();
-        log.info("Closed the store '{}' ...", streamName);
+        log.info().attr("streamName", streamName).log("Closed the store ...");
 
         // open the store again to replay the journal.
         store = new MVCCAsyncBytesStoreImpl(

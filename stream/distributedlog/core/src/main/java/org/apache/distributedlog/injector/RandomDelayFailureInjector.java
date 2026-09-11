@@ -17,17 +17,15 @@
  */
 package org.apache.distributedlog.injector;
 
+import lombok.CustomLog;
 import org.apache.distributedlog.config.DynamicDistributedLogConfiguration;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Injector that injects random delays.
  */
+@CustomLog
 public class RandomDelayFailureInjector implements FailureInjector {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RandomDelayFailureInjector.class);
 
     private final DynamicDistributedLogConfiguration dynConf;
 
@@ -55,7 +53,7 @@ public class RandomDelayFailureInjector implements FailureInjector {
             }
         } catch (InterruptedException ex) {
             Thread.currentThread().interrupt();
-            LOG.warn("delay was interrupted ", ex);
+            log.warn().exception(ex).log("delay was interrupted");
         }
     }
 }

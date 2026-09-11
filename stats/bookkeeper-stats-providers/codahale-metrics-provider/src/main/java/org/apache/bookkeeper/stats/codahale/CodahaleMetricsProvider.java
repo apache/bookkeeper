@@ -33,20 +33,19 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.StatsProvider;
 import org.apache.bookkeeper.stats.ThreadRegistry;
 import org.apache.commons.configuration2.Configuration;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * A {@link StatsProvider} implemented based on <i>Codahale</i> metrics library.
  */
 @SuppressWarnings("deprecation")
+@CustomLog
 public class CodahaleMetricsProvider implements StatsProvider {
-
-    static final Logger LOG = LoggerFactory.getLogger(CodahaleMetricsProvider.class);
 
     MetricRegistry metrics = null;
     List<ScheduledReporter> reporters = new ArrayList<ScheduledReporter>();
@@ -76,7 +75,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
         String jmxDomain = conf.getString("codahaleStatsJmxEndpoint");
 
         if (!Strings.isNullOrEmpty(graphiteHost)) {
-            LOG.info("Configuring stats with graphite");
+            log.info("Configuring stats with graphite");
             HostAndPort addr = HostAndPort.fromString(graphiteHost);
             final Graphite graphite = new Graphite(
                     new InetSocketAddress(addr.getHost(), addr.getPort()));
@@ -97,14 +96,14 @@ public class CodahaleMetricsProvider implements StatsProvider {
             } else {
                 outdir = new File(csvDir);
             }
-            LOG.info("Configuring stats with csv output to directory [{}]", outdir.getAbsolutePath());
+            log.info().attr("directory", outdir.getAbsolutePath()).log("Configuring stats with csv output");
             reporters.add(CsvReporter.forRegistry(getMetrics())
                           .convertRatesTo(TimeUnit.SECONDS)
                           .convertDurationsTo(TimeUnit.MILLISECONDS)
                           .build(outdir));
         }
         if (!Strings.isNullOrEmpty(slf4jCat)) {
-            LOG.info("Configuring stats with slf4j");
+            log.info("Configuring stats with slf4j");
             reporters.add(Slf4jReporter.forRegistry(getMetrics())
                           .outputTo(LoggerFactory.getLogger(slf4jCat))
                           .convertRatesTo(TimeUnit.SECONDS)
@@ -112,7 +111,7 @@ public class CodahaleMetricsProvider implements StatsProvider {
                           .build());
         }
         if (!Strings.isNullOrEmpty(jmxDomain)) {
-            LOG.info("Configuring stats with jmx");
+            log.info("Configuring stats with jmx");
             jmx = JmxReporter.forRegistry(getMetrics())
                 .inDomain(jmxDomain)
                 .convertRatesTo(TimeUnit.SECONDS)

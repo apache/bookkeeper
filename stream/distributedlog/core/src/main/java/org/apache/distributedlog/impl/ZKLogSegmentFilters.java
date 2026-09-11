@@ -20,19 +20,15 @@ package org.apache.distributedlog.impl;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.distributedlog.DistributedLogConstants;
 import org.apache.distributedlog.logsegment.LogSegmentFilter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Filters based on current zookeeper log segments.
  */
+@CustomLog
 public class ZKLogSegmentFilters {
-
-    static final Logger LOG = LoggerFactory.getLogger(ZKLogSegmentFilters.class);
 
     /**
      * Write handler filter should return all inprogress log segments and the last completed log segment.
@@ -70,19 +66,23 @@ public class ZKLogSegmentFilters {
                             result.add(s);
                         }
                     } catch (NumberFormatException nfe) {
-                        LOG.warn("Unexpected sequence number in log segment {} :", s, nfe);
+                        log.warn()
+                                .attr("logSegment", s)
+                                .exception(nfe)
+                                .log("Unexpected sequence number in log segment");
                         result.add(s);
                     }
                 } else {
-                    LOG.error("Unknown log segment name : {}", s);
+                    log.error().attr("logSegment", s).log("Unknown log segment name");
                 }
             }
             if (null != lastCompletedLogSegmentName) {
                 result.add(lastCompletedLogSegmentName);
             }
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Filtered log segments {} from {}.", result, fullList);
-            }
+            log.trace()
+                    .attr("filtered", result)
+                    .attr("fullList", fullList)
+                    .log("Filtered log segments");
             return result;
         }
     };

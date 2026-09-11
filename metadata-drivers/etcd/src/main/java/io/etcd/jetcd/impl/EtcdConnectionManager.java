@@ -20,12 +20,12 @@ package io.etcd.jetcd.impl;
 
 import io.etcd.jetcd.Client;
 import io.etcd.jetcd.api.WatchGrpc;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * Keep a reference to etcd internal connection manager.
  */
-@Slf4j
+@CustomLog
 public class EtcdConnectionManager {
 
     private final ClientImpl client;
@@ -42,11 +42,11 @@ public class EtcdConnectionManager {
                 client, "connectionManager"
             );
         } catch (NoSuchFieldException e) {
-            log.error("No `connectionManager` field found in etcd client", e);
+            log.error().exception(e).log("No `connectionManager` field found in etcd client");
             throw new RuntimeException(
                 "No `connectionManager` field found in etcd client", e);
         } catch (IllegalAccessException e) {
-            log.error("Illegal access to `connectionManager` field in etcd client", e);
+            log.error().exception(e).log("Illegal access to `connectionManager` field in etcd client");
             throw new RuntimeException(
                 "Illegal access to `connectionManager` field in etcd client", e);
         }

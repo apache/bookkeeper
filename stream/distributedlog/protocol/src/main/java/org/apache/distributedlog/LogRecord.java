@@ -27,9 +27,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import javax.annotation.concurrent.NotThreadSafe;
+import lombok.CustomLog;
 import org.apache.distributedlog.common.util.ByteBufUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Log record is the basic element in a log.
@@ -107,10 +106,9 @@ import org.slf4j.LoggerFactory;
  *
  * @see LogRecordWithDLSN
  */
+@CustomLog
 @NotThreadSafe
 public class LogRecord {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LogRecord.class);
 
     // Allow 4K overhead for metadata within the max transmission size
     public static final int MAX_LOGRECORD_SIZE = 1024 * 1024 - 8 * 1024; //1MB - 8KB
@@ -524,14 +522,12 @@ public class LogRecord {
                     //    don't have to deal with reference count.
                     boolean copyData = !isRecordSet(metadata) || !deserializeRecordSet;
                     nextRecordInStream.readPayload(in, copyData);
-                    if (LOG.isTraceEnabled()) {
-                        if (nextRecordInStream.isControl()) {
-                            LOG.trace("Reading {} Control DLSN {}",
-                                recordStream.getName(), nextRecordInStream.getDlsn());
-                        } else {
-                            LOG.trace("Reading {} Valid DLSN {}",
-                                recordStream.getName(), nextRecordInStream.getDlsn());
-                        }
+                    if (nextRecordInStream.isControl()) {
+                        log.trace().attr("stream", recordStream.getName())
+                                .attr("dlsn", nextRecordInStream.getDlsn()).log("Reading Control DLSN");
+                    } else {
+                        log.trace().attr("stream", recordStream.getName())
+                                .attr("dlsn", nextRecordInStream.getDlsn()).log("Reading Valid DLSN");
                     }
 
                     int numRecords = 1;
@@ -586,9 +582,8 @@ public class LogRecord {
                     }
 
                     if ((null != dlsn) && (recordStream.getCurrentPosition().compareTo(dlsn) >= 0)) {
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace("Found position {} beyond {}", recordStream.getCurrentPosition(), dlsn);
-                        }
+                        log.trace().attr("position", recordStream.getCurrentPosition()).attr("dlsn", dlsn)
+                                .log("Found position beyond dlsn");
                         if (null == lastRecordSkipTo) {
                             in.resetReaderIndex();
                         }
@@ -597,9 +592,8 @@ public class LogRecord {
                     }
                     if ((null != txId) && (currTxId >= txId)) {
                         if (!skipControl || !isControl(flags)) {
-                            if (LOG.isTraceEnabled()) {
-                                LOG.trace("Found position {} beyond {}", currTxId, txId);
-                            }
+                            log.trace().attr("currTxId", currTxId).attr("txId", txId)
+                                    .log("Found position beyond txId");
                             if (null == lastRecordSkipTo) {
                                 in.resetReaderIndex();
                             }
@@ -627,21 +621,17 @@ public class LogRecord {
                         if (length < 0) {
                             // We should never really see this as we only write complete entries to
                             // BK and BK client has logic to detect torn writes (through checksum)
-                            LOG.info("Encountered Record with negative length at TxId: {}", currTxId);
+                            log.info().attr("txId", currTxId).log("Encountered Record with negative length");
                             break;
                         }
                         // skip single record
                         in.skipBytes(length);
-                        if (LOG.isTraceEnabled()) {
-                            LOG.trace("Skipped Record with TxId {} DLSN {}",
-                                currTxId, recordStream.getCurrentPosition());
-                        }
+                        log.trace().attr("txId", currTxId).attr("dlsn", recordStream.getCurrentPosition())
+                                .log("Skipped Record");
                         recordStream.advance(1);
                     }
                 } catch (EOFException eof) {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Skip encountered end of file Exception", eof);
-                    }
+                    log.debug().exception(eof).log("Skip encountered end of file Exception");
                     break;
                 }
             }

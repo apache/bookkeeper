@@ -28,17 +28,17 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.Cleanup;
+import lombok.CustomLog;
 import lombok.SneakyThrows;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Utils for interacting a bookkeeper cluster used for integration tests.
  */
+@CustomLog
 public class BookKeeperClusterUtils {
     public static final String CURRENT_VERSION = System.getProperty("currentVersion");
 
@@ -62,8 +62,6 @@ public class BookKeeperClusterUtils {
                     VERSION_4_13_x, VERSION_4_14_x, VERSION_4_15_x, VERSION_4_16_x, VERSION_4_17_x);
     public static final List<String> UPGRADE_DOWNGRADE_TEST_VERSIONS =
             Arrays.asList(VERSION_4_14_x, VERSION_4_15_x, VERSION_4_16_x, VERSION_4_17_x);
-
-    private static final Logger LOG = LoggerFactory.getLogger(BookKeeperClusterUtils.class);
 
     public static boolean hasVersionLatestMetadataFormat(String version) {
         return OLD_CLIENT_VERSIONS_WITH_CURRENT_LEDGER_METADATA_FORMAT.contains(version);
@@ -250,12 +248,14 @@ public class BookKeeperClusterUtils {
                 timeoutMillis -= pollMillis;
             }
         } catch (Exception e) {
-            LOG.error("Exception checking for bookie state", e);
+            log.error().exception(e).log("Exception checking for bookie state");
             return false;
         }
-        LOG.warn("Bookie {} didn't go {} after {} seconds",
-                 containerId, upOrDown ? "up" : "down",
-                 timeoutUnit.toSeconds(timeout));
+        log.warn()
+                .attr("containerId", containerId)
+                .attr("expectedState", upOrDown ? "up" : "down")
+                .attr("seconds", timeoutUnit.toSeconds(timeout))
+                .log("Bookie did not reach expected state in time");
         return false;
     }
 
@@ -273,7 +273,7 @@ public class BookKeeperClusterUtils {
         try {
             DockerUtils.runCommand(docker, containerId, "supervisorctl", "start", "bookkeeper-" + version);
         } catch (Exception e) {
-            LOG.error("Exception starting bookie", e);
+            log.error().exception(e).log("Exception starting bookie");
             return false;
         }
         return waitBookieUp(docker, containerId, 10, TimeUnit.SECONDS);
@@ -294,7 +294,7 @@ public class BookKeeperClusterUtils {
         try {
             DockerUtils.runCommand(docker, containerId, "supervisorctl", "stop", "all");
         } catch (Exception e) {
-            LOG.error("Exception stopping bookie", e);
+            log.error().exception(e).log("Exception stopping bookie");
             return false;
         }
         return waitBookieDown(docker, containerId, 5, TimeUnit.SECONDS);

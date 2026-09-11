@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -44,11 +45,9 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.zookeeper.AsyncCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 public class AuditorCheckAllLedgersTask extends AuditorTask {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditorBookieCheckTask.class);
 
     private final Semaphore openLedgerNoRecoverySemaphore;
     private final int openLedgerNoRecoverySemaphoreWaitTimeoutMSec;
@@ -66,14 +65,14 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 ledgerUnderreplicationManager, shutdownTaskHandler, hasAuditCheckTask);
 
         if (conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations() <= 0) {
-            LOG.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
+            log.error("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
             throw new UnavailableException("auditorMaxNumberOfConcurrentOpenLedgerOperations should be greater than 0");
         }
         this.openLedgerNoRecoverySemaphore =
                 new Semaphore(conf.getAuditorMaxNumberOfConcurrentOpenLedgerOperations());
 
         if (conf.getAuditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec() < 0) {
-            LOG.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
+            log.error("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec should be greater than or equal to 0");
             throw new UnavailableException("auditorAcquireConcurrentOpenLedgerOperationsTimeoutMSec "
                     + "should be greater than or equal to 0");
         }
@@ -93,7 +92,7 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
     @Override
     protected void runTask() {
         if (hasBookieCheckTask()) {
-            LOG.info("Audit bookie task already scheduled; skipping periodic all ledgers check task");
+            log.info("Audit bookie task already scheduled; skipping periodic all ledgers check task");
             auditorStats.getNumSkippingCheckTaskTimes().inc();
             return;
         }
@@ -102,30 +101,30 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
         boolean checkSuccess = false;
         try {
             if (!isLedgerReplicationEnabled()) {
-                LOG.info("Ledger replication disabled, skipping checkAllLedgers");
+                log.info("Ledger replication disabled, skipping checkAllLedgers");
                 checkSuccess = true;
                 return;
             }
 
-            LOG.info("Starting checkAllLedgers");
+            log.info("Starting checkAllLedgers");
             checkAllLedgers();
             long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-            LOG.info("Completed checkAllLedgers in {} milliSeconds", checkAllLedgersDuration);
+            log.info().attr("durationMs", checkAllLedgersDuration).log("Completed checkAllLedgers");
             auditorStats.getCheckAllLedgersTime()
                     .registerSuccessfulEvent(checkAllLedgersDuration, TimeUnit.MILLISECONDS);
             checkSuccess = true;
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while running periodic check", ie);
+            log.error().exception(ie).log("Interrupted while running periodic check");
         } catch (BKException bke) {
-            LOG.error("Exception running periodic check", bke);
+            log.error().exception(bke).log("Exception running periodic check");
         } catch (IOException ioe) {
-            LOG.error("I/O exception running periodic check", ioe);
+            log.error().exception(ioe).log("I/O exception running periodic check");
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Underreplication manager unavailable running periodic check", ue);
+            log.error().exception(ue).log("Underreplication manager unavailable running periodic check");
         } finally {
             if (!checkSuccess) {
                 long checkAllLedgersDuration = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
@@ -137,17 +136,17 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
 
     @Override
     public void shutdown() {
-        LOG.info("Shutting down AuditorCheckAllLedgersTask");
+        log.info("Shutting down AuditorCheckAllLedgersTask");
         ledgerCheckerExecutor.shutdown();
         try {
             while (!ledgerCheckerExecutor.awaitTermination(30, TimeUnit.SECONDS)) {
-                LOG.warn("Executor for ledger checker not shutting down, interrupting");
+                log.warn("Executor for ledger checker not shutting down, interrupting");
                 ledgerCheckerExecutor.shutdownNow();
             }
 
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.warn("Interrupted while shutting down AuditorCheckAllLedgersTask", ie);
+            log.warn().exception(ie).log("Interrupted while shutting down AuditorCheckAllLedgersTask");
         }
     }
 
@@ -166,16 +165,16 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
             BookkeeperInternalCallbacks.Processor<Long> checkLedgersProcessor = (ledgerId, callback) -> {
                 try {
                     if (!ledgerUnderreplicationManager.isLedgerReplicationEnabled()) {
-                        LOG.info("Ledger rereplication has been disabled, aborting periodic check");
+                        log.info("Ledger rereplication has been disabled, aborting periodic check");
                         FutureUtils.complete(processFuture, null);
                         return;
                     }
                 } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                    LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                    log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                     submitShutdownTask();
                     return;
                 } catch (ReplicationException.UnavailableException ue) {
-                    LOG.error("Underreplication manager unavailable running periodic check", ue);
+                    log.error().exception(ue).log("Underreplication manager unavailable running periodic check");
                     FutureUtils.complete(processFuture, null);
                     return;
                 }
@@ -183,13 +182,15 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 try {
                     if (!openLedgerNoRecoverySemaphore.tryAcquire(openLedgerNoRecoverySemaphoreWaitTimeoutMSec,
                             TimeUnit.MILLISECONDS)) {
-                        LOG.warn("Failed to acquire semaphore for {} ms, ledgerId: {}",
-                                openLedgerNoRecoverySemaphoreWaitTimeoutMSec, ledgerId);
+                        log.warn()
+                                .attr("timeoutMs", openLedgerNoRecoverySemaphoreWaitTimeoutMSec)
+                                .attr("ledgerId", ledgerId)
+                                .log("Failed to acquire semaphore");
                         FutureUtils.complete(processFuture, null);
                         return;
                     }
                 } catch (InterruptedException e) {
-                    LOG.error("Unable to acquire open ledger operation semaphore ", e);
+                    log.error().exception(e).log("Unable to acquire open ledger operation semaphore");
                     Thread.currentThread().interrupt();
                     FutureUtils.complete(processFuture, null);
                     return;
@@ -214,12 +215,13 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                             lh.closeAsync();
                         });
                     } else if (BKException.Code.NoSuchLedgerExistsOnMetadataServerException == rc) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ledger {} was deleted before we could check it", ledgerId);
-                        }
+                        log.debug().attr("ledgerId", ledgerId).log("Ledger was deleted before we could check it");
                         callback.processResult(BKException.Code.OK, null, null);
                     } else {
-                        LOG.error("Couldn't open ledger {} to check : {}", ledgerId, BKException.getMessage(rc));
+                        log.error()
+                                .attr("ledgerId", ledgerId)
+                                .attr("error", BKException.getMessage(rc))
+                                .log("Couldn't open ledger to check");
                         callback.processResult(rc, null, null);
                     }
                 }, null);
@@ -237,10 +239,10 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
             try {
                 ledgerUnderreplicationManager.setCheckAllLedgersCTime(System.currentTimeMillis());
             } catch (ReplicationException.NonRecoverableReplicationException nre) {
-                LOG.error("Non Recoverable Exception while reading from ZK", nre);
+                log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
                 submitShutdownTask();
             } catch (ReplicationException.UnavailableException ue) {
-                LOG.error("Got exception while trying to set checkAllLedgersCTime", ue);
+                log.error().exception(ue).log("Got exception while trying to set checkAllLedgersCTime");
             }
         } finally {
             localAdmin.close();
@@ -275,8 +277,11 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                             Sets.newHashSet(lh.getId())
                     ).whenComplete((result, cause) -> {
                         if (null != cause) {
-                            LOG.error("Auditor exception publishing suspected ledger {} with lost bookies {}",
-                                    lh.getId(), bookies, cause);
+                            log.error()
+                                    .attr("ledgerId", lh.getId())
+                                    .attr("bookies", bookies)
+                                    .exception(cause)
+                                    .log("Auditor exception publishing suspected ledger");
                             callback.processResult(BKException.Code.ReplicationException, null, null);
                         } else {
                             callback.processResult(BKException.Code.OK, null, null);
@@ -288,7 +293,10 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
             }
             lh.closeAsync().whenComplete((result, cause) -> {
                 if (null != cause) {
-                    LOG.warn("Error closing ledger {} : {}", lh.getId(), cause.getMessage());
+                    log.warn()
+                            .attr("ledgerId", lh.getId())
+                            .exceptionMessage(cause)
+                            .log("Error closing ledger");
                 }
             });
         }

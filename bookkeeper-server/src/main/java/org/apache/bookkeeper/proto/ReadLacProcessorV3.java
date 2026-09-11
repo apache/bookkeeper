@@ -20,27 +20,21 @@
  */
 package org.apache.bookkeeper.proto;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ReadLacResponse;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Response;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.StatusCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A read processor for v3 last add confirmed messages.
  */
+@CustomLog
 class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
-    private static final Logger logger = LoggerFactory.getLogger(ReadLacProcessorV3.class);
 
     public ReadLacProcessorV3(Request request, BookieRequestHandler requestHandler,
                              BookieRequestProcessor requestProcessor) {
@@ -53,31 +47,40 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         ReadLacRequest readLacRequest = request.getReadLacRequest();
         long ledgerId = readLacRequest.getLedgerId();
 
-        final ReadLacResponse.Builder readLacResponse = ReadLacResponse.newBuilder().setLedgerId(ledgerId);
+        final ReadLacResponse readLacResponse = new ReadLacResponse().setLedgerId(ledgerId);
 
         if (!isVersionCompatible()) {
             readLacResponse.setStatus(StatusCode.EBADVERSION);
-            return readLacResponse.build();
+            return readLacResponse;
         }
 
-        logger.debug("Received ReadLac request: {}", request);
+        log.debug().attr("request", request).log("Received ReadLac request");
         StatusCode status = StatusCode.EOK;
         ByteBuf lastEntry = null;
         ByteBuf lac = null;
         try {
             lac = requestProcessor.bookie.getExplicitLac(ledgerId);
             if (lac != null) {
-                readLacResponse.setLacBody(ByteString.copyFrom(lac.nioBuffer()));
+                readLacResponse.setLacBody(ByteBufUtil.getBytes(lac));
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while performing readLac from ledger: {}", ledgerId, e);
+            log.debug()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("No ledger found while performing readLac");
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
-            logger.error("Ledger {} in unknown state and cannot serve reacLac requests", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger in unknown state and cannot serve readLac requests");
         } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
-            logger.error("IOException while performing readLac from ledger: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("IOException while performing readLac from ledger");
         } finally {
             ReferenceCountUtil.release(lac);
         }
@@ -85,17 +88,26 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         try {
             lastEntry = requestProcessor.bookie.readEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
             if (lastEntry != null) {
-                readLacResponse.setLastEntryBody(ByteString.copyFrom(lastEntry.nioBuffer()));
+                readLacResponse.setLastEntryBody(ByteBufUtil.getBytes(lastEntry));
             }
         } catch (Bookie.NoLedgerException e) {
             status = StatusCode.ENOLEDGER;
-            logger.debug("No ledger found while trying to read last entry: {}", ledgerId, e);
+            log.debug()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("No ledger found while trying to read last entry");
         } catch (BookieException.DataUnknownException e) {
             status = StatusCode.EUNKNOWNLEDGERSTATE;
-            logger.error("Ledger in an unknown state while trying to read last entry: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("Ledger in an unknown state while trying to read last entry");
         } catch (BookieException | IOException e) {
             status = StatusCode.EIO;
-            logger.error("IOException while trying to read last entry: {}", ledgerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("ledgerId", ledgerId)
+                    .log("IOException while trying to read last entry");
         } finally {
             ReferenceCountUtil.release(lastEntry);
         }
@@ -113,7 +125,7 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
         }
         // Finally set the status and return
         readLacResponse.setStatus(status);
-        return readLacResponse.build();
+        return readLacResponse;
     }
 
     @Override
@@ -123,12 +135,12 @@ class ReadLacProcessorV3 extends PacketProcessorBaseV3 implements Runnable {
     }
 
     private void sendResponse(ReadLacResponse readLacResponse) {
-        Response.Builder response = Response.newBuilder()
-            .setHeader(getHeader())
-            .setStatus(readLacResponse.getStatus())
-            .setReadLacResponse(readLacResponse);
+        Response response = new Response();
+        response.setHeader().copyFrom(getHeader());
+        response.setStatus(readLacResponse.getStatus());
+        response.setReadLacResponse().copyFrom(readLacResponse);
         sendResponse(response.getStatus(),
-                response.build(),
+                response,
                 requestProcessor.getRequestStats().getReadLacRequestStats());
     }
 }

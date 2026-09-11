@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
@@ -32,8 +33,6 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * LongHierarchical Ledger Manager which manages ledger meta in zookeeper using 5-level hierarchical znodes.
@@ -55,9 +54,8 @@ import org.slf4j.LoggerFactory;
  * <i>0001</i>, which is stored in <i>(ledgersRootPath)/000/0000/0000/0000/L0001</i>. So each znode could have at most
  * 10000 ledgers, which avoids errors during garbage collection due to lists of children that are too long.
  */
+@CustomLog
 class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
-
-    static final Logger LOG = LoggerFactory.getLogger(LongHierarchicalLedgerManager.class);
 
     static final String IDGEN_ZNODE = "idgen-long";
 
@@ -166,9 +164,7 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
                 Collections.sort(children);
                 return children;
             } catch (KeeperException.NoNodeException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("NoNodeException at path {}, assumed race with deletion", path);
-                }
+                log.debug().attr("path", path).log("NoNodeException at path, assumed race with deletion");
                 return new ArrayList<>();
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
@@ -186,9 +182,10 @@ class LongHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
             LeafIterator(String path) throws IOException {
                 List<String> ledgerLeafNodes = getChildrenAt(path);
                 Set<Long> ledgerIds = ledgerListToSet(ledgerLeafNodes, path);
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("All active ledgers from ZK for hash node {}: {}", path, ledgerIds);
-                }
+                log.debug()
+                        .attr("path", path)
+                        .attr("ledgerIds", ledgerIds)
+                        .log("All active ledgers from ZK for hash node");
                 if (!ledgerIds.isEmpty()) {
                     range = new LedgerRange(ledgerIds);
                 } // else, hasNext() should return false so that advance will skip us and move on

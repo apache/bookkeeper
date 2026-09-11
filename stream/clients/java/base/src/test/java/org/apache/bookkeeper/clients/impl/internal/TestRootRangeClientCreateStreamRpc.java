@@ -58,12 +58,11 @@ public class TestRootRangeClientCreateStreamRpc extends RootRangeClientImplTestB
         this.streamId = System.currentTimeMillis();
         this.colName = testName.getMethodName() + "_col";
         this.streamName = testName.getMethodName() + "_stream";
-        this.streamProps = StreamProperties.newBuilder()
-            .setStorageContainerId(System.currentTimeMillis())
-            .setStreamId(streamId)
-            .setStreamName(streamName)
-            .setStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        this.streamProps = new StreamProperties();
+        this.streamProps.setStorageContainerId(System.currentTimeMillis());
+        this.streamProps.setStreamId(streamId);
+        this.streamProps.setStreamName(streamName);
+        this.streamProps.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
     }
 
     @Override
@@ -72,10 +71,10 @@ public class TestRootRangeClientCreateStreamRpc extends RootRangeClientImplTestB
             @Override
             public void createStream(CreateStreamRequest request,
                                      StreamObserver<CreateStreamResponse> responseObserver) {
-                responseObserver.onNext(CreateStreamResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .setStreamProps(streamProps)
-                    .build());
+                CreateStreamResponse resp = new CreateStreamResponse();
+                resp.setCode(StatusCode.SUCCESS);
+                resp.setStreamProps().copyFrom(streamProps);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };
@@ -85,7 +84,7 @@ public class TestRootRangeClientCreateStreamRpc extends RootRangeClientImplTestB
     protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
         CompletableFuture<StreamProperties> createFuture =
             rootRangeClient.createStream(colName, streamName, streamConf);
-        assertTrue(streamProps == createFuture.get());
+        assertEquals(streamProps, createFuture.get());
     }
 
     @Override
@@ -94,9 +93,9 @@ public class TestRootRangeClientCreateStreamRpc extends RootRangeClientImplTestB
             @Override
             public void createStream(CreateStreamRequest request,
                                      StreamObserver<CreateStreamResponse> responseObserver) {
-                responseObserver.onNext(CreateStreamResponse.newBuilder()
-                    .setCode(StatusCode.STREAM_NOT_FOUND)
-                    .build());
+                CreateStreamResponse resp = new CreateStreamResponse();
+                resp.setCode(StatusCode.STREAM_NOT_FOUND);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

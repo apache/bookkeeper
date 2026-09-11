@@ -35,7 +35,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.metadata.etcd.EtcdWatchClient;
 import org.apache.bookkeeper.metadata.etcd.EtcdWatcher;
@@ -45,7 +45,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * A helper class to read a set of keys and watch them.
  */
-@Slf4j
+@CustomLog
 public class KeySetReader<T> implements BiConsumer<WatchResponse, Throwable>, AutoCloseable {
 
     private final Client client;
@@ -131,10 +131,10 @@ public class KeySetReader<T> implements BiConsumer<WatchResponse, Throwable>, Au
         if (null != closeFuture) {
             return null;
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Received watch response : revision = {}, {} events = {}",
-                response.getHeader().getRevision(), response.getEvents().size(), response.getEvents());
-        }
+        log.debug(e -> e.attr("revision", response.getHeader().getRevision())
+                .attr("eventCount", response.getEvents().size())
+                .attr("events", response.getEvents())
+                .log("Received watch response"));
 
         if (response.getHeader().getRevision() <= revision) {
             return null;
@@ -276,7 +276,7 @@ public class KeySetReader<T> implements BiConsumer<WatchResponse, Throwable>, Au
         try {
             FutureUtils.result(closeAsync());
         } catch (Exception e) {
-            log.warn("Encountered exceptions on closing key reader : {}", e.getMessage());
+            log.warn().exceptionMessage(e).log("Encountered exceptions on closing key reader");
         }
     }
 }

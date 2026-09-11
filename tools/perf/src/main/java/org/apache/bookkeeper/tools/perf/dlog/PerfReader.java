@@ -36,7 +36,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.distributedlog.DLSN;
@@ -48,7 +48,7 @@ import org.apache.distributedlog.api.namespace.Namespace;
 /**
  * A perf reader to evaluate read performance.
  */
-@Slf4j
+@CustomLog
 public class PerfReader extends PerfReaderBase {
 
     PerfReader(ServiceURI serviceURI, Flags flags) {
@@ -62,7 +62,7 @@ public class PerfReader extends PerfReaderBase {
             String logName = String.format(flags.logName, i);
             managers.add(Pair.of(i, namespace.openLog(logName)));
         }
-        log.info("Successfully open {} logs", managers.size());
+        log.info().attr("numLogs", managers.size()).log("Successfully opened logs");
 
         // register shutdown hook to aggregate stats
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -83,11 +83,11 @@ public class PerfReader extends PerfReaderBase {
                     try {
                         read(logsThisThread);
                     } catch (Exception e) {
-                        log.error("Encountered error at writing records", e);
+                        log.error().exception(e).log("Encountered error at writing records");
                     }
                 });
             }
-            log.info("Started {} write threads", flags.numThreads);
+            log.info().attr("numThreads", flags.numThreads).log("Started write threads");
             reportStats();
         } finally {
             executor.shutdown();
@@ -99,15 +99,19 @@ public class PerfReader extends PerfReaderBase {
     }
 
     void read(List<DistributedLogManager> logs) throws Exception {
-        log.info("Read thread started with : logs = {}",
-            logs.stream().map(l -> l.getStreamName()).collect(Collectors.toList()));
+        log.info()
+                .attr("logs", logs.stream().map(l -> l.getStreamName()).collect(Collectors.toList()))
+                .log("Read thread started");
 
         List<LogReader> readers = logs.stream()
             .map(manager -> {
                 try {
                     return manager.openLogReader(DLSN.InitialDLSN);
                 } catch (IOException e) {
-                    log.error("Failed to open reader for log stream {}", manager.getStreamName(), e);
+                    log.error()
+                            .attr("streamName", manager.getStreamName())
+                            .exception(e)
+                            .log("Failed to open reader for log stream");
                     throw new UncheckedIOException(e);
                 }
             })

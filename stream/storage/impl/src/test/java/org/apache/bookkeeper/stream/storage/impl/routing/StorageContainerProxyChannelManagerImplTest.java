@@ -91,19 +91,16 @@ public class StorageContainerProxyChannelManagerImplTest extends GrpcClientTestB
     }
 
     private static GetStorageContainerEndpointResponse getResponse(GetStorageContainerEndpointRequest request) {
-        GetStorageContainerEndpointResponse.Builder respBuilder =
-            GetStorageContainerEndpointResponse.newBuilder();
-        respBuilder.setStatusCode(StatusCode.SUCCESS);
+        GetStorageContainerEndpointResponse resp = new GetStorageContainerEndpointResponse();
+        resp.setStatusCode(StatusCode.SUCCESS);
         for (OneStorageContainerEndpointRequest oneReq : request.getRequestsList()) {
-            OneStorageContainerEndpointResponse oneResp = OneStorageContainerEndpointResponse.newBuilder()
-                .setEndpoint(StorageContainerEndpoint.newBuilder()
-                    .setStorageContainerId(oneReq.getStorageContainer())
-                    .setRevision(oneReq.getRevision() + 1)
-                    .setRwEndpoint(ENDPOINT))
-                .build();
-            respBuilder.addResponses(oneResp);
+            OneStorageContainerEndpointResponse oneResp = resp.addResponse();
+            StorageContainerEndpoint endpoint = oneResp.setEndpoint();
+            endpoint.setStorageContainerId(oneReq.getStorageContainer());
+            endpoint.setRevision(oneReq.getRevision() + 1);
+            endpoint.setRwEndpoint().copyFrom(ENDPOINT);
         }
-        return respBuilder.build();
+        return resp;
     }
 
 

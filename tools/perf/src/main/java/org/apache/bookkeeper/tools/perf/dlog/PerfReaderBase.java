@@ -21,7 +21,7 @@ import java.text.DecimalFormat;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.LongAdder;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.HdrHistogram.Histogram;
 import org.HdrHistogram.Recorder;
 import org.apache.bookkeeper.common.net.ServiceURI;
@@ -31,7 +31,7 @@ import org.apache.distributedlog.DistributedLogConfiguration;
 import org.apache.distributedlog.api.namespace.Namespace;
 import org.apache.distributedlog.api.namespace.NamespaceBuilder;
 
-@Slf4j
+@CustomLog
 abstract class PerfReaderBase implements Runnable {
 
     /**
@@ -107,7 +107,9 @@ abstract class PerfReaderBase implements Runnable {
     protected void execute() throws Exception {
         ObjectMapper m = new ObjectMapper();
         ObjectWriter w = m.writerWithDefaultPrettyPrinter();
-        log.info("Starting dlog perf reader with config : {}", w.writeValueAsString(flags));
+        log.info()
+                .attr("config", w.writeValueAsString(flags))
+                .log("Starting dlog perf reader");
 
         DistributedLogConfiguration conf = newDlogConf(flags);
         try (Namespace namespace = NamespaceBuilder.newBuilder()
@@ -143,16 +145,22 @@ abstract class PerfReaderBase implements Runnable {
 
             reportHistogram = recorder.getIntervalHistogram(reportHistogram);
 
-            log.info("Throughput read : {}  records/s --- {} MB/s --- Latency: mean:"
-                        + " {} ms - med: {} - 95pct: {} - 99pct: {} - 99.9pct: {} - 99.99pct: {} - Max: {}",
-                    THROUGHPUT_FORMAT.format(rate), THROUGHPUT_FORMAT.format(throughput),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getMean() / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getMaxValue() / 1000.0));
+            log.info()
+                    .attr("rate", THROUGHPUT_FORMAT.format(rate))
+                    .attr("throughputMBs", THROUGHPUT_FORMAT.format(throughput))
+                    .attr("latencyMeanMs", PADDING_DECIMAL_FORMAT.format(reportHistogram.getMean() / 1000.0))
+                    .attr("latencyMedMs",
+                        PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                    .attr("latency95pctMs",
+                        PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                    .attr("latency99pctMs",
+                        PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                    .attr("latency999pctMs",
+                        PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                    .attr("latency9999pctMs",
+                        PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                    .attr("latencyMaxMs", PADDING_DECIMAL_FORMAT.format(reportHistogram.getMaxValue() / 1000.0))
+                    .log("Throughput read");
 
             reportHistogram.reset();
 
@@ -168,7 +176,7 @@ abstract class PerfReaderBase implements Runnable {
         try {
             execute();
         } catch (Exception e) {
-            log.error("Encountered exception at running dlog perf writer", e);
+            log.error().exception(e).log("Encountered exception at running dlog perf writer");
         }
     }
 
@@ -187,16 +195,22 @@ abstract class PerfReaderBase implements Runnable {
     protected static void printAggregatedStats(Recorder recorder) {
         Histogram reportHistogram = recorder.getIntervalHistogram();
 
-        log.info("Aggregated latency stats --- Latency: mean: {} ms - med: {} - 95pct: {} - 99pct: {}"
-                + " - 99.9pct: {} - 99.99pct: {} - 99.999pct: {} - Max: {}",
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getMean() / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(50) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(95) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0),
-                PADDING_DECIMAL_FORMAT.format(reportHistogram.getMaxValue() / 1000.0));
+        log.info()
+                .attr("latencyMeanMs", PADDING_DECIMAL_FORMAT.format(reportHistogram.getMean() / 1000.0))
+                .attr("latencyMedMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(50) / 1000.0))
+                .attr("latency95pctMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(95) / 1000.0))
+                .attr("latency99pctMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99) / 1000.0))
+                .attr("latency999pctMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.9) / 1000.0))
+                .attr("latency9999pctMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.99) / 1000.0))
+                .attr("latency99999pctMs",
+                    PADDING_DECIMAL_FORMAT.format(reportHistogram.getValueAtPercentile(99.999) / 1000.0))
+                .attr("latencyMaxMs", PADDING_DECIMAL_FORMAT.format(reportHistogram.getMaxValue() / 1000.0))
+                .log("Aggregated latency stats");
     }
 
 }

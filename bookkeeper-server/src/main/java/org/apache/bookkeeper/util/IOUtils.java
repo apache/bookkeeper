@@ -24,7 +24,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.WritableByteChannel;
-import org.slf4j.Logger;
 
 /**
  * An utility class for I/O related functionality.
@@ -40,7 +39,7 @@ public class IOUtils {
      * @param closeables
      *            the objects to close
      */
-    public static void close(Logger log, java.io.Closeable... closeables) {
+    public static void close(io.github.merlimat.slog.Logger log, java.io.Closeable... closeables) {
         for (java.io.Closeable c : closeables) {
             close(log, c);
         }
@@ -55,13 +54,13 @@ public class IOUtils {
      * @param closeable
      *            the objects to close
      */
-    public static void close(Logger log, java.io.Closeable closeable) {
+    public static void close(io.github.merlimat.slog.Logger log, java.io.Closeable closeable) {
         if (closeable != null) {
             try {
                 closeable.close();
             } catch (IOException e) {
-                if (log != null && log.isDebugEnabled()) {
-                    log.debug("Exception in closing " + closeable, e);
+                if (log != null) {
+                    log.debug().exception(e).attr("closeable", closeable).log("Exception in closing");
                 }
             }
         }

@@ -43,9 +43,8 @@ class DeleteNamespaceProcessor
 
     @Override
     protected DeleteNamespaceResponse failRequest(StatusCode code) {
-        return DeleteNamespaceResponse.newBuilder()
-            .setCode(code)
-            .build();
+        return new DeleteNamespaceResponse()
+            .setCode(code);
     }
 
     @Override

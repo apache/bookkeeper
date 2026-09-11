@@ -17,14 +17,14 @@
  */
 package org.apache.bookkeeper.client;
 
+import io.netty.util.ReferenceCountUtil;
 import java.util.BitSet;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.AsyncCallback.AddLacCallback;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteLacCallback;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This represents a pending WriteLac operation. When it has got
@@ -35,9 +35,8 @@ import org.slf4j.LoggerFactory;
  * to be up to date with the writer. This is best effort to get latest LAC
  * from bookies, and doesn't affect the correctness of the protocol.
  */
+@CustomLog
 class PendingWriteLacOp implements WriteLacCallback {
-    private static final Logger LOG = LoggerFactory.getLogger(PendingWriteLacOp.class);
-    ByteBufList toSend;
     AddLacCallback cb;
     long lac;
     Object ctx;
@@ -59,11 +58,11 @@ class PendingWriteLacOp implements WriteLacCallback {
         this.cb = cb;
         this.ctx = ctx;
         this.lac = LedgerHandle.INVALID_ENTRY_ID;
-        ackSet = lh.distributionSchedule.getAckSet();
+        ackSet = lh.getDistributionSchedule().getAckSet();
         currentEnsemble = ensemble;
     }
 
-    void setLac(long lac) {
+    synchronized void setLac(long lac) {
         this.lac = lac;
 
         this.receivedResponseSet = new BitSet(
@@ -72,22 +71,28 @@ class PendingWriteLacOp implements WriteLacCallback {
                 lh.getLedgerMetadata().getWriteQuorumSize());
     }
 
-    void sendWriteLacRequest(int bookieIndex) {
+    void sendWriteLacRequest(int bookieIndex, ByteBufList toSend) {
         clientCtx.getBookieClient().writeLac(currentEnsemble.get(bookieIndex),
-                                             lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex);
+                                             lh.ledgerId, lh.ledgerKey, lac, toSend, this, bookieIndex, lh.executor);
     }
 
     void initiate(ByteBufList toSend) {
-        this.toSend = toSend;
-
-        for (int i = 0; i < lh.distributionSchedule.getWriteQuorumSize(); i++) {
-            sendWriteLacRequest(lh.distributionSchedule.getWriteSetBookieIndex(lac, i));
+        try {
+            for (int i = 0; i < lh.getDistributionSchedule().getWriteQuorumSize(); i++) {
+                sendWriteLacRequest(lh.getDistributionSchedule().getWriteSetBookieIndex(lac, i), toSend);
+            }
+        } finally {
+            ReferenceCountUtil.release(toSend);
         }
+
     }
 
     @Override
-    public void writeLacComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
+    public synchronized void writeLacComplete(int rc, long ledgerId, BookieId addr, Object ctx) {
         int bookieIndex = (Integer) ctx;
+
+        // We got response.
+        receivedResponseSet.clear(bookieIndex);
 
         if (completed) {
             return;
@@ -97,9 +102,6 @@ class PendingWriteLacOp implements WriteLacCallback {
             lastSeenError = rc;
         }
 
-        // We got response.
-        receivedResponseSet.clear(bookieIndex);
-
         if (rc == BKException.Code.OK) {
             if (ackSet.completeBookieAndCheck(bookieIndex) && !completed) {
                 completed = true;
@@ -107,7 +109,10 @@ class PendingWriteLacOp implements WriteLacCallback {
                 return;
             }
         } else {
-            LOG.warn("WriteLac did not succeed: Ledger {} on {}", ledgerId, addr);
+            log.warn()
+                    .ctx(lh.log)
+                    .attr("bookieAddr", addr)
+                    .log("WriteLac did not succeed");
         }
 
         if (receivedResponseSet.isEmpty()){
@@ -115,4 +120,5 @@ class PendingWriteLacOp implements WriteLacCallback {
             cb.addLacComplete(lastSeenError, lh, ctx);
         }
     }
+
 }

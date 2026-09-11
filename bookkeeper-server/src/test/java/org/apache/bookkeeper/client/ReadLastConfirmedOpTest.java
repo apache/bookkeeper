@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
-import org.apache.bookkeeper.proto.DataFormats.LedgerMetadataFormat.DigestType;
+import org.apache.bookkeeper.proto.LedgerMetadataFormat.DigestType;
 import org.apache.bookkeeper.proto.MockBookieClient;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.junit.After;

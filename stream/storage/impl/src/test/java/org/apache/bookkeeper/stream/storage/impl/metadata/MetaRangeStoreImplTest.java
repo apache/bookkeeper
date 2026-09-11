@@ -25,7 +25,6 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.google.common.collect.Lists;
-import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.stream.LongStream;
@@ -56,12 +55,11 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
 
     @Override
     protected void doSetup() throws Exception {
-        this.streamProps = StreamProperties.newBuilder()
+        this.streamProps = new StreamProperties()
             .setStorageContainerId(1234L)
-            .setStreamConf(DEFAULT_STREAM_CONF)
             .setStreamName(name.getMethodName() + "_stream")
-            .setStreamId(System.currentTimeMillis())
-            .build();
+            .setStreamId(System.currentTimeMillis());
+        this.streamProps.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         this.clientManager = mock(StorageServerClientManager.class);
         this.mrStoreImpl = new MetaRangeStoreImpl(
             this.store,
@@ -77,9 +75,8 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
     GetActiveRangesRequest createRequest(StreamProperties streamProperties) {
         when(clientManager.getStreamProperties(eq(this.streamProps.getStreamId())))
             .thenReturn(FutureUtils.value(streamProperties));
-        GetActiveRangesRequest.Builder reqBuilder = GetActiveRangesRequest.newBuilder()
+        return new GetActiveRangesRequest()
             .setStreamId(this.streamProps.getStreamId());
-        return reqBuilder.build();
     }
 
     @Test
@@ -118,7 +115,7 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
                 metaRange.unsafeGetRanges().get(expectedRid);
             assertNotNull(expectedRangeMetadata);
 
-            assertEquals(Collections.emptyList(), actualRR.getRelatedRangesList());
+            assertEquals(0, actualRR.getRelatedRangesCount());
             assertEquals(expectedRangeMetadata.getProps(), actualRR.getProps());
         }
 
@@ -192,7 +189,8 @@ public class MetaRangeStoreImplTest extends MVCCAsyncStoreTestBase {
                                             RangeState expectedRangeState) throws Exception {
         byte[] rangeKey = MetaRangeImpl.getStreamRangeKey(streamId, rangeId);
         byte[] rangeMetadataBytes = FutureUtils.result(store.get(rangeKey));
-        RangeMetadata rangeMetadata = RangeMetadata.parseFrom(rangeMetadataBytes);
+        RangeMetadata rangeMetadata = new RangeMetadata();
+        rangeMetadata.parseFrom(rangeMetadataBytes);
 
         verifyRangeMetadata(
             rangeMetadata,

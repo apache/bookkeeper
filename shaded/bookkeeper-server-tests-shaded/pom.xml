@@ -96,7 +96,6 @@
               <artifactSet>
                 <includes>
                   <include>com.google.guava:guava</include>
-                  <include>com.google.protobuf:protobuf-java</include>
                   <include>org.apache.bookkeeper:bookkeeper-server:test-jar:tests</include>
                 </includes>
               </artifactSet>
@@ -148,6 +147,21 @@
             </fileset>
           </filesets>
         </configuration>
+      </plugin>
+      <plugin>
+        <artifactId>maven-jar-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>javadoc-jar</id>
+            <phase>package</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+            <configuration>
+              <classifier>javadoc</classifier>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

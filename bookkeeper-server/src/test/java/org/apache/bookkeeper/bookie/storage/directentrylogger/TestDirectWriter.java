@@ -25,6 +25,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
 import com.google.common.util.concurrent.MoreExecutors;
+import io.github.merlimat.slog.Logger;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
@@ -38,7 +39,6 @@ import java.util.concurrent.Future;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOException;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
-import org.apache.bookkeeper.slogger.Slogger;
 import org.apache.bookkeeper.test.TmpDirs;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -51,7 +51,7 @@ import org.junit.jupiter.api.condition.OS;
  */
 @DisabledOnOs(OS.WINDOWS)
 public class TestDirectWriter {
-    private static final Slogger slog = Slogger.CONSOLE;
+    private static final Logger LOG = Logger.get(TestDirectWriter.class);
 
     private final TmpDirs tmpDirs = new TmpDirs();
     private final ExecutorService writeExecutor = Executors.newSingleThreadExecutor();
@@ -69,7 +69,7 @@ public class TestDirectWriter {
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
                  LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678),
                          1 << 24, writeExecutor,
-                         buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                         buffers, new NativeIOImpl(), LOG)) {
                 ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
                 TestBuffer.fillByteBuf(bb, 0xdededede);
                 writer.writeAt(1234, bb);
@@ -84,7 +84,7 @@ public class TestDirectWriter {
         Assertions.assertThrows(IllegalArgumentException.class, () -> {
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
                  LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                         buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                         buffers, new NativeIOImpl(), LOG)) {
                 ByteBuf bb = Unpooled.buffer(123);
                 TestBuffer.fillByteBuf(bb, 0xdededede);
                 writer.writeAt(0, bb);
@@ -98,7 +98,7 @@ public class TestDirectWriter {
         File ledgerDir = tmpDirs.createNew("writeAlignment", "logs");
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), LOG)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
             TestBuffer.fillByteBuf(bb, 0xdededede);
             writer.writeAt(Buffer.ALIGNMENT * 2, bb);
@@ -113,7 +113,7 @@ public class TestDirectWriter {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT,
                 Buffer.ALIGNMENT, 1); // only one buffer available, so we can't flush in bg
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), LOG)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT / 2);
             TestBuffer.fillByteBuf(bb, 0xdededede);
             writer.writeDelimited(bb);
@@ -140,7 +140,7 @@ public class TestDirectWriter {
         Assertions.assertThrows(IOException.class, () -> {
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, Buffer.ALIGNMENT, 8);
                  LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                         buffers, io, Slogger.CONSOLE)) {
+                         buffers, io, LOG)) {
                 for (int i = 0; i < 10; i++) {
                     ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT / 2);
                     TestBuffer.fillByteBuf(bb, 0xdededede);
@@ -170,7 +170,7 @@ public class TestDirectWriter {
         Assertions.assertThrows(IOException.class, () -> {
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
                  LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                         buffers, io, Slogger.CONSOLE)) {
+                         buffers, io, LOG)) {
                 ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
                 TestBuffer.fillByteBuf(bb, 0xdededede);
                 writer.writeAt(0, bb);
@@ -184,7 +184,7 @@ public class TestDirectWriter {
         File ledgerDir = tmpDirs.createNew("paddingWrite", "logs");
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(5678, logFilename(ledgerDir, 5678), 1 << 24, writeExecutor,
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), LOG)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
             TestBuffer.fillByteBuf(bb, 0xdededede);
             bb.writerIndex(123);
@@ -213,7 +213,7 @@ public class TestDirectWriter {
             try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
                  LogWriter writer = new DirectWriter(1234, logFilename(ledgerDir, 1234),
                                                      1 << 24, writeExecutor,
-                                                     buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                     buffers, new NativeIOImpl(), LOG)) {
                 CompletableFuture<?> blocker = new CompletableFuture<>();
                 writeExecutor.submit(() ->  {
                         blocker.join();
@@ -254,7 +254,7 @@ public class TestDirectWriter {
             Assertions.assertThrows(IOException.class, () -> {
                 new DirectWriter(1234, logFilename(ledgerDir, 1234),
                         1 << 30, MoreExecutors.newDirectExecutorService(),
-                        buffers, new NativeIOImpl(), Slogger.CONSOLE);
+                        buffers, new NativeIOImpl(), LOG);
             });
         }
     }
@@ -272,7 +272,7 @@ public class TestDirectWriter {
         try (BufferPool buffers = new BufferPool(new NativeIOImpl(), ByteBufAllocator.DEFAULT, 1 << 14, 8);
              LogWriter writer = new DirectWriter(3456, logFilename(ledgerDir, 3456),
                                                  1 << 24, writeExecutor,
-                                                 buffers, nativeIO, Slogger.CONSOLE)) {
+                                                 buffers, nativeIO, LOG)) {
             ByteBuf bb = Unpooled.buffer(Buffer.ALIGNMENT);
             TestBuffer.fillByteBuf(bb, 0xdeadbeef);
 
@@ -296,7 +296,7 @@ public class TestDirectWriter {
              LogWriter writer = new DirectWriter(3456, logFilename(ledgerDir, 3456),
                                                  (long) Integer.MAX_VALUE + (Buffer.ALIGNMENT * 100),
                                                  writeExecutor,
-                                                 buffers, new NativeIOImpl(), Slogger.CONSOLE)) {
+                                                 buffers, new NativeIOImpl(), LOG)) {
             ByteBuf b1 = Unpooled.buffer(Buffer.ALIGNMENT - (Integer.BYTES * 2) - 1);
             TestBuffer.fillByteBuf(b1, 0xdeadbeef);
 
@@ -324,7 +324,7 @@ public class TestDirectWriter {
     static ByteBuf readIntoByteBuf(File directory, int logId) throws Exception {
         byte[] bytes = new byte[1024];
         File file = new File(DirectEntryLogger.logFilename(directory, logId));
-        slog.kv("filename", file.toString()).info("reading in");
+        LOG.info().attr("filename", file.toString()).log("Reading log file");
         ByteBuf byteBuf = Unpooled.buffer((int) file.length());
         try (FileInputStream is = new FileInputStream(file)) {
             int bytesRead = is.read(bytes);

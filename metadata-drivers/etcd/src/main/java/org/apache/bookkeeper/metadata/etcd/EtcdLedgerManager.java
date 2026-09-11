@@ -41,7 +41,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
@@ -60,7 +60,7 @@ import org.apache.zookeeper.AsyncCallback.VoidCallback;
 /**
  * Etcd ledger manager.
  */
-@Slf4j
+@CustomLog
 class EtcdLedgerManager implements LedgerManager {
 
     private final LedgerMetadataSerDe serDe = new LedgerMetadataSerDe();
@@ -97,7 +97,7 @@ class EtcdLedgerManager implements LedgerManager {
                                                                              LedgerMetadata metadata) {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
-        log.info("Create ledger metadata under key {}", ledgerKey);
+        log.info().attr("ledgerKey", ledgerKey).log("Create ledger metadata");
 
         ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
         final ByteSequence valueBs;
@@ -149,12 +149,14 @@ class EtcdLedgerManager implements LedgerManager {
         CompletableFuture<Void> promise = new CompletableFuture<>();
         long revision = -0xabcd;
         if (Version.NEW == version) {
-            log.error("Request to delete ledger {} metadata with version set to the initial one", ledgerId);
+            log.error()
+                    .attr("ledgerId", ledgerId)
+                    .log("Request to delete ledger metadata with version set to the initial one");
             promise.completeExceptionally(new BKException.BKMetadataVersionException());
             return promise;
         } else if (Version.ANY != version) {
             if (!(version instanceof LongVersion)) {
-                log.info("Not an instance of LongVersion : {}", ledgerId);
+                log.info().attr("ledgerId", ledgerId).log("Not an instance of LongVersion");
                 promise.completeExceptionally(new BKException.BKMetadataVersionException());
                 return promise;
             } else {
@@ -197,7 +199,10 @@ class EtcdLedgerManager implements LedgerManager {
                         // fail to delete the ledger
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else {
-                        log.warn("Deleting ledger {} failed due to : ledger key {} doesn't exist", ledgerId, ledgerKey);
+                        log.warn()
+                                .attr("ledgerId", ledgerId)
+                                .attr("ledgerKey", ledgerKey)
+                                .log("Deleting ledger failed: ledger key doesn't exist");
                         promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
                     }
                 }
@@ -214,7 +219,7 @@ class EtcdLedgerManager implements LedgerManager {
         CompletableFuture<Versioned<LedgerMetadata>> promise = new CompletableFuture<>();
         String ledgerKey = EtcdUtils.getLedgerKey(scope, ledgerId);
         ByteSequence ledgerKeyBs = ByteSequence.from(ledgerKey, StandardCharsets.UTF_8);
-        log.info("read ledger metadata under key {}", ledgerKey);
+        log.info().attr("ledgerKey", ledgerKey).log("read ledger metadata");
         kvClient.get(ledgerKeyBs)
             .thenAccept(getResp -> {
                 if (getResp.getCount() > 0) {
@@ -224,7 +229,10 @@ class EtcdLedgerManager implements LedgerManager {
                         LedgerMetadata metadata = serDe.parseConfig(data, ledgerId, Optional.empty());
                         promise.complete(new Versioned<>(metadata, new LongVersion(kv.getModRevision())));
                     } catch (IOException ioe) {
-                        log.error("Could not parse ledger metadata for ledger : {}", ledgerId, ioe);
+                        log.error()
+                                .attr("ledgerId", ledgerId)
+                                .exception(ioe)
+                                .log("Could not parse ledger metadata for ledger");
                         promise.completeExceptionally(new BKException.MetaStoreException());
                         return;
                     }
@@ -278,9 +286,10 @@ class EtcdLedgerManager implements LedgerManager {
                 } else {
                     GetResponse getResp = resp.getGetResponses().get(0);
                     if (getResp.getCount() > 0) {
-                        log.warn("Conditional update ledger metadata failed :"
-                            + " expected version = {}, actual version = {}",
-                            getResp.getKvs().get(0).getModRevision(), lv);
+                        log.warn()
+                                .attr("expectedVersion", getResp.getKvs().get(0).getModRevision())
+                                .attr("actualVersion", lv)
+                                .log("Conditional update ledger metadata failed");
                         promise.completeExceptionally(new BKException.BKMetadataVersionException());
                     } else {
                         promise.completeExceptionally(new BKException.BKNoSuchLedgerExistsException());
@@ -322,8 +331,10 @@ class EtcdLedgerManager implements LedgerManager {
                                         Optional.empty()
                                 );
                             } catch (IOException ioe) {
-                                log.error("Could not parse ledger metadata : {}",
-                                        bs.toString(StandardCharsets.UTF_8), ioe);
+                                log.error()
+                                        .attr("metadata", bs.toString(StandardCharsets.UTF_8))
+                                        .exception(ioe)
+                                        .log("Could not parse ledger metadata");
                                 throw new RuntimeException(
                                         "Could not parse ledger metadata : "
                                                 + bs.toString(StandardCharsets.UTF_8), ioe);
@@ -334,7 +345,7 @@ class EtcdLedgerManager implements LedgerManager {
         LedgerMetadataConsumer lmConsumer = listenerToConsumer(ledgerId, listener,
             (lid) -> {
                 if (watchers.remove(lid, lmStream)) {
-                    log.info("Closed ledger metadata watcher on ledger {} deletion.", lid);
+                    log.info().attr("ledgerId", lid).log("Closed ledger metadata watcher on ledger deletion");
                     lmStream.closeAsync();
                 }
             });
@@ -366,8 +377,9 @@ class EtcdLedgerManager implements LedgerManager {
             lmStream.unwatch(lmConsumer).thenAccept(noConsumers -> {
                 if (noConsumers) {
                     if (watchers.remove(ledgerId, lmStream)) {
-                        log.info("Closed ledger metadata watcher on ledger {} since there are no listeners any more.",
-                            ledgerId);
+                        log.info()
+                                .attr("ledgerId", ledgerId)
+                                .log("Closed ledger metadata watcher since there are no listeners any more");
                         lmStream.closeAsync();
                     }
                 }

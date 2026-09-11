@@ -21,18 +21,19 @@
 
 package org.apache.bookkeeper.proto;
 
-import com.google.common.base.Joiner;
+import io.github.merlimat.slog.Event;
 import io.netty.channel.Channel;
 import java.util.Map;
+import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.stats.OpStatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
+@CustomLog
 abstract class CompletionValue {
     private final String operationName;
     protected Object ctx;
@@ -43,18 +44,26 @@ abstract class CompletionValue {
     protected OpStatsLogger timeoutOpLogger;
     protected Map<String, String> mdcContextMap;
     protected PerChannelBookieClient perChannelBookieClient;
-
-    static final Logger LOG = LoggerFactory.getLogger(CompletionValue.class);
+    /** Executor running the callback; {@code null} means the worker thread selected by ledger id. */
+    protected Executor callbackExecutor;
 
     public CompletionValue(String operationName,
                            Object ctx,
                            long ledgerId, long entryId, PerChannelBookieClient perChannelBookieClient) {
+        this(operationName, ctx, ledgerId, entryId, perChannelBookieClient, null);
+    }
+
+    public CompletionValue(String operationName,
+                           Object ctx,
+                           long ledgerId, long entryId, PerChannelBookieClient perChannelBookieClient,
+                           Executor callbackExecutor) {
         this.operationName = operationName;
         this.ctx = ctx;
         this.ledgerId = ledgerId;
         this.entryId = entryId;
         this.startTime = MathUtils.nowInNano();
         this.perChannelBookieClient = perChannelBookieClient;
+        this.callbackExecutor = callbackExecutor;
         if (perChannelBookieClient != null) {
             this.mdcContextMap = perChannelBookieClient.preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
         }
@@ -91,20 +100,26 @@ abstract class CompletionValue {
                 TimeUnit.NANOSECONDS);
         errorOut(BKException.Code.TimeoutException);
     }
-
-    protected void logResponse(BookkeeperProtocol.StatusCode status, Object... extraInfo) {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Got {} response from bookie:{} rc:{}, {}", operationName,
-                    perChannelBookieClient.bookieId, status, Joiner.on(":").join(extraInfo));
-        }
+    protected Event logEvent(StatusCode status) {
+        return log.debug()
+                .attr("operation", operationName)
+                .attr("bookieId", perChannelBookieClient.bookieId)
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .attr("status", status);
     }
 
-    protected int convertStatus(BookkeeperProtocol.StatusCode status, int defaultStatus) {
+    protected int convertStatus(StatusCode status, int defaultStatus) {
         // convert to BKException code
         int rcToRet = statusCodeToExceptionCode(status);
         if (rcToRet == BKException.Code.UNINITIALIZED) {
-            LOG.error("{} for failed on bookie {} code {}",
-                    operationName, perChannelBookieClient.bookieId, status);
+            log.error()
+                    .attr("operation", operationName)
+                    .attr("bookieId", perChannelBookieClient.bookieId)
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("statusCode", status)
+                    .log("Operation failed on bookie");
             return defaultStatus;
         } else {
             return rcToRet;
@@ -115,7 +130,7 @@ abstract class CompletionValue {
      * @param status
      * @return {@link BKException.Code.UNINITIALIZED} if the statuscode is unknown.
      */
-    private int statusCodeToExceptionCode(BookkeeperProtocol.StatusCode status) {
+    private int statusCodeToExceptionCode(StatusCode status) {
         switch (status) {
             case EOK:
                 return BKException.Code.OK;
@@ -150,30 +165,38 @@ abstract class CompletionValue {
         // no-op
     }
 
+    /**
+     * Runs {@code r} on the thread owning the callbacks of this operation: the caller-supplied executor when
+     * present, otherwise the worker thread selected by ledger id.
+     */
+    void executeOrdered(Runnable r) {
+        PerChannelBookieClient.executeOrdered(perChannelBookieClient.executor, callbackExecutor, ledgerId, r);
+    }
+
     protected void errorOutAndRunCallback(final Runnable callback) {
-        perChannelBookieClient.executor.executeOrdered(ledgerId, () -> {
+        executeOrdered(() -> {
             String bAddress = "null";
             Channel c = perChannelBookieClient.channel;
             if (c != null && c.remoteAddress() != null) {
                 bAddress = c.remoteAddress().toString();
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Could not write {} request to bookie {} for ledger {}, entry {}",
-                        operationName, bAddress,
-                        ledgerId, entryId);
-            }
+            log.debug()
+                    .attr("operation", operationName)
+                    .attr("bookieAddress", bAddress)
+                    .attr("ledgerId", ledgerId).attr("entryId", entryId)
+                    .log("Could not write request to bookie");
             callback.run();
         });
     }
 
     public void handleV2Response(
-            long ledgerId, long entryId, BookkeeperProtocol.StatusCode status,
+            long ledgerId, long entryId, StatusCode status,
             BookieProtocol.Response response) {
-        LOG.warn("Unhandled V2 response {}", response);
+        log.warn().attr("response", response).log("Unhandled V2 response");
     }
 
     public abstract void handleV3Response(
-            BookkeeperProtocol.Response response);
+            Response response);
 
     public void release() {}
 }

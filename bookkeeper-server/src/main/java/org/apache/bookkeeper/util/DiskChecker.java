@@ -26,15 +26,13 @@ import java.nio.file.Files;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Class that provides utility functions for checking disk problems.
  */
+@CustomLog
 public class DiskChecker {
-
-    private static final Logger LOG = LoggerFactory.getLogger(DiskChecker.class);
 
     private float diskUsageThreshold;
     private float diskUsageWarnThreshold;
@@ -151,15 +149,21 @@ public class DiskChecker {
             float free = (float) usableSpace / (float) totalSpace;
             float used = 1f - free;
             if (used > diskUsageThreshold) {
-                LOG.error("Space left on device {} : {}, Used space fraction: {} > threshold {}.",
-                        dir, usableSpace, used, diskUsageThreshold);
+                log.error()
+                        .attr("directory", dir)
+                        .attr("usableSpace", usableSpace)
+                        .attr("used", used).attr("threshold", diskUsageThreshold)
+                        .log("Space left on device exceeds threshold");
                 throw new DiskOutOfSpaceException("Space left on device "
                         + usableSpace + " Used space fraction:" + used + " > threshold " + diskUsageThreshold, used);
             }
             // Warn should be triggered only if disk usage threshold doesn't trigger first.
             if (used > diskUsageWarnThreshold) {
-                LOG.warn("Space left on device {} : {}, Used space fraction: {} > WarnThreshold {}.",
-                        dir, usableSpace, used, diskUsageWarnThreshold);
+                log.warn()
+                        .attr("directory", dir)
+                        .attr("usableSpace", usableSpace)
+                        .attr("used", used).attr("warnThreshold", diskUsageWarnThreshold)
+                        .log("Space left on device exceeds warn threshold");
                 throw new DiskWarnThresholdException("Space left on device:"
                         + usableSpace + " Used space fraction:" + used + " > WarnThreshold:" + diskUsageWarnThreshold,
                         used);

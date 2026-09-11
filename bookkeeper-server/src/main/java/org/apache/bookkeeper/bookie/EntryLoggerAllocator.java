@@ -44,14 +44,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 
 /**
  * An allocator pre-allocates entry log files.
  */
-@Slf4j
+@CustomLog
 class EntryLoggerAllocator {
 
     private long preallocatedLogId;
@@ -174,8 +174,8 @@ class EntryLoggerAllocator {
             for (File dir : ledgersDirs) {
                 testLogFile = new File(dir, logFileName);
                 if (testLogFile.exists()) {
-                    log.warn("Found existed entry log " + testLogFile
-                           + " when trying to create it as a new log.");
+                    log.warn().attr("file", testLogFile)
+                        .log("Found existing entry log when trying to create it as a new log.");
                     testLogFile = null;
                     break;
                 }
@@ -198,7 +198,10 @@ class EntryLoggerAllocator {
             recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
         }
 
-        log.info("Created new entry log file {} for logId {}.", newLogFile, preallocatedLogId);
+        log.info()
+                .attr("file", newLogFile)
+                .attr("logId", preallocatedLogId)
+                .log("Created new entry log file");
         return logChannel;
     }
 
@@ -237,7 +240,7 @@ class EntryLoggerAllocator {
             try {
                 bw.close();
             } catch (IOException e) {
-                log.error("Could not close lastId file in {}", dir.getPath());
+                log.error().attr("path", dir.getPath()).log("Could not close lastId file");
             }
         }
     }

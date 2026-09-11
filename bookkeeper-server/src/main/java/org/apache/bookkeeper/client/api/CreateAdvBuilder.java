@@ -42,4 +42,18 @@ public interface CreateAdvBuilder extends OpBuilder<WriteAdvHandle> {
      * @return the builder itself
      */
     CreateAdvBuilder withLedgerId(long ledgerId);
+
+    /**
+     * Set the key used to select the client worker thread on which every callback of the resulting
+     * {@link WriteAdvHandle} runs. By default the thread is selected by ledger id.
+     *
+     * @param orderingKey the ordering key; {@code null} (the default) selects the thread by ledger id
+     *
+     * @return the builder itself
+     *
+     * @see CreateBuilder#withOrderingKey(Object)
+     */
+    default CreateAdvBuilder withOrderingKey(Object orderingKey) {
+        return this;
+    }
 }

@@ -19,19 +19,18 @@ package org.apache.bookkeeper.util;
 
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MdcUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 
 /**
  * Generic callback implementation which will run the
  * callback in the thread which matches the ordering key.
  */
+@CustomLog
 public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
-    private static final Logger LOG = LoggerFactory.getLogger(OrderedGenericCallback.class);
 
     private final OrderedExecutor executor;
     private final long orderingKey;
@@ -74,7 +73,10 @@ public abstract class OrderedGenericCallback<T> implements GenericCallback<T> {
                         }
                     });
                 } catch (RejectedExecutionException re) {
-                    LOG.warn("Failed to submit callback for {} : ", orderingKey, re);
+                    log.warn()
+                            .attr("orderingKey", orderingKey)
+                            .exception(re)
+                            .log("Failed to submit callback");
                 }
             }
         } finally {

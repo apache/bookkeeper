@@ -34,6 +34,7 @@ import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.clients.SimpleClientBase;
 import org.apache.bookkeeper.clients.SimpleStorageClientImpl;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
+import org.apache.bookkeeper.clients.grpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.clients.utils.ClientResources;
 import org.apache.bookkeeper.clients.utils.GrpcUtils;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -43,8 +44,6 @@ import org.apache.bookkeeper.stream.proto.NamespaceConfiguration;
 import org.apache.bookkeeper.stream.proto.NamespaceProperties;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
 import org.apache.bookkeeper.stream.proto.StreamProperties;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc;
-import org.apache.bookkeeper.stream.proto.storage.RootRangeServiceGrpc.RootRangeServiceFutureStub;
 import org.apache.bookkeeper.stream.proto.storage.StatusCode;
 
 /**
@@ -66,7 +65,7 @@ public class SimpleStorageAdminClientImpl extends SimpleClientBase implements St
                                         Resource<OrderedScheduler> schedulerResource) {
         super(settings, schedulerResource);
         this.rootRangeService = GrpcUtils.configureGrpcStub(
-            RootRangeServiceGrpc.newFutureStub(channel),
+            RootRangeServiceFutureStub.newFutureStub(channel),
             Optional.empty());
     }
 

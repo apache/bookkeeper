@@ -22,7 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.StorageClient;
 import org.apache.bookkeeper.api.exceptions.ApiException;
 import org.apache.bookkeeper.api.kv.PTable;
@@ -44,7 +44,7 @@ import org.apache.bookkeeper.stream.proto.StreamProperties;
 /**
  * The implementation of {@link StorageClient} client.
  */
-@Slf4j
+@CustomLog
 public class StorageClientImpl extends AbstractAutoAsyncCloseable implements StorageClient {
 
     private static final String COMPONENT_NAME = StorageClientImpl.class.getSimpleName();
@@ -122,9 +122,11 @@ public class StorageClientImpl extends AbstractAutoAsyncCloseable implements Sto
                                CompletableFuture<PTable<ByteBuf, ByteBuf>> future) {
         FutureUtils.proxyTo(
             getStreamProperties(namespaceName, tableName).thenComposeAsync(props -> {
-                if (log.isInfoEnabled()) {
-                    log.info("Retrieved table properties for table {}/{} : {}", namespaceName, tableName, props);
-                }
+                log.info()
+                    .attr("namespace", namespaceName)
+                    .attr("tableName", tableName)
+                    .attr("props", props)
+                    .log("Retrieved table properties for table");
                 if (StorageType.TABLE != props.getStreamConf().getStorageType()) {
                     return FutureUtils.exception(new ApiException(
                         "Can't open a non-table storage entity : " + props.getStreamConf().getStorageType())
@@ -167,7 +169,7 @@ public class StorageClientImpl extends AbstractAutoAsyncCloseable implements Sto
         try {
             super.close(1, TimeUnit.SECONDS);
         } catch (Exception e) {
-            log.warn("Encountered exceptions on closing the storage client", e);
+            log.warn().exception(e).log("Encountered exceptions on closing the storage client");
         }
         scheduler.forceShutdown(100, TimeUnit.MILLISECONDS);
     }

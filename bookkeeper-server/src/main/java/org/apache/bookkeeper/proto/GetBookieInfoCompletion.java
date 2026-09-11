@@ -64,17 +64,18 @@ class GetBookieInfoCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.GetBookieInfoResponse getBookieInfoResponse = response.getGetBookieInfoResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+    public void handleV3Response(Response response) {
+        GetBookieInfoResponse getBookieInfoResponse = response.getGetBookieInfoResponse();
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? getBookieInfoResponse.getStatus() : response.getStatus();
 
         long freeDiskSpace = getBookieInfoResponse.getFreeDiskSpace();
         long totalDiskSpace = getBookieInfoResponse.getTotalDiskCapacity();
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "freeDisk", freeDiskSpace, "totalDisk", totalDiskSpace);
-        }
+        logEvent(status)
+                .attr("totalDiskSpace", totalDiskSpace)
+                .attr("freeDiskSpace", freeDiskSpace)
+                .log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
         cb.getBookieInfoComplete(rc,

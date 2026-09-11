@@ -40,6 +40,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -62,11 +63,6 @@ import org.apache.zookeeper.Transaction;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * A Federated ZooKeeper Based Log Metadata Store.
@@ -78,11 +74,10 @@ import org.slf4j.LoggerFactory;
  * <p>NOTE: current federated namespace isn't optimized for deletion/creation. so don't use it in the workloads
  *       that have lots of creations or deletions.</p>
  */
+@CustomLog
 public class FederatedZKLogMetadataStore
         extends NamespaceWatcher
         implements LogMetadataStore, Watcher, Runnable, FutureEventListener<Set<URI>> {
-
-    private static final Logger logger = LoggerFactory.getLogger(FederatedZKLogMetadataStore.class);
 
     private static final  String ZNODE_SUB_NAMESPACES = ".subnamespaces";
     private static final  String SUB_NAMESPACE_PREFIX = "NS_";
@@ -139,8 +134,10 @@ public class FederatedZKLogMetadataStore
                     try {
                         oldLogs = FutureUtils.result(logsFuture);
                     } catch (Exception e) {
-                        logger.error("Unexpected exception when getting logs from a satisfied future of {} : ",
-                                uri, e);
+                        log.error()
+                                .attr("uri", uri)
+                                .exception(e)
+                                .log("Unexpected exception when getting logs from a satisfied future");
                     }
                     logsFuture = new CompletableFuture<Set<String>>();
                 }
@@ -149,8 +146,11 @@ public class FederatedZKLogMetadataStore
                 for (String logName : newLogs) {
                     URI oldURI = log2Locations.putIfAbsent(logName, uri);
                     if (null != oldURI && !Objects.equal(uri, oldURI)) {
-                        logger.error("Log {} is found duplicated in multiple locations : old location = {},"
-                                + " new location = {}", logName, oldURI, uri);
+                        log.error()
+                                .attr("logName", logName)
+                                .attr("oldURI", oldURI)
+                                .attr("uri", uri)
+                                .log("Log is found duplicated in multiple locations");
                         duplicatedLogFound.set(true);
                     }
                 }
@@ -216,23 +216,24 @@ public class FederatedZKLogMetadataStore
             SubNamespace subNs = new SubNamespace(uri);
             if (null == subNamespaces.putIfAbsent(uri, subNs)) {
                 subNs.watch();
-                logger.info("Watched sub namespace {}", uri);
+                log.info().attr("uri", uri).log("Watched sub namespace");
             }
         }
 
-        logger.info("Federated ZK LogMetadataStore is initialized for {}", namespace);
+        log.info().attr("namespace", namespace).log("Federated ZK LogMetadataStore is initialized");
     }
 
     private void scheduleTask(Runnable r, long ms) {
         if (duplicatedLogFound.get()) {
-            logger.error("Scheduler is halted for federated namespace {} as duplicated log found",
-                    namespace);
+            log.error()
+                .attr("namespace", namespace)
+                .log("Scheduler is halted for federated namespace as duplicated log found");
             return;
         }
         try {
             scheduler.schedule(r, ms, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException ree) {
-            logger.error("Task {} scheduled in {} ms is rejected : ", r, ms, ree);
+            log.error().attr("task", r).attr("delayMs", ms).exception(ree).log("Task scheduling rejected");
         }
     }
 
@@ -327,7 +328,7 @@ public class FederatedZKLogMetadataStore
                                         subnamespaces.add(getSubNamespaceURI(ns));
                                     }
                                 } catch (URISyntaxException use) {
-                                    logger.error("Invalid sub namespace uri found : ", use);
+                                    log.error().exception(use).log("Invalid sub namespace uri found");
                                     promise.completeExceptionally(new UnexpectedException(
                                             "Invalid sub namespace uri found in " + namespace, use));
                                     return;
@@ -360,7 +361,7 @@ public class FederatedZKLogMetadataStore
             SubNamespace subNs = new SubNamespace(uri);
             if (null == subNamespaces.putIfAbsent(uri, subNs)) {
                 subNs.watch();
-                logger.info("Watched new sub namespace {}.", uri);
+                log.info().attr("uri", uri).log("Watched new sub namespace.");
                 notifyOnNamespaceChanges();
             }
         }
@@ -523,7 +524,7 @@ public class FederatedZKLogMetadataStore
                             if (Code.OK.intValue() == rc) {
                                 try {
                                     URI newUri = getSubNamespaceURI(getNamespaceFromZkPath(name));
-                                    logger.info("Created sub namespace {}", newUri);
+                                    log.info().attr("newUri", newUri).log("Created sub namespace");
                                     promise.complete(newUri);
                                 } catch (UnexpectedException ue) {
                                     promise.completeExceptionally(ue);
@@ -667,8 +668,11 @@ public class FederatedZKLogMetadataStore
                 for (Optional<URI> fetchResult : fetchResults) {
                     if (result.isPresent()) {
                         if (fetchResult.isPresent()) {
-                            logger.error("Log {} is found in multiple sub namespaces : {} & {}.",
-                                logName, result.get(), fetchResult.get());
+                            log.error()
+                                    .attr("logName", logName)
+                                    .attr("existingUri", result.get())
+                                    .attr("duplicateUri", fetchResult.get())
+                                    .log("Log is found in multiple sub namespaces");
                             duplicatedLogName.compareAndSet(null, logName);
                             duplicatedLogFound.set(true);
                             fetchPromise.completeExceptionally(new UnexpectedException("Log " + logName

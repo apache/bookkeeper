@@ -33,22 +33,21 @@ import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A utility class to check the complete ledger and finds the UnderReplicated fragments if any.
  *
  * <p>NOTE: This class is tended to be used by this project only. External users should not rely on it directly.
  */
+@CustomLog
 public class LedgerChecker {
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerChecker.class);
 
     public final BookieClient bookieClient;
     public final BookieWatcher bookieWatcher;
@@ -87,9 +86,14 @@ public class LedgerChecker {
                     cb.operationComplete(rc, fragment);
                 }
             } else if (!completed.getAndSet(true)) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Read {}:{} from {} failed, the error code: {}", ledgerId, entryId, ctx, rc);
-                }
+
+                log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .attr("ctx", ctx)
+                .attr("returnCode", rc)
+                .log("Read failed");
+
                 cb.operationComplete(rc, fragment);
             }
         }
@@ -455,7 +459,10 @@ public class LedgerChecker {
                         bookieClient.readEntry(addr, lh.getId(), entryToRead,
                                 eecb, null, BookieProtocol.FLAG_NONE);
                     } catch (InterruptedException e) {
-                        LOG.error("InterruptedException when checking entry : {}", entryToRead, e);
+                        log.error()
+                                .exception(e)
+                                .attr("entryId", entryToRead)
+                                .log("InterruptedException when checking entry");
                     }
                 }
                 return;
@@ -478,19 +485,25 @@ public class LedgerChecker {
         FullLedgerCallback allFragmentsCb = new FullLedgerCallback(fragments
                 .size(), cb);
         for (LedgerFragment r : fragments) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Checking fragment {}", r);
-            }
+
+            log.debug().attr("ledgerFragment", r).log("Checking fragment");
+
             try {
                 verifyLedgerFragment(r, allFragmentsCb, percentageOfLedgerFragmentToBeVerified);
             } catch (InvalidFragmentException ife) {
-                LOG.error("Invalid fragment found : {}", r);
+                log.error().attr("ledgerFragment", r).log("Invalid fragment found");
                 allFragmentsCb.operationComplete(
                         BKException.Code.IncorrectParameterException, r);
             } catch (BKException e) {
-                LOG.error("BKException when checking fragment : {}", r, e);
+                log.error()
+                        .exception(e)
+                        .attr("ledgerFragment", r)
+                        .log("BKException when checking fragment");
             } catch (InterruptedException e) {
-                LOG.error("InterruptedException when checking fragment : {}", r, e);
+                log.error()
+                        .exception(e)
+                        .attr("ledgerFragment", r)
+                        .log("InterruptedException when checking fragment");
             }
         }
     }

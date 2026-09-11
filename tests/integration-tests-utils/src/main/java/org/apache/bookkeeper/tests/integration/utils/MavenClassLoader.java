@@ -48,7 +48,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPInputStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.commons.compress.archivers.ArchiveStreamFactory;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -65,7 +65,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.coordinate.MavenDependency;
 /**
  * A maven class loader for resolving and loading maven artifacts.
  */
-@Slf4j
+@CustomLog
 public class MavenClassLoader implements AutoCloseable {
     private static ScheduledExecutorService delayedCloseExecutor = createExecutorThatShutsDownIdleThreads();
 
@@ -116,7 +116,7 @@ public class MavenClassLoader implements AutoCloseable {
         List<MavenDependency> deps = Lists.newArrayList(
                 dependency);
         // use newer zookeeper version in all cases
-        deps.add(MavenDependencies.createDependency("org.apache.zookeeper:zookeeper:3.9.3",
+        deps.add(MavenDependencies.createDependency("org.apache.zookeeper:zookeeper:3.9.5",
                 ScopeType.COMPILE, false));
         if (slf4jVersion.isPresent()) {
             deps.add(MavenDependencies.createDependency("org.slf4j:slf4j-simple:" + slf4jVersion.get(),
@@ -337,7 +337,7 @@ public class MavenClassLoader implements AutoCloseable {
                 try {
                     ((Closeable) classloader).close();
                 } catch (Exception e) {
-                    log.error("Failed to close classloader", e);
+                    log.error().exception(e).log("Failed to close classloader");
                 }
             }, 5, TimeUnit.SECONDS);
         }

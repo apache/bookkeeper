@@ -40,6 +40,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.util.IOUtils;
@@ -68,17 +69,12 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.thrift.AccessControlEntry;
 import org.apache.distributedlog.tools.DistributedLogTool;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Admin Tool for DistributedLog.
  */
+@CustomLog
 public class DistributedLogAdmin extends DistributedLogTool {
-
-    static final Logger LOG = LoggerFactory.getLogger(DistributedLogAdmin.class);
 
     /**
      * Fix inprogress segment with lower ledger sequence number.
@@ -109,7 +105,7 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     System.out.println(segment.getLogSegmentSequenceNumber() + "\t: " + segment);
                 }
             }
-            LOG.info("Get log segments for {} : {}", streamName, segments);
+            log.info().attr("streamName", streamName).attr("segments", segments).log("Get log segments");
             // validate log segments
             long maxCompletedLogSegmentSequenceNumber = -1L;
             LogSegmentMetadata inprogressSegment = null;
@@ -138,7 +134,11 @@ public class DistributedLogAdmin extends DistributedLogTool {
             final LogSegmentMetadata newSegment =
                     FutureUtils.result(metadataUpdater.changeSequenceNumber(inprogressSegment,
                             newLogSegmentSequenceNumber));
-            LOG.info("Fixed {} : {} -> {} ", streamName, inprogressSegment, newSegment);
+            log.info()
+                .attr("streamName", streamName)
+                .attr("inprogressSegment", inprogressSegment)
+                .attr("newSegment", newSegment)
+                .log("Fixed");
             if (verbose) {
                 System.out.println("Fixed " + streamName + " : " + inprogressSegment.getZNodeName()
                                    + " -> " + newSegment.getZNodeName());
@@ -275,11 +275,11 @@ public class DistributedLogAdmin extends DistributedLogTool {
                     }
                     StreamCandidate candidate;
                     try {
-                        LOG.info("Checking stream {}.", stream);
+                        log.info().attr("stream", stream).log("Checking stream.");
                         candidate = checkStream(namespace, stream, scheduler);
-                        LOG.info("Checked stream {} - {}.", stream, candidate);
+                        log.info().attr("stream", stream).attr("candidate", candidate).log("Checked stream -.");
                     } catch (Throwable e) {
-                        LOG.error("Error on checking stream {} : ", stream, e);
+                        log.error().attr("stream", stream).exception(e).log("Error on checking stream");
                         doneLatch.countDown();
                         break;
                     }

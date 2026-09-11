@@ -57,9 +57,9 @@ public class TestRootRangeClientDeleteNamespaceRpc extends RootRangeClientImplTe
             @Override
             public void deleteNamespace(DeleteNamespaceRequest request,
                                         StreamObserver<DeleteNamespaceResponse> responseObserver) {
-                responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .build());
+                DeleteNamespaceResponse resp = new DeleteNamespaceResponse();
+                resp.setCode(StatusCode.SUCCESS);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };
@@ -76,9 +76,9 @@ public class TestRootRangeClientDeleteNamespaceRpc extends RootRangeClientImplTe
             @Override
             public void deleteNamespace(DeleteNamespaceRequest request,
                                         StreamObserver<DeleteNamespaceResponse> responseObserver) {
-                responseObserver.onNext(DeleteNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-                    .build());
+                DeleteNamespaceResponse resp = new DeleteNamespaceResponse();
+                resp.setCode(StatusCode.NAMESPACE_NOT_FOUND);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

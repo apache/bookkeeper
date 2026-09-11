@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
@@ -38,14 +39,12 @@ import org.apache.distributedlog.impl.logsegment.BKLogSegmentEntryReader;
 import org.apache.distributedlog.util.FailpointUtils;
 import org.apache.distributedlog.util.Utils;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Test Cases for RollLogSegments.
  */
+@CustomLog
 public class TestRollLogSegments extends TestDistributedLogBase {
-    private static final Logger logger = LoggerFactory.getLogger(TestRollLogSegments.class);
 
     private static void ensureOnlyOneInprogressLogSegments(List<LogSegmentMetadata> segments) throws Exception {
         int numInprogress = 0;
@@ -85,7 +84,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
                 @Override
                 public void onSuccess(DLSN value) {
-                    logger.info("Completed entry {} : {}.", entryId, value);
+                    log.info().attr("entryId", entryId).attr("dlsn", value).log("Completed entry");
                     latch.countDown();
                 }
 
@@ -133,7 +132,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
                 @Override
                 public void onSuccess(DLSN value) {
-                    logger.info("Completed entry {} : {}.", entryId, value);
+                    log.info().attr("entryId", entryId).attr("dlsn", value).log("Completed entry");
                     synchronized (lastDLSNs) {
                         DLSN lastDLSN = lastDLSNs.get(value.getLogSegmentSequenceNo());
                         if (null == lastDLSN || lastDLSN.compareTo(value) < 0) {
@@ -159,8 +158,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         writer.closeAndComplete();
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
-        logger.info("lastDLSNs after writes {} {}", lastDLSNs.size(), lastDLSNs);
-        logger.info("segments after writes {} {}", segments.size(), segments);
+        log.info().attr("size", lastDLSNs.size()).attr("lastDLSNs", lastDLSNs).log("lastDLSNs after writes");
+        log.info().attr("size", segments.size()).attr("segments", segments).log("segments after writes");
         assertTrue(segments.size() >= 2);
         assertTrue(lastDLSNs.size() >= 2);
         assertEquals(lastDLSNs.size(), segments.size());
@@ -170,8 +169,8 @@ public class TestRollLogSegments extends TestDistributedLogBase {
             assertNotNull(dlsnInMetadata);
             assertNotNull(dlsnSeen);
             if (dlsnInMetadata.compareTo(dlsnSeen) != 0) {
-                logger.error("Last dlsn recorded in log segment {} is different from the one already seen {}.",
-                             dlsnInMetadata, dlsnSeen);
+                log.error().attr("dlsnInMetadata", dlsnInMetadata).attr("dlsnSeen", dlsnSeen)
+                        .log("Last dlsn recorded in log segment differs from the one already seen");
             }
             assertEquals(0, dlsnInMetadata.compareTo(dlsnSeen));
         }
@@ -208,12 +207,12 @@ public class TestRollLogSegments extends TestDistributedLogBase {
                 writer.write(DLMTestUtil.getLogRecordInstance(++txId)).whenComplete(new FutureEventListener<DLSN>() {
                     @Override
                     public void onSuccess(DLSN value) {
-                        logger.info("Completed entry : {}.", value);
+                        log.info().attr("entry", value).log("Completed entry");
                         latch.countDown();
                     }
                     @Override
                     public void onFailure(Throwable cause) {
-                        logger.error("Failed to write entries : ", cause);
+                        log.error().exception(cause).log("Failed to write entries");
                     }
                 });
             }
@@ -223,7 +222,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
             writer.close();
 
             List<LogSegmentMetadata> segments = dlm.getLogSegments();
-            logger.info("LogSegments: {}", segments);
+            log.info().attr("segments", segments).log("LogSegments");
 
             assertEquals(1, segments.size());
 
@@ -250,7 +249,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
 
     @Test(timeout = 60000)
     public void testRollingLogSegments() throws Exception {
-        logger.info("start testRollingLogSegments");
+        log.info("start testRollingLogSegments");
         String name = "distrlog-rolling-logsegments-hightraffic";
         DistributedLogConfiguration confLocal = new DistributedLogConfiguration();
         confLocal.loadConf(conf);
@@ -274,12 +273,12 @@ public class TestRollLogSegments extends TestDistributedLogBase {
                     .whenComplete(new FutureEventListener<DLSN>() {
                 @Override
                 public void onSuccess(DLSN value) {
-                    logger.info("Completed entry {} : {}.", entryId, value);
+                    log.info().attr("entryId", entryId).attr("dlsn", value).log("Completed entry");
                     latch.countDown();
                 }
                 @Override
                 public void onFailure(Throwable cause) {
-                    logger.error("Failed to write entries", cause);
+                    log.error().exception(cause).log("Failed to write entries");
                 }
             });
             if (i == 1) {
@@ -289,11 +288,11 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         }
         latch.await();
 
-        logger.info("Took {} ms to completed all requests.", System.currentTimeMillis() - startTime);
+        log.info().attr("elapsedMs", System.currentTimeMillis() - startTime).log("Took ms to complete all requests");
 
         List<LogSegmentMetadata> segments = dlm.getLogSegments();
-        logger.info("LogSegments : {}", segments);
-        logger.info("LogSegments size: {}", segments.size());
+        log.info().attr("segments", segments).log("LogSegments");
+        log.info().attr("size", segments.size()).log("LogSegments size");
 
         assertTrue(segments.size() >= 2);
         ensureOnlyOneInprogressLogSegments(segments);
@@ -304,12 +303,12 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         // there would be (numLogSegments/2) segments based on current rolling policy
         for (int i = 1; i <= numLogSegments; i++) {
             DLSN newDLSN = Utils.ioResult(writer.write(DLMTestUtil.getLogRecordInstance(numLogSegments + i)));
-            logger.info("Completed entry {} : {}", numLogSegments + i, newDLSN);
+            log.info().attr("entryId", numLogSegments + i).attr("dlsn", newDLSN).log("Completed entry");
         }
 
         segments = dlm.getLogSegments();
-        logger.info("LogSegments : {}", segments);
-        logger.info("LogSegments size: {}", segments.size());
+        log.info().attr("segments", segments).log("LogSegments");
+        log.info().attr("size", segments.size()).log("LogSegments size");
 
         assertEquals(numSegmentsAfterAsyncWrites + numLogSegments / 2, segments.size());
         ensureOnlyOneInprogressLogSegments(segments);
@@ -327,11 +326,11 @@ public class TestRollLogSegments extends TestDistributedLogBase {
         assertEquals(expectedWriterPosition, getLedgerHandle(writer).getLastAddConfirmed());
         assertEquals(expectedLac, inspector.readLastConfirmed());
         EntryPosition readPosition = reader.getReadAheadReader().getNextEntryPosition();
-        logger.info("ReadAhead moved read position {} : ", readPosition);
+        log.info().attr("readPosition", readPosition).log("ReadAhead moved read position");
         while (readPosition.getEntryId() < expectedReaderPosition) {
             Thread.sleep(1000);
             readPosition = reader.getReadAheadReader().getNextEntryPosition();
-            logger.info("ReadAhead moved read position {} : ", readPosition);
+            log.info().attr("readPosition", readPosition).log("ReadAhead moved read position");
         }
         assertEquals(expectedReaderPosition, readPosition.getEntryId());
     }
@@ -404,7 +403,7 @@ public class TestRollLogSegments extends TestDistributedLogBase {
             }
             Thread.sleep(1000);
         }
-        logger.info("Waiting for long poll getting interrupted with metadata changed");
+        log.info("Waiting for long poll getting interrupted with metadata changed");
 
         // simulate a recovery without closing ledger causing recording wrong last dlsn
         BKLogWriteHandler writeHandler = writer.getCachedWriteHandler();

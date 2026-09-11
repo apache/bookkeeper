@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.conf.ConfigurationUtil;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -42,8 +43,6 @@ import org.apache.distributedlog.bk.QuorumConfig;
 import org.apache.distributedlog.feature.DefaultFeatureProvider;
 import org.apache.distributedlog.net.DNSResolverForRacks;
 import org.apache.distributedlog.net.DNSResolverForRows;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * DistributedLog Configuration.
@@ -78,8 +77,8 @@ import org.slf4j.LoggerFactory;
  *
  * @see org.apache.bookkeeper.conf.ClientConfiguration
  */
+@CustomLog
 public class DistributedLogConfiguration extends CompositeConfiguration {
-    static final Logger LOG = LoggerFactory.getLogger(DistributedLogConfiguration.class);
 
     private static ClassLoader defaultLoader;
 
@@ -556,9 +555,10 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
                 ignoredSettings.add(setting);
             }
         }
-        if (LOG.isWarnEnabled() && !ignoredSettings.isEmpty()) {
-            LOG.warn("invalid stream configuration override(s): {}",
-                StringUtils.join(ignoredSettings, ";"));
+        if (!ignoredSettings.isEmpty()) {
+            log.warn()
+                    .attr("ignoredSettings", StringUtils.join(ignoredSettings, ";"))
+                    .log("invalid stream configuration override(s)");
         }
     }
 
@@ -3589,6 +3589,5 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
                     "Invalid configuration: ReaderIdleWarnThreshold should be 2x larger than readLACLongPollTimeout");
         }
     }
-
 
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -39,7 +39,7 @@ import org.apache.bookkeeper.stream.server.conf.BookieConfiguration;
 /**
  * A service that watches bookies and wait for minimum number of bookies to be alive.
  */
-@Slf4j
+@CustomLog
 public class BookieWatchService
     extends AbstractLifecycleComponent<BookieConfiguration> {
 
@@ -64,7 +64,9 @@ public class BookieWatchService
                 try {
                     waitingForNumBookies(clientDriver.getRegistrationClient(), minNumBookies);
                 } catch (Exception e) {
-                    log.error("Encountered exceptions on waiting {} bookies to be alive", minNumBookies);
+                    log.error()
+                        .attr("minNumBookies", minNumBookies)
+                        .log("Encountered exceptions on waiting for bookies to be alive");
                     throw new RuntimeException("Encountered exceptions on waiting "
                         + minNumBookies + " bookies to be alive", e);
                 }
@@ -81,9 +83,11 @@ public class BookieWatchService
         while (bookies.size() < minNumBookies) {
             TimeUnit.SECONDS.sleep(1);
             bookies = FutureUtils.result(client.getWritableBookies()).getValue();
-            log.info("Only {} bookies are live since {} seconds elapsed, "
-                + "wait for another {} bookies for another 1 second",
-                bookies.size(), stopwatch.elapsed(TimeUnit.SECONDS), minNumBookies - bookies.size());
+            log.info()
+                .attr("aliveBookies", bookies.size())
+                .attr("elapsedSeconds", stopwatch.elapsed(TimeUnit.SECONDS))
+                .attr("waitingForBookies", minNumBookies - bookies.size())
+                .log("Waiting for additional bookies to become alive for another 1 second");
         }
     }
 

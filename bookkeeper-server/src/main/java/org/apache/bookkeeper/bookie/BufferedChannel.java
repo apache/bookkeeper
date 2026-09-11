@@ -115,33 +115,66 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException if a write operation fails.
      */
     public void write(ByteBuf src) throws IOException {
-        int copied = 0;
         boolean shouldForceWrite = false;
         synchronized (this) {
-            int len = src.readableBytes();
-            while (copied < len) {
-                int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
-                writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
-                copied += bytesToCopy;
-
-                // if we have run out of buffer space, we should flush to the
-                // file
-                if (!writeBuffer.isWritable()) {
-                    flush();
-                }
-            }
-            position += copied;
-            if (doRegularFlushes) {
-                unpersistedBytes.addAndGet(copied);
-                if (unpersistedBytes.get() >= unpersistedBytesBound) {
-                    flush();
-                    shouldForceWrite = true;
-                }
-            }
+            int copied = copyIntoWriteBuffer(src);
+            shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
         }
         if (shouldForceWrite) {
             forceWrite(false);
         }
+    }
+
+    /**
+     * Write all the data in src1 and src2, in order, to the {@link FileChannel}, taking the
+     * lock only once. This avoids the overhead of two lock acquisitions when writing an
+     * entry preceded by its length prefix.
+     *
+     * @param src1 The first source buffer which contains the data to be written.
+     * @param src2 The second source buffer which contains the data to be written.
+     * @throws IOException if a write operation fails.
+     */
+    public void write(ByteBuf src1, ByteBuf src2) throws IOException {
+        boolean shouldForceWrite = false;
+        synchronized (this) {
+            int copied = copyIntoWriteBuffer(src1);
+            copied += copyIntoWriteBuffer(src2);
+            shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
+        }
+        if (shouldForceWrite) {
+            forceWrite(false);
+        }
+    }
+
+    // must be called while holding the lock on this instance
+    private int copyIntoWriteBuffer(ByteBuf src) throws IOException {
+        int copied = 0;
+        int len = src.readableBytes();
+        while (copied < len) {
+            int bytesToCopy = Math.min(src.readableBytes() - copied, writeBuffer.writableBytes());
+            writeBuffer.writeBytes(src, src.readerIndex() + copied, bytesToCopy);
+            copied += bytesToCopy;
+
+            // if we have run out of buffer space, we should flush to the
+            // file
+            if (!writeBuffer.isWritable()) {
+                flush();
+            }
+        }
+        return copied;
+    }
+
+    // must be called while holding the lock on this instance
+    private boolean updatePositionAndFlushIfNeeded(int copied) throws IOException {
+        position += copied;
+        if (doRegularFlushes) {
+            unpersistedBytes.addAndGet(copied);
+            if (unpersistedBytes.get() >= unpersistedBytesBound) {
+                flush();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

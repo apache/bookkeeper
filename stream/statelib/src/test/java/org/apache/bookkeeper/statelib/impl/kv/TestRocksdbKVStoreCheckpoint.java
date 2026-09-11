@@ -24,7 +24,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 import java.io.File;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.statelib.impl.rocksdb.checkpoint.CheckpointInfo;
 import org.junit.After;
 import org.junit.Before;
@@ -39,7 +39,7 @@ import org.junit.rules.TestName;
 /**
  * Test cases for Rocksdb KV Store with checkpoints.
  */
-@Slf4j
+@CustomLog
 public class TestRocksdbKVStoreCheckpoint {
 
     @Rule

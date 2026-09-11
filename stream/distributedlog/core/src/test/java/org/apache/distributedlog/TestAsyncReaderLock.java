@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.distributedlog.api.AsyncLogReader;
 import org.apache.distributedlog.api.DistributedLogManager;
@@ -47,17 +48,12 @@ import org.apache.distributedlog.util.Utils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
-
 
 /**
  * TestAsyncReaderLock.
  */
+@CustomLog
 public class TestAsyncReaderLock extends TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestAsyncReaderLock.class);
 
     @Rule
     public TestName runtime = new TestName();
@@ -403,7 +399,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
 
         @Override
         public void onSuccess(final AsyncLogReader reader) {
-            LOG.info("Reader {} is ready to read entries", name);
+            log.info().attr("name", name).log("Reader is ready to read entries");
             executorService.submit(new Runnable() {
                 @Override
                 public void run() {
@@ -427,7 +423,7 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
 
         @Override
         public void onFailure(Throwable cause) {
-            LOG.error("{} failed to open reader", name, cause);
+            log.error().attr("name", name).exception(cause).log("failed to open reader");
             failed = true;
             latch.countDown();
         }
@@ -471,14 +467,14 @@ public class TestAsyncReaderLock extends TestDistributedLogBase {
                 .conf(localConf).uri(uri).clientId(clientId3).build();
         DistributedLogManager dlm3 = namespace3.openLog(name);
 
-        LOG.info("{} is opening reader on stream {}", clientId1, name);
+        log.info().attr("clientId", clientId1).attr("stream", name).log("client is opening reader on stream");
         CompletableFuture<AsyncLogReader> futureReader1 = dlm1.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
         AsyncLogReader reader1 = Utils.ioResult(futureReader1);
-        LOG.info("{} opened reader on stream {}", clientId1, name);
+        log.info().attr("clientId", clientId1).attr("stream", name).log("client opened reader on stream");
 
-        LOG.info("{} is opening reader on stream {}", clientId2, name);
+        log.info().attr("clientId", clientId2).attr("stream", name).log("client is opening reader on stream");
         CompletableFuture<AsyncLogReader> futureReader2 = dlm2.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
-        LOG.info("{} is opening reader on stream {}", clientId3, name);
+        log.info().attr("clientId", clientId3).attr("stream", name).log("client is opening reader on stream");
         CompletableFuture<AsyncLogReader> futureReader3 = dlm3.getAsyncLogReaderWithLock(DLSN.InitialDLSN);
 
         ExecutorService executorService = Executors.newCachedThreadPool();

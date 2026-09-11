@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ReadLacCompletion extends CompletionValue {
@@ -31,8 +32,9 @@ class ReadLacCompletion extends CompletionValue {
     public ReadLacCompletion(final CompletionKey key,
                              BookkeeperInternalCallbacks.ReadLacCallback originalCallback,
                              final Object ctx, final long ledgerId,
-                             PerChannelBookieClient perChannelBookieClient) {
-        super("ReadLAC", ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                             PerChannelBookieClient perChannelBookieClient,
+                             Executor callbackExecutor) {
+        super("ReadLAC", ctx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readLacOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readLacTimeoutOpLogger;
         this.cb = new BookkeeperInternalCallbacks.ReadLacCallback() {
@@ -61,24 +63,22 @@ class ReadLacCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.ReadLacResponse readLacResponse = response.getReadLacResponse();
+    public void handleV3Response(Response response) {
+        ReadLacResponse readLacResponse = response.getReadLacResponse();
         ByteBuf lacBuffer = Unpooled.EMPTY_BUFFER;
         ByteBuf lastEntryBuffer = Unpooled.EMPTY_BUFFER;
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
+        StatusCode status = response.getStatus() == StatusCode.EOK
                 ? readLacResponse.getStatus() : response.getStatus();
 
         if (readLacResponse.hasLacBody()) {
-            lacBuffer = Unpooled.wrappedBuffer(readLacResponse.getLacBody().asReadOnlyByteBuffer());
+            lacBuffer = readLacResponse.getLacBodySlice();
         }
 
         if (readLacResponse.hasLastEntryBody()) {
-            lastEntryBuffer = Unpooled.wrappedBuffer(readLacResponse.getLastEntryBody().asReadOnlyByteBuffer());
+            lastEntryBuffer = readLacResponse.getLastEntryBodySlice();
         }
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledgerId", ledgerId);
-        }
+        logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
         cb.readLacComplete(rc, ledgerId, lacBuffer.slice(),

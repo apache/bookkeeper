@@ -28,8 +28,7 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * DynamicWeightedRandomSelectionImpl class implements both getNextRandom
@@ -37,8 +36,8 @@ import org.slf4j.LoggerFactory;
  * knows of as candidates, but getNextRandom(Collection selectedNodes) method
  * considers only 'selectedNodes' as candidates.
  */
+@CustomLog
 class DynamicWeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
-    static final Logger LOG = LoggerFactory.getLogger(DynamicWeightedRandomSelectionImpl.class);
 
     int maxProbabilityMultiplier;
     final Map<T, WeightedObject> weightMap;

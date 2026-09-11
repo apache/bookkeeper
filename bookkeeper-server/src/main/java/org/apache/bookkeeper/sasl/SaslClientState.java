@@ -34,15 +34,14 @@ import javax.security.sasl.RealmCallback;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
+import lombok.CustomLog;
 import org.apache.zookeeper.server.auth.KerberosName;
-import org.slf4j.LoggerFactory;
 
 /**
  * A SASL Client State data object.
  */
+@CustomLog
 public class SaslClientState {
-
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SaslClientState.class);
 
     private final SaslClient saslClient;
     private final Subject clientSubject;
@@ -58,9 +57,7 @@ public class SaslClientState {
             throw new SaslException("Cannot create JAAS Sujbect for SASL");
         }
         if (clientSubject.getPrincipals().isEmpty()) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using JAAS/SASL/DIGEST-MD5 auth to connect to {}", serverPrincipal);
-            }
+            log.debug().attr("serverPrincipal", serverPrincipal).log("Using JAAS/SASL/DIGEST-MD5 auth to connect");
             String[] mechs = {"DIGEST-MD5"};
             username = (String) (clientSubject.getPublicCredentials().toArray()[0]);
             password = (String) (clientSubject.getPrivateCredentials().toArray()[0]);
@@ -74,9 +71,7 @@ public class SaslClientState {
             final String serviceName = serviceKerberosName.getServiceName();
             final String serviceHostname = serviceKerberosName.getHostName();
             final String clientPrincipalName = clientKerberosName.toString();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Using JAAS/SASL/GSSAPI auth to connect to server Principal {}", serverPrincipal);
-            }
+            log.debug().attr("serverPrincipal", serverPrincipal).log("Using JAAS/SASL/GSSAPI auth to connect");
             try {
                 saslClient = Subject.doAs(clientSubject, new PrivilegedExceptionAction<SaslClient>() {
                     @Override
@@ -87,9 +82,7 @@ public class SaslClientState {
                     }
                 });
             } catch (PrivilegedActionException err) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("GSSAPI client error", err.getCause());
-                }
+                log.debug().exception(err.getCause()).log("GSSAPI client error");
                 throw new SaslException("error while booting GSSAPI client", err.getCause());
             }
         }
@@ -113,9 +106,7 @@ public class SaslClientState {
                     });
                 return retval;
             } catch (PrivilegedActionException e) {
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("SASL error", e.getCause());
-                }
+                log.debug().exception(e.getCause()).log("SASL error");
                 throw new SaslException("SASL/JAAS error", e.getCause());
             }
         } else {
@@ -184,9 +175,7 @@ public class SaslClientState {
             byte[] retval = saslClient.evaluateChallenge(saslTokenMessage);
             return retval;
         } catch (SaslException e) {
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("saslResponse: Failed to respond to SASL server's token:", e);
-            }
+            log.debug().exception(e).log("saslResponse: Failed to respond to SASL server's token");
             return null;
         }
     }

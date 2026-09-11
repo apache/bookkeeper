@@ -20,8 +20,8 @@ package org.apache.bookkeeper.util;
 
 import java.io.FileDescriptor;
 import java.lang.reflect.Field;
+import lombok.CustomLog;
 import lombok.experimental.UtilityClass;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.util.nativeio.NativeIO;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 
@@ -29,7 +29,7 @@ import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
  * Native I/O operations.
  */
 @UtilityClass
-@Slf4j
+@CustomLog
 public final class PageCacheUtil {
 
     private static final int POSIX_FADV_DONTNEED = 4; /* fadvise.h */
@@ -43,7 +43,7 @@ public final class PageCacheUtil {
         try {
             nativeIO = new NativeIOImpl();
         } catch (Exception e) {
-            log.warn("Unable to initialize NativeIO for posix_fdavise: {}", e.getMessage());
+            log.warn().exceptionMessage(e).log("Unable to initialize NativeIO for posix_fadvise");
             fadvisePossible = false;
         }
 
@@ -59,7 +59,10 @@ public final class PageCacheUtil {
         } catch (Exception e) {
             // We don't really expect this so throw an assertion to
             // catch this during development
-            log.warn("Unable to read {} field from {}", fieldName, cls.getName());
+            log.warn()
+                    .attr("fieldName", fieldName)
+                    .attr("className", cls.getName())
+                    .log("Unable to read field from class");
             assert false;
         }
 
@@ -96,7 +99,7 @@ public final class PageCacheUtil {
         try {
             NATIVE_IO.posix_fadvise(fd, offset, len, POSIX_FADV_DONTNEED);
         } catch (Throwable e) {
-            log.warn("Failed to perform posix_fadvise: {}", e.getMessage());
+            log.warn().exceptionMessage(e).log("Failed to perform posix_fadvise");
             fadvisePossible = false;
         }
     }

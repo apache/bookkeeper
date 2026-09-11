@@ -15,91 +15,85 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.bookkeeper.proto;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
-
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.util.ReferenceCountUtil;
-import java.util.concurrent.ThreadLocalRandom;
+import java.security.SecureRandom;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import org.apache.bookkeeper.proto.BookieProtoEncoding.EnDecoder;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.RequestEnDeCoderPreV3;
 import org.apache.bookkeeper.proto.BookieProtoEncoding.RequestEnDecoderV3;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AddRequest;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.BKPacketHeader;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.OperationType;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.ProtocolVersion;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.Request;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.slf4j.MDC;
 
 /**
- * Benchmarking serialization and deserialization.
+ * Benchmark protocol encoding.
  */
 @BenchmarkMode({Mode.Throughput})
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@State(Scope.Thread)
+@Warmup(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+@Measurement(iterations = 5, time = 10, timeUnit = TimeUnit.SECONDS)
+@Fork(value = 1, jvmArgsAppend = {"-Xms2g", "-Xmx2g"})
+@State(Scope.Benchmark)
 public class ProtocolBenchmark {
 
-    @Param({"10", "100", "1000", "10000"})
-    int size;
+    private final long ledgerId = System.currentTimeMillis();
+    private final long entryId = ledgerId + 1L;
 
-    byte[] masterKey;
-    ByteBuf entry;
-    long ledgerId;
-    long entryId;
-    short flags;
-    EnDecoder reqEnDeV2;
-    EnDecoder reqEnDeV3;
+    private final byte[] masterKey = new byte[20];
+    private ByteBuf entry;
+
+    private RequestEnDeCoderPreV3 reqEnDeV2;
+    private RequestEnDecoderV3 reqEnDeV3;
 
     @Setup
-    public void prepare() {
-        this.masterKey = "test-benchmark-key".getBytes(UTF_8);
-        byte[] data = new byte[this.size];
-        ThreadLocalRandom.current().nextBytes(data);
-        this.entry = Unpooled.wrappedBuffer(data);
-        this.ledgerId = ThreadLocalRandom.current().nextLong();
-        this.entryId = ThreadLocalRandom.current().nextLong();
-        this.flags = 1;
+    public void setup() {
+        // prepare master key
+        Random rng = new SecureRandom();
+        rng.nextBytes(masterKey);
+
+        // prepare entry data
+        byte[] entryData = new byte[1024];
+        rng.nextBytes(entryData);
+        entry = PooledByteBufAllocator.DEFAULT.buffer(entryData.length);
+        entry.writeBytes(entryData);
 
         // prepare the encoder
-        this.reqEnDeV2 = new RequestEnDeCoderPreV3(null);
-        this.reqEnDeV3 = new RequestEnDecoderV3(null);
+        this.reqEnDeV2 = new RequestEnDeCoderPreV3();
+        this.reqEnDeV3 = new RequestEnDecoderV3();
     }
 
     @Benchmark
     public void testAddEntryV3() throws Exception {
         // Build the request and calculate the total size to be included in the packet.
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
-                .setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.ADD_ENTRY)
-                .setTxnId(0L);
-
         ByteBuf toSend = entry.slice();
         byte[] toSendArray = new byte[toSend.readableBytes()];
         toSend.getBytes(toSend.readerIndex(), toSendArray);
-        AddRequest.Builder addBuilder = AddRequest.newBuilder()
+
+        Request request = new Request();
+        request.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(0L);
+        request.setAddRequest()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId)
-                .setMasterKey(ByteString.copyFrom(masterKey))
-                .setBody(ByteString.copyFrom(toSendArray))
+                .setMasterKey(masterKey)
+                .setBody(toSendArray)
                 .setFlag(AddRequest.Flag.RECOVERY_ADD);
-
-        Request request = Request.newBuilder()
-                .setHeader(headerBuilder)
-                .setAddRequest(addBuilder)
-                .build();
 
         Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
         ReferenceCountUtil.release(res);
@@ -110,69 +104,57 @@ public class ProtocolBenchmark {
         MDC.put("parent_id", "LetsPutSomeLongParentRequestIdHere");
         MDC.put("request_id", "LetsPutSomeLongRequestIdHere");
         // Build the request and calculate the total size to be included in the packet.
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
-                .setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.ADD_ENTRY)
-                .setTxnId(0L);
-
         ByteBuf toSend = entry.slice();
         byte[] toSendArray = new byte[toSend.readableBytes()];
         toSend.getBytes(toSend.readerIndex(), toSendArray);
-        AddRequest.Builder addBuilder = AddRequest.newBuilder()
+
+        Request request = new Request();
+        request.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(0L);
+        request.setAddRequest()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId)
-                .setMasterKey(ByteString.copyFrom(masterKey))
-                .setBody(ByteString.copyFrom(toSendArray))
+                .setMasterKey(masterKey)
+                .setBody(toSendArray)
                 .setFlag(AddRequest.Flag.RECOVERY_ADD);
-
-        Request request = PerChannelBookieClient.appendRequestContext(Request.newBuilder())
-                .setHeader(headerBuilder)
-                .setAddRequest(addBuilder)
-                .build();
+        PerChannelBookieClient.appendRequestContext(request);
 
         Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
         ReferenceCountUtil.release(res);
         MDC.clear();
     }
 
-    static Request.Builder appendRequestContextNoMdc(Request.Builder builder) {
-        final BookkeeperProtocol.ContextPair context1 = BookkeeperProtocol.ContextPair.newBuilder()
+    static Request appendRequestContextNoMdc(Request request) {
+        request.addRequestContext()
                 .setKey("parent_id")
-                .setValue("LetsPutSomeLongParentRequestIdHere")
-                .build();
-        builder.addRequestContext(context1);
-
-        final BookkeeperProtocol.ContextPair context2 = BookkeeperProtocol.ContextPair.newBuilder()
+                .setValue("LetsPutSomeLongParentRequestIdHere");
+        request.addRequestContext()
                 .setKey("request_id")
-                .setValue("LetsPutSomeLongRequestIdHere")
-                .build();
-        builder.addRequestContext(context2);
-
-        return builder;
+                .setValue("LetsPutSomeLongRequestIdHere");
+        return request;
     }
 
     @Benchmark
     public void testAddEntryV3WithExtraContextDataNoMdc() throws Exception {
         // Build the request and calculate the total size to be included in the packet.
-        BKPacketHeader.Builder headerBuilder = BKPacketHeader.newBuilder()
-                .setVersion(ProtocolVersion.VERSION_THREE)
-                .setOperation(OperationType.ADD_ENTRY)
-                .setTxnId(0L);
-
         ByteBuf toSend = entry.slice();
         byte[] toSendArray = new byte[toSend.readableBytes()];
         toSend.getBytes(toSend.readerIndex(), toSendArray);
-        AddRequest.Builder addBuilder = AddRequest.newBuilder()
+
+        Request request = new Request();
+        request.setHeader()
+                .setVersion(ProtocolVersion.VERSION_THREE)
+                .setOperation(OperationType.ADD_ENTRY)
+                .setTxnId(0L);
+        request.setAddRequest()
                 .setLedgerId(ledgerId)
                 .setEntryId(entryId)
-                .setMasterKey(ByteString.copyFrom(masterKey))
-                .setBody(ByteString.copyFrom(toSendArray))
+                .setMasterKey(masterKey)
+                .setBody(toSendArray)
                 .setFlag(AddRequest.Flag.RECOVERY_ADD);
-
-        Request request = appendRequestContextNoMdc(Request.newBuilder())
-                .setHeader(headerBuilder)
-                .setAddRequest(addBuilder)
-                .build();
+        appendRequestContextNoMdc(request);
 
         Object res = this.reqEnDeV3.encode(request, ByteBufAllocator.DEFAULT);
         ReferenceCountUtil.release(res);

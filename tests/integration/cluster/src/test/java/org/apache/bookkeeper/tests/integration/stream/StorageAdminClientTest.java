@@ -67,9 +67,8 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
     private void testNamespaceAPI(StorageAdminClient adminClient) throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName();
-        NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        NamespaceConfiguration colConf = new NamespaceConfiguration();
+        colConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         NamespaceProperties colProps = FutureUtils.result(adminClient.createNamespace(nsName, colConf));
         assertEquals(nsName, colProps.getNamespaceName());
         assertEquals(colConf.getDefaultStreamConf(), colProps.getDefaultStreamConf());
@@ -139,17 +138,15 @@ public class StorageAdminClientTest extends StreamClusterTestBase {
     private void testStreamAPI(StorageAdminClient adminClient) throws Exception {
         // Create a namespace
         String nsName = testName.getMethodName() + "_ns";
-        NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        NamespaceConfiguration colConf = new NamespaceConfiguration();
+        colConf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         NamespaceProperties colProps = FutureUtils.result(adminClient.createNamespace(nsName, colConf));
         assertEquals(nsName, colProps.getNamespaceName());
         assertEquals(colConf.getDefaultStreamConf(), colProps.getDefaultStreamConf());
 
         // Create a stream
         String streamName = testName.getMethodName() + "_stream";
-        StreamConfiguration streamConf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
-            .build();
+        StreamConfiguration streamConf = new StreamConfiguration().copyFrom(DEFAULT_STREAM_CONF);
         StreamProperties streamProps = FutureUtils.result(adminClient.createStream(nsName, streamName, streamConf));
         assertEquals(streamName, streamProps.getStreamName());
 

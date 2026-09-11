@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.LedgerEntry;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
@@ -34,12 +35,9 @@ import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.BatchedReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
 import org.apache.bookkeeper.util.ByteBufList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallback {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BatchedReadOp.class);
 
     final int maxCount;
     final long maxSize;
@@ -80,11 +78,16 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
 
         long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
         if (code != BKException.Code.OK) {
-            LOG.error(
-                    "Batch read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
-                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, startEntryId + maxCount - 1, sentToHosts, heardFromHosts,
-                    heardFromHostsBitSet, BKException.getMessage(code), startEntryId, code);
+            log.error()
+                    .ctx(lh.log)
+                    .attr("startEntryId", startEntryId)
+                    .attr("entryId", startEntryId + maxCount - 1)
+                    .attr("sentToHosts", sentToHosts)
+                    .attr("heardFromHosts", heardFromHosts)
+                    .attr("heardFromHostsBitSet", heardFromHostsBitSet)
+                    .attr("message", BKException.getMessage(code))
+                    .attr("code", code)
+                    .log("Batch read of ledger entry failed");
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
 
@@ -109,6 +112,11 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         heardFromHosts.add(rctx.to);
         heardFromHostsBitSet.set(rctx.bookieIndex, true);
 
+        /*
+         * Retain the response while this read op handles it. complete() returns true only when it
+         * transfers the buffers into request.entries. For digest failures, duplicate responses, or
+         * other incomplete paths, complete() returns false and this retained reference is released here.
+         */
         bufList.retain();
         // if entry has completed don't handle twice
         if (entry.complete(rctx.bookieIndex, rctx.to, bufList)) {
@@ -129,10 +137,12 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
         if (isRecoveryRead) {
             int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
             clientCtx.getBookieClient().batchReadEntries(to, lh.ledgerId, entry.eId,
-                    maxCount, maxSize, this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
+                    maxCount, maxSize, this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey, false,
+                    lh.executor);
         } else {
             clientCtx.getBookieClient().batchReadEntries(to, lh.ledgerId, entry.eId, maxCount, maxSize,
-                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
+                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE, null, false,
+                    lh.executor);
         }
     }
 
@@ -157,32 +167,50 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             if (isComplete()) {
                 return false;
             }
-            if (!complete.getAndSet(true)) {
-                for (int i = 0; i < bufList.size(); i++) {
-                    ByteBuf buffer = bufList.getBuffer(i);
-                    ByteBuf content;
-                    try {
-                        content = lh.macManager.verifyDigestAndReturnData(eId + i, buffer);
-                    } catch (BKException.BKDigestMatchException e) {
-                        clientCtx.getClientStats().getReadOpDmCounter().inc();
+
+            /*
+             * Verify entries in order. If the first entry has a digest mismatch, retry the read from
+             * another replica. If a later entry fails, return the verified prefix; batch reads are allowed
+             * to return fewer than maxCount entries.
+             */
+            int verifiedEntries = 0;
+            for (int i = 0; i < bufList.size(); i++) {
+                ByteBuf buffer = bufList.getBuffer(i);
+                try {
+                    lh.macManager.verifyDigestAndReturnData(eId + i, buffer);
+                    verifiedEntries++;
+                } catch (BKException.BKDigestMatchException e) {
+                    clientCtx.getClientStats().getReadOpDmCounter().inc();
+                    if (verifiedEntries == 0) {
                         logErrorAndReattemptRead(bookieIndex, host, "Mac mismatch",
                                 BKException.Code.DigestMatchException);
                         return false;
                     }
-                    rc = BKException.Code.OK;
+                    break;
+                }
+            }
+
+            if (complete.compareAndSet(false, true)) {
+                rc = BKException.Code.OK;
+                for (int i = 0; i < verifiedEntries; i++) {
+                    ByteBuf buffer = bufList.getBuffer(i);
                     /*
                      * The length is a long and it is the last field of the metadata of an entry.
                      * Consequently, we have to subtract 8 from METADATA_LENGTH to get the length.
                      */
-                    LedgerEntryImpl entryImpl =  LedgerEntryImpl.create(lh.ledgerId, startEntryId + i);
+                    LedgerEntryImpl entryImpl = LedgerEntryImpl.create(lh.ledgerId, startEntryId + i);
                     entryImpl.setLength(buffer.getLong(DigestManager.METADATA_LENGTH - 8));
-                    entryImpl.setEntryBuf(content);
+                    entryImpl.setEntryBuf(buffer);
                     entries.add(entryImpl);
+                }
+                // These buffers are not transferred to LedgerEntryImpl, so release them here.
+                for (int i = verifiedEntries; i < bufList.size(); i++) {
+                    bufList.getBuffer(i).release();
                 }
                 writeSet.recycle();
                 return true;
             } else {
-                writeSet.recycle();
+                // Another response completed the request first; readEntriesComplete() releases bufList.
                 return false;
             }
         }
@@ -274,7 +302,11 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
                 sentReplicas.set(replica);
                 return to;
             } catch (InterruptedException ie) {
-                LOG.error("Interrupted reading entry " + this, ie);
+                log.error()
+                        .ctx(lh.log)
+                        .attr("readOp", this)
+                        .exception(ie)
+                        .log("Interrupted reading entry");
                 Thread.currentThread().interrupt();
                 fail(BKException.Code.InterruptedException);
                 return null;
@@ -286,7 +318,11 @@ public class BatchedReadOp extends ReadOpBase implements BatchedReadEntryCallbac
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
             int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
-                LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
+                log.error()
+                        .ctx(lh.log)
+                        .attr("bookieAddr", host)
+                        .attr("ensemble", ensemble)
+                        .log("Received error from a host which is not in the ensemble");
                 return;
             }
             erroredReplicas.set(replica);

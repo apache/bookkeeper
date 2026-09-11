@@ -94,7 +94,7 @@ public class BatchedArrayBlockingQueueTest {
 
     @Test
     public void blockingTake() throws Exception {
-        BlockingQueue<Integer> queue = new GrowableMpScArrayConsumerBlockingQueue<>();
+        BlockingQueue<Integer> queue = new BatchedArrayBlockingQueue<>(100);
 
         CountDownLatch latch = new CountDownLatch(1);
 

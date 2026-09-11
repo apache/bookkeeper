@@ -19,11 +19,14 @@
 package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -46,6 +49,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.proto.BookieProtocol.Response;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.util.ByteBufList;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -220,5 +224,172 @@ public class BatchedReadEntryProcessorTest {
         assertEquals(ledgerId, response.getLedgerId());
         assertEquals(BookieProtocol.BATCH_READ_ENTRY, response.getOpCode());
         assertEquals(BookieProtocol.EOK, response.getErrorCode());
+    }
+
+    @Test
+    public void testReadDataPredictsMaxCountFromUniformFirstEntrySize() throws Exception {
+        long ledgerId = 1234L;
+        long firstEntryId = 1L;
+        int entrySize = 20;
+        long maxSize = 24 + 8 + Integer.BYTES + (entrySize + Integer.BYTES) * 2L;
+
+        ByteBuf firstEntry = entryBuffer(entrySize);
+        ByteBuf secondEntry = entryBuffer(entrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId + 1))).thenReturn(secondEntry);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(2, data.size());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId + 1));
+        verify(bookie, never()).readEntry(eq(ledgerId), eq(firstEntryId + 2));
+    }
+
+    @Test
+    public void testReadDataReturnsFirstEntryEvenIfItAloneExceedsMaxSize() throws Exception {
+        long ledgerId = 1235L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+        long maxSize = 50;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, never()).readEntry(eq(ledgerId), eq(firstEntryId + 1));
+    }
+
+    @Test
+    public void testReadDataReleasesOneOverReadEntryWhenSizesGrow() throws Exception {
+        long ledgerId = 1236L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 10;
+        int secondEntrySize = 40;
+        long maxSize = 80;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        ByteBuf secondEntry = entryBuffer(secondEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId + 1))).thenReturn(secondEntry);
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, maxSize);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+            assertEquals(0, secondEntry.refCnt());
+        } finally {
+            data.release();
+        }
+
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId));
+        verify(bookie, times(1)).readEntry(eq(ledgerId), eq(firstEntryId + 1));
+        verify(bookie, never()).readEntry(eq(ledgerId), eq(firstEntryId + 2));
+    }
+
+    @Test
+    public void testReadDataStopsOnMissingSubsequentEntry() throws Exception {
+        long ledgerId = 1237L;
+        long firstEntryId = 1L;
+        int firstEntrySize = 20;
+
+        ByteBuf firstEntry = entryBuffer(firstEntrySize);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId + 1)))
+                .thenThrow(new Bookie.NoEntryException(ledgerId, firstEntryId + 1));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+    }
+
+    @Test
+    public void testReadDataStopsOnIOExceptionAfterFirstEntry() throws Exception {
+        long ledgerId = 1238L;
+        long firstEntryId = 1L;
+
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId + 1)))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        ByteBufList data = (ByteBufList) processor.readData();
+        assertNotNull(data);
+        try {
+            assertEquals(1, data.size());
+        } finally {
+            data.release();
+        }
+    }
+
+    @Test
+    public void testProcessPacketReturnsPrefixWhenSubsequentReadFails() throws Exception {
+        ChannelPromise promise = new DefaultChannelPromise(channel);
+        AtomicReference<Object> writtenObject = new AtomicReference<>();
+        CountDownLatch latch = new CountDownLatch(1);
+        doAnswer(invocationOnMock -> {
+            writtenObject.set(invocationOnMock.getArgument(0));
+            promise.setSuccess();
+            latch.countDown();
+            return promise;
+        }).when(channel).writeAndFlush(any(Response.class));
+
+        long ledgerId = 1239L;
+        long firstEntryId = 1L;
+        ByteBuf firstEntry = entryBuffer(20);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId))).thenReturn(firstEntry);
+        when(bookie.readEntry(eq(ledgerId), eq(firstEntryId + 1)))
+                .thenThrow(new IOException("disk error"));
+
+        BatchedReadEntryProcessor processor = createProcessor(ledgerId, firstEntryId, 5, 1024);
+        processor.run();
+
+        latch.await();
+        assertTrue(writtenObject.get() instanceof Response);
+        BookieProtocol.BatchedReadResponse response = (BookieProtocol.BatchedReadResponse) writtenObject.get();
+        try {
+            assertEquals(BookieProtocol.EOK, response.getErrorCode());
+            assertEquals(1, response.getData().size());
+        } finally {
+            response.release();
+        }
+        assertEquals(0, firstEntry.refCnt());
+    }
+
+    private BatchedReadEntryProcessor createProcessor(long ledgerId, long entryId, int maxCount, long maxSize) {
+        ExecutorService service = mock(ExecutorService.class);
+        BookieProtocol.BatchedReadRequest request = BookieProtocol.BatchedReadRequest.create(
+                BookieProtocol.CURRENT_PROTOCOL_VERSION, ledgerId, entryId, BookieProtocol.FLAG_NONE, new byte[] {},
+                0L, maxCount, maxSize);
+        return BatchedReadEntryProcessor.create(request, requestHandler, requestProcessor, service, true,
+                5 * 1024 * 1024);
+    }
+
+    private static ByteBuf entryBuffer(int size) {
+        ByteBuf entry = ByteBufAllocator.DEFAULT.buffer(size);
+        entry.writeZero(size);
+        return entry;
     }
 }

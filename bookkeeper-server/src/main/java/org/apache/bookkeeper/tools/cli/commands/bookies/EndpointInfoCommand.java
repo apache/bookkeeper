@@ -22,6 +22,7 @@ import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.IOException;
 import java.util.Collection;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -33,15 +34,12 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Get endpoint information about a Bookie.
  */
+@CustomLog
 public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.EndpointInfoFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(EndpointInfoCommand.class);
 
     private static final String NAME = "endpointinfo";
     private static final String DESC = "Get all end point information about a given bookie.";
@@ -87,34 +85,43 @@ public class EndpointInfoCommand extends BookieCommand<EndpointInfoCommand.Endpo
             BookieId bookieId = BookieId.parse(bookieIdStr);
             Collection<BookieId> allBookies = admin.getAllBookies();
             if (!allBookies.contains(bookieId)) {
-                LOG.info("Bookie {} does not exist, only {}", bookieId, allBookies);
+                log.info()
+                        .attr("bookieId", bookieId)
+                        .attr("allBookies", allBookies)
+                        .log("Bookie does not exist, only");
                 return false;
             }
             BookieServiceInfo bookieServiceInfo = admin.getBookieServiceInfo(bookieId);
 
-            LOG.info("BookiedId: {}", bookieId);
+            log.info().attr("bookieId", bookieId).log("BookiedId");
             if (!bookieServiceInfo.getProperties().isEmpty()) {
-                LOG.info("Properties");
+                log.info("Properties");
                 bookieServiceInfo.getProperties().forEach((k, v) -> {
-                    LOG.info("{} : {}", k, v);
+                    log.info()
+                            .attr("key", k)
+                            .attr("value", v)
+                            .log("property");
                 });
             }
             if (!bookieServiceInfo.getEndpoints().isEmpty()) {
                 bookieServiceInfo.getEndpoints().forEach(e -> {
-                    LOG.info("Endpoint: {}", e.getId());
-                    LOG.info("Protocol: {}", e.getProtocol());
-                    LOG.info("Address: {} : {}", e.getHost(), e.getPort());
-                    LOG.info("Auth: {}", e.getAuth());
-                    LOG.info("Extensions: {}", e.getExtensions());
+                    log.info().attr("id", e.getId()).log("Endpoint");
+                    log.info().attr("protocol", e.getProtocol()).log("Protocol");
+                    log.info()
+                            .attr("host", e.getHost())
+                            .attr("port", e.getPort())
+                            .log("Address");
+                    log.info().attr("auth", e.getAuth()).log("Auth");
+                    log.info().attr("extensions", e.getExtensions()).log("Extensions");
                 });
             } else {
-                LOG.info("Bookie did not publish any endpoint info. Maybe it is down");
+                log.info("Bookie did not publish any endpoint info. Maybe it is down");
                 return false;
             }
 
             return true;
         } catch (Exception e) {
-            LOG.error("Received exception in EndpointInfoCommand ", e);
+            log.error().exception(e).log("Received exception in EndpointInfoCommand");
             return false;
         } finally {
             if (admin != null) {

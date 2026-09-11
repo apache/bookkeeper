@@ -30,7 +30,7 @@ import java.util.NavigableMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.LongStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.RangeMetadata;
 import org.apache.bookkeeper.stream.proto.RangeState;
@@ -44,7 +44,7 @@ import org.junit.Test;
 /**
  * Unit test of {@link MetaRangeImpl}.
  */
-@Slf4j
+@CustomLog
 public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
 
     private StreamProperties streamProps;
@@ -52,12 +52,11 @@ public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
 
     @Override
     protected void doSetup() {
-        this.streamProps = StreamProperties.newBuilder()
+        this.streamProps = new StreamProperties()
             .setStorageContainerId(1234L)
-            .setStreamConf(DEFAULT_STREAM_CONF)
             .setStreamName(name.getMethodName() + "_stream")
-            .setStreamId(System.currentTimeMillis())
-            .build();
+            .setStreamId(System.currentTimeMillis());
+        this.streamProps.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
         this.metaRange = new MetaRangeImpl(
             this.store,
             this.scheduler.chooseThread(),
@@ -166,7 +165,8 @@ public class TestMetaRangeImpl extends MVCCAsyncStoreTestBase {
                                             RangeState expectedRangeState) throws Exception {
         byte[] rangeKey = MetaRangeImpl.getStreamRangeKey(streamId, rangeId);
         byte[] rangeMetadataBytes = FutureUtils.result(store.get(rangeKey));
-        RangeMetadata rangeMetadata = RangeMetadata.parseFrom(rangeMetadataBytes);
+        RangeMetadata rangeMetadata = new RangeMetadata();
+        rangeMetadata.parseFrom(rangeMetadataBytes);
 
         verifyRangeMetadata(
             rangeMetadata,

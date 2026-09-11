@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
 import java.io.IOException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.storage.ldb.LedgersIndexCheckOp;
@@ -27,15 +28,12 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to check the DBLedgerStorage ledgers index integrity.
  */
+@CustomLog
 public class CheckDBLedgersIndexCommand extends BookieCommand<CheckDBLedgersIndexCommand.CheckLedgersIndexFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(CheckDBLedgersIndexCommand.class);
 
     private static final String NAME = "check-db-ledgers-index";
     private static final String DESC = "Check the DBLedgerStorage ledgers index integrity by performing a read scan";
@@ -51,14 +49,14 @@ public class CheckDBLedgersIndexCommand extends BookieCommand<CheckDBLedgersInde
 
     @Override
     public boolean apply(ServerConfiguration conf, CheckLedgersIndexFlags cmdFlags) {
-        LOG.info("=== Checking DBStorage ledgers index by running a read scan ===");
+        log.info("=== Checking DBStorage ledgers index by running a read scan ===");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         try {
             boolean success = new LedgersIndexCheckOp(serverConfiguration, cmdFlags.verbose).initiate();
             if (success) {
-                LOG.info("-- Done checking DBStorage ledgers index --");
+                log.info("-- Done checking DBStorage ledgers index --");
             } else {
-                LOG.info("-- Aborted checking DBStorage ledgers index --");
+                log.info("-- Aborted checking DBStorage ledgers index --");
             }
 
             return success;

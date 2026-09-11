@@ -20,6 +20,7 @@
  */
 package org.apache.bookkeeper.client.api;
 
+import io.github.merlimat.slog.Logger;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
@@ -121,5 +122,41 @@ public interface CreateBuilder extends OpBuilder<WriteHandle> {
      * @return a new {@link CreateAdvBuilder} builder
      */
     CreateAdvBuilder makeAdv();
+
+    /**
+     * Inherit the context attributes of the given slog {@link Logger} on the logger bound to
+     * the resulting {@link WriteHandle}. Every log statement emitted by the handle (and by the create-time machinery
+     * that produces it) will carry the parent logger's context attributes, in addition to the {@code ledgerId}
+     * attribute that is always added by the client.
+     *
+     * <p>Useful for correlating bookkeeper-client log output with the application's own request / tenant / trace
+     * identifiers — typically the application has built a per-request logger via
+     * {@code Logger.get(...).with().attr(...)...build()} and passes it here.
+     *
+     * @param parentLogger logger whose context attributes to inherit; {@code null} is treated as no extra context
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withLoggerContext(Logger parentLogger) {
+        return this;
+    }
+
+    /**
+     * Set the key used to select the client worker thread on which every callback of the resulting
+     * {@link WriteHandle} runs (add, read and close completions, as well as the completion of this create
+     * operation). By default the thread is selected by ledger id.
+     *
+     * <p>The thread is resolved with {@link org.apache.bookkeeper.common.util.OrderedExecutor#chooseThread(Object)}
+     * on the client's main worker pool, so an application that already runs its own per-entity work on
+     * {@code bookKeeper.getMainWorkerPool().chooseThread(key)} can pass the same key here and have the ledger's
+     * callbacks delivered on that very thread, avoiding a cross-thread hop per completion.
+     *
+     * @param orderingKey the ordering key; {@code null} (the default) selects the thread by ledger id
+     *
+     * @return the builder itself
+     */
+    default CreateBuilder withOrderingKey(Object orderingKey) {
+        return this;
+    }
 
 }

@@ -28,11 +28,10 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
+@CustomLog
 class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
-    static final Logger LOG = LoggerFactory.getLogger(WeightedRandomSelectionImpl.class);
 
     Double randomMax;
     int maxProbabilityMultiplier;
@@ -94,9 +93,12 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         medianWeight = median / (double) totalWeight;
         minWeight = (double) min / totalWeight;
 
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Updating weights map. MediaWeight: {} MinWeight: {}", medianWeight, minWeight);
-        }
+
+        log.debug()
+                .attr("medianWeight", medianWeight)
+                .attr("minWeight", minWeight)
+                .log("Updating weights map");
+
 
         double maxWeight = maxProbabilityMultiplier * medianWeight;
         Map<T, Double> weightMap = new HashMap<T, Double>();
@@ -109,10 +111,13 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
             }
             if (maxWeight > 0 && weightedProbability > maxWeight) {
                 weightedProbability = maxWeight;
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Capping the probability to {} for {} Value: {}",
-                            weightedProbability, e.getKey(), e.getValue());
-                }
+
+                log.debug()
+                        .attr("weightedProbability", weightedProbability)
+                        .attr("key", () -> e.getKey())
+                        .attr("value", () -> e.getValue())
+                        .log("Capping the probability");
+
             }
             weightMap.put(e.getKey(), weightedProbability);
         }
@@ -124,10 +129,14 @@ class WeightedRandomSelectionImpl<T> implements WeightedRandomSelection<T> {
         Double key = 0.0;
         for (Map.Entry<T, Double> e : weightMap.entrySet()) {
             tmpCumulativeMap.put(key, e.getKey());
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Key: {} Value: {} AssignedKey: {} AssignedWeight: {}",
-                        e.getKey(), e.getValue(), key, e.getValue());
-            }
+
+            log.debug()
+                    .attr("key", () -> e.getKey())
+                    .attr("value", () -> e.getValue())
+                    .attr("assignedKey", key)
+                    .attr("assignedValue", () -> e.getValue())
+                    .log("Assigned weight");
+
             key += e.getValue();
         }
 

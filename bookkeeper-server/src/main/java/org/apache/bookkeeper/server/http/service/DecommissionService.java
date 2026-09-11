@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.Cookie;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -34,16 +35,13 @@ import org.apache.bookkeeper.http.service.HttpServiceRequest;
 import org.apache.bookkeeper.http.service.HttpServiceResponse;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper Decommission related http request.
  * The PUT method will send decommission bookie command running at backend.
  */
+@CustomLog
 public class DecommissionService implements HttpEndpointService {
-
-    static final Logger LOG = LoggerFactory.getLogger(DecommissionService.class);
 
     protected ServerConfiguration conf;
     protected BookKeeperAdmin bka;
@@ -82,28 +80,38 @@ public class DecommissionService implements HttpEndpointService {
 
                     executor.execute(() -> {
                         try {
-                            LOG.info("Start decommissioning bookie.");
+                            log.info("Start decommissioning bookie");
                             bka.decommissionBookie(bookieSrc);
-                            LOG.info("Complete decommissioning bookie.");
+                            log.info("Complete decommissioning bookie");
                             if (deleteCookie) {
                                 runFunctionWithRegistrationManager(conf, rm -> {
                                     try {
                                         Versioned<Cookie> cookie = Cookie.readFromRegistrationManager(rm, bookieSrc);
                                         cookie.getValue().deleteFromRegistrationManager(rm, bookieSrc,
                                                 cookie.getVersion());
-                                        LOG.info("Cookie of the decommissioned bookie: {} is deleted successfully",
-                                                bookieSrc);
+                                        log.info().attr("bookie", bookieSrc)
+                                                .log("Cookie of the decommissioned bookie is deleted successfully");
                                     } catch (BookieException.CookieNotFoundException nne) {
-                                        LOG.warn("No cookie to remove for the decommissioning bookie: {}, "
-                                                + "it could be deleted already", bookieSrc, nne);
+                                        log.warn()
+                                                .attr("bookie", bookieSrc)
+                                                .exception(nne)
+                                                .log("No cookie to remove for the"
+                                                        + " decommissioning bookie, it could"
+                                                        + " be deleted already");
                                     } catch (BookieException be) {
-                                        LOG.error("Error deleting cookie: {}.", bookieSrc, be);
+                                        log.error()
+                                                .attr("bookie", bookieSrc)
+                                                .exception(be)
+                                                .log("Error deleting cookie");
                                     }
                                     return true;
                                 });
                             }
                         } catch (Exception e) {
-                            LOG.error("Error handling decommissionBookie: {}.", bookieSrc, e);
+                            log.error()
+                                    .attr("bookie", bookieSrc)
+                                    .exception(e)
+                                    .log("Error handling decommissionBookie");
                         }
                     });
 
@@ -111,7 +119,7 @@ public class DecommissionService implements HttpEndpointService {
                     response.setBody("Success send decommission Bookie command " + bookieSrc);
                     return response;
                 } catch (Exception e) {
-                    LOG.error("Exception occurred while decommissioning bookie: ", e);
+                    log.error().exception(e).log("Exception occurred while decommissioning bookie");
                     response.setCode(HttpServer.StatusCode.NOT_FOUND);
                     response.setBody("Exception when send decommission command." + e.getMessage());
                     return response;

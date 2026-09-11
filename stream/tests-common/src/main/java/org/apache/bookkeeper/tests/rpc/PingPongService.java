@@ -19,7 +19,7 @@
 package org.apache.bookkeeper.tests.rpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.bookkeeper.tests.proto.rpc.PingPongServiceGrpc.PingPongServiceImplBase;
 import org.bookkeeper.tests.proto.rpc.PingRequest;
 import org.bookkeeper.tests.proto.rpc.PongResponse;
@@ -27,7 +27,7 @@ import org.bookkeeper.tests.proto.rpc.PongResponse;
 /**
  * An implementation of the ping pong service used for testing.
  */
-@Slf4j
+@CustomLog
 public class PingPongService extends PingPongServiceImplBase {
 
     private final int streamPongSize;
@@ -38,11 +38,10 @@ public class PingPongService extends PingPongServiceImplBase {
 
     @Override
     public void pingPong(PingRequest request, StreamObserver<PongResponse> responseObserver) {
-        responseObserver.onNext(PongResponse.newBuilder()
+        responseObserver.onNext(new PongResponse()
             .setLastSequence(request.getSequence())
             .setNumPingReceived(1)
-            .setSlotId(0)
-            .build());
+            .setSlotId(0));
         responseObserver.onCompleted();
     }
 
@@ -61,16 +60,15 @@ public class PingPongService extends PingPongServiceImplBase {
 
             @Override
             public void onError(Throwable t) {
-                log.error("Failed on receiving stream of pings", t);
+                log.error().exception(t).log("Failed on receiving stream of pings");
             }
 
             @Override
             public void onCompleted() {
-                responseObserver.onNext(PongResponse.newBuilder()
+                responseObserver.onNext(new PongResponse()
                     .setNumPingReceived(pingCount)
                     .setLastSequence(lastSequence)
-                    .setSlotId(0)
-                    .build());
+                    .setSlotId(0));
                 responseObserver.onCompleted();
             }
         };
@@ -80,11 +78,10 @@ public class PingPongService extends PingPongServiceImplBase {
     public void lotsOfPongs(PingRequest request, StreamObserver<PongResponse> responseObserver) {
         long sequence = request.getSequence();
         for (int i = 0; i < streamPongSize; i++) {
-            responseObserver.onNext(PongResponse.newBuilder()
+            responseObserver.onNext(new PongResponse()
                 .setLastSequence(sequence)
                 .setNumPingReceived(1)
-                .setSlotId(i)
-                .build());
+                .setSlotId(i));
         }
         responseObserver.onCompleted();
     }
@@ -98,11 +95,10 @@ public class PingPongService extends PingPongServiceImplBase {
             @Override
             public void onNext(PingRequest ping) {
                 pingCount++;
-                responseObserver.onNext(PongResponse.newBuilder()
+                responseObserver.onNext(new PongResponse()
                     .setLastSequence(ping.getSequence())
                     .setNumPingReceived(pingCount)
-                    .setSlotId(0)
-                    .build());
+                    .setSlotId(0));
             }
 
             @Override

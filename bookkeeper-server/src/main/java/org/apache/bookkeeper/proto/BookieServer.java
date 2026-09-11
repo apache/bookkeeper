@@ -29,13 +29,16 @@ import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
-import org.apache.bookkeeper.common.util.JsonUtil.ParseJsonException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -48,13 +51,12 @@ import org.apache.bookkeeper.tls.SecurityException;
 import org.apache.bookkeeper.tls.SecurityHandlerFactory;
 import org.apache.bookkeeper.tls.SecurityProviderFactoryFactory;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Implements the server-side part of the BookKeeper protocol.
  *
  */
+@CustomLog
 public class BookieServer {
     final ServerConfiguration conf;
     BookieNettyServer nettyServer;
@@ -62,7 +64,6 @@ public class BookieServer {
     private final Bookie bookie;
     DeathWatcher deathWatcher;
     UncleanShutdownDetection uncleanShutdownDetection;
-    private static final Logger LOG = LoggerFactory.getLogger(BookieServer.class);
 
     int exitCode = ExitCode.OK;
 
@@ -84,13 +85,9 @@ public class BookieServer {
             BookieException, UnavailableException, CompatibilityException, SecurityException {
         this.conf = conf;
         validateUser(conf);
-        String configAsString;
-        try {
-            configAsString = conf.asJson();
-            LOG.info(configAsString);
-        } catch (ParseJsonException pe) {
-            LOG.error("Got ParseJsonException while converting Config to JSONString", pe);
-        }
+        log.info()
+                .attr("overrides", overriddenConfig(conf))
+                .log("Starting Bookie server");
 
         this.statsLogger = statsLogger;
         this.bookie = bookie;
@@ -176,9 +173,7 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void suspendProcessing() {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Suspending bookie server, port is {}", conf.getBookiePort());
-        }
+        log.debug().attr("port", () -> conf.getBookiePort()).log("Suspending bookie server");
         nettyServer.suspendProcessing();
     }
 
@@ -187,14 +182,12 @@ public class BookieServer {
      */
     @VisibleForTesting
     public void resumeProcessing() {
-        if (LOG.isDebugEnabled()) {
-            LOG.debug("Resuming bookie server, port is {}", conf.getBookiePort());
-        }
+        log.debug().attr("port", () -> conf.getBookiePort()).log("Resuming bookie server");
         nettyServer.resumeProcessing();
     }
 
     public synchronized void shutdown() {
-        LOG.info("Shutting down BookieServer");
+        log.info("Shutting down BookieServer");
         this.nettyServer.shutdown();
         if (!running) {
             return;
@@ -221,9 +214,32 @@ public class BookieServer {
                     "System cannot start because current user isn't in permittedStartupUsers."
                             + " Current user: " + currentUser + " permittedStartupUsers: "
                             + Arrays.toString(propertyValue);
-            LOG.error(errorMsg);
+            log.error(errorMsg);
             throw new BookieException.BookieUnauthorizedAccessException(errorMsg);
         }
+    }
+
+    /**
+     * Returns the configuration entries that differ from the {@link ServerConfiguration}
+     * defaults — i.e. values explicitly set by the user (via config file or programmatically)
+     * whose value is not the same as the built-in default.
+     */
+    private static Map<String, Object> overriddenConfig(ServerConfiguration conf) {
+        ServerConfiguration defaults = new ServerConfiguration();
+        Map<String, Object> overrides = new TreeMap<>();
+        Iterator<String> keys = conf.getInMemoryConfiguration().getKeys();
+        while (keys.hasNext()) {
+            String key = keys.next();
+            Object value = conf.getProperty(key);
+            if (value == null) {
+                continue;
+            }
+            Object defaultValue = defaults.getProperty(key);
+            if (defaultValue == null || !value.toString().equals(defaultValue.toString())) {
+                overrides.put(key, value);
+            }
+        }
+        return overrides;
     }
 
 
@@ -261,8 +277,10 @@ public class BookieServer {
             // set a default uncaught exception handler to shutdown the bookie server
             // when it notices the bookie is not running any more.
             setUncaughtExceptionHandler((thread, cause) -> {
-                LOG.info("BookieDeathWatcher exited loop due to uncaught exception from thread {}",
-                    thread.getName(), cause);
+                log.info()
+                        .exception(cause)
+                        .attr("threadName", thread.getName())
+                    .log("BookieDeathWatcher exited loop due to uncaught exception");
                 shutdown();
             });
         }
@@ -277,7 +295,7 @@ public class BookieServer {
                     Thread.currentThread().interrupt();
                 }
                 if (!isBookieRunning()) {
-                    LOG.info("BookieDeathWatcher noticed the bookie is not running any more, exiting the watch loop!");
+                    log.info("BookieDeathWatcher noticed the bookie is not running any more, exiting the watch loop!");
                     // death watcher has noticed that bookie is not running any more
                     // throw an exception to fail the death watcher thread and it will
                     // trigger the uncaught exception handler to handle this "bookie not running" situation.

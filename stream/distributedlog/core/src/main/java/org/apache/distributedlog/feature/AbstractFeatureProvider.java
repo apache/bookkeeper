@@ -20,23 +20,19 @@ package org.apache.distributedlog.feature;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.feature.CacheableFeatureProvider;
 import org.apache.bookkeeper.feature.Feature;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.distributedlog.DistributedLogConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Decider based feature provider.
  */
+@CustomLog
 public abstract class AbstractFeatureProvider<T extends Feature> extends CacheableFeatureProvider<T> {
-
-    private static final Logger logger = LoggerFactory.getLogger(AbstractFeatureProvider.class);
 
     public static FeatureProvider getFeatureProvider(String rootScope,
                                                      DistributedLogConfiguration conf,

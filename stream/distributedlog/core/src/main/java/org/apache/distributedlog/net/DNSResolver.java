@@ -21,18 +21,15 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import lombok.CustomLog;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Abstract DNS resolver for bookkeeper ensemble placement.
  */
+@CustomLog
 public abstract class DNSResolver implements DNSToSwitchMapping {
-    static final Logger LOG = LoggerFactory.getLogger(DNSResolver.class);
 
     protected final ConcurrentMap<String, String> domainNameToNetworkLocation =
             new ConcurrentHashMap<String, String>();
@@ -66,7 +63,7 @@ public abstract class DNSResolver implements DNSToSwitchMapping {
             for (String override : overrides) {
                 String[] parts = override.split(":");
                 if (parts.length != 2) {
-                    LOG.warn("Incorrect override specified : {}", override);
+                    log.warn().attr("override", override).log("Incorrect override specified");
                 } else {
                     hostNameToRegion.putIfAbsent(parts[0], parts[1]);
                 }

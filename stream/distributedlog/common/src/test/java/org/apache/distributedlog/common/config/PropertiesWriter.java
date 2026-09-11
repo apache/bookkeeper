@@ -20,14 +20,13 @@ package org.apache.distributedlog.common.config;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.util.Properties;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Writer to write properties to files.
  */
+@CustomLog
 public class PropertiesWriter {
-    static final Logger LOG = LoggerFactory.getLogger(PropertiesWriter.class);
 
     final FileOutputStream outputStream;
     final File configFile;
@@ -60,9 +59,7 @@ public class PropertiesWriter {
         try (FileOutputStream outputStream = new FileOutputStream(configFile)) {
             properties.store(outputStream, null);
             configFile.setLastModified(configFile.lastModified() + 1000);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("save modified={}", configFile.lastModified());
-            }
+            log.debug().attr("modified", configFile.lastModified()).log("save");
         }
     }
 

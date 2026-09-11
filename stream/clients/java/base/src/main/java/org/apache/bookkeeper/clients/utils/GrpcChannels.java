@@ -20,7 +20,7 @@ package org.apache.bookkeeper.clients.utils;
 
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.inprocess.InProcessChannelBuilder;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.common.resolver.NameResolverFactoryProvider;
@@ -30,7 +30,7 @@ import org.apache.bookkeeper.common.util.ReflectionUtils;
 /**
  * Utils to create grpc channels.
  */
-@Slf4j
+@CustomLog
 public final class GrpcChannels {
 
     private static final String BACKEND_INPROCESS = "inprocess";

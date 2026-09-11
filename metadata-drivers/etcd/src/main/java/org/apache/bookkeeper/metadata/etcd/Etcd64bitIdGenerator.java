@@ -34,7 +34,7 @@ import io.etcd.jetcd.options.PutOption;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.meta.LedgerIdGenerator;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
@@ -45,7 +45,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
  * <p>The most significant 8 bits is used as bucket id. The remaining 56 bits are
  * used as the id generated per bucket.
  */
-@Slf4j
+@CustomLog
 class Etcd64bitIdGenerator implements LedgerIdGenerator {
 
     static final long MAX_ID_PER_BUCKET = 0x00ffffffffffffffL;
@@ -115,7 +115,9 @@ class Etcd64bitIdGenerator implements LedgerIdGenerator {
                     if (resp.getCount() > 0) {
                         KeyValue kv = resp.getKvs().get(0);
                         if (kv.getVersion() > MAX_ID_PER_BUCKET) {
-                            log.warn("Etcd bucket '{}' is overflowed", bucketKey.toString(StandardCharsets.UTF_8));
+                            log.warn()
+                                    .attr("bucketKey", bucketKey.toString(StandardCharsets.UTF_8))
+                                    .log("Etcd bucket is overflowed");
                             // the bucket is overflowed, moved to next bucket.
                             generateLedgerId(cb);
                         } else {

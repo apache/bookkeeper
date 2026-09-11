@@ -41,12 +41,11 @@ public class TestStreamRanges {
     public void testConstructor() {
         NavigableMap<Long, RangeProperties> ranges = Maps.newTreeMap();
         for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-            RangeProperties props = RangeProperties.newBuilder()
+            RangeProperties props = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey)
                 .setStartHashKey(hashKey)
-                .setEndHashKey(hashKey)
-                .build();
+                .setEndHashKey(hashKey);
             ranges.put(hashKey, props);
         }
 
@@ -64,19 +63,17 @@ public class TestStreamRanges {
         NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
         NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
         for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-            RangeProperties props1 = RangeProperties.newBuilder()
+            RangeProperties props1 = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey)
                 .setStartHashKey(hashKey)
-                .setEndHashKey(hashKey)
-                .build();
+                .setEndHashKey(hashKey);
             ranges1.put(hashKey, props1);
-            RangeProperties props2 = RangeProperties.newBuilder()
+            RangeProperties props2 = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey)
                 .setStartHashKey(hashKey)
-                .setEndHashKey(hashKey)
-                .build();
+                .setEndHashKey(hashKey);
             ranges2.put(hashKey, props2);
         }
 
@@ -95,19 +92,17 @@ public class TestStreamRanges {
         NavigableMap<Long, RangeProperties> ranges1 = Maps.newTreeMap();
         NavigableMap<Long, RangeProperties> ranges2 = Maps.newTreeMap();
         for (long hashKey = 0L; hashKey < 10L; hashKey++) {
-            RangeProperties props1 = RangeProperties.newBuilder()
+            RangeProperties props1 = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey)
                 .setStartHashKey(hashKey)
-                .setEndHashKey(hashKey)
-                .build();
+                .setEndHashKey(hashKey);
             ranges1.put(hashKey, props1);
-            RangeProperties props2 = RangeProperties.newBuilder()
+            RangeProperties props2 = new RangeProperties()
                 .setStorageContainerId(hashKey)
                 .setRangeId(hashKey + 1)
                 .setStartHashKey(hashKey + 1)
-                .setEndHashKey(hashKey + 1)
-                .build();
+                .setEndHashKey(hashKey + 1);
             ranges2.put(hashKey, props2);
         }
 

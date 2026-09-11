@@ -20,6 +20,7 @@ package org.apache.bookkeeper.tools.cli.commands.bookies;
 
 import com.beust.jcommander.Parameter;
 import com.google.common.util.concurrent.UncheckedExecutionException;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
@@ -27,15 +28,12 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Nuke bookkeeper metadata of existing cluster in zookeeper.
  */
+@CustomLog
 public class NukeExistingClusterCommand extends BookieCommand<NukeExistingClusterCommand.NukeExistingClusterFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(NukeExistingClusterCommand.class);
 
     private static final String NAME = "nukeexistingcluster";
     private static final String DESC = "Nuke bookkeeper cluster by deleting metadata.";
@@ -79,7 +77,7 @@ public class NukeExistingClusterCommand extends BookieCommand<NukeExistingCluste
          * instanceid should be provided.
          */
         if (cmdFlags.force == (cmdFlags.instandId != null)) {
-            LOG.error("Either force option or instanceid should be specified (but no both)");
+            log.error("Either force option or instanceid should be specified (but no both)");
             return false;
         }
         try {

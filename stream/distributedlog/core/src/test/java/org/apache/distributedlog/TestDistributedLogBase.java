@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -68,15 +69,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.rules.TestName;
 import org.junit.rules.Timeout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * DistributedLogBase providing test environment setup for other Test Cases.
  */
+@CustomLog
 public class TestDistributedLogBase {
-    static final Logger LOG = LoggerFactory.getLogger(TestDistributedLogBase.class);
 
     @Rule
     public final TestName runtime = new TestName();
@@ -150,7 +148,7 @@ public class TestDistributedLogBase {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
-                LOG.warn("Uncaught exception at Thread {} : ", t.getName(), e);
+                log.warn().attr("thread", t.getName()).exception(e).log("Uncaught exception");
             }
         });
     }
@@ -171,7 +169,8 @@ public class TestDistributedLogBase {
         try {
             zkc = LocalDLMEmulator.connectZooKeeper("127.0.0.1", zkPort);
         } catch (Exception ex) {
-            LOG.error("hit exception connecting to zookeeper at {}:{}", "127.0.0.1", zkPort, ex);
+            log.error().attr("host", "127.0.0.1").attr("port", zkPort).exception(ex)
+                    .log("hit exception connecting to zookeeper");
             throw ex;
         }
     }
@@ -230,12 +229,12 @@ public class TestDistributedLogBase {
         AsyncCloseable resourcesCloseable = new AsyncCloseable() {
             @Override
             public CompletableFuture<Void> asyncClose() {
-                LOG.info("Shutting down the scheduler");
+                log.info("Shutting down the scheduler");
                 SchedulerUtils.shutdownScheduler(scheduler, 1, TimeUnit.SECONDS);
-                LOG.info("Shut down the scheduler");
-                LOG.info("Closing the namespace");
+                log.info("Shut down the scheduler");
+                log.info("Closing the namespace");
                 namespace.close();
-                LOG.info("Closed the namespace");
+                log.info("Closed the namespace");
                 return FutureUtils.Void();
             }
         };

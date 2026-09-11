@@ -29,9 +29,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.Supplier;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.experimental.Accessors;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.coder.ByteArrayCoder;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.exceptions.ObjectClosedException;
@@ -50,7 +50,7 @@ import org.apache.distributedlog.api.namespace.Namespace;
  * A default implementation of {@link MVCCStoreFactory}.
  */
 @Accessors(fluent = true)
-@Slf4j
+@CustomLog
 public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
 
     // store supplier
@@ -140,8 +140,11 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         if (null != oldStore) {
             store.closeAsync();
         } else {
-            log.info("Add store (scId = {}, streamId = {}, rangeId = {}) at storage container ({})",
-                scId, streamId, rangeId, scId);
+            log.info()
+                .attr("scId", scId)
+                .attr("streamId", streamId)
+                .attr("rangeId", rangeId)
+                .log("Add store at storage container");
             scStores.put(rid, store);
         }
     }
@@ -174,8 +177,11 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             }
         }
 
-        log.info("Initializing stream({})/range({}) at storage container ({})",
-            streamId, rangeId, scId);
+        log.info()
+            .attr("streamId", streamId)
+            .attr("rangeId", rangeId)
+            .attr("scId", scId)
+            .log("Initializing stream/range at storage container");
 
         MVCCAsyncStore<byte[], byte[]> store = storeSupplier.get();
 
@@ -222,17 +228,23 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
         return store.init(spec).whenComplete((ignored, throwable) -> {
             // since the store has not been added, so can't release its resources during close sc
             if (null != throwable) {
-                log.info("Clearing resources hold by stream({})/range({}) at storage container ({}) ",
-                    streamId, rangeId, scId);
+                log.info()
+                    .attr("streamId", streamId)
+                    .attr("rangeId", rangeId)
+                    .attr("scId", scId)
+                    .log("Clearing resources hold by stream/range at storage container");
                 store.closeAsync().whenComplete((i, t) -> {
                     if (null != t) {
-                        log.error("Clear resources hold by {} fail", store.name());
+                        log.error().attr("store", store.name()).log("Clear resources hold fail");
                     }
                 });
             }
         }).thenApply(ignored -> {
-            log.info("Successfully initialize stream({})/range({}) at storage container ({})",
-                streamId, rangeId, scId);
+            log.info()
+                .attr("streamId", streamId)
+                .attr("rangeId", rangeId)
+                .attr("scId", scId)
+                .log("Successfully initialized stream/range at storage container");
             addStore(scId, streamId, rangeId, store);
             return store;
         });
@@ -245,13 +257,13 @@ public class MVCCStoreFactoryImpl implements MVCCStoreFactory {
             scStores = stores.remove(scId);
         }
         if (null == scStores) {
-            log.info("scStores for {} on store factory is null, return directly", scId);
+            log.info().attr("scId", scId).log("scStores on store factory is null, return directly");
             return FutureUtils.Void();
         }
 
         List<CompletableFuture<Void>> closeFutures = Lists.newArrayList();
         for (MVCCAsyncStore<byte[], byte[]> store : scStores.values()) {
-            log.info("Closing {} of sc {}", store.name(), scId);
+            log.info().attr("store", store.name()).attr("scId", scId).log("Closing store of sc");
             closeFutures.add(store.closeAsync());
         }
 

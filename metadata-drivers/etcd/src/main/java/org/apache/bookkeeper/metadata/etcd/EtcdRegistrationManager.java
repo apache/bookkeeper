@@ -61,8 +61,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieException.BookieIllegalOpException;
 import org.apache.bookkeeper.bookie.BookieException.CookieNotFoundException;
@@ -78,7 +78,7 @@ import org.apache.bookkeeper.versioning.Versioned;
 /**
  * Etcd registration manager.
  */
-@Slf4j
+@CustomLog
 class EtcdRegistrationManager implements RegistrationManager {
 
     private final String scope;
@@ -137,10 +137,10 @@ class EtcdRegistrationManager implements RegistrationManager {
     @Override
     public void close() {
         if (ownClient) {
-            log.info("Closing registration manager under scope '{}'", scope);
+            log.info().attr("scope", scope).log("Closing registration manager");
             bkRegister.close();
             client.close();
-            log.info("Successfully closed registration manager under scope '{}'", scope);
+            log.info().attr("scope", scope).log("Successfully closed registration manager");
         }
     }
 
@@ -186,8 +186,11 @@ class EtcdRegistrationManager implements RegistrationManager {
                         .build(),
                     response -> {
                         for (WatchEvent event : response.getEvents()) {
-                            log.info("Received watch event on '{}' : EventType = {}, lease {}",
-                                regPath, event.getEventType(), leaseId);
+                            log.info()
+                                    .attr("regPath", regPath)
+                                    .attr("eventType", event.getEventType())
+                                    .attr("leaseId", leaseId)
+                                    .log("Received watch event");
                             if (EventType.DELETE == event.getEventType()) {
                                 watchFuture.complete(null);
                                 return;
@@ -195,16 +198,23 @@ class EtcdRegistrationManager implements RegistrationManager {
                         }
                     },
                     exception -> {
-                        log.warn("Exception in keepAlive for watch event on {}, lease {}",
-                                regPath, leaseId, exception);
+                        log.warn()
+                                .attr("regPath", regPath)
+                                .attr("leaseId", leaseId)
+                                .exception(exception)
+                                .log("Exception in keepAlive for watch event");
                         watchFuture.completeExceptionally(new UncheckedExecutionException(
                                     "Interrupted at waiting previous registration under "
                                     + regPath + " (lease = " + kv.getLease() + ") to be expired", exception));
                     }
                 );
-                log.info("Previous bookie registration (lease = {}) still exists at {}, "
-                                + "so new lease '{}' will be waiting previous lease for {} seconds to be expired",
-                        kv.getLease(), regPath, leaseId, bkRegister.getTtlSeconds());
+                log.info()
+                        .attr("previousLeaseId", kv.getLease())
+                        .attr("regPath", regPath)
+                        .attr("newLeaseId", leaseId)
+                        .attr("ttlSeconds", bkRegister.getTtlSeconds())
+                        .log("Previous bookie registration still exists, new lease will wait for previous lease"
+                                + " to be expired");
 
                 try {
                     msResult(watchFuture, 2 * bkRegister.getTtlSeconds(), TimeUnit.SECONDS);
@@ -261,7 +271,7 @@ class EtcdRegistrationManager implements RegistrationManager {
                     + regPath + "': lease = " + kv.getLease());
             }
         } else {
-            log.info("Successfully registered bookie at {}", regPath);
+            log.info().attr("regPath", regPath).log("Successfully registered bookie");
         }
     }
 
@@ -282,9 +292,12 @@ class EtcdRegistrationManager implements RegistrationManager {
         }
         DeleteResponse delResp = msResult(kvClient.delete(ByteSequence.from(regPath, UTF_8)));
         if (delResp.getDeleted() > 0) {
-            log.info("Successfully unregistered bookie {} from {}", bookieId, regPath);
+            log.info()
+                    .attr("bookieId", bookieId)
+                    .attr("regPath", regPath)
+                    .log("Successfully unregistered bookie");
         } else {
-            log.info("Bookie disappeared from {} before unregistering", regPath);
+            log.info().attr("regPath", regPath).log("Bookie disappeared before unregistering");
         }
     }
 
@@ -385,8 +398,10 @@ class EtcdRegistrationManager implements RegistrationManager {
                 throw new CookieNotFoundException(bookieId.toString());
             }
         } else {
-            log.info("Removed cookie from {} for bookie {}",
-                cookiePath.toString(UTF_8), bookieId);
+            log.info()
+                    .attr("cookiePath", cookiePath.toString(UTF_8))
+                    .attr("bookieId", bookieId)
+                    .log("Removed cookie");
         }
     }
 
@@ -396,8 +411,8 @@ class EtcdRegistrationManager implements RegistrationManager {
             kvClient.get(ByteSequence.from(getClusterInstanceIdPath(scope), UTF_8)));
         if (response.getCount() <= 0) {
             log.error("BookKeeper metadata doesn't exist in Etcd. "
-                + "Has the cluster been initialized? "
-                + "Try running bin/bookkeeper shell initNewCluster");
+                    + "Has the cluster been initialized? "
+                    + "Try running bin/bookkeeper shell initNewCluster");
             throw new MetadataStoreException("BookKeeper is not initialized under '" + scope + "' yet");
         } else {
             KeyValue kv = response.getKvs().get(0);
@@ -529,8 +544,9 @@ class EtcdRegistrationManager implements RegistrationManager {
         ByteSequence rootScopeKey = ByteSequence.from(scope, UTF_8);
         GetResponse resp = msResult(kvClient.get(rootScopeKey));
         if (resp.getCount() <= 0) {
-            log.info("There is no existing cluster with under scope '{}' in Etcd, "
-                + "so exiting nuke operation", scope);
+            log.info()
+                    .attr("scope", scope)
+                    .log("There is no existing cluster under scope in Etcd, so exiting nuke operation");
             return true;
         }
 
@@ -559,7 +575,7 @@ class EtcdRegistrationManager implements RegistrationManager {
         }
         if (hasBookiesAlive) {
             log.error("Bookies are still up and connected to this cluster, "
-                + "stop all bookies before nuking the cluster");
+                    + "stop all bookies before nuking the cluster");
             return false;
         }
         DeleteResponse delResp = msResult(kvClient.delete(
@@ -567,8 +583,10 @@ class EtcdRegistrationManager implements RegistrationManager {
             DeleteOption.newBuilder()
                 .withRange(ByteSequence.from(getScopeEndKey(scope), UTF_8))
                 .build()));
-        log.info("Successfully nuked cluster under scope '{}' : {} kv pairs deleted",
-            scope, delResp.getDeleted());
+        log.info()
+                .attr("scope", scope)
+                .attr("kvPairsDeleted", delResp.getDeleted())
+                .log("Successfully nuked cluster");
         return true;
     }
 }

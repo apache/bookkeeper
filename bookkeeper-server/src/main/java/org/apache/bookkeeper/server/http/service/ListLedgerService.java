@@ -25,6 +25,7 @@ import com.google.common.collect.Maps;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.common.util.JsonUtil;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -36,8 +37,6 @@ import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerMetadataSerDe;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * HttpEndpointService that handle Bookkeeper list ledger related http request.
@@ -45,9 +44,9 @@ import org.slf4j.LoggerFactory;
  * <p>The GET method will list all ledger_ids in this bookkeeper cluster.
  * User can choose print metadata of each ledger or not by set parameter "print_metadata"
  */
+@CustomLog
 public class ListLedgerService implements HttpEndpointService {
 
-    static final Logger LOG = LoggerFactory.getLogger(ListLedgerService.class);
 
     protected ServerConfiguration conf;
     protected LedgerManagerFactory ledgerManagerFactory;
@@ -148,9 +147,7 @@ public class ListLedgerService implements HttpEndpointService {
             manager.close();
 
             String jsonResponse = JsonUtil.toJson(output);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("output body:" + jsonResponse);
-            }
+            log.debug().attr("body", jsonResponse).log("output body");
             response.setBody(jsonResponse);
             response.setCode(HttpServer.StatusCode.OK);
             return response;

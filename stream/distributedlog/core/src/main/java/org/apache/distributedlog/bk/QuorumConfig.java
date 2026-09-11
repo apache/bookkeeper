@@ -18,15 +18,13 @@
 package org.apache.distributedlog.bk;
 
 import com.google.common.base.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Configuration for quorums.
  */
+@CustomLog
 public class QuorumConfig {
-
-    private static final Logger logger = LoggerFactory.getLogger(QuorumConfig.class);
 
     private final int ensembleSize;
     private final int writeQuorumSize;
@@ -38,15 +36,19 @@ public class QuorumConfig {
         this.ensembleSize = ensembleSize;
         if (this.ensembleSize < writeQuorumSize) {
             this.writeQuorumSize = this.ensembleSize;
-            logger.warn("Setting write quorum size {} greater than ensemble size {}",
-                    writeQuorumSize, this.ensembleSize);
+            log.warn()
+                    .attr("writeQuorumSize", writeQuorumSize)
+                    .attr("ensembleSize", this.ensembleSize)
+                    .log("Setting write quorum size greater than ensemble size");
         } else {
             this.writeQuorumSize = writeQuorumSize;
         }
         if (this.writeQuorumSize < ackQuorumSize) {
             this.ackQuorumSize = this.writeQuorumSize;
-            logger.warn("Setting write ack quorum size {} greater than write quorum size {}",
-                    ackQuorumSize, this.writeQuorumSize);
+            log.warn()
+                    .attr("ackQuorumSize", ackQuorumSize)
+                    .attr("writeQuorumSize", this.writeQuorumSize)
+                    .log("Setting write ack quorum size greater than write quorum size");
         } else {
             this.ackQuorumSize = ackQuorumSize;
         }

@@ -22,12 +22,12 @@ import com.google.common.collect.Maps;
 import java.util.Map;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 
 /**
  * A manager manages the mapping between storage containers and range servers.
  */
-@Slf4j
+@CustomLog
 public class StorageContainerManager implements AutoCloseable {
 
     @GuardedBy("storageContainers")
@@ -48,7 +48,8 @@ public class StorageContainerManager implements AutoCloseable {
         synchronized (storageContainers) {
             StorageContainerInfo oldGroupInfo = storageContainers.get(groupId);
             if (null == oldGroupInfo || oldGroupInfo.getRevision() < groupInfo.getRevision()) {
-                log.info("Updated the storage container info for group {} : {}", groupId, groupInfo);
+                log.info().attr("groupId", groupId).attr("groupInfo", groupInfo)
+                    .log("Updated the storage container info");
                 storageContainers.put(groupId, groupInfo);
                 return true;
             }

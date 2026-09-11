@@ -59,7 +59,7 @@ public class TestLedgerFragmentReplicationWithMock {
         doAnswer(invocationOnMock -> {
             ByteBuf toSend = invocationOnMock.getArgument(4);
             BookieProtoEncoding.RequestEnDeCoderPreV3 deCoderPreV3 =
-                new BookieProtoEncoding.RequestEnDeCoderPreV3(null);
+                new BookieProtoEncoding.RequestEnDeCoderPreV3();
             toSend.readerIndex(4);
             BookieProtocol.ParsedAddRequest request = (BookieProtocol.ParsedAddRequest) deCoderPreV3.decode(toSend);
 

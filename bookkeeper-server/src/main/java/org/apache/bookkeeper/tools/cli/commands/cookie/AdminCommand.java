@@ -29,6 +29,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.BookieException;
@@ -46,15 +47,12 @@ import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to update cookie.
  */
+@CustomLog
 public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(AdminCommand.class);
 
     private static final String NAME = "admin";
     private static final String DESC = "Command to update cookie";
@@ -125,10 +123,10 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
         boolean useHostName = flags.hostname;
         if (flags.hostname || flags.ip) {
             if (!conf.getUseHostNameAsBookieID() && useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=true as the option value");
+                log.error("Expects configuration useHostNameAsBookieID=true as the option value");
                 return false;
             } else if (conf.getUseHostNameAsBookieID() && !useHostName) {
-                LOG.error("Expects configuration useHostNameAsBookieID=false as the option value");
+                log.error("Expects configuration useHostNameAsBookieID=false as the option value");
                 return false;
             }
             return updateBookieIdInCookie(conf, flags.hostname);
@@ -140,7 +138,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
         } else if (flags.delete) {
             return listOrDeleteCookies(conf, true, flags.force);
         } else {
-            LOG.error("Invalid command !");
+            log.error("Invalid command !");
             usage();
             return false;
         }
@@ -158,8 +156,10 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                     conf.setUseHostNameAsBookieID(!useHostname);
                     oldCookie = Cookie.readFromRegistrationManager(rm, conf);
                 } catch (BookieException.CookieNotFoundException nne) {
-                    LOG.error("Either cookie already updated with UseHostNameAsBookieID={} or no cookie exists!",
-                              useHostname, nne);
+                    log.error()
+                            .exception(nne)
+                            .logf("Either cookie already updated with UseHostNameAsBookieID=%s or no cookie exists!",
+                                    useHostname);
                     return false;
                 }
                 Cookie newCookie = Cookie.newBuilder(oldCookie.getValue()).setBookieId(newBookieId).build();
@@ -183,25 +183,29 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                         oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
                         return true;
                     } catch (BookieException.CookieNotFoundException nne) {
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Ignoring, cookie will be written to zookeeper");
-                        }
+                        log.debug("Ignoring, cookie will be written to zookeeper");
                     }
                 } else {
                     // writes newcookie to local dirs
                     for (File journalDirectory : journalDirectories) {
                         newCookie.writeToDirectory(journalDirectory);
-                        LOG.info("Updated cookie file present in journalDirectory {}", journalDirectory);
+                        log.info()
+                                .attr("journalDirectory", journalDirectory)
+                                .log("Updated cookie file present in journalDirectory");
                     }
                     for (File dir : ledgerDirectories) {
                         newCookie.writeToDirectory(dir);
                     }
-                    LOG.info("Updated cookie file present in ledgerDirectories {}", (Object) ledgerDirectories);
+                    log.info()
+                            .attr("ledgerDirectories", (Object) ledgerDirectories)
+                            .log("Updated cookie file present in ledgerDirectories");
                     if (ledgerDirectories != indexDirectories) {
                         for (File dir : indexDirectories) {
                             newCookie.writeToDirectory(dir);
                         }
-                        LOG.info("Updated cookie file present in indexDirectories {}", (Object) indexDirectories);
+                        log.info()
+                                .attr("indexDirectories", (Object) indexDirectories)
+                                .log("Updated cookie file present in indexDirectories");
                     }
                 }
                 // writes newcookie to zookeeper
@@ -213,7 +217,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                 oldCookie.getValue().deleteFromRegistrationManager(rm, conf, oldCookie.getVersion());
                 return true;
             } catch (IOException | BookieException ioe) {
-                LOG.error("IOException during cookie updation!", ioe);
+                log.error().exception(ioe).log("IOException during cookie updation!");
                 return false;
             }
         });
@@ -245,7 +249,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                 validation.checkCookies(dirs);
                 return true;
             } catch (BookieException e) {
-                LOG.error("Exception while updating cookie for storage expansion", e);
+                log.error().exception(e).log("Exception while updating cookie for storage expansion");
                 return false;
             }
         });
@@ -280,23 +284,25 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                 if (confirm) {
                     for (File verFile : allVersionFiles) {
                         if (!verFile.delete()) {
-                            LOG.error("Failed to delete Local cookie file {}. So aborting deletecookie of Bookie: {}",
-                                      verFile, bookieAddress);
+                            log.error()
+                                    .attr("verFile", verFile)
+                                    .attr("bookieAddress", bookieAddress)
+                                    .log("Failed to delete Local cookie file, aborting deletecookie of Bookie");
                             return false;
                         }
                     }
-                    LOG.info("Deleted Local Cookies of Bookie: {}", bookieAddress);
+                    log.info().attr("bookieAddress", bookieAddress).log("Deleted Local Cookies of Bookie");
                 } else {
-                    LOG.info("Skipping deleting local Cookies of Bookie: {}", bookieAddress);
+                    log.info().attr("bookieAddress", bookieAddress).log("Skipping deleting local Cookies of Bookie");
                 }
             } else {
-                LOG.info("Listing local Cookie Files of Bookie: {}", bookieAddress);
+                log.info().attr("bookieAddress", bookieAddress).log("Listing local Cookie Files of Bookie");
                 for (File verFile : allVersionFiles) {
-                    LOG.info(verFile.getCanonicalPath());
+                    log.info().attr("file", verFile.getCanonicalPath()).log("Cookie file");
                 }
             }
         } else {
-            LOG.info("No local cookies for Bookie: {}", bookieAddress);
+            log.info().attr("bookieAddress", bookieAddress).log("No local cookies for Bookie");
         }
 
         return runFunctionWithRegistrationManager(bkConf, rm -> {
@@ -305,7 +311,7 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
                 try {
                     cookie = Cookie.readFromRegistrationManager(rm, bookieAddress);
                 } catch (BookieException.CookieNotFoundException nne) {
-                    LOG.info("No cookie for {} in metadata store", bookieAddress);
+                    log.info().attr("bookieAddress", bookieAddress).log("No cookie for in metadata store");
                     return true;
                 }
 
@@ -317,9 +323,13 @@ public class AdminCommand extends BookieCommand<AdminCommand.AdminFlags> {
 
                     if (confirm) {
                         cookie.getValue().deleteFromRegistrationManager(rm, bkConf, cookie.getVersion());
-                        LOG.info("Deleted Cookie from metadata store for Bookie: {}", bookieAddress);
+                        log.info()
+                                .attr("bookieAddress", bookieAddress)
+                                .log("Deleted Cookie from metadata store for Bookie");
                     } else {
-                        LOG.info("Skipping deleting cookie from metadata store for Bookie: {}", bookieAddress);
+                        log.info()
+                                .attr("bookieAddress", bookieAddress)
+                                .log("Skipping deleting cookie from metadata store for Bookie");
                     }
                 }
             } catch (BookieException | IOException e) {

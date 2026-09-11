@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.LastConfirmedAndEntry;
 import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
 
@@ -30,7 +30,7 @@ import org.apache.bookkeeper.client.impl.LastConfirmedAndEntryImpl;
  * Utility for callbacks.
  *
  */
-@Slf4j
+@CustomLog
 class SyncCallbackUtils {
 
     /**
@@ -196,9 +196,9 @@ class SyncCallbackUtils {
         @Override
         public void addLacComplete(int rc, LedgerHandle lh, Object ctx) {
             if (rc != BKException.Code.OK) {
-                log.warn("LastAddConfirmedUpdate failed: {} ", BKException.getMessage(rc));
-            } else if (log.isDebugEnabled()) {
-                log.debug("Callback LAC Updated for: {} ", lh.getId());
+                log.warn().attr("error", BKException.getMessage(rc)).log("LastAddConfirmedUpdate failed");
+            } else {
+                log.debug().attr("ledgerId", () -> lh.getId()).log("Callback LAC Updated");
             }
         }
     }

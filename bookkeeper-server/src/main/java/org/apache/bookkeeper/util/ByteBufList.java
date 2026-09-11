@@ -22,6 +22,8 @@ package org.apache.bookkeeper.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandler.Sharable;
 import io.netty.channel.ChannelHandlerContext;
@@ -244,6 +246,47 @@ public class ByteBufList extends AbstractReferenceCounted {
         }
 
         return res;
+    }
+
+    /**
+     * Returns a {@link ByteBuf} that views the contents of this {@code ByteBufList}
+     * without copying the bytes.
+     *
+     * <p>Ownership semantics: this {@code ByteBufList}'s reference count is
+     * <em>not</em> changed by this call &mdash; the returned {@link ByteBuf} holds
+     * its own retained references to the underlying buffers. The caller is
+     * responsible for releasing the returned {@link ByteBuf} when it is no longer
+     * needed; this {@code ByteBufList} continues to be owned by its caller and
+     * must be released independently.
+     *
+     * <p>If this list is empty, {@link Unpooled#EMPTY_BUFFER} is returned.
+     * If it contains exactly one buffer, a retained duplicate of that buffer is
+     * returned to avoid the overhead of wrapping it in a
+     * {@link CompositeByteBuf}.
+     *
+     * @param allocator the {@link ByteBufAllocator} used to allocate the
+     *                  {@link CompositeByteBuf} when more than one buffer is present
+     * @return a {@link ByteBuf} viewing the contents of this list
+     */
+    public ByteBuf toByteBuf(ByteBufAllocator allocator) {
+        final int size = buffers.size();
+        if (size == 0) {
+            return Unpooled.EMPTY_BUFFER;
+        }
+        if (size == 1) {
+            // Fast path: avoid wrapping a single buffer in a CompositeByteBuf.
+            // retainedDuplicate() gives the caller an independent ref count and
+            // reader/writer indexes.
+            return buffers.get(0).retainedDuplicate();
+        }
+
+        CompositeByteBuf composite = allocator.compositeBuffer(size);
+        for (int i = 0; i < size; i++) {
+            // Retain so that the composite owns its own reference to each buffer,
+            // independent of this ByteBufList's lifecycle.
+            composite.addComponent(true, buffers.get(i).retainedDuplicate());
+        }
+        return composite;
     }
 
     @Override

@@ -18,7 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.helpers;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.conf.ClientConfiguration;
@@ -32,7 +32,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * This is a mixin class for commands that needs a bookkeeper client.
  */
-@Slf4j
+@CustomLog
 public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends BKCommand<ClientFlagsT> {
 
     protected ClientCommand(CliSpec<ClientFlagsT> spec) {
@@ -66,7 +66,7 @@ public abstract class ClientCommand<ClientFlagsT extends CliFlags> extends BKCom
             run(bk, cmdFlags);
             return true;
         } catch (Exception e) {
-            log.error("Failed to process command '{}'", name(), e);
+            log.error().exception(e).attr("command", name()).log("Failed to process command");
             return false;
         }
     }

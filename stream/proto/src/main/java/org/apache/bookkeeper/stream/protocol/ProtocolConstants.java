@@ -21,14 +21,11 @@ package org.apache.bookkeeper.stream.protocol;
 import io.grpc.Metadata;
 import org.apache.bookkeeper.common.grpc.netty.IdentityBinaryMarshaller;
 import org.apache.bookkeeper.common.grpc.netty.LongBinaryMarshaller;
-import org.apache.bookkeeper.stream.proto.FixedRangeSplitPolicy;
 import org.apache.bookkeeper.stream.proto.RangeKeyType;
 import org.apache.bookkeeper.stream.proto.RetentionPolicy;
 import org.apache.bookkeeper.stream.proto.SegmentRollingPolicy;
-import org.apache.bookkeeper.stream.proto.SizeBasedSegmentRollingPolicy;
 import org.apache.bookkeeper.stream.proto.SplitPolicy;
 import org.apache.bookkeeper.stream.proto.StreamConfiguration;
-import org.apache.bookkeeper.stream.proto.TimeBasedRetentionPolicy;
 
 /**
  * Protocol related constants used across the project.
@@ -77,38 +74,47 @@ public final class ProtocolConstants {
     public static final long MIN_DATA_STREAM_ID = 1024L;
 
     // default split policy
-    public static final SplitPolicy DEFAULT_SPLIT_POLICY =
-        SplitPolicy.newBuilder()
-            .setFixedRangePolicy(
-                FixedRangeSplitPolicy.newBuilder()
-                    .setNumRanges(2))
-            .build();
+    public static final SplitPolicy DEFAULT_SPLIT_POLICY = newDefaultSplitPolicy();
+
+    private static SplitPolicy newDefaultSplitPolicy() {
+        SplitPolicy policy = new SplitPolicy();
+        policy.setFixedRangePolicy().setNumRanges(2);
+        return policy;
+    }
+
     // default rolling policy
-    public static final SegmentRollingPolicy DEFAULT_SEGMENT_ROLLING_POLICY =
-        SegmentRollingPolicy.newBuilder()
-            .setSizePolicy(
-                SizeBasedSegmentRollingPolicy.newBuilder()
-                    .setMaxSegmentSize(128 * 1024 * 1024))
-            .build();
+    public static final SegmentRollingPolicy DEFAULT_SEGMENT_ROLLING_POLICY = newDefaultSegmentRollingPolicy();
+
+    private static SegmentRollingPolicy newDefaultSegmentRollingPolicy() {
+        SegmentRollingPolicy policy = new SegmentRollingPolicy();
+        policy.setSizePolicy().setMaxSegmentSize(128 * 1024 * 1024);
+        return policy;
+    }
+
     // default retention policy
-    public static final RetentionPolicy DEFAULT_RETENTION_POLICY =
-        RetentionPolicy.newBuilder()
-            .setTimePolicy(
-                TimeBasedRetentionPolicy.newBuilder()
-                    .setRetentionMinutes(-1))
-            .build();
+    public static final RetentionPolicy DEFAULT_RETENTION_POLICY = newDefaultRetentionPolicy();
+
+    private static RetentionPolicy newDefaultRetentionPolicy() {
+        RetentionPolicy policy = new RetentionPolicy();
+        policy.setTimePolicy().setRetentionMinutes(-1);
+        return policy;
+    }
+
     // default stream configuration
     public static final int INIT_NUM_RANGES = 24;
     public static final int MIN_NUM_RANGES = 24;
-    public static final StreamConfiguration DEFAULT_STREAM_CONF =
-        StreamConfiguration.newBuilder()
+    public static final StreamConfiguration DEFAULT_STREAM_CONF = newDefaultStreamConf();
+
+    private static StreamConfiguration newDefaultStreamConf() {
+        StreamConfiguration conf = new StreamConfiguration()
             .setKeyType(RangeKeyType.HASH)
             .setInitialNumRanges(INIT_NUM_RANGES)
-            .setMinNumRanges(MIN_NUM_RANGES)
-            .setRetentionPolicy(DEFAULT_RETENTION_POLICY)
-            .setRollingPolicy(DEFAULT_SEGMENT_ROLLING_POLICY)
-            .setSplitPolicy(DEFAULT_SPLIT_POLICY)
-            .build();
+            .setMinNumRanges(MIN_NUM_RANGES);
+        conf.setRetentionPolicy().copyFrom(DEFAULT_RETENTION_POLICY);
+        conf.setRollingPolicy().copyFrom(DEFAULT_SEGMENT_ROLLING_POLICY);
+        conf.setSplitPolicy().copyFrom(DEFAULT_SPLIT_POLICY);
+        return conf;
+    }
 
     // storage container request metadata key
     public static final String SC_ID_KEY = "bk-rt-sc-id" + Metadata.BINARY_HEADER_SUFFIX;

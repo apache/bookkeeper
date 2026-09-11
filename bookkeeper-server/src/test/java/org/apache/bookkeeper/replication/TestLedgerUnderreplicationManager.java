@@ -26,7 +26,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import com.google.protobuf.TextFormat;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -53,7 +52,7 @@ import org.apache.bookkeeper.meta.ZkLayoutManager;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.DNS;
-import org.apache.bookkeeper.proto.DataFormats.UnderreplicatedLedgerFormat;
+import org.apache.bookkeeper.proto.UnderreplicatedLedgerFormat;
 import org.apache.bookkeeper.replication.ReplicationException.UnavailableException;
 import org.apache.bookkeeper.test.ZooKeeperUtil;
 import org.apache.bookkeeper.util.BookKeeperConstants;
@@ -430,12 +429,11 @@ public class TestLedgerUnderreplicationManager {
         m2.markLedgerUnderreplicated(ledgerA, missingReplica1);
 
         // verify duplicate missing replica
-        UnderreplicatedLedgerFormat.Builder builderA = UnderreplicatedLedgerFormat
-                .newBuilder();
+        UnderreplicatedLedgerFormat fmtA = new UnderreplicatedLedgerFormat();
         String znode = getUrLedgerZnode(ledgerA);
         byte[] data = zkc1.getData(znode, false, null);
-        TextFormat.merge(new String(data, Charset.forName("UTF-8")), builderA);
-        List<String> replicaList = builderA.getReplicaList();
+        fmtA.parseFromTextFormat(new String(data, Charset.forName("UTF-8")));
+        List<String> replicaList = fmtA.getReplicasList();
         assertEquals("Published duplicate missing replica : " + replicaList, 1,
                 replicaList.size());
         assertTrue("Published duplicate missing replica : " + replicaList,
@@ -833,12 +831,11 @@ public class TestLedgerUnderreplicationManager {
         }
 
         String urLedgerA = getData(znodeA);
-        UnderreplicatedLedgerFormat.Builder builderA = UnderreplicatedLedgerFormat
-                .newBuilder();
+        UnderreplicatedLedgerFormat fmtA = new UnderreplicatedLedgerFormat();
         for (String replica : missingReplica) {
-            builderA.addReplica(replica);
+            fmtA.addReplica(replica);
         }
-        List<String> replicaList = builderA.getReplicaList();
+        List<String> replicaList = fmtA.getReplicasList();
 
         for (String replica : missingReplica) {
             assertTrue("UrLedger:" + urLedgerA

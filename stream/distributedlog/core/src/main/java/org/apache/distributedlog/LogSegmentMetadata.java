@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Comparator;
 import java.util.concurrent.CompletableFuture;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.distributedlog.exceptions.DLInterruptedException;
 import org.apache.distributedlog.exceptions.LogSegmentNotFoundException;
@@ -35,16 +36,13 @@ import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * Utility class for storing the metadata associated
  * with a single edit log segment, stored in a single ledger.
  */
+@CustomLog
 public class LogSegmentMetadata {
-    static final Logger LOG = LoggerFactory.getLogger(LogSegmentMetadata.class);
     /**
      * LogSegmentMetadataVersion.
      */
@@ -365,7 +363,6 @@ public class LogSegmentMetadata {
                 }
             }
 
-
         }
     };
 
@@ -642,7 +639,7 @@ public class LogSegmentMetadata {
                         LogSegmentMetadata metadata = parseData(path, data, skipMinVersionCheck);
                         FutureUtils.complete(result, metadata);
                     } catch (IOException ie) {
-                        LOG.error("Error on parsing log segment metadata from {} : ", path, ie);
+                        log.error().attr("path", path).exception(ie).log("Error on parsing log segment metadata");
                         result.completeExceptionally(ie);
                     }
                 }
@@ -1018,7 +1015,7 @@ public class LogSegmentMetadata {
             Thread.currentThread().interrupt();
             throw new DLInterruptedException("Interrupted on creating ledger znode " + zkPath, ie);
         } catch (Exception e) {
-            LOG.error("Error creating ledger znode {}", zkPath, e);
+            log.error().attr("zkPath", zkPath).exception(e).log("Error creating ledger znode");
             throw new IOException("Error creating ledger znode " + zkPath);
         }
     }
@@ -1026,9 +1023,7 @@ public class LogSegmentMetadata {
     boolean checkEquivalence(ZooKeeperClient zkc, String path) {
         try {
             LogSegmentMetadata other = FutureUtils.result(read(zkc, path));
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Verifying {} against {}", this, other);
-            }
+            log.trace().attr("this", this).attr("other", other).log("Verifying against");
 
             boolean retVal;
 
@@ -1048,12 +1043,16 @@ public class LogSegmentMetadata {
             }
 
             if (!retVal) {
-                LOG.warn("Equivalence check failed between {} and {}", this, other);
+                log.warn().attr("this", this).attr("other", other).log("Equivalence check failed between and");
             }
 
             return retVal;
         } catch (Exception e) {
-            LOG.error("Could not check equivalence between:" + this + " and data in " + path, e);
+            log.error()
+                    .attr("this", this)
+                    .attr("path", path)
+                    .exception(e)
+                    .log("Could not check equivalence");
             return false;
         }
     }
@@ -1107,7 +1106,6 @@ public class LogSegmentMetadata {
     public Mutator mutator() {
         return new Mutator(this);
     }
-
 
     //
     // Version Checking Utilities

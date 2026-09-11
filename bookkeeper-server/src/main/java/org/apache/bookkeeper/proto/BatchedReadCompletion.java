@@ -23,6 +23,7 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.util.ByteBufList;
 
@@ -34,8 +35,9 @@ class BatchedReadCompletion extends CompletionValue {
                                  final BookkeeperInternalCallbacks.BatchedReadEntryCallback originalCallback,
                                  final Object originalCtx,
                                  long ledgerId, final long entryId,
-                                 PerChannelBookieClient perChannelBookieClient) {
-        super("BatchedRead", originalCtx, ledgerId, entryId, perChannelBookieClient);
+                                 PerChannelBookieClient perChannelBookieClient,
+                                 Executor callbackExecutor) {
+        super("BatchedRead", originalCtx, ledgerId, entryId, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readTimeoutOpLogger;
         this.cb = (rc, ledgerId1, startEntryId, bufList, ctx) -> {
@@ -62,7 +64,7 @@ class BatchedReadCompletion extends CompletionValue {
     @Override
     public void handleV2Response(long ledgerId,
                                  long entryId,
-                                 BookkeeperProtocol.StatusCode status,
+                                 StatusCode status,
                                  BookieProtocol.Response response) {
 
         perChannelBookieClient.readEntryOutstanding.dec();
@@ -75,13 +77,13 @@ class BatchedReadCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
+    public void handleV3Response(Response response) {
         // V3 protocol haven't supported batched read yet.
     }
 
     private void handleBatchedReadResponse(long ledgerId,
                                            long entryId,
-                                           BookkeeperProtocol.StatusCode status,
+                                           StatusCode status,
                                            ByteBufList buffers,
                                            long maxLAC, // max known lac piggy-back from bookies
                                            long lacUpdateTimestamp) { // the timestamp when the lac is updated.

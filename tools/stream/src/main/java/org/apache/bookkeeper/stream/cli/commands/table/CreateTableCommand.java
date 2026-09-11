@@ -79,17 +79,12 @@ public class CreateTableCommand extends AdminCommand<Flags> {
         String streamName = flags.arguments.get(0);
 
         try {
-            StreamConfiguration conf = StreamConfiguration.newBuilder(DEFAULT_STREAM_CONF)
+            StreamConfiguration conf = new StreamConfiguration().copyFrom(DEFAULT_STREAM_CONF)
                 .setMinNumRanges(flags.numRanges)
                 .setInitialNumRanges(flags.numRanges)
-                .build();
+                .setStorageType(StorageType.TABLE);
             StreamProperties nsProps = result(
-                admin.createStream(
-                    globalFlags.namespace,
-                    streamName,
-                    StreamConfiguration.newBuilder(conf)
-                        .setStorageType(StorageType.TABLE)
-                        .build()));
+                admin.createStream(globalFlags.namespace, streamName, conf));
             spec.console().println("Successfully created table '" + streamName + "':");
             spec.console().println(nsProps);
         } catch (NamespaceNotFoundException nfe) {

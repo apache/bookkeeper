@@ -16,14 +16,13 @@
  */
 package org.apache.bookkeeper.stats;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * This class is used to raise alert when we detect an event that should never happen in production.
  */
+@CustomLog
 public class AlertStatsLogger {
-    private static final Logger logger = LoggerFactory.getLogger(AlertStatsLogger.class);
 
     public final String alertStatName;
 
@@ -73,7 +72,6 @@ public class AlertStatsLogger {
         if (null != scopedCounter) {
             scopedCounter.inc();
         }
-        logger.error(format(msg), args);
-        logger.error("fake exception to generate stack trace", new Exception());
+        log.error().exception(new Exception()).logf(format(msg), args);
     }
 }

@@ -22,16 +22,14 @@ package org.apache.bookkeeper.http;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import lombok.CustomLog;
 import org.apache.commons.configuration2.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Class to load and instantiate http server from config.
  */
+@CustomLog
 public class HttpServerLoader {
-
-    static final Logger LOG = LoggerFactory.getLogger(HttpServerLoader.class);
 
     public static final String HTTP_SERVER_CLASS = "httpServerClass";
     static HttpServer server = null;
@@ -46,16 +44,17 @@ public class HttpServerLoader {
                     (Constructor<? extends HttpServer>) cls.getDeclaredConstructor();
                 server = cons.newInstance();
             } catch (ClassNotFoundException cnfe) {
-                LOG.error("Couldn't find configured class(" + className + ")", cnfe);
+                log.error().exception(cnfe).attr("className", className).log("Couldn't find configured class");
             } catch (NoSuchMethodException nsme) {
-                LOG.error("Couldn't find default constructor for class (" + className + ")", nsme);
+                log.error().exception(nsme).attr("className", className)
+                        .log("Couldn't find default constructor for class");
             } catch (InstantiationException ie) {
-                LOG.error("Couldn't construct class (" + className + ")", ie);
+                log.error().exception(ie).attr("className", className).log("Couldn't construct class");
             } catch (IllegalAccessException iae) {
-                LOG.error("Couldn't construct class (" + className + "),"
-                    + " Is the constructor private?", iae);
+                log.error().exception(iae).attr("className", className)
+                        .log("Couldn't construct class. Is the constructor private?");
             } catch (InvocationTargetException ite) {
-                LOG.error("Constructor threw an exception. It should not have.", ite);
+                log.error().exception(ite).log("Constructor threw an exception. It should not have.");
             }
         }
     }

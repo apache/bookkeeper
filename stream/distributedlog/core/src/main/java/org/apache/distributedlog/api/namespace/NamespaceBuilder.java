@@ -21,6 +21,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 import java.io.IOException;
 import java.net.URI;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.annotation.InterfaceAudience.Public;
 import org.apache.bookkeeper.common.annotation.InterfaceStability.Stable;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -42,8 +43,6 @@ import org.apache.distributedlog.namespace.NamespaceDriverManager;
 import org.apache.distributedlog.util.ConfUtils;
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.SimplePermitLimiter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Builder to construct a <code>Namespace</code>.
@@ -52,11 +51,10 @@ import org.slf4j.LoggerFactory;
  * @see Namespace
  * @since 0.3.32
  */
+@CustomLog
 @Public
 @Stable
 public class NamespaceBuilder {
-
-    private static final Logger logger = LoggerFactory.getLogger(NamespaceBuilder.class);
 
     public static NamespaceBuilder newBuilder() {
         return new NamespaceBuilder();
@@ -211,7 +209,7 @@ public class NamespaceBuilder {
         FeatureProvider featureProvider;
         if (null == _featureProvider) {
             featureProvider = new SettableFeatureProvider("", 0);
-            logger.info("No feature provider is set. All features are disabled now.");
+            log.info("No feature provider is set. All features are disabled now.");
         } else {
             featureProvider = _featureProvider;
         }

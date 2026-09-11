@@ -26,6 +26,7 @@ import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
 import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.util.MathUtils;
@@ -33,8 +34,6 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.ReadEntryCallback;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Sequence of entries of a ledger that represents a pending read operation.
@@ -43,8 +42,8 @@ import org.slf4j.LoggerFactory;
  * application as soon as it arrives rather than waiting for the whole thing.
  *
  */
+@CustomLog
 class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
-    private static final Logger LOG = LoggerFactory.getLogger(PendingReadOp.class);
 
     protected boolean parallelRead = false;
     protected final LinkedList<SingleLedgerEntryRequest> seq;
@@ -118,8 +117,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         }
 
         if (numPendingEntries < 0) {
-            LOG.error("Read too many values for ledger {} : [{}, {}].",
-                    ledgerId, startEntryId, endEntryId);
+            log.error()
+                    .ctx(lh.log)
+                    .attr("startEntryId", startEntryId)
+                    .attr("endEntryId", endEntryId)
+                    .log("Read too many values");
         }
 
     }
@@ -150,11 +152,17 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                     break;
                 }
             }
-            LOG.error(
-                    "Read of ledger entry failed: L{} E{}-E{}, Sent to {}, "
-                            + "Heard from {} : bitset = {}, Error = '{}'. First unread entry is ({}, rc = {})",
-                    lh.getId(), startEntryId, endEntryId, sentToHosts, heardFromHosts, heardFromHostsBitSet,
-                    BKException.getMessage(code), firstUnread, firstRc);
+            log.error()
+                    .ctx(lh.log)
+                    .attr("startEntryId", startEntryId)
+                    .attr("endEntryId", endEntryId)
+                    .attr("sentToHosts", sentToHosts)
+                    .attr("heardFromHosts", heardFromHosts)
+                    .attr("heardFromHostsBitSet", heardFromHostsBitSet)
+                    .attr("error", BKException.getMessage(code))
+                    .attr("firstUnreadEntry", firstUnread)
+                    .attr("firstReturnCode", firstRc)
+                    .log("Read of ledger entry failed");
             clientCtx.getClientStats().getReadOpLogger().registerFailedEvent(latencyNanos, TimeUnit.NANOSECONDS);
             // release the entries
             seq.forEach(LedgerEntryRequest::close);
@@ -173,10 +181,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         if (isRecoveryRead) {
             int flags = BookieProtocol.FLAG_HIGH_PRIORITY | BookieProtocol.FLAG_DO_FENCING;
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey);
+                    this, new ReadContext(bookieIndex, to, entry), flags, lh.ledgerKey, false, lh.executor);
         } else {
             clientCtx.getBookieClient().readEntry(to, lh.ledgerId, entry.eId,
-                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE);
+                    this, new ReadContext(bookieIndex, to, entry), BookieProtocol.FLAG_NONE, null, false,
+                    lh.executor);
         }
     }
 
@@ -248,7 +257,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 try {
                     sendReadTo(writeSet.get(i), to, this);
                 } catch (InterruptedException ie) {
-                    LOG.error("Interrupted reading entry {} : ", this, ie);
+                    log.error()
+                            .ctx(lh.log)
+                            .exception(ie)
+                            .attr("readOp", this)
+                            .log("Interrupted reading entry");
                     Thread.currentThread().interrupt();
                     fail(BKException.Code.InterruptedException);
                     return;
@@ -363,7 +376,11 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
                 sentReplicas.set(replica);
                 return to;
             } catch (InterruptedException ie) {
-                LOG.error("Interrupted reading entry " + this, ie);
+                log.error()
+                        .ctx(lh.log)
+                        .exception(ie)
+                        .attr("readOp", this)
+                        .log("Interrupted reading entry");
                 Thread.currentThread().interrupt();
                 fail(BKException.Code.InterruptedException);
                 return null;
@@ -372,11 +389,21 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
         @Override
         synchronized void logErrorAndReattemptRead(int bookieIndex, BookieId host, String errMsg, int rc) {
+            // A late error response from a bookie whose request was already superseded by
+            // a faster (e.g. speculative) read must not flow through the reattempt logic:
+            // writeSet has been recycled at the moment this entry transitioned to complete.
+            if (isComplete()) {
+                return;
+            }
             super.logErrorAndReattemptRead(bookieIndex, host, errMsg, rc);
 
             int replica = writeSet.indexOf(bookieIndex);
             if (replica == NOT_FOUND) {
-                LOG.error("Received error from a host which is not in the ensemble {} {}.", host, ensemble);
+                log.error()
+                        .ctx(lh.log)
+                        .attr("bookieAddr", host)
+                        .attr("ensemble", ensemble)
+                        .log("Received error from a host which is not in the ensemble");
                 return;
             }
             erroredReplicas.set(replica);
@@ -395,15 +422,29 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
         @Override
         boolean complete(int bookieIndex, BookieId host, ByteBuf buffer) {
+            if (isComplete()) {
+                return false;
+            }
+            // Common case: the very first replica responded successfully; no
+            // speculative retry happened, so there are no slow bookies to mark.
+            // Skip the snapshot allocation entirely.
+            final int numReplicasTried = getNextReplicaIndexToReadFrom();
+            if (numReplicasTried <= 1) {
+                return super.complete(bookieIndex, host, buffer);
+            }
+            // Speculative retry happened: snapshot the addresses of the replicas tried
+            // before this one BEFORE calling super.complete(), which recycles writeSet
+            // (see issue #4680). The WriteSet keeps its normal pooled lifecycle.
+            final BookieId[] slowBookies = new BookieId[numReplicasTried - 1];
+            for (int i = 0; i < slowBookies.length; i++) {
+                slowBookies[i] = ensemble.get(writeSet.get(i));
+            }
+
             boolean completed = super.complete(bookieIndex, host, buffer);
             if (completed) {
-                int numReplicasTried = getNextReplicaIndexToReadFrom();
-                // Check if any speculative reads were issued and mark any slow bookies before
-                // the first successful speculative read as "slow"
-                for (int i = 0; i < numReplicasTried - 1; i++) {
-                    int slowBookieIndex = writeSet.get(i);
-                    BookieId slowBookieSocketAddress = ensemble.get(slowBookieIndex);
-                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookieSocketAddress, eId);
+                // Mark replicas tried before the first successful response as "slow".
+                for (BookieId slowBookie : slowBookies) {
+                    clientCtx.getPlacementPolicy().registerSlowBookie(slowBookie, eId);
                 }
             }
             return completed;

@@ -22,20 +22,25 @@
 package org.apache.bookkeeper.proto;
 
 import io.netty.util.Recycler;
+import java.util.concurrent.Executor;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.slf4j.MDC;
 
+@CustomLog
 class AddCompletion extends CompletionValue implements BookkeeperInternalCallbacks.WriteCallback {
 
     static AddCompletion acquireAddCompletion(final CompletionKey key,
                                               final BookkeeperInternalCallbacks.WriteCallback originalCallback,
                                               final Object originalCtx,
                                               final long ledgerId, final long entryId,
-                                              PerChannelBookieClient perChannelBookieClient) {
+                                              PerChannelBookieClient perChannelBookieClient,
+                                              Executor callbackExecutor) {
         AddCompletion completion = ADD_COMPLETION_RECYCLER.get();
-        completion.reset(key, originalCallback, originalCtx, ledgerId, entryId, perChannelBookieClient);
+        completion.reset(key, originalCallback, originalCtx, ledgerId, entryId, perChannelBookieClient,
+                callbackExecutor);
         return completion;
     }
 
@@ -53,7 +58,8 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
                final BookkeeperInternalCallbacks.WriteCallback originalCallback,
                final Object originalCtx,
                final long ledgerId, final long entryId,
-               PerChannelBookieClient perChannelBookieClient) {
+               PerChannelBookieClient perChannelBookieClient,
+               Executor callbackExecutor) {
         this.key = key;
         this.originalCallback = originalCallback;
         this.ctx = originalCtx;
@@ -64,6 +70,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
         this.opLogger = perChannelBookieClient.addEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.addTimeoutOpLogger;
         this.perChannelBookieClient = perChannelBookieClient;
+        this.callbackExecutor = callbackExecutor;
         this.mdcContextMap = perChannelBookieClient.preserveMdcForTaskExecution ? MDC.getCopyOfContextMap() : null;
     }
 
@@ -73,6 +80,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
         this.opLogger = null;
         this.timeoutOpLogger = null;
         this.perChannelBookieClient = null;
+        this.callbackExecutor = null;
         this.mdcContextMap = null;
         handle.recycle(this);
     }
@@ -115,7 +123,7 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
 
     @Override
     public void handleV2Response(
-            long ledgerId, long entryId, BookkeeperProtocol.StatusCode status,
+            long ledgerId, long entryId, StatusCode status,
             BookieProtocol.Response response) {
         perChannelBookieClient.addEntryOutstanding.dec();
         handleResponse(ledgerId, entryId, status);
@@ -123,20 +131,23 @@ class AddCompletion extends CompletionValue implements BookkeeperInternalCallbac
 
     @Override
     public void handleV3Response(
-            BookkeeperProtocol.Response response) {
+            Response response) {
         perChannelBookieClient.addEntryOutstanding.dec();
-        BookkeeperProtocol.AddResponse addResponse = response.getAddResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
-                ? addResponse.getStatus() : response.getStatus();
-        handleResponse(addResponse.getLedgerId(), addResponse.getEntryId(),
-                status);
+        StatusCode status;
+        if (response.getStatus() == StatusCode.EOK && response.hasAddResponse()) {
+            status = response.getAddResponse().getStatus();
+        } else {
+            // Error responses (e.g. EUA from a rejected auth handshake) may not
+            // carry an AddResponse with ledgerId/entryId populated. Fall back to
+            // the values we recorded from the outgoing request.
+            status = response.getStatus();
+        }
+        handleResponse(ledgerId, entryId, status);
     }
 
     private void handleResponse(long ledgerId, long entryId,
-                                BookkeeperProtocol.StatusCode status) {
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledger", ledgerId, "entry", entryId);
-        }
+                                StatusCode status) {
+        logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.WriteException);
         writeComplete(rc, ledgerId, entryId, perChannelBookieClient.bookieId, ctx);

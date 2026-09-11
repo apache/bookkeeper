@@ -31,14 +31,12 @@ import org.junit.Test;
 public class TestStorageContainerManager {
 
     private final StorageContainerManager manager = new StorageContainerManager();
-    private final Endpoint endpoint1 = Endpoint.newBuilder()
+    private final Endpoint endpoint1 = new Endpoint()
         .setHostname("128.0.0.1")
-        .setPort(3181)
-        .build();
-    private final Endpoint endpoint2 = Endpoint.newBuilder()
+        .setPort(3181);
+    private final Endpoint endpoint2 = new Endpoint()
         .setHostname("128.0.0.1")
-        .setPort(3181)
-        .build();
+        .setPort(3181);
 
     @Test
     public void testGetNullStorageContainer() {

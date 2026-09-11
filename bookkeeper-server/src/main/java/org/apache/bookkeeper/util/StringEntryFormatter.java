@@ -21,8 +21,8 @@
 
 package org.apache.bookkeeper.util;
 
-import com.google.protobuf.ByteString;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A String-based entry formatter.
@@ -30,7 +30,7 @@ import java.io.IOException;
 public class StringEntryFormatter extends EntryFormatter {
     @Override
     public void formatEntry(byte[] data) {
-        System.out.println(ByteString.copyFrom(data).toStringUtf8());
+        System.out.println(new String(data, StandardCharsets.UTF_8));
     }
 
     @Override

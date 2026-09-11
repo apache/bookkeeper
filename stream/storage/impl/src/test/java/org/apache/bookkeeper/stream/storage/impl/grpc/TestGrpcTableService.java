@@ -23,9 +23,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
 import io.grpc.Status;
 import io.grpc.StatusRuntimeException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
@@ -47,14 +47,62 @@ public class TestGrpcTableService {
 
     private static final Throwable CAUSE = new Exception("test-exception");
 
-    private static final ByteString TEST_ROUTING_KEY = ByteString.copyFromUtf8("test-routing-key");
-    private static final RoutingHeader ROUTING_HEADER = RoutingHeader.newBuilder()
-        .setStreamId(1234L)
-        .setRangeId(1234L)
-        .setRKey(TEST_ROUTING_KEY)
-        .build();
-    private static final ByteString TEST_KEY = ByteString.copyFromUtf8("test-key");
-    private static final ByteString TEST_VAL = ByteString.copyFromUtf8("test-val");
+    private static final byte[] TEST_ROUTING_KEY = "test-routing-key".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] TEST_KEY = "test-key".getBytes(StandardCharsets.UTF_8);
+    private static final byte[] TEST_VAL = "test-val".getBytes(StandardCharsets.UTF_8);
+
+    private static RoutingHeader newRoutingHeader() {
+        return new RoutingHeader()
+            .setStreamId(1234L)
+            .setRangeId(1234L)
+            .setRKey(TEST_ROUTING_KEY);
+    }
+
+    private static PutRequest newPutRequest() {
+        PutRequest req = new PutRequest()
+            .setKey(TEST_KEY)
+            .setValue(TEST_VAL);
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
+    }
+
+    private static PutResponse newPutResponse(StatusCode code) {
+        PutResponse resp = new PutResponse();
+        ResponseHeader header = resp.setHeader();
+        header.setCode(code);
+        header.setRoutingHeader().copyFrom(newRoutingHeader());
+        return resp;
+    }
+
+    private static RangeRequest newRangeRequest() {
+        RangeRequest req = new RangeRequest()
+            .setKey(TEST_KEY);
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
+    }
+
+    private static RangeResponse newRangeResponse(StatusCode code) {
+        RangeResponse resp = new RangeResponse();
+        ResponseHeader header = resp.setHeader();
+        header.setCode(code);
+        header.setRoutingHeader().copyFrom(newRoutingHeader());
+        return resp;
+    }
+
+    private static DeleteRangeRequest newDeleteRangeRequest() {
+        DeleteRangeRequest req = new DeleteRangeRequest()
+            .setKey(TEST_KEY);
+        req.setHeader().copyFrom(newRoutingHeader());
+        return req;
+    }
+
+    private static DeleteRangeResponse newDeleteRangeResponse(StatusCode code) {
+        DeleteRangeResponse resp = new DeleteRangeResponse();
+        ResponseHeader header = resp.setHeader();
+        header.setCode(code);
+        header.setRoutingHeader().copyFrom(newRoutingHeader());
+        return resp;
+    }
 
     //
     // Meta KeyRange Server Requests tests
@@ -65,19 +113,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        PutRequest request = PutRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        PutRequest request = newPutRequest();
 
-        PutResponse response = PutResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        PutResponse response = newPutResponse(StatusCode.SUCCESS);
 
         when(rangeService.put(request)).thenReturn(
             CompletableFuture.completedFuture(response));
@@ -97,19 +135,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        PutRequest request = PutRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        PutRequest request = newPutRequest();
 
-        PutResponse response = PutResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        PutResponse response = newPutResponse(StatusCode.INTERNAL_SERVER_ERROR);
 
         when(rangeService.put(request)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -129,12 +157,7 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        PutRequest request = PutRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setValue(TEST_VAL)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        PutRequest request = newPutRequest();
 
         when(rangeService.put(request)).thenReturn(
             FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
@@ -154,18 +177,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        RangeRequest request = RangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        RangeRequest request = newRangeRequest();
 
-        RangeResponse response = RangeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        RangeResponse response = newRangeResponse(StatusCode.SUCCESS);
 
         when(rangeService.range(request)).thenReturn(
             CompletableFuture.completedFuture(response));
@@ -185,18 +199,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        RangeRequest request = RangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        RangeRequest request = newRangeRequest();
 
-        RangeResponse response = RangeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        RangeResponse response = newRangeResponse(StatusCode.INTERNAL_SERVER_ERROR);
 
         when(rangeService.range(request)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -216,11 +221,7 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        RangeRequest request = RangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        RangeRequest request = newRangeRequest();
 
         when(rangeService.range(request)).thenReturn(
             FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));
@@ -240,18 +241,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        DeleteRangeRequest request = DeleteRangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        DeleteRangeRequest request = newDeleteRangeRequest();
 
-        DeleteRangeResponse response = DeleteRangeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.SUCCESS)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        DeleteRangeResponse response = newDeleteRangeResponse(StatusCode.SUCCESS);
 
         when(rangeService.delete(request)).thenReturn(
             CompletableFuture.completedFuture(response));
@@ -271,18 +263,9 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        DeleteRangeRequest request = DeleteRangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        DeleteRangeRequest request = newDeleteRangeRequest();
 
-        DeleteRangeResponse response = DeleteRangeResponse.newBuilder()
-            .setHeader(ResponseHeader.newBuilder()
-                .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                .setRoutingHeader(ROUTING_HEADER)
-                .build())
-            .build();
+        DeleteRangeResponse response = newDeleteRangeResponse(StatusCode.INTERNAL_SERVER_ERROR);
 
         when(rangeService.delete(request)).thenReturn(
             FutureUtils.exception(CAUSE));
@@ -302,11 +285,7 @@ public class TestGrpcTableService {
         RangeStoreService rangeService = mock(RangeStoreService.class);
         GrpcTableService grpcService = new GrpcTableService(rangeService);
 
-        DeleteRangeRequest request = DeleteRangeRequest
-            .newBuilder()
-            .setKey(TEST_KEY)
-            .setHeader(ROUTING_HEADER)
-            .build();
+        DeleteRangeRequest request = newDeleteRangeRequest();
 
         when(rangeService.delete(request)).thenReturn(
             FutureUtils.exception(new StatusRuntimeException(Status.NOT_FOUND)));

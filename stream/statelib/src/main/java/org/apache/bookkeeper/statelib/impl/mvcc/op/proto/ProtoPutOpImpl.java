@@ -66,7 +66,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
         if (null != value) {
             return value;
         }
-        value = req.getValue().toByteArray();
+        value = req.getValue();
         return value;
     }
 
@@ -85,7 +85,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
 
     @Override
     public boolean prevKv() {
-        return req.getPrevKv();
+        return req.isPrevKv();
     }
 
     @Override
@@ -98,7 +98,7 @@ public class ProtoPutOpImpl implements PutOp<byte[], byte[]>, PutOption<byte[]> 
         if (null != key) {
             return key;
         }
-        key = req.getKey().toByteArray();
+        key = req.getKey();
         return key;
     }
 

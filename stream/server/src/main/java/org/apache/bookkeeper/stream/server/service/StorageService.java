@@ -16,7 +16,7 @@ package org.apache.bookkeeper.stream.server.service;
 
 import java.io.IOException;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.component.AbstractLifecycleComponent;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stream.storage.StorageContainerStoreBuilder;
@@ -26,7 +26,7 @@ import org.apache.bookkeeper.stream.storage.conf.StorageConfiguration;
 /**
  * Service to run the storage {@link StorageContainerStore}.
  */
-@Slf4j
+@CustomLog
 public class StorageService
     extends AbstractLifecycleComponent<StorageConfiguration>
     implements Supplier<StorageContainerStore> {

@@ -41,7 +41,7 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.proto.BookieClientImpl;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GetBookieInfoCallback;
-import org.apache.bookkeeper.proto.BookkeeperProtocol;
+import org.apache.bookkeeper.proto.GetBookieInfoRequest;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.junit.After;
@@ -110,8 +110,8 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
         // try to get bookie info from the sleeping bookie. It should fail with timeout error
         BookieClient bc = new BookieClientImpl(cConf, eventLoopGroup, UnpooledByteBufAllocator.DEFAULT, executor,
                 scheduler, NullStatsLogger.INSTANCE, bkc.getBookieAddressResolver());
-        long flags = BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
-                | BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
+        long flags = GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE
+                | GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE;
 
         class CallbackObj {
             int rc;
@@ -133,10 +133,10 @@ public class TestGetBookieInfoTimeout extends BookKeeperClusterTestCase {
                 CallbackObj obj = (CallbackObj) ctx;
                 obj.rc = rc;
                 if (rc == Code.OK) {
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
+                    if ((obj.requested & GetBookieInfoRequest.Flags.FREE_DISK_SPACE_VALUE) != 0) {
                         obj.freeDiskSpace = bInfo.getFreeDiskSpace();
                     }
-                    if ((obj.requested & BookkeeperProtocol.GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE)
+                    if ((obj.requested & GetBookieInfoRequest.Flags.TOTAL_DISK_CAPACITY_VALUE)
                             != 0) {
                         obj.totalDiskCapacity = bInfo.getTotalDiskSpace();
                     }

@@ -8,9 +8,6 @@ cd $WEBSITE_DIR
 yarn install
 OUTPUT_DIR=$WEBSITE_DIR/build
 
-# Replace {{ site.xx }} variables
-node $SCRIPTS_DIR/replace.js
-
 # build the website to OUTPUT_DIR
 yarn build
 

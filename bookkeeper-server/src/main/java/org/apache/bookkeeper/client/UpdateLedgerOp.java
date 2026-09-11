@@ -33,20 +33,18 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieShell.UpdateLedgerNotifier;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulates updating the ledger metadata operation.
  */
+@CustomLog
 public class UpdateLedgerOp {
-
-    private static final Logger LOG = LoggerFactory.getLogger(UpdateLedgerOp.class);
     private final LedgerManager lm;
     private final BookKeeperAdmin admin;
 
@@ -119,11 +117,14 @@ public class UpdateLedgerOp {
                             && !(ex instanceof BKException.BKNoSuchLedgerExistsOnMetadataServerException)) {
                             String error = String.format("Failed to update ledger metadata %s, replacing %s with %s",
                                                          ledgerId, oldBookieId, newBookieId);
-                            LOG.error(error, ex);
+                            log.error().exception(ex).log(error);
                             finalPromise.completeExceptionally(new IOException(error, ex));
                         } else {
-                            LOG.info("Updated ledger {} metadata, replacing {} with {}",
-                                     ledgerId, oldBookieId, newBookieId);
+                            log.info()
+                                    .attr("ledgerId", ledgerId)
+                                    .attr("oldBookieId", oldBookieId)
+                                    .attr("newBookieId", newBookieId)
+                                    .log("Updated ledger metadata, replaced old bookie with new bookie");
 
                             updatedLedgerCnt.incrementAndGet();
                             progressable.progress(updatedLedgerCnt.get(), issuedLedgerCnt.get());
@@ -144,16 +145,22 @@ public class UpdateLedgerOp {
 
         try {
             finalPromise.get();
-            LOG.info("Total number of ledgers issued={} updated={}",
-                     issuedLedgerCnt.get(), updatedLedgerCnt.get());
+            log.info()
+                    .attr("issued", issuedLedgerCnt.get())
+                    .attr("updated", updatedLedgerCnt.get())
+                    .log("Total number of ledgers");
         } catch (ExecutionException e) {
-            String error = String.format("Error waiting for ledger metadata updates to complete (replacing %s with %s)",
-                                         oldBookieId, newBookieId);
-            LOG.info(error, e);
+            log.info()
+                    .exception(e)
+                    .attr("oldBookieId", oldBookieId)
+                    .attr("newBookieId", newBookieId)
+                    .log("Error waiting for ledger metadata updates to complete");
             if (e.getCause() instanceof IOException) {
                 throw (IOException) e.getCause();
             } else {
-                throw new IOException(error, e);
+                throw new IOException(
+                        String.format("Error waiting for ledger metadata updates to complete (replacing %s with %s)",
+                                oldBookieId, newBookieId), e);
             }
         }
     }

@@ -28,17 +28,17 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.affinity.CpuAffinity;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
@@ -56,7 +56,7 @@ import org.slf4j.MDC;
  * achieved by hashing the key objects to threads by their {@link #hashCode()}
  * method.
  */
-@Slf4j
+@CustomLog
 public class OrderedExecutor implements ExecutorService {
     public static final int NO_TASK_LIMIT = -1;
     private static final int DEFAULT_MAX_ARRAY_QUEUE_SIZE = 10_000;
@@ -65,7 +65,6 @@ public class OrderedExecutor implements ExecutorService {
     final String name;
     final ExecutorService[] threads;
     final long[] threadIds;
-    final Random rand = new Random();
     final OpStatsLogger taskExecutionStats;
     final OpStatsLogger taskPendingStats;
     final boolean traceTaskExecution;
@@ -205,7 +204,10 @@ public class OrderedExecutor implements ExecutorService {
                 long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
                 taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 if (elapsedMicroSec >= warnTimeMicroSec) {
-                    log.warn("Runnable {} took too long {} micros to execute.", runnableClass, elapsedMicroSec);
+                    log.warn()
+                            .attr("runnable", runnableClass)
+                            .attr("elapsedMicroSec", elapsedMicroSec)
+                            .log("Runnable took too long to execute");
                 }
             }
         }
@@ -235,7 +237,10 @@ public class OrderedExecutor implements ExecutorService {
                 long elapsedMicroSec = MathUtils.elapsedMicroSec(startNanos);
                 taskExecutionStats.registerSuccessfulEvent(elapsedMicroSec, TimeUnit.MICROSECONDS);
                 if (elapsedMicroSec >= warnTimeMicroSec) {
-                    log.warn("Callable {} took too long {} micros to execute.", callableClass, elapsedMicroSec);
+                    log.warn()
+                            .attr("callable", callableClass)
+                            .attr("elapsedMicroSec", elapsedMicroSec)
+                            .log("Callable took too long to execute");
                 }
             }
         }
@@ -419,8 +424,9 @@ public class OrderedExecutor implements ExecutorService {
                         try {
                             CpuAffinity.acquireCore();
                         } catch (Throwable t) {
-                            log.warn("Failed to acquire CPU core for thread {}: {}", Thread.currentThread().getName(),
-                                    t.getMessage(), t);
+                            log.warn().exception(t)
+                                    .attr("thread", Thread.currentThread().getName())
+                                    .log("Failed to acquire CPU core for thread");
                         }
                     }
                 }).get();
@@ -538,7 +544,7 @@ public class OrderedExecutor implements ExecutorService {
             return threads[0];
         }
 
-        return threads[rand.nextInt(threads.length)];
+        return threads[ThreadLocalRandom.current().nextInt(threads.length)];
     }
 
     public ExecutorService chooseThread(Object orderingKey) {
@@ -548,7 +554,7 @@ public class OrderedExecutor implements ExecutorService {
         }
 
         if (null == orderingKey) {
-            return threads[rand.nextInt(threads.length)];
+            return threads[ThreadLocalRandom.current().nextInt(threads.length)];
         } else {
             return threads[chooseThreadIdx(orderingKey.hashCode(), threads.length)];
         }

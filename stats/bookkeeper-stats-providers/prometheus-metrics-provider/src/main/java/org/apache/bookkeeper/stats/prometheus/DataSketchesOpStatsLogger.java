@@ -16,10 +16,6 @@
  */
 package org.apache.bookkeeper.stats.prometheus;
 
-import com.yahoo.sketches.quantiles.DoublesSketch;
-import com.yahoo.sketches.quantiles.DoublesSketchBuilder;
-import com.yahoo.sketches.quantiles.DoublesUnion;
-import com.yahoo.sketches.quantiles.DoublesUnionBuilder;
 import io.netty.util.concurrent.FastThreadLocal;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +24,7 @@ import java.util.concurrent.atomic.LongAdder;
 import java.util.concurrent.locks.StampedLock;
 import org.apache.bookkeeper.stats.OpStatsData;
 import org.apache.bookkeeper.stats.OpStatsLogger;
+import org.apache.datasketches.kll.KllDoublesSketch;
 
 /**
  * OpStatsLogger implementation that uses DataSketches library to calculate the approximated latency quantiles.
@@ -43,8 +40,8 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
     /*
      * These are the sketches where all the aggregated results are published.
      */
-    private volatile DoublesSketch successResult;
-    private volatile DoublesSketch failResult;
+    private volatile KllDoublesSketch successResult;
+    private volatile KllDoublesSketch failResult;
 
     private final LongAdder successCountAdder = new LongAdder();
     private final LongAdder failCountAdder = new LongAdder();
@@ -145,22 +142,22 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
         current = replacement;
         replacement = local;
 
-        final DoublesUnion aggregateSuccess = new DoublesUnionBuilder().build();
-        final DoublesUnion aggregateFail = new DoublesUnionBuilder().build();
+        final KllDoublesSketch aggregateSuccess = KllDoublesSketch.newHeapInstance();
+        final KllDoublesSketch aggregateFail = KllDoublesSketch.newHeapInstance();
         local.map.forEach((localData, b) -> {
             long stamp = localData.lock.writeLock();
             try {
-                aggregateSuccess.update(localData.successSketch);
-                localData.successSketch.reset();
-                aggregateFail.update(localData.failSketch);
-                localData.failSketch.reset();
+                aggregateSuccess.merge(localData.successSketch);
+                aggregateFail.merge(localData.failSketch);
+                localData.successSketch = KllDoublesSketch.newHeapInstance();
+                localData.failSketch = KllDoublesSketch.newHeapInstance();
             } finally {
                 localData.lock.unlockWrite(stamp);
             }
         });
 
-        successResult = aggregateSuccess.getResultAndReset();
-        failResult = aggregateFail.getResultAndReset();
+        successResult = aggregateSuccess;
+        failResult = aggregateFail;
     }
 
     public long getCount(boolean success) {
@@ -172,8 +169,8 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
     }
 
     public double getQuantileValue(boolean success, double quantile) {
-        DoublesSketch s = success ? successResult : failResult;
-        return s != null ? s.getQuantile(quantile) : Double.NaN;
+        KllDoublesSketch s = success ? successResult : failResult;
+        return (s != null && !s.isEmpty()) ? s.getQuantile(quantile) : Double.NaN;
     }
 
     public Map<String, String> getLabels() {
@@ -190,8 +187,8 @@ public class DataSketchesOpStatsLogger implements OpStatsLogger {
     }
 
     private static class LocalData {
-        private final DoublesSketch successSketch = new DoublesSketchBuilder().build();
-        private final DoublesSketch failSketch = new DoublesSketchBuilder().build();
+        private KllDoublesSketch successSketch = KllDoublesSketch.newHeapInstance();
+        private KllDoublesSketch failSketch = KllDoublesSketch.newHeapInstance();
         private final StampedLock lock = new StampedLock();
     }
 

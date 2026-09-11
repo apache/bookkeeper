@@ -22,7 +22,6 @@ package org.apache.bookkeeper.proto;
 
 import static org.apache.bookkeeper.auth.AuthProviderFactoryFactory.AUTHENTICATION_DISABLED_PLUGIN_NAME;
 
-import com.google.protobuf.ByteString;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelDuplexHandler;
@@ -34,19 +33,17 @@ import java.net.SocketAddress;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLong;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.AuthToken;
 import org.apache.bookkeeper.auth.BookieAuthProvider;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.client.BKException;
-import org.apache.bookkeeper.proto.BookkeeperProtocol.AuthMessage;
 import org.apache.bookkeeper.util.ByteBufList;
 import org.apache.bookkeeper.util.NettyChannelUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 class AuthHandler {
-    static final Logger LOG = LoggerFactory.getLogger(AuthHandler.class);
 
     static class ServerSideHandler extends ChannelInboundHandlerAdapter {
         volatile boolean authenticated = false;
@@ -91,10 +88,7 @@ class AuthHandler {
                 BookieProtocol.AuthRequest req = (BookieProtocol.AuthRequest) msg;
                 assert (req.getOpCode() == BookieProtocol.AUTH);
                 if (checkAuthPlugin(req.getAuthMessage(), ctx.channel())) {
-                    byte[] payload = req
-                        .getAuthMessage()
-                        .getPayload()
-                        .toByteArray();
+                    byte[] payload = req.getAuthMessage().getPayload();
                     authProvider.process(AuthToken.wrap(payload),
                                 new AuthResponseCallbackLegacy(req, ctx.channel()));
                 } else {
@@ -115,26 +109,23 @@ class AuthHandler {
                 } else {
                     ctx.channel().close();
                 }
-            } else if (msg instanceof BookkeeperProtocol.Request) { // post-PB-client
-                BookkeeperProtocol.Request req = (BookkeeperProtocol.Request) msg;
-                if (req.getHeader().getOperation() == BookkeeperProtocol.OperationType.AUTH
+            } else if (msg instanceof Request) { // post-PB-client
+                Request req = (Request) msg;
+                if (req.getHeader().getOperation() == OperationType.AUTH
                         && req.hasAuthRequest()
                         && checkAuthPlugin(req.getAuthRequest(), ctx.channel())) {
-                    byte[] payload = req
-                        .getAuthRequest()
-                        .getPayload()
-                        .toByteArray();
+                    byte[] payload = req.getAuthRequest().getPayload();
                     authProvider.process(AuthToken.wrap(payload),
                             new AuthResponseCallback(req, ctx.channel(), authProviderFactory.getPluginName()));
-                } else if (req.getHeader().getOperation() == BookkeeperProtocol.OperationType.START_TLS
+                } else if (req.getHeader().getOperation() == OperationType.START_TLS
                         && req.hasStartTLSRequest()) {
                     super.channelRead(ctx, msg);
                 } else {
-                    BookkeeperProtocol.Response.Builder builder = BookkeeperProtocol.Response.newBuilder()
-                        .setHeader(req.getHeader())
-                        .setStatus(BookkeeperProtocol.StatusCode.EUA);
+                    Response response = new Response();
+                    response.setHeader().copyFrom(req.getHeader());
+                    response.setStatus(StatusCode.EUA);
 
-                    NettyChannelUtil.writeAndFlushWithVoidPromise(ctx.channel(), builder.build());
+                    NettyChannelUtil.writeAndFlushWithVoidPromise(ctx.channel(), response);
                 }
             } else {
                 // close the channel, junk coming over it
@@ -144,8 +135,9 @@ class AuthHandler {
 
         private boolean checkAuthPlugin(AuthMessage am, final Channel src) {
             if (!am.hasAuthPluginName() || !am.getAuthPluginName().equals(authProviderFactory.getPluginName())) {
-                LOG.error("Received message from incompatible auth plugin. Local = {}, Remote = {}, Channel = {}",
-                        authProviderFactory.getPluginName(), am.getAuthPluginName(), src);
+                log.error().attr("localPlugin", authProviderFactory.getPluginName())
+                        .attr("remotePlugin", am.getAuthPluginName()).attr("channel", src)
+                        .log("Received message from incompatible auth plugin");
                 return false;
             }
             return true;
@@ -167,12 +159,13 @@ class AuthHandler {
             @Override
             public void operationComplete(int rc, AuthToken newam) {
                 if (rc != BKException.Code.OK) {
-                    LOG.error("Error processing auth message, closing connection");
+                    log.error("Error processing auth message, closing connection");
                     channel.close();
                     return;
                 }
-                AuthMessage message = AuthMessage.newBuilder().setAuthPluginName(req.authMessage.getAuthPluginName())
-                        .setPayload(ByteString.copyFrom(newam.getData())).build();
+                AuthMessage message = new AuthMessage()
+                        .setAuthPluginName(req.authMessage.getAuthPluginName())
+                        .setPayload(newam.getData());
                 final BookieProtocol.AuthResponse response =
                         new BookieProtocol.AuthResponse(req.getProtocolVersion(), message);
                 NettyChannelUtil.writeAndFlushWithVoidPromise(channel, response);
@@ -180,11 +173,11 @@ class AuthHandler {
         }
 
         static class AuthResponseCallback implements AuthCallbacks.GenericCallback<AuthToken> {
-            final BookkeeperProtocol.Request req;
+            final Request req;
             final Channel channel;
             final String pluginName;
 
-            AuthResponseCallback(BookkeeperProtocol.Request req, Channel channel, String pluginName) {
+            AuthResponseCallback(Request req, Channel channel, String pluginName) {
                 this.req = req;
                 this.channel = channel;
                 this.pluginName = pluginName;
@@ -192,24 +185,21 @@ class AuthHandler {
 
             @Override
             public void operationComplete(int rc, AuthToken newam) {
-                BookkeeperProtocol.Response.Builder builder = BookkeeperProtocol.Response.newBuilder()
-                        .setHeader(req.getHeader());
+                Response response = new Response();
+                response.setHeader().copyFrom(req.getHeader());
 
                 if (rc != BKException.Code.OK) {
-                    LOG.error("Error processing auth message, closing connection");
+                    log.error("Error processing auth message, closing connection");
 
-                    builder.setStatus(BookkeeperProtocol.StatusCode.EUA);
-                    NettyChannelUtil.writeAndFlushWithClosePromise(
-                            channel, builder.build()
-                    );
+                    response.setStatus(StatusCode.EUA);
+                    NettyChannelUtil.writeAndFlushWithClosePromise(channel, response);
                     return;
                 } else {
-                    AuthMessage message = AuthMessage.newBuilder().setAuthPluginName(pluginName)
-                            .setPayload(ByteString.copyFrom(newam.getData())).build();
-                    builder.setStatus(BookkeeperProtocol.StatusCode.EOK).setAuthResponse(message);
-                    NettyChannelUtil.writeAndFlushWithVoidPromise(
-                            channel, builder.build()
-                    );
+                    response.setStatus(StatusCode.EOK)
+                            .setAuthResponse()
+                            .setAuthPluginName(pluginName)
+                            .setPayload(newam.getData());
+                    NettyChannelUtil.writeAndFlushWithVoidPromise(channel, response);
                 }
             }
         }
@@ -219,11 +209,9 @@ class AuthHandler {
             public void operationComplete(int rc, Void v) {
                 if (rc == BKException.Code.OK) {
                     authenticated = true;
-                    LOG.info("Authentication success on server side");
+                    log.info("Authentication success on server side");
                 } else {
-                    if (LOG.isDebugEnabled()) {
-                        LOG.debug("Authentication failed on server side");
-                    }
+                    log.debug("Authentication failed on server side");
                 }
             }
         }
@@ -274,10 +262,13 @@ class AuthHandler {
 
             if (authenticated) {
                 super.channelRead(ctx, msg);
-            } else if (msg instanceof BookkeeperProtocol.Response) {
-                BookkeeperProtocol.Response resp = (BookkeeperProtocol.Response) msg;
+            } else if (msg instanceof Response) {
+                Response resp = (Response) msg;
                 if (null == resp.getHeader().getOperation()) {
-                    LOG.info("dropping received malformed message {} from bookie {}", msg, ctx.channel());
+                    log.info()
+                            .attr("message", msg)
+                            .attr("bookie", ctx.channel())
+                            .log("dropping received malformed message");
                     // drop the message without header
                 } else {
                     switch (resp.getHeader().getOperation()) {
@@ -285,26 +276,29 @@ class AuthHandler {
                         super.channelRead(ctx, msg);
                         break;
                     case AUTH:
-                        if (resp.getStatus() != BookkeeperProtocol.StatusCode.EOK) {
-                            authenticationError(ctx, resp.getStatus().getNumber());
+                        if (resp.getStatus() != StatusCode.EOK) {
+                            authenticationError(ctx, resp.getStatus().getValue());
                         } else {
                             assert (resp.hasAuthResponse());
-                            BookkeeperProtocol.AuthMessage am = resp.getAuthResponse();
+                            AuthMessage am = resp.getAuthResponse();
                             if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())){
                                 SocketAddress remote = ctx.channel().remoteAddress();
-                                LOG.info("Authentication is not enabled."
-                                    + "Considering this client {} authenticated", remote);
+                                log.info().attr("client", remote)
+                                    .log("Authentication is not enabled. Considering this client authenticated");
                                 AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
                                 cb.operationComplete(BKException.Code.OK, null);
                                 return;
                             }
-                            byte[] payload = am.getPayload().toByteArray();
+                            byte[] payload = am.getPayload();
                             authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
                                 authProviderFactory.getPluginName()));
                         }
                         break;
                     default:
-                        LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
+                        log.warn()
+                                .attr("message", msg)
+                                .attr("bookie", ctx.channel())
+                                .log("dropping received message");
                         // else just drop the message,
                         // we're not authenticated so nothing should be coming through
                         break;
@@ -317,22 +311,25 @@ class AuthHandler {
                     if (resp.errorCode != BookieProtocol.EOK) {
                         authenticationError(ctx, resp.errorCode);
                     } else {
-                        BookkeeperProtocol.AuthMessage am = ((BookieProtocol.AuthResponse) resp).authMessage;
+                        AuthMessage am = ((BookieProtocol.AuthResponse) resp).authMessage;
                         if (AUTHENTICATION_DISABLED_PLUGIN_NAME.equals(am.getAuthPluginName())) {
                             SocketAddress remote = ctx.channel().remoteAddress();
-                            LOG.info("Authentication is not enabled."
-                                    + "Considering this client {} authenticated", remote);
+                            log.info().attr("client", remote)
+                                    .log("Authentication is not enabled. Considering this client authenticated");
                             AuthHandshakeCompleteCallback cb = new AuthHandshakeCompleteCallback(ctx);
                             cb.operationComplete(BKException.Code.OK, null);
                             return;
                         }
-                        byte[] payload = am.getPayload().toByteArray();
+                        byte[] payload = am.getPayload();
                         authProvider.process(AuthToken.wrap(payload), new AuthRequestCallback(ctx,
                                 authProviderFactory.getPluginName()));
                     }
                     break;
                 default:
-                    LOG.warn("dropping received message {} from bookie {}", msg, ctx.channel());
+                    log.warn()
+                            .attr("message", msg)
+                            .attr("bookie", ctx.channel())
+                            .log("dropping received message");
                     // else just drop the message, we're not authenticated so nothing should be coming
                     // through
                     break;
@@ -346,12 +343,12 @@ class AuthHandler {
                 if (authenticated) {
                     super.write(ctx, msg, promise);
                     super.flush(ctx);
-                } else if (msg instanceof BookkeeperProtocol.Request) {
+                } else if (msg instanceof Request) {
                     // let auth messages through, queue the rest
-                    BookkeeperProtocol.Request req = (BookkeeperProtocol.Request) msg;
+                    Request req = (Request) msg;
                     if (req.getHeader().getOperation()
-                            == BookkeeperProtocol.OperationType.AUTH
-                        || req.getHeader().getOperation() == BookkeeperProtocol.OperationType.START_TLS) {
+                            == OperationType.AUTH
+                        || req.getHeader().getOperation() == OperationType.START_TLS) {
                         super.write(ctx, msg, promise);
                         super.flush(ctx);
                     } else {
@@ -369,7 +366,10 @@ class AuthHandler {
                 } else if (msg instanceof ByteBuf || msg instanceof ByteBufList) {
                     addMsgAndPromiseToQueue(msg, promise);
                 } else {
-                    LOG.info("[{}] dropping write of message {}", ctx.channel(), msg);
+                    log.info()
+                            .attr("channel", ctx.channel())
+                            .attr("message", msg)
+                            .log("dropping write of message");
                 }
             }
         }
@@ -389,7 +389,7 @@ class AuthHandler {
         }
 
         void authenticationError(ChannelHandlerContext ctx, int errorCode) {
-            LOG.error("Error processing auth message, erroring connection {}", errorCode);
+            log.error().attr("errorCode", errorCode).log("Error processing auth message, erroring connection");
             ctx.fireExceptionCaught(new AuthenticationException("Auth failed with error " + errorCode));
         }
 
@@ -411,8 +411,9 @@ class AuthHandler {
                     return;
                 }
 
-                AuthMessage message = AuthMessage.newBuilder().setAuthPluginName(pluginName)
-                        .setPayload(ByteString.copyFrom(newam.getData())).build();
+                AuthMessage message = new AuthMessage()
+                        .setAuthPluginName(pluginName)
+                        .setPayload(newam.getData());
 
                 if (isUsingV2Protocol) {
                     final BookieProtocol.AuthRequest msg =
@@ -420,13 +421,13 @@ class AuthHandler {
                     NettyChannelUtil.writeAndFlushWithVoidPromise(channel, msg);
                 } else {
                     // V3 protocol
-                    BookkeeperProtocol.BKPacketHeader header = BookkeeperProtocol.BKPacketHeader.newBuilder()
-                            .setVersion(BookkeeperProtocol.ProtocolVersion.VERSION_THREE)
-                            .setOperation(BookkeeperProtocol.OperationType.AUTH).setTxnId(newTxnId()).build();
-                    BookkeeperProtocol.Request.Builder builder = BookkeeperProtocol.Request.newBuilder()
-                            .setHeader(header)
-                            .setAuthRequest(message);
-                    NettyChannelUtil.writeAndFlushWithVoidPromise(channel, builder.build());
+                    Request request = new Request();
+                    request.setHeader()
+                            .setVersion(ProtocolVersion.VERSION_THREE)
+                            .setOperation(OperationType.AUTH)
+                            .setTxnId(newTxnId());
+                    request.setAuthRequest().copyFrom(message);
+                    NettyChannelUtil.writeAndFlushWithVoidPromise(channel, request);
                 }
             }
         }
@@ -459,7 +460,7 @@ class AuthHandler {
                         }
                     }
                 } else {
-                    LOG.warn("Client authentication failed");
+                    log.warn("Client authentication failed");
                     authenticationError(ctx, rc);
                 }
             }

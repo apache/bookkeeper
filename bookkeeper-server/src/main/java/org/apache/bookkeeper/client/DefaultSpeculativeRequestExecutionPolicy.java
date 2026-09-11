@@ -29,8 +29,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * A default implementation of {@link SpeculativeRequestExecutionPolicy}.
@@ -38,8 +37,8 @@ import org.slf4j.LoggerFactory;
  * <p>The policy issues speculative requests in a backoff way. The time between two speculative requests
  * are between {@code firstSpeculativeRequestTimeout} and {@code maxSpeculativeRequestTimeout}.
  */
+@CustomLog
 public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequestExecutionPolicy {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultSpeculativeRequestExecutionPolicy.class);
     final int firstSpeculativeRequestTimeout;
     final int maxSpeculativeRequestTimeout;
     final float backoffMultiplier;
@@ -90,25 +89,33 @@ public class DefaultSpeculativeRequestExecutionPolicy implements SpeculativeRequ
                                         Math.min(maxSpeculativeRequestTimeout,
                                         Math.round((float) speculativeRequestTimeout * backoffMultiplier)));
                             } else {
-                                if (LOG.isTraceEnabled()) {
-                                    LOG.trace("Stopped issuing speculative requests for {}, "
-                                        + "speculativeReadTimeout = {}", requestExecutor, speculativeRequestTimeout);
-                                }
+
+                                log.trace()
+                                .attr("requestExecutor", requestExecutor)
+                                .attr("speculativeRequestTimeout", speculativeRequestTimeout)
+                                .log("Stopped issuing speculative requests");
+
                             }
                         }
 
                         @Override
                         public void onFailure(Throwable thrown) {
-                            LOG.warn("Failed to issue speculative request for {}, speculativeReadTimeout = {} : ",
-                                    requestExecutor, speculativeRequestTimeout, thrown);
+                            log.warn()
+                                    .attr("requestExecutor", requestExecutor)
+                                    .attr("speculativeRequestTimeout", speculativeRequestTimeout)
+                                    .exception(thrown)
+                                    .log("Failed to issue speculative request");
                         }
                     }, directExecutor());
                 }
             }, speculativeRequestTimeout, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException re) {
             if (!scheduler.isShutdown()) {
-                LOG.warn("Failed to schedule speculative request for {}, speculativeReadTimeout = {} : ",
-                        requestExecutor, speculativeRequestTimeout, re);
+                log.warn()
+                        .exception(re)
+                        .attr("requestExecutor", requestExecutor)
+                        .attr("speculativeRequestTimeout", speculativeRequestTimeout)
+                        .log("Failed to schedule speculative request");
             }
         }
         return null;

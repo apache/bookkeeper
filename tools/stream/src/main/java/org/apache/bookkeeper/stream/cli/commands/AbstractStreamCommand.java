@@ -19,7 +19,7 @@
 
 package org.apache.bookkeeper.stream.cli.commands;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.net.ServiceURI;
 import org.apache.bookkeeper.tools.common.BKCommand;
 import org.apache.bookkeeper.tools.common.BKFlags;
@@ -31,7 +31,7 @@ import org.apache.commons.configuration2.CompositeConfiguration;
 /**
  * Abstract stream storage related commands.
  */
-@Slf4j
+@CustomLog
 abstract class AbstractStreamCommand<CommandFlagsT extends CliFlags> extends BKCommand<CommandFlagsT> {
 
     protected AbstractStreamCommand(CliSpec<CommandFlagsT> spec) {
@@ -50,7 +50,9 @@ abstract class AbstractStreamCommand<CommandFlagsT extends CliFlags> extends BKC
                             CommandFlagsT cmdFlags) {
         if (serviceURI == null) {
             serviceURI = ServiceURI.DEFAULT_LOCAL_STREAM_STORAGE_SERVICE_URI;
-            log.info("Service Uri is not specified. Using default service uri : {}", serviceURI);
+            log.info()
+                    .attr("serviceUri", serviceURI)
+                    .log("Service Uri is not specified, using default");
         }
         return doApply(serviceURI, conf, globalFlags, cmdFlags);
     }

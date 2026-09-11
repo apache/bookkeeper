@@ -21,7 +21,7 @@ package org.apache.bookkeeper.stream.storage.impl.cluster;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static org.apache.bookkeeper.stream.storage.StorageConstants.getControllerPath;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeader;
 import org.apache.bookkeeper.stream.storage.api.cluster.ClusterControllerLeaderSelector;
 import org.apache.curator.framework.CuratorFramework;
@@ -32,7 +32,7 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 /**
  * A controller leader selector implemented using zookeeper.
  */
-@Slf4j
+@CustomLog
 public class ZkClusterControllerLeaderSelector implements ClusterControllerLeaderSelector, ConnectionStateListener {
 
     private final CuratorFramework client;

@@ -40,7 +40,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.LedgerStorage;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -52,7 +52,7 @@ import org.apache.bookkeeper.proto.BookieProtocol;
  * Implementation for the EntryCopier interface. Handles the reading of entries
  * from peer bookies.
  */
-@Slf4j
+@CustomLog
 public class EntryCopierImpl implements EntryCopier {
     private static final long SINBIN_DURATION_MS = TimeUnit.MINUTES.toMillis(1);
     private final BookieId bookieId;
@@ -156,7 +156,10 @@ public class EntryCopierImpl implements EntryCopier {
             final Map.Entry<Long, WriteSets> writeSetsForEntryId = this.writeSets
                     .floorEntry(entryId);
             if (writeSetsForEntryId == null) {
-                log.error("writeSets for entryId {} not found, writeSets {}", entryId, writeSets);
+                log.error()
+                        .attr("entryId", entryId)
+                        .attr("writeSets", writeSets)
+                        .log("writeSets for entryId not found");
                 throw new IllegalStateException("writeSets for entryId: " + entryId + " not found");
             }
             ImmutableList<Integer> writeSet = writeSetsForEntryId

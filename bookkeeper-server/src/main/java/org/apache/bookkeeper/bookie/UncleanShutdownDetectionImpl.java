@@ -23,8 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.CustomLog;
 
 /**
  * Used to determine if the prior shutdown was unclean or not. It does so
@@ -34,8 +33,8 @@ import org.slf4j.LoggerFactory;
  * and so on the subsequent boot-up, the presence of any of these files will
  * indicate an unclean shutdown.
  */
+@CustomLog
 public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
-    private static final Logger LOG = LoggerFactory.getLogger(UncleanShutdownDetectionImpl.class);
     private final LedgerDirsManager ledgerDirsManager;
     static final String DIRTY_FILENAME = "DIRTY";
 
@@ -49,15 +48,18 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
             try {
                 File dirtyFile = new File(ledgerDir, DIRTY_FILENAME);
                 if (dirtyFile.createNewFile()) {
-                    LOG.info("Created dirty file in ledger dir: {}", ledgerDir.getAbsolutePath());
+                    log.info().attr("ledgerDir", ledgerDir.getAbsolutePath()).log("Created dirty file in ledger dir");
                 } else {
-                    LOG.info("Dirty file already exists in ledger dir: {}", ledgerDir.getAbsolutePath());
+                    log.info().attr("ledgerDir", ledgerDir.getAbsolutePath())
+                        .log("Dirty file already exists in ledger dir");
                 }
 
             } catch (IOException e) {
-                LOG.error("Unable to register start-up (so an unclean shutdown cannot"
-                        + " be detected). Dirty file of ledger dir {} could not be created.",
-                        ledgerDir.getAbsolutePath(), e);
+                log.error()
+                        .exception(e)
+                        .attr("ledgerDir", ledgerDir.getAbsolutePath())
+                    .log("Unable to register start-up (so an unclean shutdown cannot"
+                        + " be detected). Dirty file of ledger dir could not be created.");
                 throw e;
             }
         }
@@ -72,19 +74,20 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
                     boolean deleted = dirtyFile.delete();
 
                     if (!deleted) {
-                        LOG.error("Unable to register a clean shutdown. The dirty file of "
-                                        + " ledger dir {} could not be deleted.",
-                                ledgerDir.getAbsolutePath());
+                        log.error().attr("ledgerDir", ledgerDir.getAbsolutePath())
+                            .log("Unable to register a clean shutdown. The dirty file of"
+                                + " ledger dir could not be deleted.");
                     }
                 } else {
-                    LOG.error("Unable to register a clean shutdown. The dirty file of "
-                                    + " ledger dir {} does not exist.",
-                            ledgerDir.getAbsolutePath());
+                    log.error().attr("ledgerDir", ledgerDir.getAbsolutePath())
+                        .log("Unable to register a clean shutdown. The dirty file of ledger dir does not exist.");
                 }
             } catch (Throwable t) {
-                LOG.error("Unable to register a clean shutdown. An error occurred while deleting "
-                        + " the dirty file of ledger dir {}.",
-                        ledgerDir.getAbsolutePath(), t);
+                log.error()
+                        .exception(t)
+                        .attr("ledgerDir", ledgerDir.getAbsolutePath())
+                    .log("Unable to register a clean shutdown. An error occurred while deleting"
+                        + " the dirty file of ledger dir.");
             }
         }
     }
@@ -102,13 +105,13 @@ public class UncleanShutdownDetectionImpl implements UncleanShutdownDetection {
                 }
             }
         } catch (Throwable t) {
-            LOG.error("Unable to determine if last shutdown was unclean (defaults to unclean)", t);
+            log.error().exception(t).log("Unable to determine if last shutdown was unclean (defaults to unclean)");
             unclean = true;
         }
 
         if (!dirtyFiles.isEmpty()) {
-            LOG.info("Dirty files exist on boot-up indicating an unclean shutdown. Dirty files: {}",
-                    String.join(",", dirtyFiles));
+            log.info().attr("dirtyFiles", String.join(",", dirtyFiles))
+                .log("Dirty files exist on boot-up indicating an unclean shutdown");
         }
 
         return unclean;

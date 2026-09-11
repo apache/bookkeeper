@@ -22,6 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 import java.io.File;
 import java.io.IOException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Journal;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
 import org.apache.bookkeeper.bookie.LogMark;
@@ -30,17 +31,15 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.DiskChecker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A bookie command to print the last log marker.
  */
+@CustomLog
 public class LastMarkCommand extends BookieCommand<CliFlags> {
 
     private static final String NAME = "lastmark";
     private static final String DESC = "Print last log marker";
-    private static final Logger LOG = LoggerFactory.getLogger(LastMarkCommand.class);
 
     public LastMarkCommand() {
         super(CliSpec.newBuilder()
@@ -66,10 +65,10 @@ public class LastMarkCommand extends BookieCommand<CliFlags> {
             for (int idx = 0; idx < journalDirs.length; idx++) {
                 Journal journal = new Journal(idx, journalDirs[idx], conf, dirsManager);
                 LogMark lastLogMark = journal.getLastLogMark().getCurMark();
-                LOG.info("LastLogMark : Journal Id - {}({}.txn), Pos - {}",
-                    lastLogMark.getLogFileId(),
-                    Long.toHexString(lastLogMark.getLogFileId()),
-                    lastLogMark.getLogFileOffset());
+                log.info().logf("LastLogMark : Journal Id - %d(%s.txn), Pos - %d",
+                        lastLogMark.getLogFileId(),
+                        Long.toHexString(lastLogMark.getLogFileId()),
+                        lastLogMark.getLogFileOffset());
             }
             return true;
         } catch (IOException e) {

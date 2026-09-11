@@ -32,6 +32,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -69,10 +70,6 @@ import org.apache.distributedlog.namespace.NamespaceDriver;
 import org.apache.distributedlog.util.Allocator;
 import org.apache.distributedlog.util.DLUtils;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * <h3>Metrics</h3>
@@ -91,8 +88,8 @@ import org.slf4j.LoggerFactory;
  * for details.
  * </ul>
  */
+@CustomLog
 class BKDistributedLogManager implements DistributedLogManager {
-    static final Logger LOG = LoggerFactory.getLogger(BKDistributedLogManager.class);
 
     static final Function<LogRecordWithDLSN, Long> RECORD_2_TXID_FUNCTION =
         record -> record.getTransactionId();
@@ -329,8 +326,6 @@ class BKDistributedLogManager implements DistributedLogManager {
     }
 
     // Create Ledger Allocator
-
-
 
     // Create Write Handler
 
@@ -765,14 +760,19 @@ class BKDistributedLogManager implements DistributedLogManager {
                 if (fromDLSN.isPresent()) {
                     return FutureUtils.value(reader);
                 }
-                LOG.info("Reader {} @ {} reading last commit position from subscription store after acquired lock.",
-                        subscriberId.get(), name);
+                log.info()
+                        .attr("subscriberId", subscriberId.get())
+                        .attr("name", name)
+                        .log("Reader @ reading last commit position from subscription store after acquired lock.");
                 // we acquired lock
                 final SubscriptionsStore subscriptionsStore = driver.getSubscriptionsStore(getStreamName());
                 return subscriptionsStore.getLastCommitPosition(subscriberId.get())
                         .thenCompose(lastCommitPosition -> {
-                            LOG.info("Reader {} @ {} positioned to last commit position {}.",
-                                subscriberId.get(), name, lastCommitPosition);
+                            log.info()
+                                    .attr("subscriberId", subscriberId.get())
+                                    .attr("name", name)
+                                    .attr("lastCommitPosition", lastCommitPosition)
+                                    .log("Reader @ positioned to last commit position.");
                             try {
                                 reader.setStartDLSN(lastCommitPosition);
                             } catch (UnexpectedException e) {
@@ -820,7 +820,7 @@ class BKDistributedLogManager implements DistributedLogManager {
 
     LogReader getInputStreamInternal(DLSN fromDLSN, Optional<Long> fromTxnId)
             throws IOException {
-        LOG.info("Create sync reader starting from {}", fromDLSN);
+        log.info().attr("fromDLSN", fromDLSN).log("Create sync reader");
         checkClosedOrInError("getInputStream");
         return new BKSyncLogReader(
                 conf,
@@ -1016,7 +1016,10 @@ class BKDistributedLogManager implements DistributedLogManager {
         checkClosedOrInError("purgeLogSegmentsOlderThan");
         BKLogWriteHandler ledgerHandler = createWriteHandler(true);
         try {
-            LOG.info("Purging logs for {} older than {}", ledgerHandler.getFullyQualifiedName(), minTxIdToKeep);
+            log.info()
+                .attr("fullyQualifiedName", ledgerHandler.getFullyQualifiedName())
+                .attr("minTxIdToKeep", minTxIdToKeep)
+                .log("Purging logs older than threshold");
             Utils.ioResult(ledgerHandler.purgeLogSegmentsOlderThanTxnId(minTxIdToKeep));
         } finally {
             Utils.closeQuietly(ledgerHandler);

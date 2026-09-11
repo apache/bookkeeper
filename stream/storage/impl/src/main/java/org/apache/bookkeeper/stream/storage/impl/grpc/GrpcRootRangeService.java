@@ -57,9 +57,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<CreateNamespaceResponse>(responseObserver) {
                 @Override
                 protected CreateNamespaceResponse createErrorResp(Throwable cause) {
-                    return CreateNamespaceResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new CreateNamespaceResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }
@@ -71,9 +70,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<DeleteNamespaceResponse>(responseObserver) {
                 @Override
                 protected DeleteNamespaceResponse createErrorResp(Throwable cause) {
-                    return DeleteNamespaceResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new DeleteNamespaceResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }
@@ -85,9 +83,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<GetNamespaceResponse>(responseObserver) {
                 @Override
                 protected GetNamespaceResponse createErrorResp(Throwable cause) {
-                    return GetNamespaceResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new GetNamespaceResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }
@@ -103,9 +100,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<CreateStreamResponse>(responseObserver) {
                 @Override
                 protected CreateStreamResponse createErrorResp(Throwable cause) {
-                    return CreateStreamResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new CreateStreamResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }
@@ -117,9 +113,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<DeleteStreamResponse>(responseObserver) {
                 @Override
                 protected DeleteStreamResponse createErrorResp(Throwable cause) {
-                    return DeleteStreamResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new DeleteStreamResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }
@@ -131,9 +126,8 @@ public class GrpcRootRangeService extends RootRangeServiceImplBase {
             new ResponseHandler<GetStreamResponse>(responseObserver) {
                 @Override
                 protected GetStreamResponse createErrorResp(Throwable cause) {
-                    return GetStreamResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new GetStreamResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }

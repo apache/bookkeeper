@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableSet;
 import java.util.NoSuchElementException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.Processor;
 import org.apache.bookkeeper.util.StringUtils;
@@ -31,8 +32,6 @@ import org.apache.bookkeeper.util.ZkUtils;
 import org.apache.zookeeper.AsyncCallback;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Hierarchical Ledger Manager which manages ledger meta in zookeeper using 2-level hierarchical znodes.
@@ -45,9 +44,8 @@ import org.slf4j.LoggerFactory;
  * <i>(ledgersRootPath)/00/0000/L0001</i>. So each znode could have at most 10000 ledgers, which avoids
  * errors during garbage collection due to lists of children that are too long.
  */
+@CustomLog
 class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager {
-
-    static final Logger LOG = LoggerFactory.getLogger(LegacyHierarchicalLedgerManager.class);
 
     static final String IDGEN_ZNODE = "idgen";
     private static final String MAX_ID_SUFFIX = "9999";
@@ -275,10 +273,11 @@ class LegacyHierarchicalLedgerManager extends AbstractHierarchicalLedgerManager 
                 throw new IOException("Error when get child nodes from zk", e);
             }
             NavigableSet<Long> zkActiveLedgers = ledgerListToSet(ledgerNodes, nodePath);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("All active ledgers from ZK for hash node "
-                          + level1 + "/" + level2 + " : " + zkActiveLedgers);
-            }
+            log.debug()
+                    .attr("level1", level1)
+                    .attr("level2", level2)
+                    .attr("ledgers", zkActiveLedgers)
+                    .log("All active ledgers from ZK for hash node");
 
             return new LedgerRange(zkActiveLedgers.subSet(getStartLedgerIdByLevel(level1, level2), true,
                                                           getEndLedgerIdByLevel(level1, level2), true));

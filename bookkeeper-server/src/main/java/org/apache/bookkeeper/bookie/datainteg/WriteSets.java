@@ -25,14 +25,11 @@ import com.google.common.collect.ImmutableList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Pregenerate the write sets. RoundRobinDistributionSchedule should really be doing this also.
  */
 class WriteSets {
-    private static final Logger log = LoggerFactory.getLogger(WriteSets.class);
     private final int ensembleSize;
     private final ImmutableList<ImmutableList<Integer>> sets;
 

@@ -23,7 +23,7 @@ import com.google.common.collect.Maps;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.config.StorageClientSettings;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannelManager;
@@ -44,7 +44,7 @@ import org.apache.bookkeeper.stream.proto.common.Endpoint;
 /**
  * A gRPC based {@link StorageServerClientManager} implementation.
  */
-@Slf4j
+@CustomLog
 public class StorageServerClientManagerImpl
     extends AbstractAutoAsyncCloseable
     implements StorageServerClientManager {

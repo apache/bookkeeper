@@ -25,7 +25,6 @@ import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RK_METADAT
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SID_METADATA_KEY;
 import static org.junit.Assert.assertEquals;
 
-import com.google.protobuf.ByteString;
 import io.grpc.CallOptions;
 import io.grpc.Channel;
 import io.grpc.ClientCall;
@@ -37,7 +36,7 @@ import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
@@ -59,7 +58,7 @@ import org.junit.Test;
 /**
  * Unit test {@link RoutingHeaderProxyInterceptor}.
  */
-@Slf4j
+@CustomLog
 public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     private final long streamId = 1234L;
@@ -68,72 +67,87 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
     private final AtomicReference<Object> receivedRequest = new AtomicReference<>();
     private StorageServerChannel channel;
 
+    private static RangeResponse newRangeResponse(RoutingHeader header) {
+        RangeResponse resp = new RangeResponse();
+        ResponseHeader rh = resp.setHeader();
+        rh.setCode(StatusCode.SUCCESS);
+        rh.setRoutingHeader().copyFrom(header);
+        return resp;
+    }
+
+    private static DeleteRangeResponse newDeleteRangeResponse(RoutingHeader header) {
+        DeleteRangeResponse resp = new DeleteRangeResponse();
+        ResponseHeader rh = resp.setHeader();
+        rh.setCode(StatusCode.SUCCESS);
+        rh.setRoutingHeader().copyFrom(header);
+        return resp;
+    }
+
+    private static TxnResponse newTxnResponse(RoutingHeader header) {
+        TxnResponse resp = new TxnResponse();
+        ResponseHeader rh = resp.setHeader();
+        rh.setCode(StatusCode.SUCCESS);
+        rh.setRoutingHeader().copyFrom(header);
+        return resp;
+    }
+
+    private static IncrementResponse newIncrementResponse(RoutingHeader header) {
+        IncrementResponse resp = new IncrementResponse();
+        ResponseHeader rh = resp.setHeader();
+        rh.setCode(StatusCode.SUCCESS);
+        rh.setRoutingHeader().copyFrom(header);
+        return resp;
+    }
+
+    private static PutResponse newPutResponse(RoutingHeader header) {
+        PutResponse resp = new PutResponse();
+        ResponseHeader rh = resp.setHeader();
+        rh.setCode(StatusCode.SUCCESS);
+        rh.setRoutingHeader().copyFrom(header);
+        return resp;
+    }
+
     @Override
     protected void doSetup() {
         TableServiceImplBase tableService = new TableServiceImplBase() {
 
             @Override
             public void range(RangeRequest request, StreamObserver<RangeResponse> responseObserver) {
-                log.info("Received range request : {}", request);
+                log.info().attr("request", request).log("Received range request");
                 receivedRequest.set(request);
-                responseObserver.onNext(RangeResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(StatusCode.SUCCESS)
-                        .setRoutingHeader(request.getHeader())
-                        .build())
-                    .build());
+                responseObserver.onNext(newRangeResponse(request.getHeader()));
                 responseObserver.onCompleted();
             }
 
             @Override
             public void delete(DeleteRangeRequest request, StreamObserver<DeleteRangeResponse> responseObserver) {
-                log.info("Received delete range request : {}", request);
+                log.info().attr("request", request).log("Received delete range request");
                 receivedRequest.set(request);
-                responseObserver.onNext(DeleteRangeResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(StatusCode.SUCCESS)
-                        .setRoutingHeader(request.getHeader())
-                        .build())
-                    .build());
+                responseObserver.onNext(newDeleteRangeResponse(request.getHeader()));
                 responseObserver.onCompleted();
             }
 
             @Override
             public void txn(TxnRequest request, StreamObserver<TxnResponse> responseObserver) {
-                log.info("Received txn request : {}", request);
+                log.info().attr("request", request).log("Received txn request");
                 receivedRequest.set(request);
-                responseObserver.onNext(TxnResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(StatusCode.SUCCESS)
-                        .setRoutingHeader(request.getHeader())
-                        .build())
-                    .build());
+                responseObserver.onNext(newTxnResponse(request.getHeader()));
                 responseObserver.onCompleted();
             }
 
             @Override
             public void increment(IncrementRequest request, StreamObserver<IncrementResponse> responseObserver) {
-                log.info("Received incr request : {}", request);
+                log.info().attr("request", request).log("Received incr request");
                 receivedRequest.set(request);
-                responseObserver.onNext(IncrementResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(StatusCode.SUCCESS)
-                        .setRoutingHeader(request.getHeader())
-                        .build())
-                    .build());
+                responseObserver.onNext(newIncrementResponse(request.getHeader()));
                 responseObserver.onCompleted();
             }
 
             @Override
             public void put(PutRequest request, StreamObserver<PutResponse> responseObserver) {
-                log.info("Received put request : {}", request);
+                log.info().attr("request", request).log("Received put request");
                 receivedRequest.set(request);
-                responseObserver.onNext(PutResponse.newBuilder()
-                    .setHeader(ResponseHeader.newBuilder()
-                        .setCode(StatusCode.SUCCESS)
-                        .setRoutingHeader(request.getHeader())
-                        .build())
-                    .build());
+                responseObserver.onNext(newPutResponse(request.getHeader()));
                 responseObserver.onCompleted();
             }
         };
@@ -153,8 +167,11 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
                     return new CheckedForwardingClientCall<ReqT, RespT>(next.newCall(method, callOptions)) {
                         @Override
                         protected void checkedStart(Listener<RespT> responseListener, Metadata headers) {
-                            log.info("Intercept the request with routing information : sid = {}, rid = {}, rk = {}",
-                                streamId, rangeId, new String(routingKey, UTF_8));
+                            log.info()
+                                .attr("streamId", streamId)
+                                .attr("rangeId", rangeId)
+                                .attr("routingKey", new String(routingKey, UTF_8))
+                                .log("Intercept the request with routing information");
                             headers.put(
                                 RID_METADATA_KEY,
                                 rangeId
@@ -180,18 +197,20 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
         channel.close();
     }
 
+    private static RoutingHeader newRoutingHeader(long streamId, long rangeId, byte[] rk) {
+        return new RoutingHeader()
+            .setStreamId(streamId)
+            .setRangeId(rangeId)
+            .setRKey(rk);
+    }
+
     @Test
     public void testPutRequest() throws Exception {
-        PutRequest request = PutRequest.newBuilder()
-            .setKey(ByteString.copyFromUtf8("test-key"))
-            .build();
-        PutRequest expectedRequest = PutRequest.newBuilder(request)
-            .setHeader(RoutingHeader.newBuilder(request.getHeader())
-                .setStreamId(streamId)
-                .setRangeId(rangeId)
-                .setRKey(ByteString.copyFrom(routingKey))
-                .build())
-            .build();
+        PutRequest request = new PutRequest()
+            .setKey("test-key".getBytes(UTF_8));
+        PutRequest expectedRequest = new PutRequest();
+        expectedRequest.copyFrom(request);
+        expectedRequest.setHeader().copyFrom(newRoutingHeader(streamId, rangeId, routingKey));
         PutResponse response = this.channel.getTableService().put(request).get();
 
         assertEquals(expectedRequest, receivedRequest.get());
@@ -200,16 +219,11 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     @Test
     public void testRangeRequest() throws Exception {
-        RangeRequest request = RangeRequest.newBuilder()
-            .setKey(ByteString.copyFromUtf8("test-key"))
-            .build();
-        RangeRequest expectedRequest = RangeRequest.newBuilder(request)
-            .setHeader(RoutingHeader.newBuilder(request.getHeader())
-                .setStreamId(streamId)
-                .setRangeId(rangeId)
-                .setRKey(ByteString.copyFrom(routingKey))
-                .build())
-            .build();
+        RangeRequest request = new RangeRequest()
+            .setKey("test-key".getBytes(UTF_8));
+        RangeRequest expectedRequest = new RangeRequest();
+        expectedRequest.copyFrom(request);
+        expectedRequest.setHeader().copyFrom(newRoutingHeader(streamId, rangeId, routingKey));
         RangeResponse response = this.channel.getTableService()
             .range(request).get();
 
@@ -219,16 +233,11 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     @Test
     public void testDeleteRangeRequest() throws Exception {
-        DeleteRangeRequest request = DeleteRangeRequest.newBuilder()
-            .setKey(ByteString.copyFromUtf8("test-key"))
-            .build();
-        DeleteRangeRequest expectedRequest = DeleteRangeRequest.newBuilder(request)
-            .setHeader(RoutingHeader.newBuilder(request.getHeader())
-                .setStreamId(streamId)
-                .setRangeId(rangeId)
-                .setRKey(ByteString.copyFrom(routingKey))
-                .build())
-            .build();
+        DeleteRangeRequest request = new DeleteRangeRequest()
+            .setKey("test-key".getBytes(UTF_8));
+        DeleteRangeRequest expectedRequest = new DeleteRangeRequest();
+        expectedRequest.copyFrom(request);
+        expectedRequest.setHeader().copyFrom(newRoutingHeader(streamId, rangeId, routingKey));
         DeleteRangeResponse response = this.channel.getTableService()
             .delete(request).get();
 
@@ -238,16 +247,11 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     @Test
     public void testIncrementRequest() throws Exception {
-        IncrementRequest request = IncrementRequest.newBuilder()
-            .setKey(ByteString.copyFromUtf8("test-key"))
-            .build();
-        IncrementRequest expectedRequest = IncrementRequest.newBuilder(request)
-            .setHeader(RoutingHeader.newBuilder(request.getHeader())
-                .setStreamId(streamId)
-                .setRangeId(rangeId)
-                .setRKey(ByteString.copyFrom(routingKey))
-                .build())
-            .build();
+        IncrementRequest request = new IncrementRequest()
+            .setKey("test-key".getBytes(UTF_8));
+        IncrementRequest expectedRequest = new IncrementRequest();
+        expectedRequest.copyFrom(request);
+        expectedRequest.setHeader().copyFrom(newRoutingHeader(streamId, rangeId, routingKey));
         IncrementResponse response = this.channel.getTableService()
             .increment(request).get();
 
@@ -257,15 +261,10 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
     @Test
     public void testTxnRequest() throws Exception {
-        TxnRequest request = TxnRequest.newBuilder()
-            .build();
-        TxnRequest expectedRequest = TxnRequest.newBuilder(request)
-            .setHeader(RoutingHeader.newBuilder(request.getHeader())
-                .setStreamId(streamId)
-                .setRangeId(rangeId)
-                .setRKey(ByteString.copyFrom(routingKey))
-                .build())
-            .build();
+        TxnRequest request = new TxnRequest();
+        TxnRequest expectedRequest = new TxnRequest();
+        expectedRequest.copyFrom(request);
+        expectedRequest.setHeader().copyFrom(newRoutingHeader(streamId, rangeId, routingKey));
         TxnResponse response = this.channel.getTableService().txn(request).get();
 
         assertEquals(expectedRequest, receivedRequest.get());

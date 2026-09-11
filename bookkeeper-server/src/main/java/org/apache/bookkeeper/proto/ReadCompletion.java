@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.client.LedgerHandle.INVALID_ENTRY_ID;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.ReferenceCountUtil;
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ReadCompletion extends CompletionValue {
@@ -35,8 +36,9 @@ class ReadCompletion extends CompletionValue {
                           final BookkeeperInternalCallbacks.ReadEntryCallback originalCallback,
                           final Object originalCtx,
                           long ledgerId, final long entryId,
-                          PerChannelBookieClient perChannelBookieClient) {
-        super("Read", originalCtx, ledgerId, entryId, perChannelBookieClient);
+                          PerChannelBookieClient perChannelBookieClient,
+                          Executor callbackExecutor) {
+        super("Read", originalCtx, ledgerId, entryId, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.readEntryOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.readTimeoutOpLogger;
         this.cb = (rc, ledgerId1, entryId1, buffer, ctx) -> {
@@ -67,7 +69,7 @@ class ReadCompletion extends CompletionValue {
 
     @Override
     public void handleV2Response(long ledgerId, long entryId,
-                                 BookkeeperProtocol.StatusCode status,
+                                 StatusCode status,
                                  BookieProtocol.Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
         if (!(response instanceof BookieProtocol.ReadResponse)) {
@@ -79,40 +81,53 @@ class ReadCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
+    public void handleV3Response(Response response) {
         perChannelBookieClient.readEntryOutstanding.dec();
-        BookkeeperProtocol.ReadResponse readResponse = response.getReadResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
-                ? readResponse.getStatus() : response.getStatus();
+        long respLedgerId = ledgerId;
+        long respEntryId = entryId;
+        StatusCode status;
         ByteBuf buffer = Unpooled.EMPTY_BUFFER;
-        if (readResponse.hasBody()) {
-            buffer = Unpooled.wrappedBuffer(readResponse.getBody().asReadOnlyByteBuffer());
-        }
         long maxLAC = INVALID_ENTRY_ID;
-        if (readResponse.hasMaxLAC()) {
-            maxLAC = readResponse.getMaxLAC();
-        }
         long lacUpdateTimestamp = -1L;
-        if (readResponse.hasLacUpdateTimestamp()) {
-            lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+        if (response.getStatus() == StatusCode.EOK && response.hasReadResponse()) {
+            ReadResponse readResponse = response.getReadResponse();
+            status = readResponse.getStatus();
+            // For long-poll reads the request entryId is LAST_ADD_CONFIRMED
+            // and the server fills in the actual entry id alongside the body.
+            if (readResponse.hasLedgerId()) {
+                respLedgerId = readResponse.getLedgerId();
+            }
+            if (readResponse.hasEntryId()) {
+                respEntryId = readResponse.getEntryId();
+            }
+            if (readResponse.hasBody()) {
+                buffer = readResponse.getBodySlice();
+            }
+            if (readResponse.hasMaxLAC()) {
+                maxLAC = readResponse.getMaxLAC();
+            }
+            if (readResponse.hasLacUpdateTimestamp()) {
+                lacUpdateTimestamp = readResponse.getLacUpdateTimestamp();
+            }
+        } else {
+            // Error responses may not carry a populated ReadResponse;
+            // fall back to the request's recorded ledgerId/entryId.
+            status = response.getStatus();
         }
-        handleReadResponse(readResponse.getLedgerId(),
-                readResponse.getEntryId(),
-                status, buffer, maxLAC, lacUpdateTimestamp);
+        handleReadResponse(respLedgerId, respEntryId, status, buffer, maxLAC, lacUpdateTimestamp);
         ReferenceCountUtil.release(
                 buffer); // meaningless using unpooled, but client may expect to hold the last reference
     }
 
     private void handleReadResponse(long ledgerId,
                                     long entryId,
-                                    BookkeeperProtocol.StatusCode status,
+                                    StatusCode status,
                                     ByteBuf buffer,
                                     long maxLAC, // max known lac piggy-back from bookies
                                     long lacUpdateTimestamp) { // the timestamp when the lac is updated.
-        int readableBytes = buffer.readableBytes();
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledger", ledgerId, "entry", entryId, "entryLength", readableBytes);
-        }
+        logEvent(status)
+                .attr("entryLength", buffer.readableBytes())
+                .log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.ReadException);
 

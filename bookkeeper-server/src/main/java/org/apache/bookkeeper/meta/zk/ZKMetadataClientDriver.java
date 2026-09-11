@@ -22,7 +22,6 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ScheduledExecutorService;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
 import org.apache.bookkeeper.discover.ZKRegistrationClient;
@@ -38,7 +37,6 @@ import org.apache.zookeeper.ZooKeeper;
 /**
  * ZooKeeper based metadata client driver.
  */
-@Slf4j
 public class ZKMetadataClientDriver
     extends ZKMetadataDriverBase
     implements MetadataClientDriver {

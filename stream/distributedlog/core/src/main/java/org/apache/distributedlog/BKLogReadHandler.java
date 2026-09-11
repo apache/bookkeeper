@@ -28,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -51,8 +52,6 @@ import org.apache.distributedlog.logsegment.LogSegmentMetadataCache;
 import org.apache.distributedlog.metadata.LogMetadataForReader;
 import org.apache.distributedlog.metadata.LogStreamMetadataStore;
 import org.apache.distributedlog.util.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Log Handler for Readers.
@@ -93,8 +92,8 @@ import org.slf4j.LoggerFactory;
  * All read lock related stats are exposed under scope `read_lock`.
  * for detail stats.
  */
+@CustomLog
 class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
-    static final Logger LOG = LoggerFactory.getLogger(BKLogReadHandler.class);
 
     protected final LogMetadataForReader logMetadataForReader;
 
@@ -169,7 +168,10 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
                     .thenCompose(lock -> {
                         try {
                             BKLogReadHandler.this.readLock = lock;
-                            LOG.info("acquiring readlock {} at {}", getLockClientId(), getReadLockPath());
+                            log.info()
+                                    .attr("lockClientId", getLockClientId())
+                                    .attr("readLockPath", getReadLockPath())
+                                    .log("Acquiring readlock");
                             return acquireLockOnExecutorThread(lock);
                         } catch (LockingException le) {
                             return FutureUtils.exception(le);
@@ -199,13 +201,20 @@ class BKLogReadHandler extends BKLogHandler implements LogSegmentNamesListener {
         acquireFuture.whenCompleteAsync(new FutureEventListener<DistributedLock>() {
             @Override
             public void onSuccess(DistributedLock lock) {
-                LOG.info("acquired readlock {} at {}", getLockClientId(), getReadLockPath());
+                log.info()
+                        .attr("lockClientId", getLockClientId())
+                        .attr("readLockPath", getReadLockPath())
+                        .log("Acquired readlock");
                 threadAcquirePromise.complete(null);
             }
 
             @Override
             public void onFailure(Throwable cause) {
-                LOG.info("failed to acquire readlock {} at {}", getLockClientId(), getReadLockPath(), cause);
+                log.info()
+                        .attr("lockClientId", getLockClientId())
+                        .attr("readLockPath", getReadLockPath())
+                        .exception(cause)
+                        .log("Failed to acquire readlock");
                 threadAcquirePromise.completeExceptionally(cause);
             }
         });

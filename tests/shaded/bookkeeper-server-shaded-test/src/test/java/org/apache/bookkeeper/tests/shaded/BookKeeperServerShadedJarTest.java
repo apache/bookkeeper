@@ -28,13 +28,9 @@ import org.junit.Test;
 public class BookKeeperServerShadedJarTest {
 
     @Test(expected = ClassNotFoundException.class)
-    public void testProtobufIsShaded() throws Exception {
+    public void testProtobufIsNotIncluded() throws Exception {
+        // protobuf-java is no longer a runtime dependency after the LightProto migration
         Class.forName("com.google.protobuf.Message");
-    }
-
-    @Test
-    public void testProtobufShadedPath() throws Exception {
-        Class.forName("org.apache.bookkeeper.shaded.com.google.protobuf.Message");
     }
 
     @Test(expected = ClassNotFoundException.class)
@@ -56,7 +52,7 @@ public class BookKeeperServerShadedJarTest {
 
     @Test
     public void testBookKeeperProto() throws Exception {
-        Class.forName("org.apache.bookkeeper.proto.BookkeeperProtocol");
+        Class.forName("org.apache.bookkeeper.proto.AddRequest");
         assertTrue(true);
     }
 

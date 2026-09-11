@@ -70,7 +70,7 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption
         if (null == req.getKey()) {
             key = null;
         } else {
-            key = req.getKey().toByteArray();
+            key = req.getKey();
         }
         return key;
     }
@@ -80,19 +80,20 @@ public class ProtoDeleteOpImpl implements DeleteOp<byte[], byte[]>, DeleteOption
         if (null != endKey) {
             return endKey;
         }
-        if (null == req.getRangeEnd()
-            || 0 == req.getRangeEnd().size()
-            || (1 == req.getRangeEnd().size() && req.getRangeEnd().byteAt(0) == 0)) {
+        byte[] rangeEnd = req.getRangeEnd();
+        if (null == rangeEnd
+            || 0 == rangeEnd.length
+            || (1 == rangeEnd.length && rangeEnd[0] == 0)) {
             endKey = null;
         } else {
-            endKey = req.getRangeEnd().toByteArray();
+            endKey = rangeEnd;
         }
         return endKey;
     }
 
     @Override
     public boolean prevKv() {
-        return req.getPrevKv();
+        return req.isPrevKv();
     }
 
     @Override

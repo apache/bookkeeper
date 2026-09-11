@@ -29,7 +29,7 @@ class EntryCompletionKey extends CompletionKey {
     long entryId;
 
     static EntryCompletionKey acquireV2Key(long ledgerId, long entryId,
-                                           BookkeeperProtocol.OperationType operationType) {
+                                           OperationType operationType) {
         EntryCompletionKey key = V2_KEY_RECYCLER.get();
         key.reset(ledgerId, entryId, operationType);
         return key;
@@ -40,7 +40,7 @@ class EntryCompletionKey extends CompletionKey {
         this.recyclerHandle = handle;
     }
 
-    void reset(long ledgerId, long entryId, BookkeeperProtocol.OperationType operationType) {
+    void reset(long ledgerId, long entryId, OperationType operationType) {
         this.ledgerId = ledgerId;
         this.entryId = entryId;
         this.operationType = operationType;

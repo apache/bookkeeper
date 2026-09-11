@@ -19,6 +19,7 @@ package org.apache.bookkeeper.meta;
 
 import java.io.IOException;
 import java.util.List;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -29,8 +30,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper based ledger id generator class, which using EPHEMERAL_SEQUENTIAL
@@ -39,8 +38,8 @@ import org.slf4j.LoggerFactory;
  * (zero) padding, i.e. "&lt;path&gt;0000000001", so ledger id space is
  * fundamentally limited to 9 billion.
  */
+@CustomLog
 public class ZkLedgerIdGenerator implements LedgerIdGenerator {
-    static final Logger LOG = LoggerFactory.getLogger(ZkLedgerIdGenerator.class);
 
     static final String LEDGER_ID_GEN_PREFIX = "ID-";
 
@@ -80,8 +79,9 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                     @Override
                     public void processResult(int rc, String path, Object ctx, final String idPathName) {
                         if (rc != KeeperException.Code.OK.intValue()) {
-                            LOG.error("Could not generate new ledger id",
-                                    KeeperException.create(KeeperException.Code.get(rc), path));
+                            log.error()
+                                    .exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                                    .log("Could not generate new ledger id");
                             cb.operationComplete(BKException.Code.ZKException, null);
                             return;
                         }
@@ -98,7 +98,10 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                                 cb.operationComplete(BKException.Code.OK, ledgerId);
                             }
                         } catch (IOException e) {
-                            LOG.error("Could not extract ledger-id from id gen path:" + path, e);
+                            log.error()
+                                    .attr("path", path)
+                                    .exception(e)
+                                    .log("Could not extract ledger-id from id gen path");
                             cb.operationComplete(BKException.Code.ZKException, null);
                             return;
                         }
@@ -108,12 +111,11 @@ public class ZkLedgerIdGenerator implements LedgerIdGenerator {
                             @Override
                             public void processResult(int rc, String path, Object ctx) {
                                 if (rc != KeeperException.Code.OK.intValue()) {
-                                    LOG.warn("Exception during deleting znode for id generation : ",
-                                            KeeperException.create(KeeperException.Code.get(rc), path));
+                                    log.warn()
+                                            .exception(KeeperException.create(KeeperException.Code.get(rc), path))
+                                            .log("Exception during deleting znode for id generation");
                                 } else {
-                                    if (LOG.isDebugEnabled()) {
-                                        LOG.debug("Deleting znode for id generation : {}", idPathName);
-                                    }
+                                    log.debug().attr("path", idPathName).log("Deleting znode for id generation");
                                 }
                             }
                         }, null);

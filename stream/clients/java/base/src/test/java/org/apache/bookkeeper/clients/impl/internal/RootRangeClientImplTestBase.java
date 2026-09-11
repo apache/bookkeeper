@@ -64,18 +64,15 @@ public abstract class RootRangeClientImplTestBase extends GrpcClientTestBase {
     private StorageServerChannel mockChannel = mock(StorageServerChannel.class);
     private StorageServerChannel mockChannel2 = mock(StorageServerChannel.class);
     private StorageServerChannel mockChannel3 = mock(StorageServerChannel.class);
-    private final Endpoint endpoint = Endpoint.newBuilder()
+    private final Endpoint endpoint = new Endpoint()
         .setHostname("127.0.0.1")
-        .setPort(8181)
-        .build();
-    private final Endpoint endpoint2 = Endpoint.newBuilder()
+        .setPort(8181);
+    private final Endpoint endpoint2 = new Endpoint()
         .setHostname("127.0.0.2")
-        .setPort(8282)
-        .build();
-    private final Endpoint endpoint3 = Endpoint.newBuilder()
+        .setPort(8282);
+    private final Endpoint endpoint3 = new Endpoint()
         .setHostname("127.0.0.3")
-        .setPort(8383)
-        .build();
+        .setPort(8383);
     private final StorageServerChannelManager channelManager = new StorageServerChannelManager(
         ep -> {
             if (endpoint2 == ep) {

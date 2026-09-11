@@ -22,17 +22,15 @@
 package org.apache.bookkeeper.util;
 
 import java.util.UUID;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.ReflectionUtils;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Formatter to format a ledgerId.
  */
+@CustomLog
 public abstract class LedgerIdFormatter {
-
-    private static final Logger LOG = LoggerFactory.getLogger(LedgerIdFormatter.class);
 
     /**
      * Formats the LedgerId according to the type of the Formatter and return it
@@ -61,8 +59,8 @@ public abstract class LedgerIdFormatter {
             Class<? extends LedgerIdFormatter> ledgerIdFormatterClass = conf.getLedgerIdFormatterClass();
             formatter = ReflectionUtils.newInstance(ledgerIdFormatterClass);
         } catch (Exception e) {
-            LOG.warn("No formatter class found", e);
-            LOG.warn("Using Default Long Formatter.");
+            log.warn().exception(e).log("No formatter class found");
+            log.warn("Using Default Long Formatter.");
             formatter = new LongLedgerIdFormatter();
         }
         return formatter;
@@ -77,7 +75,9 @@ public abstract class LedgerIdFormatter {
         } else if ("long".equals(opt)) {
             formatter = new LedgerIdFormatter.LongLedgerIdFormatter();
         } else {
-            LOG.warn("specified unexpected ledgeridformat {}, so default LedgerIdFormatter is used", opt);
+            log.warn()
+                    .attr("format", opt)
+                    .log("specified unexpected ledgeridformat, so default LedgerIdFormatter is used");
             formatter = newLedgerIdFormatter(conf);
         }
         return formatter;

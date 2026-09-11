@@ -26,15 +26,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.function.BiConsumer;
+import lombok.CustomLog;
 import lombok.Getter;
 import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 
 /**
  * Watcher class holds watcher information.
  */
-@Slf4j
+@CustomLog
 public class EtcdWatcher implements AutoCloseable {
 
     private final ScheduledExecutorService executor;
@@ -107,8 +107,10 @@ public class EtcdWatcher implements AutoCloseable {
         try {
             FutureUtils.result(closeAsync());
         } catch (Exception e) {
-            log.warn("Encountered error on removing watcher '{}' from watch client : {}",
-                watchID, e.getMessage());
+            log.warn()
+                    .attr("watchId", watchID)
+                    .exceptionMessage(e)
+                    .log("Encountered error on removing watcher from watch client");
         }
         consumers.clear();
     }

@@ -22,7 +22,7 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.api.kv.op.DeleteOp;
 import org.apache.bookkeeper.api.kv.op.IncrementOp;
 import org.apache.bookkeeper.api.kv.op.OpFactory;
@@ -45,7 +45,7 @@ import org.apache.distributedlog.api.namespace.Namespace;
 /**
  * MVCC Async Store Implementation.
  */
-@Slf4j
+@CustomLog
 class MVCCAsyncBytesStoreImpl
     extends AbstractStateStoreWithJournal<MVCCStoreImpl<byte[], byte[]>>
     implements MVCCAsyncStore<byte[], byte[]> {

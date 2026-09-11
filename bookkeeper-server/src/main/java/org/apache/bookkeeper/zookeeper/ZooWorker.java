@@ -23,19 +23,17 @@ package org.apache.bookkeeper.zookeeper;
 import com.google.common.util.concurrent.RateLimiter;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.zookeeper.KeeperException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Provide a mechanism to perform an operation on ZooKeeper that is safe on disconnections
  * and recoverable errors.
  */
+@CustomLog
 class ZooWorker {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZooWorker.class);
 
     int attempts = 0;
     long startTimeNanos;
@@ -133,7 +131,10 @@ class ZooWorker {
                 if (null != client) {
                     client.waitForConnection();
                 }
-                logger.debug("Execute {} at {} retry attempt.", proc, attempts);
+                log.debug()
+                        .attr("proc", proc)
+                        .attr("attempts", attempts)
+                        .log("Execute at retry attempt");
                 if (null != rateLimiter) {
                     rateLimiter.acquire();
                 }
@@ -150,7 +151,10 @@ class ZooWorker {
                 }
                 if (rethrow) {
                     statsLogger.registerFailedEvent(MathUtils.elapsedMicroSec(startTimeNanos), TimeUnit.MICROSECONDS);
-                    logger.debug("Stopped executing {} after {} attempts.", proc, attempts);
+                    log.debug()
+                            .attr("proc", proc)
+                            .attr("attempts", attempts)
+                            .log("Stopped executing after attempts");
                     throw e;
                 }
                 TimeUnit.MILLISECONDS.sleep(retryPolicy.nextRetryWaitTime(attempts, elapsedTime));

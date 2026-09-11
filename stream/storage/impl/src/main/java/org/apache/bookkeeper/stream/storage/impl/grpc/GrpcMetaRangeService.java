@@ -18,7 +18,7 @@
 package org.apache.bookkeeper.stream.storage.impl.grpc;
 
 import io.grpc.stub.StreamObserver;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesRequest;
 import org.apache.bookkeeper.stream.proto.storage.GetActiveRangesResponse;
 import org.apache.bookkeeper.stream.proto.storage.MetaRangeServiceGrpc.MetaRangeServiceImplBase;
@@ -29,7 +29,7 @@ import org.apache.bookkeeper.stream.storage.impl.grpc.handler.ResponseHandler;
 /**
  * The gRPC protocol based range service.
  */
-@Slf4j
+@CustomLog
 public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
 
     private final RangeStoreService rangeStore;
@@ -50,9 +50,8 @@ public class GrpcMetaRangeService extends MetaRangeServiceImplBase {
             new ResponseHandler<GetActiveRangesResponse>(responseObserver) {
                 @Override
                 protected GetActiveRangesResponse createErrorResp(Throwable cause) {
-                    return GetActiveRangesResponse.newBuilder()
-                        .setCode(StatusCode.INTERNAL_SERVER_ERROR)
-                        .build();
+                    return new GetActiveRangesResponse()
+                        .setCode(StatusCode.INTERNAL_SERVER_ERROR);
                 }
             });
     }

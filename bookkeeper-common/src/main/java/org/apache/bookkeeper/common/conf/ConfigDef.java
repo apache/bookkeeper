@@ -38,15 +38,15 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.configuration2.Configuration;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * A definition of a configuration instance.
  */
-@Slf4j
+@CustomLog
 @Getter
 public class ConfigDef {
 
@@ -160,7 +160,11 @@ public class ConfigDef {
                 try {
                     builder.withConfigKey((ConfigKey) field.get(null));
                 } catch (IllegalAccessException e) {
-                    log.error("Illegal to access {}#{}", configClass.getSimpleName(), field.getName(), e);
+                    log.error()
+                            .exception(e)
+                            .attr("configClass", configClass.getSimpleName())
+                            .attr("field", field.getName())
+                            .log("Illegal to access field");
                 }
             }
         }

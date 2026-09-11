@@ -93,12 +93,16 @@ public class TestPByteBufTableImpl {
             return keys.get(idx);
         }
     };
-    private final StreamProperties streamProps = StreamProperties.newBuilder()
-        .setStorageContainerId(12345L)
-        .setStreamConf(DEFAULT_STREAM_CONF)
-        .setStreamId(streamId)
-        .setStreamName("test-stream")
-        .build();
+    private final StreamProperties streamProps = newStreamProperties();
+
+    private static StreamProperties newStreamProperties() {
+        StreamProperties props = new StreamProperties();
+        props.setStorageContainerId(12345L);
+        props.setStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        props.setStreamId(streamId);
+        props.setStreamName("test-stream");
+        return props;
+    }
     private final MetaRangeClient mockMetaRangeClient = mock(MetaRangeClient.class);
     private final StorageServerClientManager mockClientManager = mock(StorageServerClientManager.class);
     private final OptionFactory<ByteBuf> optionFactory = new OptionFactoryImpl<>();

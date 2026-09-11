@@ -48,9 +48,13 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
     private long colId;
     private String colName;
     private NamespaceProperties colProps;
-    private static final NamespaceConfiguration colConf = NamespaceConfiguration.newBuilder()
-        .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-        .build();
+    private static final NamespaceConfiguration colConf = newColConf();
+
+    private static NamespaceConfiguration newColConf() {
+        NamespaceConfiguration conf = new NamespaceConfiguration();
+        conf.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
+        return conf;
+    }
 
     @Override
     protected void doSetup() throws Exception {
@@ -58,11 +62,10 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
 
         this.colId = System.currentTimeMillis();
         this.colName = testName.getMethodName();
-        this.colProps = NamespaceProperties.newBuilder()
-            .setNamespaceId(colId)
-            .setNamespaceName(colName)
-            .setDefaultStreamConf(DEFAULT_STREAM_CONF)
-            .build();
+        this.colProps = new NamespaceProperties();
+        this.colProps.setNamespaceId(colId);
+        this.colProps.setNamespaceName(colName);
+        this.colProps.setDefaultStreamConf().copyFrom(DEFAULT_STREAM_CONF);
     }
 
     //
@@ -80,10 +83,10 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
             @Override
             public void getNamespace(GetNamespaceRequest request,
                                      StreamObserver<GetNamespaceResponse> responseObserver) {
-                responseObserver.onNext(GetNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.SUCCESS)
-                    .setNsProps(colProps)
-                    .build());
+                GetNamespaceResponse resp = new GetNamespaceResponse();
+                resp.setCode(StatusCode.SUCCESS);
+                resp.setNsProps().copyFrom(colProps);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };
@@ -92,7 +95,7 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
     @Override
     protected void verifySuccess(RootRangeClient rootRangeClient) throws Exception {
         CompletableFuture<NamespaceProperties> getFuture = rootRangeClient.getNamespace(colName);
-        assertTrue(colProps == getFuture.get());
+        assertEquals(colProps, getFuture.get());
     }
 
 
@@ -102,9 +105,9 @@ public class TestRootRangeClientGetNamespaceRpc extends RootRangeClientImplTestB
             @Override
             public void getNamespace(GetNamespaceRequest request,
                                      StreamObserver<GetNamespaceResponse> responseObserver) {
-                responseObserver.onNext(GetNamespaceResponse.newBuilder()
-                    .setCode(StatusCode.NAMESPACE_NOT_FOUND)
-                    .build());
+                GetNamespaceResponse resp = new GetNamespaceResponse();
+                resp.setCode(StatusCode.NAMESPACE_NOT_FOUND);
+                responseObserver.onNext(resp);
                 responseObserver.onCompleted();
             }
         };

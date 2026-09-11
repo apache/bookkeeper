@@ -27,6 +27,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.client.BKException;
@@ -43,16 +44,13 @@ import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command for list all ledgers on the cluster.
  */
 @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
+@CustomLog
 public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
-
-    private static final Logger LOG = LoggerFactory.getLogger(ListLedgersCommand.class);
 
     private static final String NAME = "listledgers";
     private static final String DESC = "List all ledgers on the cluster (this may take a long time).";
@@ -100,7 +98,7 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
         try {
             handler(conf, cmdFlags);
         } catch (UnknownHostException e) {
-            LOG.error("Bookie id error");
+            log.error("Bookie id error");
             return false;
         } catch (MetadataException | ExecutionException e) {
             throw new UncheckedExecutionException(e.getMessage(), e);
@@ -162,7 +160,7 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
                                         == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
                                 cb.processResult(BKException.Code.OK, null, null);
                             } else {
-                                LOG.error("Unable to read the ledger: {} information", ledgerId);
+                                log.error().attr("ledgerId", ledgerId).log("Unable to read the ledger: information");
                                 cb.processResult(BKException.getExceptionCode(exception), null, null);
                             }
                         });
@@ -176,12 +174,14 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
 
                 processDone.await();
                 if (returnCode.get() != BKException.Code.OK) {
-                    LOG.error("Received error return value while processing ledgers: {}", returnCode.get());
+                    log.error()
+                            .attr("ledgers", returnCode.get())
+                            .log("Received error return value while processing ledgers");
                     throw BKException.create(returnCode.get());
                 }
 
             } catch (Exception ioe) {
-                LOG.error("Received Exception while processing ledgers", ioe);
+                log.error().exception(ioe).log("Received Exception while processing ledgers");
                 throw new UncheckedExecutionException(ioe);
             }
             return null;
@@ -191,9 +191,11 @@ public class ListLedgersCommand extends BookieCommand<ListLedgersFlags> {
     }
 
     private void printLedgerMetadata(long ledgerId, LedgerMetadata md, boolean printMeta) {
-        LOG.info("ledgerID: {}", ledgerIdFormatter.formatLedgerId(ledgerId));
+        var e = log.info()
+                .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId));
         if (printMeta) {
-            LOG.info("{}", md.toString());
+            e.attr("metadata", md.toString());
         }
+        e.log("log entry");
     }
 }

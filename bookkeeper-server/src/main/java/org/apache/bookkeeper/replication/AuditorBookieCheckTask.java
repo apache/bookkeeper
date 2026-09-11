@@ -27,6 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
@@ -34,11 +35,9 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.commons.collections4.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+@CustomLog
 public class AuditorBookieCheckTask extends AuditorTask {
-    private static final Logger LOG = LoggerFactory.getLogger(AuditorBookieCheckTask.class);
 
     private final BookieLedgerIndexer bookieLedgerIndexer;
     private final BiConsumer<Void, Throwable> submitCheckTask;
@@ -67,7 +66,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
             // let us not run this periodic bookie check now, if we
             // went ahead, we'll report under replication and the user
             // wanted to avoid that(with lostBookieRecoveryDelay option)
-            LOG.info("Audit already scheduled; skipping periodic bookie check");
+            log.info("Audit already scheduled; skipping periodic bookie check");
             auditorStats.getNumSkippingCheckTaskTimes().inc();
         }
     }
@@ -87,12 +86,12 @@ public class AuditorBookieCheckTask extends AuditorTask {
             auditBookies();
             shutDownTask = false;
         } catch (BKException bke) {
-            LOG.error("Exception getting bookie list", bke);
+            log.error().exception(bke).log("Exception getting bookie list");
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.error("Interrupted while watching available bookies ", ie);
+            log.error().exception(ie).log("Interrupted while watching available bookies");
         } catch (ReplicationException.BKAuditException bke) {
-            LOG.error("Exception while watching available bookies", bke);
+            log.error().exception(bke).log("Exception while watching available bookies");
         }
         if (shutDownTask) {
             submitShutdownTask();
@@ -104,15 +103,15 @@ public class AuditorBookieCheckTask extends AuditorTask {
         try {
             waitIfLedgerReplicationDisabled();
         } catch (ReplicationException.NonRecoverableReplicationException nre) {
-            LOG.error("Non Recoverable Exception while reading from ZK", nre);
+            log.error().exception(nre).log("Non Recoverable Exception while reading from ZK");
             submitShutdownTask();
             return;
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Underreplication unavailable, skipping audit."
+            log.error("Underreplication unavailable, skipping audit."
                     + "Will retry after a period");
             return;
         }
-        LOG.info("Starting auditBookies");
+        log.info("Starting auditBookies");
         Stopwatch stopwatch = Stopwatch.createStarted();
         // put exit cases here
         Map<String, Set<Long>> ledgerDetails = generateBookie2LedgersIndex();
@@ -124,7 +123,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
                 return;
             }
         } catch (ReplicationException.UnavailableException ue) {
-            LOG.error("Underreplication unavailable, skipping audit."
+            log.error("Underreplication unavailable, skipping audit."
                     + "Will retry after a period");
             return;
         }
@@ -149,7 +148,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
                     .registerSuccessfulEvent(stopwatch.elapsed(TimeUnit.MILLISECONDS),
                     TimeUnit.MILLISECONDS);
         }
-        LOG.info("Completed auditBookies");
+        log.info("Completed auditBookies");
         auditorStats.getAuditBookiesTime().registerSuccessfulEvent(stopwatch.stop().elapsed(TimeUnit.MILLISECONDS),
                 TimeUnit.MILLISECONDS);
     }
@@ -161,8 +160,9 @@ public class AuditorBookieCheckTask extends AuditorTask {
 
     private CompletableFuture<?> handleLostBookiesAsync(Collection<String> lostBookies,
                                                         Map<String, Set<Long>> ledgerDetails) {
-        LOG.info("Following are the failed bookies: {},"
-                + " and searching its ledgers for re-replication", lostBookies);
+        log.info()
+                .attr("lostBookies", lostBookies)
+                .log("Following are the failed bookies, searching their ledgers for re-replication");
 
         return FutureUtils.processList(
                 Lists.newArrayList(lostBookies),
@@ -175,7 +175,7 @@ public class AuditorBookieCheckTask extends AuditorTask {
     protected void waitIfLedgerReplicationDisabled() throws ReplicationException.UnavailableException,
             InterruptedException {
         if (!isLedgerReplicationEnabled()) {
-            LOG.info("LedgerReplication is disabled externally through Zookeeper, "
+            log.info("LedgerReplication is disabled externally through Zookeeper, "
                     + "since DISABLE_NODE ZNode is created, so waiting until it is enabled");
             ReplicationEnableCb cb = new ReplicationEnableCb();
             ledgerUnderreplicationManager.notifyLedgerReplicationEnabled(cb);

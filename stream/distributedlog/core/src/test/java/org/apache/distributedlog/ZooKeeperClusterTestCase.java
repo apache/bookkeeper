@@ -18,7 +18,7 @@
 package org.apache.distributedlog;
 
 import java.io.File;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.shims.zk.ZooKeeperServerShim;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.io.FileUtils;
@@ -30,7 +30,7 @@ import org.junit.BeforeClass;
 /**
  * ZooKeeperClusterTestCase.
  */
-@Slf4j
+@CustomLog
 public class ZooKeeperClusterTestCase {
 
     static {
@@ -52,12 +52,12 @@ public class ZooKeeperClusterTestCase {
         zkPort = serverAndPort.getRight();
         zkServers = "127.0.0.1:" + zkPort;
 
-        log.info("--- Setup zookeeper at {} ---", zkServers);
+        log.info().attr("zkServers", zkServers).log("--- Setup zookeeper ---");
     }
 
     @AfterClass
     public static void shutdownZooKeeper() throws Exception {
-        log.info("--- Shutdown zookeeper at {} ---", zkServers);
+        log.info().attr("zkServers", zkServers).log("--- Shutdown zookeeper ---");
         zks.stop();
         if (null != zkDir) {
             FileUtils.forceDeleteOnExit(zkDir);

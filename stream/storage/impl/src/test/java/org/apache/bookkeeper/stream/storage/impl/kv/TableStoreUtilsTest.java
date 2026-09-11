@@ -32,7 +32,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
-import com.google.protobuf.ByteString;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ExecutionException;
 import org.apache.bookkeeper.api.kv.result.Code;
 import org.apache.bookkeeper.api.kv.result.KeyValue;
@@ -62,34 +62,30 @@ public class TableStoreUtilsTest {
     @Test
     public void testHasRKey() {
         assertFalse(hasRKey(null));
-        assertFalse(hasRKey(ByteString.copyFrom(new byte[0])));
-        assertTrue(hasRKey(ByteString.copyFromUtf8("test")));
+        assertFalse(hasRKey(new byte[0]));
+        assertTrue(hasRKey("test".getBytes(StandardCharsets.UTF_8)));
     }
 
     @Test
     public void testNewStoreKey() {
         assertArrayEquals(
             storeKeyWithRKey,
-            newStoreKey(
-                ByteString.copyFrom(rKey),
-                ByteString.copyFrom(lKey))
+            newStoreKey(rKey, lKey)
         );
         assertArrayEquals(
             storeKeyWithoutRKey,
-            newStoreKey(
-                null,
-                ByteString.copyFrom(lKey))
+            newStoreKey(null, lKey)
         );
     }
 
     @Test
     public void testGetLKey() {
-        assertEquals(
-            ByteString.copyFrom(lKey),
+        assertArrayEquals(
+            lKey,
             getLKey(storeKeyWithoutRKey, null));
-        assertEquals(
-            ByteString.copyFrom(lKey),
-            getLKey(storeKeyWithRKey, ByteString.copyFrom(rKey)));
+        assertArrayEquals(
+            lKey,
+            getLKey(storeKeyWithRKey, rKey));
     }
 
     @Test
@@ -153,10 +149,10 @@ public class TableStoreUtilsTest {
         when(kv.version()).thenReturn(version);
 
         org.apache.bookkeeper.stream.proto.kv.KeyValue keyValue =
-            newKeyValue(ByteString.copyFrom(rKey), kv);
+            newKeyValue(rKey, kv);
 
-        assertEquals(ByteString.copyFrom(lKey), keyValue.getKey());
-        assertEquals(ByteString.copyFrom(value), keyValue.getValue());
+        assertArrayEquals(lKey, keyValue.getKey());
+        assertArrayEquals(value, keyValue.getValue());
         assertEquals(createRev, keyValue.getCreateRevision());
         assertEquals(modRev, keyValue.getModRevision());
         assertEquals(version, keyValue.getVersion());

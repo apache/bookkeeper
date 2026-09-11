@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.proto;
 
+import java.util.concurrent.Executor;
 import org.apache.bookkeeper.client.BKException;
 
 class ForceLedgerCompletion extends CompletionValue {
@@ -30,9 +31,10 @@ class ForceLedgerCompletion extends CompletionValue {
                                  final BookkeeperInternalCallbacks.ForceLedgerCallback originalCallback,
                                  final Object originalCtx,
                                  final long ledgerId,
-                                 PerChannelBookieClient perChannelBookieClient) {
+                                 PerChannelBookieClient perChannelBookieClient,
+                                 Executor callbackExecutor) {
         super("ForceLedger",
-                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient);
+                originalCtx, ledgerId, BookieProtocol.LAST_ADD_CONFIRMED, perChannelBookieClient, callbackExecutor);
         this.opLogger = perChannelBookieClient.forceLedgerOpLogger;
         this.timeoutOpLogger = perChannelBookieClient.forceLedgerTimeoutOpLogger;
         this.cb = (rc, ledgerId1, addr, ctx) -> {
@@ -55,15 +57,17 @@ class ForceLedgerCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.ForceLedgerResponse forceLedgerResponse = response.getForceLedgerResponse();
-        BookkeeperProtocol.StatusCode status = response.getStatus() == BookkeeperProtocol.StatusCode.EOK
-                ? forceLedgerResponse.getStatus() : response.getStatus();
-        long ledgerId = forceLedgerResponse.getLedgerId();
-
-        if (LOG.isDebugEnabled()) {
-            logResponse(status, "ledger", ledgerId);
+    public void handleV3Response(Response response) {
+        StatusCode status;
+        if (response.getStatus() == StatusCode.EOK && response.hasForceLedgerResponse()) {
+            status = response.getForceLedgerResponse().getStatus();
+        } else {
+            // Error responses may not carry a populated ForceLedgerResponse;
+            // fall back to the request's recorded ledgerId.
+            status = response.getStatus();
         }
+
+        logEvent(status).log("Got response from bookie");
         int rc = convertStatus(status, BKException.Code.WriteException);
         cb.forceLedgerComplete(rc, ledgerId, perChannelBookieClient.bookieId, ctx);
     }

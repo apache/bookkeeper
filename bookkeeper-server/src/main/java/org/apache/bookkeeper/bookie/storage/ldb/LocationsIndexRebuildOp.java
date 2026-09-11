@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -42,12 +43,11 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.apache.commons.lang3.time.DurationFormatUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Scan all entries in the entry log and rebuild the locations index.
  */
+@CustomLog
 public class LocationsIndexRebuildOp {
     private final ServerConfiguration conf;
 
@@ -58,7 +58,7 @@ public class LocationsIndexRebuildOp {
     private static final int BATCH_COMMIT_SIZE = 10_000;
 
     public void initiate() throws IOException {
-        LOG.info("Starting locations index rebuilding");
+        log.info("Starting locations index rebuilding");
         File[] indexDirs = conf.getIndexDirs();
         if (indexDirs == null) {
             indexDirs = conf.getLedgerDirs();
@@ -77,7 +77,7 @@ public class LocationsIndexRebuildOp {
             Path backupPath = FileSystems.getDefault().getPath(iBasePath, "locations.BACKUP-" + timestamp);
             Files.move(indexCurrentPath, backupPath);
 
-            LOG.info("Created locations index backup at {}", backupPath);
+            log.info().attr("backupPath", backupPath).log("Created locations index backup");
 
             File[] lDirs = new File[1];
             lDirs[0] = ledgerDir;
@@ -86,14 +86,14 @@ public class LocationsIndexRebuildOp {
             Set<Long> entryLogs = entryLogger.getEntryLogsSet();
 
             Set<Long> activeLedgers = getActiveLedgers(conf, KeyValueStorageRocksDB.factory, iBasePath);
-            LOG.info("Found {} active ledgers in ledger manager", activeLedgers.size());
+            log.info().attr("count", activeLedgers.size()).log("Found active ledgers in ledger manager");
 
             KeyValueStorage newIndex = KeyValueStorageRocksDB.factory.newKeyValueStorage(iBasePath, "locations",
                     DbConfigType.Default, conf);
 
             int totalEntryLogs = entryLogs.size();
             int completedEntryLogs = 0;
-            LOG.info("Scanning {} entry logs", totalEntryLogs);
+            log.info().attr("totalEntryLogs", totalEntryLogs).log("Scanning entry logs");
             AtomicReference<KeyValueStorage.Batch> batch = new AtomicReference<>(newIndex.newBatch());
             AtomicInteger count = new AtomicInteger();
 
@@ -106,10 +106,11 @@ public class LocationsIndexRebuildOp {
                         // Actual location indexed is pointing past the entry size
                         long location = (entryLogId << 32L) | (offset + 4);
 
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Rebuilding {}:{} at location {} / {}", ledgerId, entryId, location >> 32,
-                                    location & (Integer.MAX_VALUE - 1));
-                        }
+                        log.debug()
+                                .attr("ledgerId", ledgerId)
+                                .attr("entryId", entryId)
+                                .attr("logId", location >> 32).attr("offset", location & (Integer.MAX_VALUE - 1))
+                                .log("Rebuilding entry location");
 
                         // Update the ledger index page
                         LongPairWrapper key = LongPairWrapper.get(ledgerId, entryId);
@@ -138,8 +139,9 @@ public class LocationsIndexRebuildOp {
                 });
 
                 ++completedEntryLogs;
-                LOG.info("Completed scanning of log {}.log -- {} / {}", Long.toHexString(entryLogId),
-                        completedEntryLogs, totalEntryLogs);
+                log.info().attr("entryLogId", Long.toHexString(entryLogId))
+                        .attr("completed", completedEntryLogs).attr("total", totalEntryLogs)
+                        .log("Completed scanning of entry log");
             }
 
             batch.get().flush();
@@ -148,9 +150,9 @@ public class LocationsIndexRebuildOp {
             newIndex.sync();
             newIndex.close();
         }
-        LOG.info("Rebuilding index is done. Total time: {}",
-                DurationFormatUtils.formatDurationHMS(
-                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)));
+        log.info().attr("totalTime", DurationFormatUtils.formatDurationHMS(
+                        TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime)))
+                .log("Rebuilding index is done");
     }
 
     private Set<Long> getActiveLedgers(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath)
@@ -165,5 +167,4 @@ public class LocationsIndexRebuildOp {
         return activeLedgers;
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(LocationsIndexRebuildOp.class);
 }

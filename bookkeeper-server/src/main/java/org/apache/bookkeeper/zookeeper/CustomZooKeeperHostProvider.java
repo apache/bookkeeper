@@ -31,19 +31,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import lombok.CustomLog;
 import org.apache.zookeeper.client.ConnectStringParser;
 import org.apache.zookeeper.client.HostProvider;
 import org.apache.zookeeper.client.StaticHostProvider;
 import org.apache.zookeeper.client.StaticHostProvider.Resolver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * ZooKeeper HostProvider with a workaround for https://issues.apache.org/jira/browse/ZOOKEEPER-3825.
  * Based on ZooKeeper's StaticHostProvider
  */
+@CustomLog
 public final class CustomZooKeeperHostProvider implements HostProvider {
-    private static final Logger LOG = LoggerFactory.getLogger(CustomZooKeeperHostProvider.class);
 
     private List<InetSocketAddress> serverAddresses = new ArrayList<>(5);
 
@@ -136,7 +135,10 @@ public final class CustomZooKeeperHostProvider implements HostProvider {
             Collections.shuffle(resolvedAddresses);
             return new InetSocketAddress(resolvedAddresses.get(0), address.getPort());
         } catch (UnknownHostException e) {
-            LOG.error("Unable to resolve address: {}", address.toString(), e);
+            log.error()
+                    .attr("address", address.toString())
+                    .exception(e)
+                    .log("Unable to resolve address");
             return address;
         }
     }
@@ -398,7 +400,7 @@ public final class CustomZooKeeperHostProvider implements HostProvider {
             try {
                 Thread.sleep(spinDelay);
             } catch (InterruptedException e) {
-                LOG.warn("Unexpected exception", e);
+                log.warn().exception(e).log("Unexpected exception");
             }
         }
 

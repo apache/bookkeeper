@@ -33,15 +33,11 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to format the current server contents.
  */
 public class FormatCommand extends BookieCommand<FormatCommand.Flags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(FormatCommand.class);
 
     private static final String NAME = "format";
     private static final String DESC = "Format the current server contents.";

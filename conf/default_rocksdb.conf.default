@@ -21,6 +21,13 @@
 # test case to ensure unit test coverage.
 
 [DBOptions]
+ # Keep WAL records readable by RocksDB 7.9.2 (BookKeeper 4.17.0 / Pulsar 4.0.x).
+ # Enabling track_and_verify_wals adds predecessor records (since 9.11) that
+ # 7.9.2 cannot replay. Enable only after the downgrade window has closed to
+ # detect missing/truncated WALs during recovery. This option is unknown to
+ # 7.9.2: use that release's configuration files when downgrading.
+ # https://github.com/facebook/rocksdb/blob/v10.10.1/include/rocksdb/options.h
+ track_and_verify_wals=false
  # set by jni: options.setCreateIfMissing
  create_if_missing=true
  # set by jni: options.setInfoLogLevel
@@ -34,7 +41,14 @@
  #no default setting in CFOptions
 
 [TableOptions/BlockBasedTable "default"]
- # set by jni: tableOptions.setFormatVersion
+ # Keep newly flushed/compacted SSTs readable by RocksDB 7.9.2.
+ # Format 5 supports modern Bloom filters (readable since RocksDB 6.6).
+ # After the downgrade window closes, format 6 (requires >= 8.6) improves
+ # detection of misplaced data and protects the footer with a checksum;
+ # format 7 (requires >= 10.4) additionally supports custom compression.
+ # Changing this setting only affects new SSTs; lowering it does not convert
+ # existing files. set by jni: tableOptions.setFormatVersion
+ # https://github.com/facebook/rocksdb/blob/v10.10.1/include/rocksdb/table.h
  format_version=5
  # set by jni: tableOptions.setChecksumType
  checksum=kxxHash

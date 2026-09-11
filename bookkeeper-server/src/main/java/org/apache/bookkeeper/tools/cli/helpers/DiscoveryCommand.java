@@ -24,7 +24,7 @@ import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import lombok.Cleanup;
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.api.BookKeeper;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -37,7 +37,7 @@ import org.apache.bookkeeper.tools.framework.CliSpec;
 /**
  * This is a mixin for commands that talks to discovery service.
  */
-@Slf4j
+@CustomLog
 public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends ClientCommand<DiscoveryFlagsT> {
 
     protected DiscoveryCommand(CliSpec<DiscoveryFlagsT> spec) {
@@ -60,7 +60,7 @@ public abstract class DiscoveryCommand<DiscoveryFlagsT extends CliFlags> extends
                 return true;
             }
         } catch (Exception e) {
-            log.error("Fail to process command '{}'", name(), e);
+            log.error().exception(e).attr("command", name()).log("Fail to process command");
             return false;
         }
     }

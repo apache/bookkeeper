@@ -28,8 +28,8 @@ import com.google.common.collect.Lists;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import lombok.AccessLevel;
+import lombok.CustomLog;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 import org.apache.bookkeeper.clients.impl.internal.api.StorageServerClientManager;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
@@ -79,7 +79,7 @@ import org.apache.bookkeeper.stream.storage.impl.store.MVCCStoreFactory;
 /**
  * The service implementation running in a storage container.
  */
-@Slf4j
+@CustomLog
 class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
 
     private final long scId;
@@ -271,12 +271,11 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return FutureUtils.value(RangeResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(StatusCode.BAD_REQUEST)
-                    .setRoutingHeader(request.getHeader())
-                    .build())
-                .build());
+            RangeResponse resp = new RangeResponse();
+            ResponseHeader responseHeader = resp.setHeader();
+            responseHeader.setCode(StatusCode.BAD_REQUEST);
+            responseHeader.setRoutingHeader().copyFrom(request.getHeader());
+            return FutureUtils.value(resp);
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
@@ -289,12 +288,11 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return CompletableFuture.completedFuture(PutResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(StatusCode.BAD_REQUEST)
-                    .setRoutingHeader(request.getHeader())
-                    .build())
-                .build());
+            PutResponse resp = new PutResponse();
+            ResponseHeader responseHeader = resp.setHeader();
+            responseHeader.setCode(StatusCode.BAD_REQUEST);
+            responseHeader.setRoutingHeader().copyFrom(request.getHeader());
+            return CompletableFuture.completedFuture(resp);
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
@@ -307,12 +305,11 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return CompletableFuture.completedFuture(DeleteRangeResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(StatusCode.BAD_REQUEST)
-                    .setRoutingHeader(request.getHeader())
-                    .build())
-                .build());
+            DeleteRangeResponse resp = new DeleteRangeResponse();
+            ResponseHeader responseHeader = resp.setHeader();
+            responseHeader.setCode(StatusCode.BAD_REQUEST);
+            responseHeader.setRoutingHeader().copyFrom(request.getHeader());
+            return CompletableFuture.completedFuture(resp);
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
@@ -325,12 +322,11 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return CompletableFuture.completedFuture(TxnResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(StatusCode.BAD_REQUEST)
-                    .setRoutingHeader(request.getHeader())
-                    .build())
-                .build());
+            TxnResponse resp = new TxnResponse();
+            ResponseHeader responseHeader = resp.setHeader();
+            responseHeader.setCode(StatusCode.BAD_REQUEST);
+            responseHeader.setRoutingHeader().copyFrom(request.getHeader());
+            return CompletableFuture.completedFuture(resp);
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());
@@ -343,12 +339,11 @@ class RangeStoreServiceImpl implements RangeStoreService, AutoCloseable {
         RoutingHeader header = request.getHeader();
 
         if (header.getRangeId() <= 0L) {
-            return CompletableFuture.completedFuture(IncrementResponse.newBuilder()
-                .setHeader(ResponseHeader.newBuilder()
-                    .setCode(StatusCode.BAD_REQUEST)
-                    .setRoutingHeader(request.getHeader())
-                    .build())
-                .build());
+            IncrementResponse resp = new IncrementResponse();
+            ResponseHeader responseHeader = resp.setHeader();
+            responseHeader.setCode(StatusCode.BAD_REQUEST);
+            responseHeader.setRoutingHeader().copyFrom(request.getHeader());
+            return CompletableFuture.completedFuture(resp);
         }
 
         RangeId rid = RangeId.of(header.getStreamId(), header.getRangeId());

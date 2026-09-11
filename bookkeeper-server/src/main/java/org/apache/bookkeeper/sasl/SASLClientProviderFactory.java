@@ -34,20 +34,19 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.SaslException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.auth.AuthCallbacks;
 import org.apache.bookkeeper.auth.ClientAuthProvider;
 import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.proto.ClientConnectionPeer;
-import org.slf4j.LoggerFactory;
 
 /**
  * ClientAuthProvider which uses JDK-bundled SASL.
  */
+@CustomLog
 public class SASLClientProviderFactory implements
     org.apache.bookkeeper.auth.ClientAuthProvider.Factory, JAASCredentialsContainer {
-
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(SASLClientProviderFactory.class);
 
     private ClientConfiguration clientConfiguration;
     private LoginContext login;
@@ -99,7 +98,7 @@ public class SASLClientProviderFactory implements
         AppConfigurationEntry[] entries = Configuration.getConfiguration()
             .getAppConfigurationEntry(configurationEntry);
         if (entries == null) {
-            LOG.info("No JAAS Configuration found with section BookKeeper");
+            log.info("No JAAS Configuration found with section BookKeeper");
             return null;
         }
         try {
@@ -108,7 +107,7 @@ public class SASLClientProviderFactory implements
             loginContext.login();
             return loginContext;
         } catch (LoginException error) {
-            LOG.error("Error JAAS Configuration subject", error);
+            log.error().exception(error).log("Error JAAS Configuration subject");
             return null;
         }
     }
@@ -121,9 +120,7 @@ public class SASLClientProviderFactory implements
                 ticketRefreshThread.join(10000);
             } catch (InterruptedException exit) {
                 Thread.currentThread().interrupt();
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("interrupted while waiting for TGT reresh thread to stop", exit);
-                }
+                    log.debug().exception(exit).log("interrupted while waiting for TGT refresh thread to stop");
             }
         }
     }

@@ -22,21 +22,17 @@ import static org.junit.Assert.assertTrue;
 import com.google.common.base.Stopwatch;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import lombok.CustomLog;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * Utilities of {@link org.apache.distributedlog.ZooKeeperClient}.
  */
+@CustomLog
 public class ZooKeeperClientUtils {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZooKeeperClientUtils.class);
 
     /**
      * Expire given zookeeper client's session.
@@ -57,7 +53,7 @@ public class ZooKeeperClientUtils {
         oldZk.exists("/", new Watcher() {
             @Override
             public void process(WatchedEvent event) {
-                logger.debug("Receive event : {}", event);
+                log.debug().attr("event", event).log("Receive event");
                 if (event.getType() == Event.EventType.None
                         && event.getState() == Event.KeeperState.Expired) {
                     expireLatch.countDown();

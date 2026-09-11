@@ -24,27 +24,27 @@ import com.google.common.base.MoreObjects;
  */
 class RequestUtils {
 
-    public static boolean isFenceRequest(BookkeeperProtocol.ReadRequest readRequest) {
-        return hasFlag(readRequest, BookkeeperProtocol.ReadRequest.Flag.FENCE_LEDGER);
+    public static boolean isFenceRequest(ReadRequest readRequest) {
+        return hasFlag(readRequest, ReadRequest.Flag.FENCE_LEDGER);
     }
 
-    public static boolean isLongPollReadRequest(BookkeeperProtocol.ReadRequest readRequest) {
+    public static boolean isLongPollReadRequest(ReadRequest readRequest) {
         return !isFenceRequest(readRequest) && readRequest.hasPreviousLAC();
     }
 
-    public static boolean isHighPriority(BookkeeperProtocol.Request request) {
+    public static boolean isHighPriority(Request request) {
         return request.getHeader().getPriority() > 0;
     }
 
-    public static boolean shouldPiggybackEntry(BookkeeperProtocol.ReadRequest readRequest) {
-        return hasFlag(readRequest, BookkeeperProtocol.ReadRequest.Flag.ENTRY_PIGGYBACK);
+    public static boolean shouldPiggybackEntry(ReadRequest readRequest) {
+        return hasFlag(readRequest, ReadRequest.Flag.ENTRY_PIGGYBACK);
     }
 
-    static boolean hasFlag(BookkeeperProtocol.ReadRequest request, BookkeeperProtocol.ReadRequest.Flag flag) {
+    static boolean hasFlag(ReadRequest request, ReadRequest.Flag flag) {
         return request.hasFlag() && request.getFlag() == flag;
     }
 
-    static boolean hasFlag(BookkeeperProtocol.AddRequest request, BookkeeperProtocol.AddRequest.Flag flag) {
+    static boolean hasFlag(AddRequest request, AddRequest.Flag flag) {
         return request.hasFlag() && request.getFlag() == flag;
     }
 
@@ -53,11 +53,11 @@ class RequestUtils {
      * masterKey contains the password of the ledger and body is customer data,
      * so it is not appropriate to have these in logs or system output.
      */
-    public static String toSafeString(BookkeeperProtocol.Request request) {
+    public static String toSafeString(Request request) {
         MoreObjects.ToStringHelper stringHelper = MoreObjects.toStringHelper(request);
-        BookkeeperProtocol.BKPacketHeader header = request.getHeader();
+        BKPacketHeader header = request.getHeader();
         if (request.hasAddRequest()) {
-            BookkeeperProtocol.AddRequest addRequest = request.getAddRequest();
+            AddRequest addRequest = request.getAddRequest();
             includeHeaderFields(stringHelper, header);
             stringHelper.add("ledgerId", addRequest.getLedgerId());
             stringHelper.add("entryId", addRequest.getEntryId());
@@ -69,7 +69,7 @@ class RequestUtils {
             }
             return stringHelper.toString();
         } else if (request.hasReadRequest()) {
-            BookkeeperProtocol.ReadRequest readRequest = request.getReadRequest();
+            ReadRequest readRequest = request.getReadRequest();
             includeHeaderFields(stringHelper, header);
             stringHelper.add("ledgerId", readRequest.getLedgerId());
             stringHelper.add("entryId", readRequest.getEntryId());
@@ -84,13 +84,13 @@ class RequestUtils {
             }
             return stringHelper.toString();
         } else if (request.hasWriteLacRequest()) {
-            BookkeeperProtocol.WriteLacRequest writeLacRequest = request.getWriteLacRequest();
+            WriteLacRequest writeLacRequest = request.getWriteLacRequest();
             includeHeaderFields(stringHelper, header);
             stringHelper.add("ledgerId", writeLacRequest.getLedgerId());
             stringHelper.add("lac", writeLacRequest.getLac());
             return stringHelper.toString();
         } else if (request.hasForceLedgerRequest()) {
-            BookkeeperProtocol.ForceLedgerRequest forceLedgerRequest = request.getForceLedgerRequest();
+            ForceLedgerRequest forceLedgerRequest = request.getForceLedgerRequest();
             includeHeaderFields(stringHelper, header);
             stringHelper.add("ledgerId", forceLedgerRequest.getLedgerId());
             return stringHelper.toString();
@@ -100,7 +100,7 @@ class RequestUtils {
     }
 
     private static void includeHeaderFields(MoreObjects.ToStringHelper stringHelper,
-            BookkeeperProtocol.BKPacketHeader header) {
+            BKPacketHeader header) {
         stringHelper.add("version", header.getVersion());
         stringHelper.add("operation", header.getOperation());
         stringHelper.add("txnId", header.getTxnId());

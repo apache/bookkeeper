@@ -21,8 +21,10 @@
 
 package org.apache.bookkeeper.proto;
 
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 
+@CustomLog
 class StartTLSCompletion extends CompletionValue {
     final BookkeeperInternalCallbacks.StartTLSCallback cb;
 
@@ -50,12 +52,10 @@ class StartTLSCompletion extends CompletionValue {
     }
 
     @Override
-    public void handleV3Response(BookkeeperProtocol.Response response) {
-        BookkeeperProtocol.StatusCode status = response.getStatus();
+    public void handleV3Response(Response response) {
+        StatusCode status = response.getStatus();
 
-        if (LOG.isDebugEnabled()) {
-            logResponse(status);
-        }
+        logEvent(status).log("Got response from bookie");
 
         int rc = convertStatus(status, BKException.Code.SecurityException);
 
@@ -63,10 +63,10 @@ class StartTLSCompletion extends CompletionValue {
         cb.startTLSComplete(rc, null);
 
         if (perChannelBookieClient.state != PerChannelBookieClient.ConnectionState.START_TLS) {
-            LOG.error("Connection state changed before TLS response received");
+            log.error("Connection state changed before TLS response received");
             perChannelBookieClient.failTLS(BKException.Code.BookieHandleNotAvailableException);
-        } else if (status != BookkeeperProtocol.StatusCode.EOK) {
-            LOG.error("Client received error {} during TLS negotiation", status);
+        } else if (status != StatusCode.EOK) {
+            log.error().attr("status", status).log("Client received error during TLS negotiation");
             perChannelBookieClient.failTLS(BKException.Code.SecurityException);
         } else {
             perChannelBookieClient.initTLSHandshake();

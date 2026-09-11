@@ -17,7 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
-import lombok.extern.slf4j.Slf4j;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.discover.BookieServiceInfo;
 import org.apache.bookkeeper.discover.RegistrationClient;
@@ -28,7 +28,7 @@ import org.apache.bookkeeper.proto.BookieAddressResolver;
 /**
  * Resolve BookieIDs to Network addresses.
  */
-@Slf4j
+@CustomLog
 public class DefaultBookieAddressResolver implements BookieAddressResolver {
 
     private final RegistrationClient registrationClient;
@@ -53,19 +53,24 @@ public class DefaultBookieAddressResolver implements BookieAddressResolver {
             BookieSocketAddress res = new BookieSocketAddress(endpoint.getHost(), endpoint.getPort());
             if (!bookieId.toString().equals(res.toString())) {
                 // only print if the information is useful
-                log.info("Resolved {} as {}", bookieId, res);
-            } else if (log.isDebugEnabled()) {
-                log.debug("Resolved {} as {}", bookieId, res);
+                log.info()
+                        .attr("bookieId", bookieId)
+                        .attr("res", res)
+                        .log("Resolved as");
             }
+
             return res;
         } catch (BKException.BKBookieHandleNotAvailableException ex) {
             if (BookieSocketAddress.isDummyBookieIdForHostname(bookieId)) {
-                if (log.isDebugEnabled()) {
-                    log.debug("Resolving dummy bookie Id {} using legacy bookie resolver", bookieId);
-                }
+
+                log.debug().attr("bookieId", bookieId).log("Resolving dummy bookie Id using legacy bookie resolver");
+
                 return BookieSocketAddress.resolveLegacyBookieId(bookieId);
             }
-            log.info("Cannot resolve {}, bookie is unknown {}", bookieId, ex.toString());
+            log.info()
+                    .attr("bookieId", bookieId)
+                    .exceptionMessage(ex)
+                    .log("Cannot resolve bookie, bookie is unknown");
             throw new BookieIdNotResolvedException(bookieId, ex);
         } catch (Exception ex) {
             if (ex instanceof InterruptedException) {

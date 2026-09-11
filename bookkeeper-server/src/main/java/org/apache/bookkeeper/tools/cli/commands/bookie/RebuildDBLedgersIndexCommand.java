@@ -19,6 +19,7 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import com.beust.jcommander.Parameter;
+import lombok.CustomLog;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 import org.apache.bookkeeper.bookie.storage.ldb.LedgersIndexRebuildOp;
@@ -26,15 +27,12 @@ import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to rebuild DBLedgerStorage ledgers index.
  */
+@CustomLog
 public class RebuildDBLedgersIndexCommand extends BookieCommand<RebuildDBLedgersIndexCommand.RebuildLedgersIndexFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(RebuildDBLedgersIndexCommand.class);
 
     private static final String NAME = "rebuild-db-ledgers-index";
     private static final String DESC = "Rebuild DBLedgerStorage ledgers index by scanning the journal"
@@ -51,13 +49,13 @@ public class RebuildDBLedgersIndexCommand extends BookieCommand<RebuildDBLedgers
 
     @Override
     public boolean apply(ServerConfiguration conf, RebuildLedgersIndexFlags cmdFlags) {
-        LOG.info("=== Rebuilding DBStorage ledgers index ===");
+        log.info("=== Rebuilding DBStorage ledgers index ===");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         boolean success = new LedgersIndexRebuildOp(serverConfiguration, cmdFlags.verbose).initiate();
         if (success) {
-            LOG.info("-- Done rebuilding DBStorage ledgers index --");
+            log.info("-- Done rebuilding DBStorage ledgers index --");
         } else {
-            LOG.info("-- Aborted rebuilding DBStorage ledgers index --");
+            log.info("-- Aborted rebuilding DBStorage ledgers index --");
         }
 
         return success;

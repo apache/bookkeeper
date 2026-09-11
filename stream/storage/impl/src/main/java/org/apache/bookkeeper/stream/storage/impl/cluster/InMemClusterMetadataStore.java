@@ -56,10 +56,8 @@ public class InMemClusterMetadataStore implements ClusterMetadataStore {
     @Override
     public synchronized boolean initializeCluster(int numStorageContainers,
                                                Optional<String> segmentStorePath) {
-        this.metadata = ClusterMetadata.newBuilder()
-            .setNumStorageContainers(numStorageContainers)
-            .build();
-        this.assignmentData = ClusterAssignmentData.newBuilder().build();
+        this.metadata = new ClusterMetadata().setNumStorageContainers(numStorageContainers);
+        this.assignmentData = new ClusterAssignmentData();
         return true;
     }
 

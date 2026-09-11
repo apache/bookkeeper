@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.CustomLog;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.util.ZkUtils;
@@ -43,17 +44,12 @@ import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-
 
 /**
  * ZooKeeper Based {@link org.apache.distributedlog.acl.AccessControlManager}.
  */
+@CustomLog
 public class ZKAccessControlManager implements AccessControlManager, Watcher {
-
-    private static final Logger logger = LoggerFactory.getLogger(ZKAccessControlManager.class);
 
     private static final int ZK_RETRY_BACKOFF_MS = 500;
 
@@ -167,8 +163,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                     for (String s : streamsRemoved) {
                         ZKAccessControl accessControl = streamEntries.remove(s);
                         if (null != accessControl) {
-                            logger.info("Removed Access Control Entry for stream {} : {}",
-                                    s, accessControl.getAccessControlEntry());
+                            log.info()
+                                    .attr("stream", s)
+                                    .attr("accessControlEntry", accessControl.getAccessControlEntry())
+                                    .log("Removed Access Control Entry for stream");
                         }
                     }
                     if (streamsReceived.isEmpty()) {
@@ -185,8 +183,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                                     @Override
                                     public void onSuccess(ZKAccessControl accessControl) {
                                         streamEntries.put(streamName, accessControl);
-                                        logger.info("Added override access control for stream {} : {}",
-                                                streamName, accessControl.getAccessControlEntry());
+                                        log.info()
+                                                .attr("streamName", streamName)
+                                                .attr("accessControlEntry", accessControl.getAccessControlEntry())
+                                                .log("Added override access control for stream");
                                         complete();
                                     }
 
@@ -195,8 +195,11 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                                         if (cause instanceof KeeperException.NoNodeException) {
                                             streamEntries.remove(streamName);
                                         } else if (cause instanceof ZKAccessControl.CorruptedAccessControlException) {
-                                            logger.warn("Access control is corrupted for stream {} @ {},skipped it ...",
-                                                streamName, zkRootPath, cause);
+                                            log.warn()
+                                                    .attr("streamName", streamName)
+                                                    .attr("zkRootPath", zkRootPath)
+                                                    .exception(cause)
+                                                    .log("Access control is corrupted for stream, skipped it");
                                             streamEntries.remove(streamName);
                                         } else {
                                             if (1 == numFailures.incrementAndGet()) {
@@ -234,9 +237,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
             .whenComplete(new FutureEventListener<ZKAccessControl>() {
                 @Override
                 public void onSuccess(ZKAccessControl accessControl) {
-                    logger.info("Default Access Control will be changed from {} to {}",
-                                ZKAccessControlManager.this.defaultAccessControl,
-                                accessControl);
+                    log.info()
+                            .attr("defaultAccessControl", ZKAccessControlManager.this.defaultAccessControl)
+                            .attr("accessControl", accessControl)
+                            .log("Default Access Control will be changed");
                     ZKAccessControlManager.this.defaultAccessControl = accessControl;
                     promise.complete(accessControl);
                 }
@@ -244,7 +248,9 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                 @Override
                 public void onFailure(Throwable cause) {
                     if (cause instanceof KeeperException.NoNodeException) {
-                        logger.info("Default Access Control is missing, creating one for {} ...", zkRootPath);
+                        log.info()
+                                .attr("zkRootPath", zkRootPath)
+                                .log("Default Access Control is missing, creating one");
                         createDefaultAccessControlEntryIfNeeded(promise);
                     } else {
                         promise.completeExceptionally(cause);
@@ -270,7 +276,7 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
             @Override
             public void processResult(int rc, String path, Object ctx, String name) {
                 if (KeeperException.Code.OK.intValue() == rc) {
-                    logger.info("Created zk path {} for default ACL.", zkRootPath);
+                    log.info().attr("zkRootPath", zkRootPath).log("Created zk path for default ACL.");
                     fetchDefaultAccessControlEntry(promise);
                 } else {
                     promise.completeExceptionally(KeeperException.create(KeeperException.Code.get(rc)));
@@ -294,12 +300,16 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                     @Override
                     public void onFailure(Throwable cause) {
                         if (cause instanceof ZKAccessControl.CorruptedAccessControlException) {
-                            logger.warn("Default access control entry is corrupted, ignore this update : ", cause);
+                            log.warn()
+                                    .exception(cause)
+                                    .log("Default access control entry is corrupted, ignore this update");
                             return;
                         }
 
-                        logger.warn("Encountered an error on refetching default access control entry,"
-                                + " retrying in {} ms : ", ZK_RETRY_BACKOFF_MS, cause);
+                        log.warn()
+                                .attr("ZK_RETRY_BACKOFF_MS", ZK_RETRY_BACKOFF_MS)
+                                .exception(cause)
+                                .log("Encountered an error on refetching default access control entry, retrying in ms");
                         refetchDefaultAccessControlEntry(ZK_RETRY_BACKOFF_MS);
                     }
                 });
@@ -321,8 +331,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                     }
                     @Override
                     public void onFailure(Throwable cause) {
-                        logger.warn("Encountered an error on refetching access control entries, retrying in {} ms : ",
-                                    ZK_RETRY_BACKOFF_MS, cause);
+                        log.warn()
+                                .attr("ZK_RETRY_BACKOFF_MS", ZK_RETRY_BACKOFF_MS)
+                                .exception(cause)
+                                .log("Encountered an error on refetching access control entries, retrying in ms");
                         refetchAccessControlEntries(ZK_RETRY_BACKOFF_MS);
                     }
                 });
@@ -348,8 +360,11 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
 
                             @Override
                             public void onFailure(Throwable cause) {
-                                logger.warn("Encountered an error on fetching all"
-                                        + " access control entries, retrying in {} ms : ", ZK_RETRY_BACKOFF_MS, cause);
+                                log.warn()
+                                        .attr("ZK_RETRY_BACKOFF_MS", ZK_RETRY_BACKOFF_MS)
+                                        .exception(cause)
+                                        .log("Encountered an error on fetching all access control entries,"
+                                                + " retrying in ms");
                                 refetchAccessControlEntries(ZK_RETRY_BACKOFF_MS);
                             }
                         });
@@ -357,8 +372,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
 
                     @Override
                     public void onFailure(Throwable cause) {
-                        logger.warn("Encountered an error on refetching all"
-                                + " access control entries, retrying in {} ms : ", ZK_RETRY_BACKOFF_MS, cause);
+                        log.warn()
+                                .attr("ZK_RETRY_BACKOFF_MS", ZK_RETRY_BACKOFF_MS)
+                                .exception(cause)
+                                .log("Encountered an error on refetching all access control entries, retrying in ms");
                         refetchAllAccessControlEntries(ZK_RETRY_BACKOFF_MS);
                     }
                 });
@@ -373,10 +390,10 @@ public class ZKAccessControlManager implements AccessControlManager, Watcher {
                 refetchAllAccessControlEntries(0);
             }
         } else if (Event.EventType.NodeDataChanged.equals(event.getType())) {
-            logger.info("Default ACL for {} is changed, refetching ...", zkRootPath);
+            log.info().attr("zkRootPath", zkRootPath).log("Default ACL changed, refetching");
             refetchDefaultAccessControlEntry(0);
         } else if (Event.EventType.NodeChildrenChanged.equals(event.getType())) {
-            logger.info("List of ACLs for {} are changed, refetching ...", zkRootPath);
+            log.info().attr("zkRootPath", zkRootPath).log("List of ACLs changed, refetching");
             refetchAccessControlEntries(0);
         }
     }

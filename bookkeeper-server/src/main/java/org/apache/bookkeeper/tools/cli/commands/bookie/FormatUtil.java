@@ -20,18 +20,16 @@ package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import io.netty.buffer.ByteBuf;
 import java.util.Formatter;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.util.EntryFormatter;
 import org.apache.bookkeeper.util.LedgerIdFormatter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * .Provide to format message.
  */
+@CustomLog
 public class FormatUtil {
-
-    private static final Logger LOG = LoggerFactory.getLogger(FormatUtil.class);
 
     /**
      * Format the message into a readable format.
@@ -50,43 +48,56 @@ public class FormatUtil {
         long ledgerId = recBuff.readLong();
         long entryId = recBuff.readLong();
 
-        LOG.info("--------- Lid={}, Eid={}, ByteOffset={}, EntrySize={} ---------",
-            ledgerIdFormatter.formatLedgerId(ledgerId), entryId, pos, entrySize);
+        log.info()
+                .attr("ledgerId", ledgerIdFormatter.formatLedgerId(ledgerId))
+                .attr("entryId", entryId)
+                .attr("position", pos)
+                .attr("entrySize", entrySize)
+                .log("Entry");
         if (entryId == BookieImpl.METAENTRY_ID_LEDGER_KEY) {
             int masterKeyLen = recBuff.readInt();
             byte[] masterKey = new byte[masterKeyLen];
             recBuff.readBytes(masterKey);
-            LOG.info("Type:           META");
-            LOG.info("MasterKey:      {}", bytes2Hex(masterKey));
-            LOG.info("");
+            log.info()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("type", "META")
+                    .attr("masterKey", bytes2Hex(masterKey))
+                    .log("MasterKey");
             return;
         }
         if (entryId == BookieImpl.METAENTRY_ID_FENCE_KEY) {
-            LOG.info("Type:           META");
-            LOG.info("Fenced");
-            LOG.info("");
+            log.info()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .attr("type", "META")
+                    .log("Fenced");
             return;
         }
         // process a data entry
         long lastAddConfirmed = recBuff.readLong();
-        LOG.info("Type:           DATA");
-        LOG.info("LastConfirmed:  {}", lastAddConfirmed);
+        log.info()
+                .attr("ledgerId", ledgerId)
+                .attr("entryId", entryId)
+                .attr("type", "DATA")
+                .attr("lastAddConfirmed", lastAddConfirmed)
+                .log("Entry");
         if (!printMsg) {
-            LOG.info("");
             return;
         }
         // skip digest checking
         recBuff.skipBytes(8);
-        LOG.info("Data:");
-        LOG.info("");
         try {
             byte[] ret = new byte[recBuff.readableBytes()];
             recBuff.readBytes(ret);
             entryFormatter.formatEntry(ret);
         } catch (Exception e) {
-            LOG.info("N/A. Corrupted.");
+            log.info()
+                    .attr("ledgerId", ledgerId)
+                    .attr("entryId", entryId)
+                    .exceptionMessage(e)
+                    .log("N/A. Corrupted.");
         }
-        LOG.info("");
     }
 
     public static String bytes2Hex(byte[] data) {

@@ -23,6 +23,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.util.Map;
 import java.util.stream.Collectors;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
@@ -33,18 +34,15 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.cli.helpers.CommandHelpers;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 
 /**
  * A bookie command to retrieve bookie info.
  */
+@CustomLog
 public class InfoCommand extends BookieCommand<CliFlags> {
 
     private static final String NAME = "info";
     private static final String DESC = "Retrieve bookie info such as free and total disk space.";
-    private static final Logger LOG = LoggerFactory.getLogger(InfoCommand.class);
 
     public InfoCommand() {
         super(CliSpec.newBuilder()
@@ -67,7 +65,6 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         return cnt > 0 ? "(" + df.format(d) + unit[cnt] + ")" : unit[cnt];
     }
 
-
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags cmdFlags) {
 
@@ -76,20 +73,25 @@ public class InfoCommand extends BookieCommand<CliFlags> {
         try (BookKeeper bk = new BookKeeper(clientConf)) {
             Map<BookieId, BookieInfo> map = bk.getBookieInfo();
             if (map.size() == 0) {
-                LOG.info("Failed to retrieve bookie information from any of the bookies");
+                log.info("Failed to retrieve bookie information from any of the bookies");
                 bk.close();
                 return true;
             }
 
-            LOG.info("Free disk space info:");
+            log.info("Free disk space info:");
             long totalFree = 0, total = 0;
             for (Map.Entry<BookieId, BookieInfo> e : map.entrySet()) {
                 BookieInfo bInfo = e.getValue();
                 BookieId bookieId = e.getKey();
-                LOG.info("{}: \tFree: {}\tTotal: {}",
-                    CommandHelpers.getBookieSocketAddrStringRepresentation(bookieId, bk.getBookieAddressResolver()),
-                    bInfo.getFreeDiskSpace() + getReadable(bInfo.getFreeDiskSpace()),
-                    bInfo.getTotalDiskSpace() + getReadable(bInfo.getTotalDiskSpace()));
+                log.info()
+                        .attr("bookie", CommandHelpers
+                                .getBookieSocketAddrStringRepresentation(
+                                        bookieId, bk.getBookieAddressResolver()))
+                        .attr("free", bInfo.getFreeDiskSpace()
+                                + getReadable(bInfo.getFreeDiskSpace()))
+                        .attr("total", bInfo.getTotalDiskSpace()
+                                + getReadable(bInfo.getTotalDiskSpace()))
+                        .log("Free disk space info");
             }
 
             // group by hostname
@@ -105,8 +107,8 @@ public class InfoCommand extends BookieCommand<CliFlags> {
                 total += bookieInfo.getTotalDiskSpace();
             }
 
-            LOG.info("Total free disk space in the cluster:\t{}", totalFree + getReadable(totalFree));
-            LOG.info("Total disk capacity in the cluster:\t{}", total + getReadable(total));
+            log.info().attr("free", totalFree + getReadable(totalFree)).log("Total free disk space in the cluster");
+            log.info().attr("total", total + getReadable(total)).log("Total disk capacity in the cluster");
             bk.close();
 
             return true;

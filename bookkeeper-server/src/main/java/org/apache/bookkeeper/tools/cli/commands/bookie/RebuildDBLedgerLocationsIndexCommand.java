@@ -19,20 +19,18 @@
 package org.apache.bookkeeper.tools.cli.commands.bookie;
 
 import java.io.IOException;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.storage.ldb.LocationsIndexRebuildOp;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.tools.cli.helpers.BookieCommand;
 import org.apache.bookkeeper.tools.framework.CliFlags;
 import org.apache.bookkeeper.tools.framework.CliSpec;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Command to rebuild DBLedgerStorage locations index.
  */
+@CustomLog
 public class RebuildDBLedgerLocationsIndexCommand extends BookieCommand<CliFlags> {
-
-    static final Logger LOG = LoggerFactory.getLogger(RebuildDBLedgerLocationsIndexCommand.class);
 
     private static final String NAME = "rebuild-db-ledger-locations-index";
     private static final String DESC = "Rbuild DBLedgerStorage locations index by scanning the entry logs";
@@ -43,14 +41,14 @@ public class RebuildDBLedgerLocationsIndexCommand extends BookieCommand<CliFlags
 
     @Override
     public boolean apply(ServerConfiguration conf, CliFlags cmdFlags) {
-        LOG.info("=== Rebuilding DBStorage locations index ===");
+        log.info("=== Rebuilding DBStorage locations index ===");
         ServerConfiguration serverConfiguration = new ServerConfiguration(conf);
         try {
             new LocationsIndexRebuildOp(serverConfiguration).initiate();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        LOG.info("-- Done rebuilding DBStorage locations index --");
+        log.info("-- Done rebuilding DBStorage locations index --");
         return true;
     }
 }

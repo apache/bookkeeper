@@ -24,7 +24,6 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Sets;
-import com.google.protobuf.TextFormat;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.EOFException;
@@ -36,23 +35,23 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Objects;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.BookieException.InvalidCookieException;
 import org.apache.bookkeeper.bookie.BookieException.UnknownBookieIdException;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.discover.RegistrationManager;
 import org.apache.bookkeeper.net.BookieId;
-import org.apache.bookkeeper.proto.DataFormats.CookieFormat;
+import org.apache.bookkeeper.proto.CookieFormat;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.versioning.LongVersion;
 import org.apache.bookkeeper.versioning.Version;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * When a bookie starts for the first time it generates  a cookie, and stores
@@ -66,8 +65,8 @@ import org.slf4j.LoggerFactory;
  * but the bookie would be up, so the client would think that everything is ok
  * with the cluster. It's better to fail early and obviously.
  */
+@CustomLog
 public class Cookie {
-    private static final Logger LOG = LoggerFactory.getLogger(Cookie.class);
 
     static final int CURRENT_COOKIE_LAYOUT_VERSION = 5;
     private final int layoutVersion;
@@ -153,7 +152,7 @@ public class Cookie {
         String errMsg;
         if (c.layoutVersion < 3 && c.layoutVersion != layoutVersion) {
             errMsg = "Cookie is of too old version " + c.layoutVersion;
-            LOG.error(errMsg);
+            log.error(errMsg);
             throw new BookieException.InvalidCookieException(errMsg);
         } else if (!(c.layoutVersion >= 3 && c.bookieId.equals(bookieId)
             && c.journalDirs.equals(journalDirs) && verifyLedgerDirs(c, checkIfSuperSet)
@@ -182,20 +181,20 @@ public class Cookie {
         if (layoutVersion <= 3) {
             return toStringVersion3();
         }
-        CookieFormat.Builder builder = CookieFormat.newBuilder();
-        builder.setBookieHost(bookieId);
-        builder.setJournalDir(journalDirs);
-        builder.setLedgerDirs(ledgerDirs);
+        CookieFormat fmt = new CookieFormat();
+        fmt.setBookieHost(bookieId);
+        fmt.setJournalDir(journalDirs);
+        fmt.setLedgerDirs(ledgerDirs);
         if (null != instanceId) {
-            builder.setInstanceId(instanceId);
+            fmt.setInstanceId(instanceId);
         }
         if (null != indexDirs) {
-            builder.setIndexDirs(indexDirs);
+            fmt.setIndexDirs(indexDirs);
         }
 
         StringBuilder b = new StringBuilder();
         b.append(CURRENT_COOKIE_LAYOUT_VERSION).append("\n");
-        b.append(builder.build());
+        fmt.writeTextFormatTo(b);
         return b.toString();
     }
 
@@ -227,17 +226,18 @@ public class Cookie {
             cBuilder.setJournalDirs(reader.readLine());
             cBuilder.setLedgerDirs(reader.readLine());
         } else if (layoutVersion >= 4) {
-            CookieFormat.Builder cfBuilder = CookieFormat.newBuilder();
-            TextFormat.merge(reader, cfBuilder);
-            CookieFormat data = cfBuilder.build();
+            CookieFormat data = new CookieFormat();
+            StringWriter rest = new StringWriter();
+            reader.transferTo(rest);
+            data.parseFromTextFormat(rest.toString());
             cBuilder.setBookieId(data.getBookieHost());
             cBuilder.setJournalDirs(data.getJournalDir());
             cBuilder.setLedgerDirs(data.getLedgerDirs());
             // Since InstanceId is optional
-            if (null != data.getInstanceId() && !data.getInstanceId().isEmpty()) {
+            if (data.hasInstanceId() && !data.getInstanceId().isEmpty()) {
                 cBuilder.setInstanceId(data.getInstanceId());
             }
-            if (null != data.getIndexDirs() && !data.getIndexDirs().isEmpty()) {
+            if (data.hasIndexDirs() && !data.getIndexDirs().isEmpty()) {
                 cBuilder.setIndexDirs(data.getIndexDirs());
             }
         }

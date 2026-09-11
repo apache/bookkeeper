@@ -26,8 +26,8 @@
   <name>Apache BookKeeper :: Protocols</name>
   <dependencies>
     <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
+      <groupId>io.netty</groupId>
+      <artifactId>netty-buffer</artifactId>
     </dependency>
   </dependencies>
   <build>
@@ -37,26 +37,24 @@
         <artifactId>apache-rat-plugin</artifactId>
         <configuration>
           <excludes>
-            <!-- exclude generated file //-->
-            <exclude>**/DataFormats.java</exclude>
-            <exclude>**/BookkeeperProtocol.java</exclude>
-            <exclude>**/DbLedgerStorageDataFormats.java</exclude>
+            <!-- exclude generated files //-->
+            <exclude>target/generated-sources/lightproto/**</exclude>
             <exclude>**/.checkstyle</exclude>
           </excludes>
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <version>${protobuf-maven-plugin.version}</version>
+        <groupId>io.streamnative.lightproto</groupId>
+        <artifactId>lightproto-maven-plugin</artifactId>
+        <version>${lightproto-maven-plugin.version}</version>
         <configuration>
-          <protocArtifact>com.google.protobuf:protoc:${protoc.version}:exe:${os.detected.classifier}</protocArtifact>
-          <checkStaleness>true</checkStaleness>
+          <targetSourcesSubDir>generated-sources/lightproto/java</targetSourcesSubDir>
+          <generateTextFormat>true</generateTextFormat>
         </configuration>
         <executions>
           <execution>
             <goals>
-              <goal>compile</goal>
+              <goal>generate</goal>
             </goals>
           </execution>
         </executions>

@@ -40,16 +40,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.zip.GZIPOutputStream;
+import lombok.CustomLog;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Docker utilities for integration tests.
  */
+@CustomLog
 public class DockerUtils {
-    private static final Logger LOG = LoggerFactory.getLogger(DockerUtils.class);
 
     private static File getTargetDirectory(String containerId) {
         String base = System.getProperty("maven.buildDirectory");
@@ -58,7 +57,7 @@ public class DockerUtils {
         }
         File directory = new File(base + "/container-logs/" + containerId);
         if (!directory.exists() && !directory.mkdirs()) {
-            LOG.error("Error creating directory for container logs.");
+            log.error("Error creating directory for container logs");
         }
         return directory;
     }
@@ -96,10 +95,13 @@ public class DockerUtils {
                     });
             future.get();
         } catch (RuntimeException | ExecutionException | IOException e) {
-            LOG.error("Error dumping log for {}", containerId, e);
+            log.error().exception(e).attr("containerId", containerId).log("Error dumping log");
         } catch (InterruptedException ie) {
             Thread.currentThread().interrupt();
-            LOG.info("Interrupted dumping log from container {}", containerId, ie);
+            log.info()
+                    .exception(ie)
+                    .attr("containerId", containerId)
+                    .log("Interrupted dumping log from container");
         }
     }
 
@@ -123,7 +125,10 @@ public class DockerUtils {
                 read = dockerStream.read(block, 0, readBlockSize);
             }
         } catch (RuntimeException | IOException e) {
-            LOG.error("Error reading dir from container {}", containerName, e);
+            log.error()
+                    .exception(e)
+                    .attr("containerName", containerName)
+                    .log("Error reading dir from container");
         }
     }
 
@@ -152,7 +157,10 @@ public class DockerUtils {
                 entry = stream.getNextEntry();
             }
         } catch (RuntimeException | IOException e) {
-            LOG.error("Error reading bk logs from container {}", containerId, e);
+            log.error()
+                    .exception(e)
+                    .attr("containerId", containerId)
+                    .log("Error reading bk logs from container");
         }
     }
 
@@ -185,12 +193,19 @@ public class DockerUtils {
 
                 @Override
                 public void onStart(Closeable closeable) {
-                    LOG.info("DOCKER.exec({}:{}): Executing...", containerId, cmdString);
+                    log.info()
+                            .attr("containerId", containerId)
+                            .attr("cmd", cmdString)
+                            .log("DOCKER.exec: Executing");
                 }
 
                 @Override
                 public void onNext(Frame object) {
-                    LOG.info("DOCKER.exec({}:{}): {}", containerId, cmdString, object);
+                    log.info()
+                            .attr("containerId", containerId)
+                            .attr("cmd", cmdString)
+                            .attr("frame", object)
+                            .log("DOCKER.exec: frame");
                     output.append(new String(object.getPayload(), UTF_8));
                 }
 
@@ -201,7 +216,10 @@ public class DockerUtils {
 
                 @Override
                 public void onComplete() {
-                    LOG.info("DOCKER.exec({}:{}): Done", containerId, cmdString);
+                    log.info()
+                            .attr("containerId", containerId)
+                            .attr("cmd", cmdString)
+                            .log("DOCKER.exec: Done");
                     future.complete(true);
                 }
             });
@@ -214,13 +232,22 @@ public class DockerUtils {
         }
         long retCode = resp.getExitCodeLong();
         if (retCode != 0) {
-            LOG.error("DOCKER.exec({}:{}): failed with {} : {}", containerId, cmdString, retCode, output);
+            log.error()
+                    .attr("containerId", containerId)
+                    .attr("cmd", cmdString)
+                    .attr("retCode", retCode)
+                    .attr("output", output)
+                    .log("DOCKER.exec: failed");
             if (!ignoreError) {
                 throw new Exception(String.format("cmd(%s) failed on %s with exitcode %d",
                     cmdString, containerId, retCode));
             }
         } else {
-            LOG.info("DOCKER.exec({}:{}): completed with {}", containerId, cmdString, retCode);
+            log.info()
+                    .attr("containerId", containerId)
+                    .attr("cmd", cmdString)
+                    .attr("retCode", retCode)
+                    .log("DOCKER.exec: completed");
         }
         return output.toString();
     }

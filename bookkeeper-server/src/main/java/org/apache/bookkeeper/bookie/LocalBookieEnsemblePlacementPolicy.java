@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException.BKNotEnoughBookiesException;
 import org.apache.bookkeeper.client.BookieInfoReader.BookieInfo;
 import org.apache.bookkeeper.client.BookiesHealthInfo;
@@ -37,17 +38,14 @@ import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.DNSToSwitchMapping;
 import org.apache.bookkeeper.proto.BookieAddressResolver;
 import org.apache.bookkeeper.stats.StatsLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Special ensemble placement policy that always return local bookie. Only works with ledgers with ensemble=1.
  *
  * @see EnsemblePlacementPolicy
  */
+@CustomLog
 public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPolicy {
-
-    static final Logger LOG = LoggerFactory.getLogger(LocalBookieEnsemblePlacementPolicy.class);
 
     private BookieId bookieAddress;
 
@@ -64,7 +62,7 @@ public class LocalBookieEnsemblePlacementPolicy implements EnsemblePlacementPoli
         try {
             bookieAddress = BookieImpl.getBookieId(serverConf);
         } catch (UnknownHostException e) {
-            LOG.warn("Unable to get bookie address", e);
+            log.warn().exception(e).log("Unable to get bookie address");
             throw new RuntimeException(e);
         }
         return this;

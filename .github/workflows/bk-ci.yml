@@ -82,6 +82,10 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Setup native build
+        if: steps.check_changes.outputs.docs_only != 'true'
+        uses: ./.github/actions/setup-native-build
+
       - name: Validate pull request
         if: steps.check_changes.outputs.docs_only != 'true'
         run: |
@@ -160,6 +164,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -243,6 +250,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Tune Java DNS TTL settings
         run: |
@@ -341,6 +351,9 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
+
       - name: Restore released versions cache
         uses: actions/cache/restore@v4
         with:
@@ -437,6 +450,9 @@ jobs:
           distribution: 'temurin'
           java-version: 17
 
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
+
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
 
@@ -470,6 +486,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: mvn package
         run: mvn -B -nsu clean package -DskipTests
@@ -513,6 +532,9 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: ${{ matrix.jdk_version }}
+
+      - name: Setup native build
+        uses: ./.github/actions/setup-native-build
 
       - name: Build with Maven
         run: mvn clean package -B -nsu -DskipBookKeeperServerTests
