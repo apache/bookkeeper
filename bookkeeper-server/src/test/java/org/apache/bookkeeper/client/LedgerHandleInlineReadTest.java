@@ -34,10 +34,12 @@ import org.apache.bookkeeper.client.api.LedgerEntries;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
 import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
+import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
+import org.apache.bookkeeper.proto.MockBookieClient;
+import org.apache.bookkeeper.proto.MockBookies;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -53,9 +55,18 @@ public class LedgerHandleInlineReadTest {
     private LedgerHandle lh;
     private final AtomicReference<Thread> readIssuedOn = new AtomicReference<>();
 
-    @Before
-    public void setup() throws Exception {
-        clientCtx = MockClientContext.create();
+    private void setup(boolean decoratedThreads) throws Exception {
+        if (decoratedThreads) {
+            // Task tracing wraps the pool's threads in decorators; the handle must see through them
+            OrderedExecutor pool = OrderedExecutor.newBuilder().name("inline-read-test").numThreads(1)
+                    .traceTaskExecution(true).build();
+            MockBookies mockBookies = new MockBookies();
+            clientCtx = MockClientContext.create(mockBookies)
+                    .setMainWorkerPool(pool)
+                    .setBookieClient(new MockBookieClient(pool, mockBookies));
+        } else {
+            clientCtx = MockClientContext.create();
+        }
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                 LedgerMetadataBuilder.create().newEnsembleEntry(0L, Lists.newArrayList(b1, b2, b3)));
         lh = new LedgerHandle(clientCtx, 10L, md, BookKeeper.DigestType.CRC32C, ClientUtil.PASSWD,
@@ -72,6 +83,17 @@ public class LedgerHandleInlineReadTest {
 
     @Test(timeout = 30000)
     public void testReadFromLedgerThreadIsInitiatedInline() throws Exception {
+        setup(false);
+        assertReadsFromLedgerThreadAreInitiatedInline();
+    }
+
+    @Test(timeout = 30000)
+    public void testReadFromLedgerThreadIsInitiatedInlineWithDecoratedThreads() throws Exception {
+        setup(true);
+        assertReadsFromLedgerThreadAreInitiatedInline();
+    }
+
+    private void assertReadsFromLedgerThreadAreInitiatedInline() throws Exception {
         assertTrue(issuedBeforeReturnOnLedgerThread(result -> {
             lh.readAsync(0, 0).whenComplete((entries, ex) -> complete(result, entries, ex));
         }));
@@ -90,6 +112,7 @@ public class LedgerHandleInlineReadTest {
 
     @Test(timeout = 30000)
     public void testReadFromOtherThreadIsQueuedOnLedgerThread() throws Exception {
+        setup(false);
         try (LedgerEntries entries = lh.readAsync(0, 0).get(10, TimeUnit.SECONDS)) {
             assertFalse(Thread.currentThread() == readIssuedOn.get());
         }

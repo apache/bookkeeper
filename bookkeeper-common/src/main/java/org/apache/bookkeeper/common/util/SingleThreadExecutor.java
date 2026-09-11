@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
@@ -45,7 +44,7 @@ import org.apache.bookkeeper.stats.StatsLogger;
  * proceed with the next tasks.
  */
 @CustomLog
-public class SingleThreadExecutor extends AbstractExecutorService implements ExecutorService, Runnable {
+public class SingleThreadExecutor extends AbstractExecutorService implements ThreadBoundExecutor, Runnable {
 
     private static final int MAX_DRAIN_BATCH_SIZE = 1024;
 
@@ -231,21 +230,17 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Exe
         executeRunnableOrList(r, null);
     }
 
-    /**
-     * Whether the calling thread is the thread of this executor.
-     */
+    @Override
     public boolean isCurrentThread() {
         return Thread.currentThread() == runner;
     }
 
     /**
-     * Runs the task inline when called from this executor's own thread, otherwise submits it like
-     * {@link #execute(Runnable)}. Like {@code execute}, it rejects the task once the executor is shut down.
+     * {@inheritDoc}
      *
-     * <p>The inline run bypasses the queue: a task submitted this way from the executor thread runs before the
-     * tasks already queued, nested inside the task that submitted it. Use it only where that reordering is
-     * acceptable. Failures are logged and counted like those of queued tasks.
+     * <p>Failures of an inline run are logged and counted like those of queued tasks.
      */
+    @Override
     public void executeOrRun(Runnable r) {
         if (state != State.Running) {
             throw new RejectedExecutionException("Executor is shutting down");

@@ -81,7 +81,7 @@ import org.apache.bookkeeper.client.impl.LedgerEntryImpl;
 import org.apache.bookkeeper.common.concurrent.FutureEventListener;
 import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.MathUtils;
-import org.apache.bookkeeper.common.util.SingleThreadExecutor;
+import org.apache.bookkeeper.common.util.ThreadBoundExecutor;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.proto.checksum.DigestManager;
@@ -106,7 +106,7 @@ public class LedgerHandle implements WriteHandle {
     final byte[] ledgerKey;
     private Versioned<LedgerMetadata> versionedMetadata;
     final long ledgerId;
-    final SingleThreadExecutor executor;
+    final ThreadBoundExecutor executor;
     long lastAddPushed;
     boolean notSupportBatch;
 
@@ -233,8 +233,9 @@ public class LedgerHandle implements WriteHandle {
         // Two calls on purpose: chooseThread(long) hashes the raw id while chooseThread(Object) goes through
         // hashCode(), and Long.hashCode folds the high bits. Boxing the id would move ledgers with ids >= 2^31
         // to a different thread than the other ledger-id keyed dispatches (e.g. OrderedGenericCallback).
-        // The main worker pool is a plain OrderedExecutor, whose threads are SingleThreadExecutor instances.
-        this.executor = (SingleThreadExecutor) (orderingKey == null
+        // The main worker pool is an OrderedExecutor, whose threads implement ThreadBoundExecutor whether or not
+        // they are decorated for task tracing or MDC preservation.
+        this.executor = (ThreadBoundExecutor) (orderingKey == null
                 ? clientCtx.getMainWorkerPool().chooseThread(ledgerId)
                 : clientCtx.getMainWorkerPool().chooseThread(orderingKey));
 

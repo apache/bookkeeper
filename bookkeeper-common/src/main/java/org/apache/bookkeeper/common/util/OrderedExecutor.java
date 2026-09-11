@@ -306,58 +306,81 @@ public class OrderedExecutor implements ExecutorService {
     }
 
     protected ExecutorService addExecutorDecorators(ExecutorService executor) {
-        return new ForwardingExecutorService() {
-            @Override
-            protected ExecutorService delegate() {
-                return executor;
-            }
+        checkArgument(executor instanceof ThreadBoundExecutor, "Expected a ThreadBoundExecutor, got %s", executor);
+        return new DecoratedThread((ThreadBoundExecutor) executor);
+    }
 
-            @Override
-            public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
-                    throws InterruptedException {
-                return super.invokeAll(timedCallables(tasks));
-            }
+    /**
+     * One of the pool's threads with the task tracing and MDC decorators applied, which keeps exposing the thread
+     * identity of the underlying executor.
+     */
+    private class DecoratedThread extends ForwardingExecutorService implements ThreadBoundExecutor {
+        private final ThreadBoundExecutor executor;
 
-            @Override
-            public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
-                                                 long timeout, TimeUnit unit)
-                    throws InterruptedException {
-                return super.invokeAll(timedCallables(tasks), timeout, unit);
-            }
+        DecoratedThread(ThreadBoundExecutor executor) {
+            this.executor = executor;
+        }
 
-            @Override
-            public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
-                    throws InterruptedException, ExecutionException {
-                return super.invokeAny(timedCallables(tasks));
-            }
+        @Override
+        protected ExecutorService delegate() {
+            return executor;
+        }
 
-            @Override
-            public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
-                                   long timeout, TimeUnit unit)
-                    throws InterruptedException, ExecutionException, TimeoutException {
-                return super.invokeAny(timedCallables(tasks), timeout, unit);
-            }
+        @Override
+        public boolean isCurrentThread() {
+            return executor.isCurrentThread();
+        }
 
-            @Override
-            public void execute(Runnable command) {
-                super.execute(timedRunnable(command));
-            }
+        @Override
+        public void executeOrRun(Runnable r) {
+            executor.executeOrRun(timedRunnable(r));
+        }
 
-            @Override
-            public <T> Future<T> submit(Callable<T> task) {
-                return super.submit(timedCallable(task));
-            }
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException {
+            return super.invokeAll(timedCallables(tasks));
+        }
 
-            @Override
-            public Future<?> submit(Runnable task) {
-                return super.submit(timedRunnable(task));
-            }
+        @Override
+        public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks,
+                                             long timeout, TimeUnit unit)
+                throws InterruptedException {
+            return super.invokeAll(timedCallables(tasks), timeout, unit);
+        }
 
-            @Override
-            public <T> Future<T> submit(Runnable task, T result) {
-                return super.submit(timedRunnable(task), result);
-            }
-        };
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks)
+                throws InterruptedException, ExecutionException {
+            return super.invokeAny(timedCallables(tasks));
+        }
+
+        @Override
+        public <T> T invokeAny(Collection<? extends Callable<T>> tasks,
+                               long timeout, TimeUnit unit)
+                throws InterruptedException, ExecutionException, TimeoutException {
+            return super.invokeAny(timedCallables(tasks), timeout, unit);
+        }
+
+        @Override
+        public void execute(Runnable command) {
+            super.execute(timedRunnable(command));
+        }
+
+        @Override
+        public <T> Future<T> submit(Callable<T> task) {
+            return super.submit(timedCallable(task));
+        }
+
+        @Override
+        public Future<?> submit(Runnable task) {
+            return super.submit(timedRunnable(task));
+        }
+
+        @Override
+        public <T> Future<T> submit(Runnable task, T result) {
+            return super.submit(timedRunnable(task), result);
+        }
     }
 
     /**

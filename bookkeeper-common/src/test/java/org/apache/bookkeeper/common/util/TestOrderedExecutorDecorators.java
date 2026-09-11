@@ -22,7 +22,9 @@
 package org.apache.bookkeeper.common.util;
 
 import static org.hamcrest.Matchers.hasItem;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.AdditionalAnswers.answerVoid;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -30,6 +32,7 @@ import static org.mockito.Mockito.spy;
 
 import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
@@ -80,6 +83,29 @@ public class TestOrderedExecutorDecorators {
         lc.updateLoggers();
         capturedEvents.clear();
         ThreadContext.clearMap();
+    }
+
+    @Test
+    public void testDecoratedThreadsAreThreadBound() throws Exception {
+        for (OrderedExecutor executor : new OrderedExecutor[] {
+                OrderedExecutor.newBuilder().name("traced").numThreads(2).traceTaskExecution(true).build(),
+                OrderedExecutor.newBuilder().name("mdc").numThreads(2).preserveMdcForTaskExecution(true).build()}) {
+            try {
+                ThreadBoundExecutor thread = (ThreadBoundExecutor) executor.chooseThread(10);
+                assertFalse(thread.isCurrentThread());
+
+                // From the thread itself, executeOrRun runs the task before returning
+                CompletableFuture<Boolean> ranInline = new CompletableFuture<>();
+                thread.execute(() -> {
+                    boolean[] ran = new boolean[1];
+                    thread.executeOrRun(() -> ran[0] = thread.isCurrentThread());
+                    ranInline.complete(ran[0]);
+                });
+                assertTrue(ranInline.get(10, TimeUnit.SECONDS));
+            } finally {
+                executor.shutdown();
+            }
+        }
     }
 
     @Test
