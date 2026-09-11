@@ -48,6 +48,7 @@ import org.apache.bookkeeper.bookie.Bookie.NoEntryException;
 import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.CheckpointSource;
+import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.CheckpointSourceList;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
@@ -229,6 +230,51 @@ public class DbLedgerStorageTest {
             fail("Should have thrown exception since the ledger was deleted");
         } catch (Bookie.NoLedgerException e) {
             // ok
+        }
+    }
+
+    @Test
+    public void testCheckpointDoesNotSkipIncomparableCompositeCheckpoint() throws Exception {
+        TestCheckpointSource firstSource = new TestCheckpointSource();
+        TestCheckpointSource secondSource = new TestCheckpointSource();
+        CheckpointSourceList checkpointSource =
+                new CheckpointSourceList(Lists.newArrayList(firstSource, secondSource));
+        SingleDirectoryDbLedgerStorage singleDirectoryStorage = storage.getLedgerStorageList().get(0);
+        singleDirectoryStorage.setCheckpointSource(checkpointSource);
+
+        // Model two aggregate snapshots sampled concurrently: one observes a newer
+        // first source while the other observes a newer second source.
+        firstSource.setValue(2);
+        secondSource.setValue(1);
+        CheckpointSource.Checkpoint firstCheckpoint = checkpointSource.newCheckpoint();
+
+        ByteBuf firstEntry = Unpooled.buffer(24);
+        firstEntry.writeLong(1);
+        firstEntry.writeLong(1);
+        firstEntry.writeLong(0);
+
+        ByteBuf secondEntry = Unpooled.buffer(24);
+        secondEntry.writeLong(1);
+        secondEntry.writeLong(2);
+        secondEntry.writeLong(1);
+
+        try {
+            storage.addEntry(firstEntry);
+            singleDirectoryStorage.checkpoint(firstCheckpoint);
+            assertFalse(singleDirectoryStorage.isFlushRequired());
+
+            firstSource.setValue(1);
+            secondSource.setValue(2);
+            CheckpointSource.Checkpoint requestedCheckpoint = checkpointSource.newCheckpoint();
+
+            storage.addEntry(secondEntry);
+            assertTrue(singleDirectoryStorage.isFlushRequired());
+
+            singleDirectoryStorage.checkpoint(requestedCheckpoint);
+            assertFalse(singleDirectoryStorage.isFlushRequired());
+        } finally {
+            ReferenceCountUtil.safeRelease(firstEntry);
+            ReferenceCountUtil.safeRelease(secondEntry);
         }
     }
 
@@ -1119,6 +1165,42 @@ public class DbLedgerStorageTest {
             if (logFileId == NEWER_LOG_ID) {
                 newerPersisted.countDown();
             }
+        }
+    }
+
+    private static final class TestCheckpointSource implements CheckpointSource {
+        private long value;
+
+        void setValue(long value) {
+            this.value = value;
+        }
+
+        @Override
+        public Checkpoint newCheckpoint() {
+            return new TestCheckpoint(value);
+        }
+
+        @Override
+        public void checkpointComplete(Checkpoint checkpoint, boolean compact) throws IOException {
+            // No-op
+        }
+    }
+
+    private static final class TestCheckpoint implements Checkpoint {
+        private final long value;
+
+        TestCheckpoint(long value) {
+            this.value = value;
+        }
+
+        @Override
+        public int compareTo(Checkpoint other) {
+            if (other == Checkpoint.MAX) {
+                return -1;
+            } else if (other == Checkpoint.MIN) {
+                return 1;
+            }
+            return Long.compare(value, ((TestCheckpoint) other).value);
         }
     }
 }

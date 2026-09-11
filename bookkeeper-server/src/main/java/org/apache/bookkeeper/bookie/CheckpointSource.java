@@ -29,6 +29,23 @@ public interface CheckpointSource {
      */
     interface Checkpoint extends Comparable<Checkpoint> {
 
+        /**
+         * Return whether this checkpoint covers all state represented by another
+         * checkpoint and additionally represents later state.
+         *
+         * <p>For checkpoints that aggregate multiple independent sources, this means
+         * every component covers the corresponding component in {@code other} and at
+         * least one component is strictly later. Such implementations may override
+         * this method to define that partial ordering without changing the total
+         * ordering provided by {@link #compareTo(Checkpoint)}.
+         *
+         * @param other the checkpoint to compare against
+         * @return true when this checkpoint is strictly after {@code other}
+         */
+        default boolean isAfter(Checkpoint other) {
+            return compareTo(other) > 0;
+        }
+
         Checkpoint MAX = new Checkpoint() {
 
             @Override

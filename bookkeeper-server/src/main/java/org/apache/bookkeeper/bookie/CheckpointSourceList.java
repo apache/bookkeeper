@@ -111,6 +111,35 @@ public class CheckpointSourceList implements CheckpointSource {
         }
 
         @Override
+        public boolean isAfter(Checkpoint o) {
+            if (o == Checkpoint.MAX) {
+                return false;
+            } else if (o == Checkpoint.MIN) {
+                return true;
+            }
+
+            checkArgument(o instanceof CheckpointList);
+            CheckpointList other = (CheckpointList) o;
+            if (checkpoints.size() != other.checkpoints.size()) {
+                return false;
+            }
+
+            boolean strictlyAfter = false;
+            for (int i = 0; i < checkpoints.size(); i++) {
+                Checkpoint checkpoint = checkpoints.get(i);
+                Checkpoint otherCheckpoint = other.checkpoints.get(i);
+                if (checkpoint.compareTo(otherCheckpoint) == 0) {
+                    continue;
+                }
+                if (!checkpoint.isAfter(otherCheckpoint)) {
+                    return false;
+                }
+                strictlyAfter = true;
+            }
+            return strictlyAfter;
+        }
+
+        @Override
         public String toString() {
             return MoreObjects.toStringHelper(CheckpointList.class)
                 .add("checkpoints", checkpoints)
