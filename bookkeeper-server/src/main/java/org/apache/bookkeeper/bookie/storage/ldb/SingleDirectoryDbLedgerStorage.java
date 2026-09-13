@@ -136,6 +136,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     private CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
     private Checkpoint lastCheckpoint = Checkpoint.MIN;
     private volatile LedgerDirsListener fatalErrorListener = new LedgerDirsListener() { };
+    private volatile EntryLogWriteException fatalEntryLogWriteFailure;
 
     private final long writeCacheMaxSize;
     private final long readCacheMaxSize;
@@ -832,6 +833,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void checkpoint(Checkpoint checkpoint) throws IOException {
         Checkpoint thisCheckpoint = checkpointSource.newCheckpoint();
+        EntryLogWriteException failure = fatalEntryLogWriteFailure;
+        if (failure != null) {
+            throw failure;
+        }
         if (lastCheckpoint.compareTo(checkpoint) > 0) {
             return;
         }
@@ -901,6 +906,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             recordSuccessfulEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             dbLedgerStorageStats.getFlushSizeStats().registerSuccessfulValue(sizeToFlush);
+        } catch (EntryLogWriteException e) {
+            fatalEntryLogWriteFailure = e;
+            recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
+            throw e;
         } catch (IOException e) {
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             // Leave IOException as it is

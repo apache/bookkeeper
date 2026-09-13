@@ -22,15 +22,21 @@ package org.apache.bookkeeper.bookie.storage.ldb;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.Unpooled;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutorService;
 import org.apache.bookkeeper.bookie.BookieImpl;
+import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.EntryLogWriteException;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LedgerDirsManager;
@@ -93,6 +99,41 @@ public class SingleDirectoryDbLedgerStorageShutdownTest {
         assertFalse(isGcThreadRunning());
         assertTrue(getCleanupExecutor().isShutdown());
         storage = null;
+    }
+
+    @Test
+    public void failedFlushPreventsLaterEmptyCheckpointCompletion() throws Exception {
+        CheckpointSource checkpointSource = mock(CheckpointSource.class);
+        when(checkpointSource.newCheckpoint()).thenReturn(CheckpointSource.Checkpoint.MAX);
+        storage.setCheckpointSource(checkpointSource);
+        when(entryLogger.addEntry(org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any())).thenReturn(0L);
+        doThrow(new EntryLogWriteException("entry log flush failed", new IOException("injected")))
+                .when(entryLogger).flush();
+
+        storage.setMasterKey(1L, "key".getBytes());
+        ByteBuf entry = Unpooled.buffer(32);
+        try {
+            entry.writeLong(1L);
+            entry.writeLong(0L);
+            storage.addEntry(entry);
+        } finally {
+            entry.release();
+        }
+
+        try {
+            storage.flush();
+        } catch (EntryLogWriteException expected) {
+            // First flush records the terminal entry-log failure.
+        }
+
+        try {
+            storage.flush();
+        } catch (EntryLogWriteException expected) {
+            // A later empty-cache flush must remain failed.
+        }
+        verify(checkpointSource, never()).checkpointComplete(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyBoolean());
     }
 
     private boolean isGcThreadRunning() throws Exception {
