@@ -65,7 +65,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                 EntrySkipList keyValues = this.snapshot;
 
                 Phaser pendingNumOfLedgerFlushes = new Phaser(1);
-                AtomicReference<Exception> exceptionWhileFlushingParallelly = new AtomicReference<Exception>();
+                AtomicReference<Throwable> exceptionWhileFlushingParallelly = new AtomicReference<Throwable>();
 
                 if (keyValues.compareTo(checkpoint) < 0) {
 
@@ -101,7 +101,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                                         }
                                     }
                                 }
-                            } catch (Exception exc) {
+                            } catch (Throwable exc) {
                                 log.error().exception(exc).log("Got Exception while trying to flush process entries");
                                 recordFlushException(exceptionWhileFlushingParallelly, exc);
                             } finally {
@@ -121,7 +121,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                         log.error().exception(ise).log("Got IllegalStateException while awaiting on Phaser");
                         throw new IOException("Got IllegalStateException while awaiting on Phaser", ise);
                     }
-                    Exception flushFailure = exceptionWhileFlushingParallelly.get();
+                    Throwable flushFailure = exceptionWhileFlushingParallelly.get();
                     if (flushFailure != null) {
                         log.error().exception(flushFailure)
                         .log("Exception while awaiting flushExecutor to complete the entry flushes");
@@ -141,7 +141,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
         flushExecutor.shutdown();
     }
 
-    private static IOException preserveEntryLogWriteFailure(Exception failure) {
+    private static IOException preserveEntryLogWriteFailure(Throwable failure) {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof EntryLogWriteException) {
                 return (EntryLogWriteException) cause;
@@ -150,7 +150,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
         return new IOException("Failed to complete the flushSnapshotByParallelizing", failure);
     }
 
-    private static void recordFlushException(AtomicReference<Exception> failure, Exception candidate) {
+    private static void recordFlushException(AtomicReference<Throwable> failure, Throwable candidate) {
         failure.updateAndGet(previous -> {
             if (previous == null || (!containsEntryLogWriteException(previous)
                     && containsEntryLogWriteException(candidate))) {

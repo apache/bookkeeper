@@ -316,6 +316,25 @@ public class EntryMemTableTest implements CacheCallback, SkipListFlusher, Checkp
         }
     }
 
+    @Test
+    public void testParallelFlushErrorPreservesSnapshot() throws Exception {
+        if (!entryMemTableClass.equals(EntryMemTableWithParallelFlusher.class)) {
+            return;
+        }
+        memTable.addEntry(1L, 1L, ByteBuffer.wrap(new byte[10]), this);
+        memTable.snapshot();
+
+        try {
+            memTable.flush((ledgerId, entryId, entry) -> {
+                throw new AssertionError("injected worker error");
+            }, Checkpoint.MAX);
+            fail("Expected parallel flush to fail when a worker throws Error");
+        } catch (IOException expected) {
+            // The failed snapshot must remain available for a later retry.
+            assertFalse(memTable.snapshot.isEmpty());
+        }
+    }
+
     private static class TestCheckPoint implements Checkpoint {
 
         LogMark mark;
