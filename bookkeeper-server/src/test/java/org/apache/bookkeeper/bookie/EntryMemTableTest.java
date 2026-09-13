@@ -22,7 +22,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -281,6 +283,58 @@ public class EntryMemTableTest implements CacheCallback, SkipListFlusher, Checkp
         memTable.flush(flusher, Checkpoint.MAX);
     }
 
+    @Test
+    public void testEntryLogWriteFailurePreservesExceptionType() throws IOException {
+        memTable.addEntry(1L, 1L, ByteBuffer.wrap(new byte[10]), this);
+        assertNotNull(memTable.snapshot());
+
+        EntryLogWriteException expected = new EntryLogWriteException(
+                "entry log flush failed", new IOException("injected"));
+        try {
+            memTable.flush((ledgerId, entryId, entry) -> {
+                throw expected;
+            }, Checkpoint.MAX);
+            fail("Expected entry log write failure");
+        } catch (EntryLogWriteException actual) {
+            assertSame(expected, actual);
+        }
+    }
+
+    @Test
+    public void testFlushFailsWhenParallelFlushExecutorIsClosed() throws Exception {
+        if (!entryMemTableClass.equals(EntryMemTableWithParallelFlusher.class)) {
+            return;
+        }
+        memTable.addEntry(1L, 1L, ByteBuffer.wrap(new byte[10]), this);
+        memTable.snapshot();
+        memTable.close();
+        try {
+            memTable.flush(this, Checkpoint.MAX);
+            fail("Expected flush to fail after the parallel executor is closed");
+        } catch (IOException expected) {
+            assertTrue(expected.getMessage().contains("Failed to complete the flushSnapshotByParallelizing"));
+        }
+    }
+
+    @Test
+    public void testParallelFlushErrorPreservesSnapshot() throws Exception {
+        if (!entryMemTableClass.equals(EntryMemTableWithParallelFlusher.class)) {
+            return;
+        }
+        memTable.addEntry(1L, 1L, ByteBuffer.wrap(new byte[10]), this);
+        memTable.snapshot();
+
+        try {
+            memTable.flush((ledgerId, entryId, entry) -> {
+                throw new AssertionError("injected worker error");
+            }, Checkpoint.MAX);
+            fail("Expected parallel flush to fail when a worker throws Error");
+        } catch (IOException expected) {
+            // The failed snapshot must remain available for a later retry.
+            assertFalse(memTable.snapshot.isEmpty());
+        }
+    }
+
     private static class TestCheckPoint implements Checkpoint {
 
         LogMark mark;
@@ -469,4 +523,3 @@ public class EntryMemTableTest implements CacheCallback, SkipListFlusher, Checkp
         assertEquals(memTable.skipListSemaphore.availablePermits(), initialPermits);
     }
 }
-

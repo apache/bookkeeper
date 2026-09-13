@@ -500,6 +500,9 @@ public class BookieImpl implements Bookie {
         ledgerStorage.setStateManager(stateManager);
         ledgerStorage.setCheckpointSource(checkpointSource);
         ledgerStorage.setCheckpointer(syncThread);
+        if (isDbLedgerStorage) {
+            ((DbLedgerStorage) ledgerStorage).setFatalErrorListener(getLedgerDirsListener());
+        }
         ledgerStorage.registerLedgerDeletionListener(ledgerDeletionListener);
         handles = new HandleFactoryImpl(ledgerStorage);
 
@@ -871,6 +874,9 @@ public class BookieImpl implements Bookie {
     // because shutdown can be called from sync thread which would be
     // interrupted by shutdown call.
     AtomicBoolean shutdownTriggered = new AtomicBoolean(false);
+    // Startup flush runs before stateManager.initState(), so isRunning() is false if it fails.
+    // Track shutdown independently to ensure the cleanup path still runs exactly once.
+    private final AtomicBoolean shutdownStarted = new AtomicBoolean(false);
     void triggerBookieShutdown(final int exitCode) {
         if (!shutdownTriggered.compareAndSet(false, true)) {
             return;
@@ -899,7 +905,7 @@ public class BookieImpl implements Bookie {
     int shutdown(int exitCode) {
         lock.lock();
         try {
-            if (isRunning()) {
+            if (shutdownStarted.compareAndSet(false, true)) {
                 // the exitCode only set when first shutdown usually due to exception found
                 log.info()
                         .attr("bookiePort", conf.getBookiePort())
@@ -1033,6 +1039,9 @@ public class BookieImpl implements Bookie {
                 addEntryInternal(handle, entry, false /* ackBeforeSync */, cb, ctx, masterKey);
             }
             success = true;
+        } catch (EntryLogWriteException e) {
+            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+            throw e;
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);
@@ -1125,6 +1134,9 @@ public class BookieImpl implements Bookie {
                 addEntryInternal(handle, entry, ackBeforeSync, cb, ctx, masterKey);
             }
             success = true;
+        } catch (EntryLogWriteException e) {
+            triggerBookieShutdown(ExitCode.BOOKIE_EXCEPTION);
+            throw e;
         } catch (NoWritableLedgerDirException e) {
             stateManager.transitionToReadOnlyMode();
             throw new IOException(e);

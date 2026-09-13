@@ -18,12 +18,18 @@
  */
 package org.apache.bookkeeper.common.testing.executors;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Duration;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
@@ -55,6 +61,41 @@ public class MockExecutorControllerTest {
         doNothing().when(task).run();
         executor.submit(task);
         verify(task, times(1)).run();
+    }
+
+    @Test
+    public void testSubmitCallable() throws Exception {
+        Callable<String> task = () -> "done";
+
+        Future<String> future = executor.submit(task);
+
+        assertEquals("done", future.get());
+    }
+
+    @Test
+    public void testSubmitCallableWithNullResult() throws Exception {
+        Callable<Object> task = () -> null;
+
+        Future<Object> future = executor.submit(task);
+
+        assertNull(future.get());
+    }
+
+    @Test
+    public void testSubmitCallableFailure() throws Exception {
+        RuntimeException failure = new RuntimeException("failure");
+        Callable<String> task = () -> {
+            throw failure;
+        };
+
+        Future<String> future = executor.submit(task);
+
+        try {
+            future.get();
+            fail("Expected the submitted Callable failure to be visible from Future.get()");
+        } catch (ExecutionException e) {
+            assertEquals(failure, e.getCause());
+        }
     }
 
     @Test

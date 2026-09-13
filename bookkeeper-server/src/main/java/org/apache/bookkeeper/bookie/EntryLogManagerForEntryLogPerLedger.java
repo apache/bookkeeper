@@ -359,13 +359,16 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             // Append ledgers map at the end of entry log
             try {
                 logChannel.appendLedgersMap();
-            } catch (Exception e) {
-                log.error()
-                        .exception(e)
-                        .log("Got IOException while trying to appendLedgersMap in cacheEntryRemoval callback");
+            } catch (IOException | RuntimeException e) {
+                notifyFatalEntryLogWriteFailure(
+                        "Fatal entry log write failure while trying to appendLedgersMap in cacheEntryRemoval callback",
+                        e);
+                return;
             }
             replicaOfCurrentLogChannels.remove(logChannel.getLogId());
-            rotatedLogChannels.add(logChannel);
+            synchronized (EntryLogManagerForEntryLogPerLedger.this) {
+                rotatedLogChannels.add(logChannel);
+            }
             entryLogsPerLedgerCounter.removedLedgerFromEntryLogMapCache(ledgerId,
                     removedLedgerEntryLogMapEntry.getCause());
         } finally {
@@ -429,7 +432,9 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
             replicaOfCurrentLogChannels.put(logChannel.getLogId(), logChannelWithDirInfo);
             if (hasToRotateLogChannel != null) {
                 replicaOfCurrentLogChannels.remove(hasToRotateLogChannel.getLogId());
-                rotatedLogChannels.add(hasToRotateLogChannel);
+                synchronized (EntryLogManagerForEntryLogPerLedger.this) {
+                    rotatedLogChannels.add(hasToRotateLogChannel);
+                }
             }
         } catch (Exception e) {
             log.error()
@@ -613,6 +618,19 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
         for (BufferedLogChannelWithDirInfo currentLogWithDirInfo : copyOfCurrentLogsWithDirInfo) {
             IOUtils.close(log, currentLogWithDirInfo.getLogChannel());
         }
+        while (true) {
+            List<BufferedLogChannel> channels;
+            synchronized (this) {
+                if (rotatedLogChannels.isEmpty()) {
+                    break;
+                }
+                channels = rotatedLogChannels;
+                rotatedLogChannels = new CopyOnWriteArrayList<BufferedLogChannel>();
+            }
+            for (BufferedLogChannel channel : channels) {
+                IOUtils.close(log, channel);
+            }
+        }
     }
 
     @Override
@@ -680,10 +698,10 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
              * logChannel, since Bookie must have turned to readonly mode and
              * the addEntry traffic would be from GC and it is ok to proceed in
              * this case.
-             */
+            */
             if ((diskFull && (!allDisksFull)) || reachEntryLogLimit || (logChannel == null)) {
                 if (logChannel != null) {
-                    logChannel.flushAndForceWriteIfRegularFlush(false);
+                    flushAndForceWriteIfRegularFlush(logChannel, false);
                 }
                 createNewLog(ledgerId,
                     ": diskFull = " + diskFull + ", allDisksFull = " + allDisksFull
@@ -699,7 +717,7 @@ class EntryLogManagerForEntryLogPerLedger extends EntryLogManagerBase {
     @Override
     public void flushRotatedLogs() throws IOException {
         for (BufferedLogChannel channel : rotatedLogChannels) {
-            channel.flushAndForceWrite(true);
+            flushAndForceWrite(channel, true);
             // since this channel is only used for writing, after flushing the channel,
             // we had to close the underlying file channel. Otherwise, we might end up
             // leaking fds which cause the disk spaces could not be reclaimed.

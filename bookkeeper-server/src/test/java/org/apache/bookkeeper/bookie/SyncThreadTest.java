@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.util.EnumSet;
 import java.util.PrimitiveIterator.OfLong;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -146,6 +147,20 @@ public class SyncThreadTest {
         assertFalse("Shouldn't have failed anywhere", failedSomewhere.get());
     }
 
+    @Test
+    public void testSyncThreadShutdownIsIdempotent() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        LedgerDirsListener listener = new LedgerDirsListener() {};
+        LedgerStorage storage = new DummyLedgerStorage();
+
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        t.shutdown();
+        t.shutdown();
+    }
+
     /**
      * Test that sync thread suspension works.
      * i.e. when we suspend the syncthread, nothing
@@ -219,6 +234,68 @@ public class SyncThreadTest {
             };
         final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
         t.startCheckpoint(Checkpoint.MAX);
+        assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
+        t.shutdown();
+    }
+
+    @Test
+    public void testSyncThreadShutdownOnEntryLogWriteFailureDuringCheckpoint() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        final CountDownLatch fatalLatch = new CountDownLatch(1);
+        LedgerDirsListener listener = new LedgerDirsListener() {
+                @Override
+                public void fatalError() {
+                    fatalLatch.countDown();
+                }
+            };
+
+        LedgerStorage storage = new DummyLedgerStorage() {
+                @Override
+                public void checkpoint(Checkpoint checkpoint)
+                        throws IOException {
+                    throw new EntryLogWriteException(
+                            "entry log flush failed", new IOException("injected"));
+                }
+            };
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        t.startCheckpoint(Checkpoint.MAX);
+        assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
+        t.shutdown();
+    }
+
+    @Test
+    public void testSyncThreadShutdownOnEntryLogWriteFailureDuringFlush() throws Exception {
+        int flushInterval = 100;
+        ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
+        conf.setFlushInterval(flushInterval);
+        CheckpointSource checkpointSource = new DummyCheckpointSource();
+        final CountDownLatch fatalLatch = new CountDownLatch(1);
+        LedgerDirsListener listener = new LedgerDirsListener() {
+                @Override
+                public void fatalError() {
+                    fatalLatch.countDown();
+                }
+            };
+
+        LedgerStorage storage = new DummyLedgerStorage() {
+                @Override
+                public void flush() throws IOException {
+                    throw new EntryLogWriteException(
+                            "entry log flush failed", new IOException("injected"));
+                }
+            };
+        final SyncThread t = new SyncThread(conf, listener, storage, checkpointSource, NullStatsLogger.INSTANCE);
+        Future<?> flush = t.requestFlush();
+        try {
+            flush.get(10, TimeUnit.SECONDS);
+            fail("Flush future should fail on entry log write failure");
+        } catch (ExecutionException e) {
+            assertTrue("Flush future should fail with entry log write failure",
+                    e.getCause() instanceof EntryLogWriteException);
+        }
         assertTrue("Should have called fatal error", fatalLatch.await(10, TimeUnit.SECONDS));
         t.shutdown();
     }
