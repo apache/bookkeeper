@@ -143,7 +143,7 @@ abstract class EntryLogManagerBase implements EntryLogManager {
     }
 
     @Override
-    public void flush() throws IOException {
+    public synchronized void flush() throws IOException {
         flushCurrentLogs();
         flushRotatedLogs();
     }
