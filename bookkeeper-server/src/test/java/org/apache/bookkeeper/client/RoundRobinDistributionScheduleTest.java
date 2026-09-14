@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.client.RoundRobinDistributionSchedule.writeS
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.google.common.collect.Sets;
 import java.util.BitSet;
@@ -155,6 +156,31 @@ public class RoundRobinDistributionScheduleTest {
         w = writeSetFromValues(1, 2, 3, 4, 5);
         w.moveAndShift(4, 4);
         assertEquals(w, writeSetFromValues(1, 2, 3, 4, 5));
+    }
+
+    @Test
+    public void testWriteSetRejectsIndexEqualToSize() {
+        DistributionSchedule.WriteSet w = writeSetFromValues(1, 2, 3);
+        try {
+            w.get(w.size());
+            fail("Expected get(size) to fail");
+        } catch (IndexOutOfBoundsException expected) {
+            // expected
+        }
+
+        try {
+            w.set(w.size(), 4);
+            fail("Expected set(size, value) to fail");
+        } catch (IndexOutOfBoundsException expected) {
+            // expected
+        }
+
+        try {
+            w.moveAndShift(0, w.size());
+            fail("Expected moveAndShift(..., size) to fail");
+        } catch (IndexOutOfBoundsException expected) {
+            // expected
+        }
     }
 
     @Test
