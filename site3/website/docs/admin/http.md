@@ -522,6 +522,32 @@ Currently all the HTTP endpoints could be divided into these 5 components:
        }
        ```
 
+3. Method: DELETE
+    * Description: Request cancellation of running manually triggered entry location index RocksDB compactions.
+      Provide `entryLocations` to cancel selected directories; omit it to cancel all directories on the bookie.
+    * Parameters:
+
+      | Name | Type | Required | Description |
+      |:-----|:-----|:---------|:------------|
+      |entryLocations | String | no | Comma-separated entry location RocksDB paths. |
+
+    * Example: `DELETE /api/v1/bookie/entry_location_compact?entryLocations=/data1/bookkeeper/ledgers/current/locations`
+    * Response:
+
+      | Code   | Description |
+      |:-------|:------------|
+      |200 | Successful operation |
+      |403 | Permission denied |
+      |405 | Method Not Allowed |
+    * Body: The value for each entry location database is true when its cancellation request was accepted. Cancellation
+      is asynchronous; use GET to confirm that the compaction has stopped.
+       ```json
+       {
+          "/data1/bookkeeper/ledgers/current/locations" : true,
+          "/data2/bookkeeper/ledgers/current/locations" : false
+       }
+       ```
+
 ### Endpoint: /api/v1/bookie/state/readonly
 1. Method: GET
     * Description: Get bookie readOnly state.
