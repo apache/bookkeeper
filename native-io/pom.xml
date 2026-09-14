@@ -19,7 +19,7 @@
   <parent>
     <groupId>org.apache.bookkeeper</groupId>
     <artifactId>bookkeeper</artifactId>
-    <version>4.18.0-SNAPSHOT</version>
+    <version>4.19.0-SNAPSHOT</version>
     <relativePath>..</relativePath>
   </parent>
 
@@ -140,14 +140,10 @@
                 <goals><goal>run</goal></goals>
                 <configuration>
                   <target>
-                    <mkdir dir="${rust.lib.dir}/linux-x86_64-gnu"/>
-                    <mkdir dir="${rust.lib.dir}/linux-aarch64-gnu"/>
-                    <copy file="${rust.target.dir}/${rust.zig.target.amd64.gnu}/${rust.release.lib.relative.path}"
-                          tofile="${rust.lib.dir}/linux-x86_64-gnu/libnative-io.so"
-                          failonerror="true" verbose="true"/>
-                    <copy file="${rust.target.dir}/${rust.zig.target.arm64.gnu}/${rust.release.lib.relative.path}"
-                          tofile="${rust.lib.dir}/linux-aarch64-gnu/libnative-io.so"
-                          failonerror="true" verbose="true"/>
+                    <mkdir dir="${rust.lib.dir}/linux-x86_64-gnu" />
+                    <mkdir dir="${rust.lib.dir}/linux-aarch64-gnu" />
+                    <copy file="${rust.target.dir}/${rust.zig.target.amd64.gnu}/${rust.release.lib.relative.path}" tofile="${rust.lib.dir}/linux-x86_64-gnu/libnative-io.so" failonerror="true" verbose="true" />
+                    <copy file="${rust.target.dir}/${rust.zig.target.arm64.gnu}/${rust.release.lib.relative.path}" tofile="${rust.lib.dir}/linux-aarch64-gnu/libnative-io.so" failonerror="true" verbose="true" />
                   </target>
                 </configuration>
               </execution>
@@ -182,33 +178,30 @@
                     <fail message="Pure Rust native-io builds are supported on Linux hosts only.">
                       <condition>
                         <not>
-                          <equals arg1="${os.detected.name}" arg2="linux"/>
+                          <equals arg1="${os.detected.name}" arg2="linux" />
                         </not>
                       </condition>
                     </fail>
                     <condition property="rust.current.jar.directory" value="linux-x86_64-gnu">
                       <or>
-                        <equals arg1="${os.detected.arch}" arg2="x86_64"/>
-                        <equals arg1="${os.detected.arch}" arg2="amd64"/>
+                        <equals arg1="${os.detected.arch}" arg2="x86_64" />
+                        <equals arg1="${os.detected.arch}" arg2="amd64" />
                       </or>
                     </condition>
                     <condition property="rust.current.jar.directory" value="linux-aarch64-gnu">
                       <or>
-                        <equals arg1="${os.detected.arch}" arg2="aarch64"/>
-                        <equals arg1="${os.detected.arch}" arg2="arm64"/>
-                        <equals arg1="${os.detected.arch}" arg2="aarch_64"/>
+                        <equals arg1="${os.detected.arch}" arg2="aarch64" />
+                        <equals arg1="${os.detected.arch}" arg2="arm64" />
+                        <equals arg1="${os.detected.arch}" arg2="aarch_64" />
                       </or>
                     </condition>
-                    <fail unless="rust.current.jar.directory"
-                          message="Pure Rust native-io builds are supported on Linux amd64/aarch64 hosts only."/>
-                    <mkdir dir="${rust.lib.dir}/${rust.current.jar.directory}"/>
+                    <fail unless="rust.current.jar.directory" message="Pure Rust native-io builds are supported on Linux amd64/aarch64 hosts only." />
+                    <mkdir dir="${rust.lib.dir}/${rust.current.jar.directory}" />
                     <exec executable="${rust.executable}" dir="${rust.dir}" failonerror="true">
-                      <arg value="build"/>
-                      <arg value="--release"/>
+                      <arg value="build" />
+                      <arg value="--release" />
                     </exec>
-                    <copy file="${rust.target.dir}/${rust.release.lib.relative.path}"
-                          tofile="${rust.lib.dir}/${rust.current.jar.directory}/libnative-io.so"
-                          failonerror="true" verbose="true"/>
+                    <copy file="${rust.target.dir}/${rust.release.lib.relative.path}" tofile="${rust.lib.dir}/${rust.current.jar.directory}/libnative-io.so" failonerror="true" verbose="true" />
                   </target>
                 </configuration>
               </execution>
