@@ -385,21 +385,22 @@ public class LedgerMetadataIndex implements Closeable {
     }
 
     void setExplicitLac(long ledgerId, ByteBuf lac) throws IOException {
-        LedgerData ledgerData = ledgers.get(ledgerId);
-        if (ledgerData != null) {
-            LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData)
-                    .setExplicitLac(ByteBufUtil.getBytes(lac));
+        ReentrantLock lock = lockForLedger(ledgerId);
+        lock.lock();
+        try {
+            LedgerData ledgerData = ledgers.get(ledgerId);
+            if (ledgerData != null) {
+                LedgerData newLedgerData = new LedgerData().copyFrom(ledgerData)
+                        .setExplicitLac(ByteBufUtil.getBytes(lac));
 
-            if (ledgers.put(ledgerId, newLedgerData) == null) {
-                // Ledger had been deleted
-                ledgersCount.incrementAndGet();
-                return;
-            } else {
+                ledgers.put(ledgerId, newLedgerData);
                 log.debug().attr("ledgerId", ledgerId).log("Set explicitLac on ledger");
+                pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
+            } else {
+                // unknown ledger here
             }
-            pendingLedgersUpdates.add(new SimpleEntry<Long, LedgerData>(ledgerId, newLedgerData));
-        } else {
-            // unknown ledger here
+        } finally {
+            lock.unlock();
         }
     }
 
