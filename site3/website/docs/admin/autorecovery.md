@@ -106,7 +106,7 @@ When the auditor sees that a bookie has disappeared, it immediately scans the co
 
 The auditor does not publish failed-bookie tasks for ledgers with `writeQuorumSize == 1`. Each entry in such a ledger has only one data source, so if that source Bookie is permanently lost, AutoRecovery cannot reconstruct the data. The replication worker also removes matching historical failed-bookie tasks created before an upgrade. This behavior does not apply to placement-policy repair tasks, which have no failed Bookie in their replica list and may still migrate data from an available source.
 
-Skipped ledgers are reported by the `NUM_SINGLE_REPLICA_LEDGERS_SKIPPED` Auditor counter and the `NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED` replication-worker counter. These counters indicate possible data loss, not successful recovery. Operators should alert on them and use the original Bookie disk, backups, or application-specific recovery procedures when the data must be restored.
+Skipped ledgers are reported by the logical metric paths `auditor.NUM_SINGLE_REPLICA_LEDGERS_SKIPPED` and `replication_worker.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED`. The exact rendered metric names may vary by stats provider. These counters indicate possible data loss, not successful recovery. Operators should alert on them and use the original Bookie disk, backups, or application-specific recovery procedures when the data must be restored.
 
 ### Replication Worker
 
