@@ -226,6 +226,36 @@ public class CleanupLedgerManager implements LedgerManager {
     }
 
     @Override
+    public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+        underlying.ensureLedgerMetadataBucketWatched(ledgerId);
+    }
+
+    @Override
+    public void onLedgerAddedToLocalStorage(long ledgerId) {
+        underlying.onLedgerAddedToLocalStorage(ledgerId);
+    }
+
+    @Override
+    public void retainLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+        underlying.retainLedgerMetadataBucketsForLedgers(ledgerIds);
+    }
+
+    @Override
+    public void refreshLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+        underlying.refreshLedgerMetadataBucketsForLedgers(ledgerIds);
+    }
+
+    @Override
+    public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+        return underlying.lookupLedgerMetadataInCache(ledgerId);
+    }
+
+    @Override
+    public boolean supportsLedgerMetadataCache() {
+        return underlying.supportsLedgerMetadataCache();
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void close() throws IOException {
         Set<GenericCallback> keys;

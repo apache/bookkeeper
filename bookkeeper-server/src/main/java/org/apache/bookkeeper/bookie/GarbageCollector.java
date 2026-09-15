@@ -34,6 +34,16 @@ public interface GarbageCollector {
     void gc(GarbageCleaner garbageCleaner);
 
     /**
+     * Do the garbage collector work.
+     *
+     * @param garbageCleaner cleaner used to clean selected garbages
+     * @param force whether this gc cycle is explicitly forced
+     */
+    default void gc(GarbageCleaner garbageCleaner, boolean force) {
+        gc(garbageCleaner);
+    }
+
+    /**
      * A interface used to define customised garbage cleaner.
      */
     interface GarbageCleaner {
