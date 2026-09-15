@@ -24,6 +24,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.CATEGORY_SERVER
 
 import java.util.function.Supplier;
 import lombok.Getter;
+import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -43,6 +44,8 @@ class EntryLocationIndexStats {
     private static final String ENTRIES_COUNT = "entries-count";
     private static final String LOOKUP_ENTRY_LOCATION = "lookup-entry-location";
     private static final String GET_LAST_ENTRY_IN_LEDGER = "get-last-entry-in-ledger";
+    private static final String LAST_ENTRY_CACHE_HITS = "last-entry-cache-hits";
+    private static final String LAST_ENTRY_CACHE_MISSES = "last-entry-cache-misses";
 
     @StatsDoc(
         name = ENTRIES_COUNT,
@@ -62,6 +65,18 @@ class EntryLocationIndexStats {
     )
     private final OpStatsLogger getLastEntryInLedgerStats;
 
+    @StatsDoc(
+            name = LAST_ENTRY_CACHE_HITS,
+            help = "number of last-entry lookups served from the in-memory cache"
+    )
+    private final Counter lastEntryCacheHits;
+
+    @StatsDoc(
+            name = LAST_ENTRY_CACHE_MISSES,
+            help = "number of last-entry lookups that fell through to RocksDB"
+    )
+    private final Counter lastEntryCacheMisses;
+
     EntryLocationIndexStats(StatsLogger statsLogger,
                             Supplier<Long> entriesCountSupplier) {
         entriesCountGauge = new Gauge<Long>() {
@@ -78,6 +93,8 @@ class EntryLocationIndexStats {
         statsLogger.registerGauge(ENTRIES_COUNT, entriesCountGauge);
         lookupEntryLocationStats = statsLogger.getOpStatsLogger(LOOKUP_ENTRY_LOCATION);
         getLastEntryInLedgerStats = statsLogger.getOpStatsLogger(GET_LAST_ENTRY_IN_LEDGER);
+        lastEntryCacheHits = statsLogger.getCounter(LAST_ENTRY_CACHE_HITS);
+        lastEntryCacheMisses = statsLogger.getCounter(LAST_ENTRY_CACHE_MISSES);
     }
 
 }
