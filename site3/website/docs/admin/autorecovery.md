@@ -3,7 +3,7 @@ id: autorecovery
 title: Using AutoRecovery
 ---
 
-When a bookie crashes, all ledgers on that bookie become under-replicated. In order to bring all ledgers in your BookKeeper cluster back to full replication, you'll need to *recover* the data from any offline bookies. There are two ways to recover bookies' data:
+When a bookie crashes, ledgers with replicas on that bookie may become under-replicated. In order to bring recoverable ledgers in your BookKeeper cluster back to full replication, you'll need to *recover* the data from any offline bookies. There are two ways to recover bookies' data:
 
 1. Using [manual recovery](#manual-recovery)
 1. Automatically, using [*AutoRecovery*](#autorecovery)
@@ -102,7 +102,11 @@ Both of these components run as threads in the [`AutoRecoveryMain`]({{site.javad
 
 The auditor watches all bookies in the cluster that are registered with ZooKeeper. Bookies register with ZooKeeper at startup. If the bookie crashes or is killed, the bookie's registration in ZooKeeper disappears and the auditor is notified of the change in the list of registered bookies.
 
-When the auditor sees that a bookie has disappeared, it immediately scans the complete ledger list to find ledgers that have data stored on the failed bookie. Once it has a list of ledgers for that bookie, the auditor will publish a rereplication task for each ledger under the `/underreplicated/` [znode](https://zookeeper.apache.org/doc/current/zookeeperOver.html) in ZooKeeper.
+When the auditor sees that a bookie has disappeared, it immediately scans the complete ledger list to find ledgers that have data stored on the failed bookie. For ledgers with `writeQuorumSize > 1`, the auditor publishes a rereplication task under the `/underreplicated/` [znode](https://zookeeper.apache.org/doc/current/zookeeperOver.html) in ZooKeeper.
+
+The auditor does not publish failed-bookie tasks for ledgers with `writeQuorumSize == 1`. Each entry in such a ledger has only one data source, so if that source Bookie is permanently lost, AutoRecovery cannot reconstruct the data. The replication worker also removes matching historical failed-bookie tasks created before an upgrade. This behavior does not apply to placement-policy repair tasks, which have no failed Bookie in their replica list and may still migrate data from an available source.
+
+Skipped ledgers are reported by the logical metric paths `auditor.NUM_SINGLE_REPLICA_LEDGERS_SKIPPED` and `replication_worker.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED`. The exact rendered metric names may vary by stats provider. These counters indicate possible data loss, not successful recovery. Operators should alert on them and use the original Bookie disk, backups, or application-specific recovery procedures when the data must be restored.
 
 ### Replication Worker
 

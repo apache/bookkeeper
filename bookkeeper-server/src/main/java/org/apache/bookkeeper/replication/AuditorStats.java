@@ -31,6 +31,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAV
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_HAVING_NO_REPLICA_OF_AN_ENTRY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_NOT_ADHERING_TO_PLACEMENT_POLICY;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_LEDGERS_SOFTLY_ADHERING_TO_PLACEMENT_POLICY;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_SINGLE_REPLICA_LEDGERS_SKIPPED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_SKIPPING_CHECK_TASK_TIMES;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDERREPLICATED_LEDGERS_ELAPSED_RECOVERY_GRACE_PERIOD;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_UNDER_REPLICATED_LEDGERS;
@@ -165,6 +166,11 @@ public class AuditorStats {
             help = "the times of auditor check task skipped"
     )
     private final Counter numSkippingCheckTaskTimes;
+    @StatsDoc(
+            name = NUM_SINGLE_REPLICA_LEDGERS_SKIPPED,
+            help = "the number of single-replica ledgers skipped when publishing failed-bookie tasks"
+    )
+    private final Counter numSingleReplicaLedgersSkipped;
 
     public AuditorStats(StatsLogger statsLogger) {
         this.statsLogger = statsLogger;
@@ -192,6 +198,7 @@ public class AuditorStats {
         numDelayedBookieAuditsCancelled = this.statsLogger
                 .getCounter(ReplicationStats.NUM_DELAYED_BOOKIE_AUDITS_DELAYES_CANCELLED);
         numSkippingCheckTaskTimes = this.statsLogger.getCounter(NUM_SKIPPING_CHECK_TASK_TIMES);
+        numSingleReplicaLedgersSkipped = this.statsLogger.getCounter(NUM_SINGLE_REPLICA_LEDGERS_SKIPPED);
         numLedgersNotAdheringToPlacementPolicy = new Gauge<Integer>() {
             @Override
             public Integer getDefaultValue() {
