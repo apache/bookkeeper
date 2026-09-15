@@ -1,6 +1,6 @@
 ---
 id: overview
-title: Apache BookKeeper 4.18.0-SNAPSHOT
+title: Apache BookKeeper 4.18.1-SNAPSHOT
 ---
 <!--
 Licensed to the Apache Software Foundation (ASF) under one
@@ -39,7 +39,7 @@ Object/[BLOB](https://en.wikipedia.org/wiki/Binary_large_object) storage | Stori
 
 Learn more about Apache BookKeeper&trade; and what it can do for your organization:
 
-- [Apache BookKeeper {{site.latest_release}} Release Notes](/release-notes#4180)
+- [Apache BookKeeper {{site.latest_release}} Release Notes](/release-notes#4181)
 - [Java API docs]({{site.javadoc_base_url}})
 
 Or start [using](../getting-started/installation) Apache BookKeeper today.
