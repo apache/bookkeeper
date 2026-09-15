@@ -35,7 +35,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.MockitoAnnotations.openMocks;
 
@@ -48,6 +50,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.MockLedgerManager;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -143,6 +146,19 @@ public class GarbageCollectorThreadTest {
             sum += usageBuckets[i];
         }
         Assert.assertEquals("Incorrect number of items", items + 1, sum);
+    }
+
+    @Test
+    public void testGarbageCollectorThreadDoesNotCloseServerOwnedLedgerManagerFactory() throws Exception {
+        LedgerManagerFactory lmf = mock(LedgerManagerFactory.class);
+        File ledgerDir = tmpDirs.createNew("testGcFactoryOwnership", "ledgers");
+        GarbageCollectorThread gcThread = new GarbageCollectorThread(
+                TestBKConfiguration.newServerConfiguration(), new MockLedgerManager(), lmf, newDirsManager(ledgerDir),
+                new MockLedgerStorage(), newLegacyEntryLogger(20000, ledgerDir), NullStatsLogger.INSTANCE);
+
+        gcThread.shutdown();
+
+        verify(lmf, never()).close();
     }
 
     @Test
