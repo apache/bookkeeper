@@ -23,6 +23,7 @@ import static org.apache.bookkeeper.replication.ReplicationStats.NUM_DEFER_LEDGE
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_FULL_OR_PARTIAL_LEDGERS_REPLICATED;
 import static org.apache.bookkeeper.replication.ReplicationStats.NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED;
+import static org.apache.bookkeeper.replication.ReplicationStats.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATE_EXCEPTION;
 import static org.apache.bookkeeper.replication.ReplicationStats.REPLICATION_WORKER_SCOPE;
 import static org.apache.bookkeeper.replication.ReplicationStats.REREPLICATE_OP;
@@ -71,6 +72,7 @@ import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
+import org.apache.bookkeeper.meta.UnderreplicatedLedger;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.replication.ReplicationException.CompatibilityException;
@@ -92,6 +94,11 @@ import org.apache.bookkeeper.versioning.Versioned;
 )
 @CustomLog
 public class ReplicationWorker implements Runnable {
+    private enum RereplicateResult {
+        SUCCESS,
+        FAILED,
+        SKIPPED
+    }
     private static final int REPLICATED_FAILED_LEDGERS_MAXSIZE = 2000;
     public static final int NUM_OF_EXPONENTIAL_BACKOFF_RETRIALS = 5;
 
@@ -143,6 +150,11 @@ public class ReplicationWorker implements Runnable {
             help = "the number of not adhering placement policy ledgers re-replicated"
     )
     private final Counter numNotAdheringPlacementLedgersReplicated;
+    @StatsDoc(
+            name = NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED,
+            help = "the number of historical single-replica underreplicated ledgers skipped"
+    )
+    private final Counter numSingleReplicaUnderreplicatedLedgersSkipped;
     private final Map<String, Counter> exceptionCounters;
     final LoadingCache<Long, AtomicInteger> replicationFailedLedgers;
     final LoadingCache<Long, ConcurrentSkipListSet<Long>> unableToReadEntriesForReplication;
@@ -226,6 +238,8 @@ public class ReplicationWorker implements Runnable {
                 .getCounter(NUM_ENTRIES_UNABLE_TO_READ_FOR_REPLICATION);
         this.numNotAdheringPlacementLedgersReplicated = this.statsLogger
                 .getCounter(NUM_NOT_ADHERING_PLACEMENT_LEDGERS_REPLICATED);
+        this.numSingleReplicaUnderreplicatedLedgersSkipped = this.statsLogger
+                .getCounter(NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED);
         this.exceptionCounters = new HashMap<String, Counter>();
         this.onReadEntryFailureCallback = (ledgerid, entryid) -> {
             numEntriesUnableToReadForReplication.inc();
@@ -292,18 +306,18 @@ public class ReplicationWorker implements Runnable {
                 .getLedgerToRereplicate();
 
         Stopwatch stopwatch = Stopwatch.createStarted();
-        boolean success = false;
+        RereplicateResult result = RereplicateResult.FAILED;
         try {
-            success = rereplicate(ledgerIdToReplicate);
+            result = rereplicate(ledgerIdToReplicate);
         } finally {
             long latencyMillis = stopwatch.stop().elapsed(TimeUnit.MILLISECONDS);
-            if (success) {
+            if (result == RereplicateResult.SUCCESS) {
                 rereplicateOpStats.registerSuccessfulEvent(latencyMillis, TimeUnit.MILLISECONDS);
-            } else {
+            } else if (result == RereplicateResult.FAILED) {
                 rereplicateOpStats.registerFailedEvent(latencyMillis, TimeUnit.MILLISECONDS);
             }
         }
-        return success;
+        return result != RereplicateResult.FAILED;
     }
 
     private void logBKExceptionAndReleaseLedger(BKException e, long ledgerIdToReplicate)
@@ -441,78 +455,91 @@ public class ReplicationWorker implements Runnable {
     }
 
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
-    private boolean rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
+    private RereplicateResult rereplicate(long ledgerIdToReplicate) throws InterruptedException, BKException,
             UnavailableException {
         log.debug().attr("ledgerId", ledgerIdToReplicate).log("Going to replicate the fragments of the ledger");
 
         boolean deferLedgerLockRelease = false;
 
-        try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
-            Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh,
-                    conf.getAuditorLedgerVerificationPercentage());
-
-            log.debug()
-                    .attr("fragments", fragments)
-                    .attr("ledgerId", ledgerIdToReplicate)
-                    .log("Found fragments for replication");
-
-            boolean foundOpenFragments = false;
-            long numFragsReplicated = 0;
-            long numNotAdheringPlacementFragsReplicated = 0;
-            for (LedgerFragment ledgerFragment : fragments) {
-                if (!ledgerFragment.isClosed()) {
-                    foundOpenFragments = true;
-                    continue;
-                }
-                if (!tryReadingFaultyEntries(lh, ledgerFragment)) {
-                    log.error()
-                            .attr("ledgerFragment", ledgerFragment)
-                            .log("Failed to read faulty entries, so giving up replicating ledgerFragment");
-                    continue;
-                }
-                try {
-                    admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
-                    numFragsReplicated++;
-                    if (ledgerFragment.getReplicateType() == LedgerFragment
-                            .ReplicateType.DATA_NOT_ADHERING_PLACEMENT) {
-                        numNotAdheringPlacementFragsReplicated++;
-                    }
-                } catch (BKException.BKBookieHandleNotAvailableException e) {
-                    log.warn().exception(e).log("BKBookieHandleNotAvailableException while replicating the fragment");
-                } catch (BKException.BKLedgerRecoveryException e) {
-                    log.warn().exception(e).log("BKLedgerRecoveryException while replicating the fragment");
-                } catch (BKException.BKNotEnoughBookiesException e) {
-                    log.warn().exception(e).log("BKNotEnoughBookiesException while replicating the fragment");
-                }
-            }
-
-            if (numFragsReplicated > 0) {
-                numLedgersReplicated.inc();
-            }
-            if (numNotAdheringPlacementFragsReplicated > 0) {
-                numNotAdheringPlacementLedgersReplicated.inc();
-            }
-
-            if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
-                deferLedgerLockRelease = true;
-                deferLedgerLockRelease(ledgerIdToReplicate);
-                return false;
-            }
-
-            fragments = getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
-            if (fragments.size() == 0) {
-                log.info().attr("ledgerId", ledgerIdToReplicate).log("Ledger replicated successfully");
+        try {
+            if (skipHistoricalSingleReplicaLedger(ledgerIdToReplicate)) {
                 underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
-                return true;
-            } else {
-                deferLedgerLockRelease = true;
-                deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
-                numDeferLedgerLockReleaseOfFailedLedger.inc();
-                // Releasing the underReplication ledger lock and compete
-                // for the replication again for the pending fragments
-                return false;
+                numSingleReplicaUnderreplicatedLedgersSkipped.inc();
+                log.info()
+                        .attr("ledgerId", ledgerIdToReplicate)
+                        .attr("writeQuorumSize", 1)
+                        .attr("reason", "single-replica-ledger")
+                        .attr("action", "skip-replication")
+                        .log("Skipping replication for single-replica ledger");
+                return RereplicateResult.SKIPPED;
             }
+            try (LedgerHandle lh = admin.openLedgerNoRecovery(ledgerIdToReplicate)) {
+                Set<LedgerFragment> fragments = getUnderreplicatedFragments(lh,
+                        conf.getAuditorLedgerVerificationPercentage());
 
+                log.debug()
+                        .attr("fragments", fragments)
+                        .attr("ledgerId", ledgerIdToReplicate)
+                        .log("Found fragments for replication");
+
+                boolean foundOpenFragments = false;
+                long numFragsReplicated = 0;
+                long numNotAdheringPlacementFragsReplicated = 0;
+                for (LedgerFragment ledgerFragment : fragments) {
+                    if (!ledgerFragment.isClosed()) {
+                        foundOpenFragments = true;
+                        continue;
+                    }
+                    if (!tryReadingFaultyEntries(lh, ledgerFragment)) {
+                        log.error()
+                                .attr("ledgerFragment", ledgerFragment)
+                                .log("Failed to read faulty entries, so giving up replicating ledgerFragment");
+                        continue;
+                    }
+                    try {
+                        admin.replicateLedgerFragment(lh, ledgerFragment, onReadEntryFailureCallback);
+                        numFragsReplicated++;
+                        if (ledgerFragment.getReplicateType() == LedgerFragment
+                                .ReplicateType.DATA_NOT_ADHERING_PLACEMENT) {
+                            numNotAdheringPlacementFragsReplicated++;
+                        }
+                    } catch (BKException.BKBookieHandleNotAvailableException e) {
+                        log.warn().exception(e)
+                                .log("BKBookieHandleNotAvailableException while replicating the fragment");
+                    } catch (BKException.BKLedgerRecoveryException e) {
+                        log.warn().exception(e).log("BKLedgerRecoveryException while replicating the fragment");
+                    } catch (BKException.BKNotEnoughBookiesException e) {
+                        log.warn().exception(e).log("BKNotEnoughBookiesException while replicating the fragment");
+                    }
+                }
+
+                if (numFragsReplicated > 0) {
+                    numLedgersReplicated.inc();
+                }
+                if (numNotAdheringPlacementFragsReplicated > 0) {
+                    numNotAdheringPlacementLedgersReplicated.inc();
+                }
+
+                if (foundOpenFragments || isLastSegmentOpenAndMissingBookies(lh)) {
+                    deferLedgerLockRelease = true;
+                    deferLedgerLockRelease(ledgerIdToReplicate);
+                    return RereplicateResult.FAILED;
+                }
+
+                fragments = getUnderreplicatedFragments(lh, conf.getAuditorLedgerVerificationPercentage());
+                if (fragments.size() == 0) {
+                    log.info().attr("ledgerId", ledgerIdToReplicate).log("Ledger replicated successfully");
+                    underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
+                    return RereplicateResult.SUCCESS;
+                } else {
+                    deferLedgerLockRelease = true;
+                    deferLedgerLockReleaseOfFailedLedger(ledgerIdToReplicate);
+                    numDeferLedgerLockReleaseOfFailedLedger.inc();
+                    // Releasing the underReplication ledger lock and compete
+                    // for the replication again for the pending fragments
+                    return RereplicateResult.FAILED;
+                }
+            }
         } catch (BKNoSuchLedgerExistsOnMetadataServerException e) {
             // Ledger might have been deleted by user
             log.info()
@@ -523,13 +550,13 @@ public class ReplicationWorker implements Runnable {
                             + " the ledger");
             underreplicationManager.markLedgerReplicated(ledgerIdToReplicate);
             getExceptionCounter("BKNoSuchLedgerExistsOnMetadataServerException").inc();
-            return false;
+            return RereplicateResult.FAILED;
         } catch (BKNotEnoughBookiesException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
             throw e;
         } catch (BKException e) {
             logBKExceptionAndReleaseLedger(e, ledgerIdToReplicate);
-            return false;
+            return RereplicateResult.FAILED;
         } finally {
             // we make sure we always release the underreplicated lock, unless we decided to defer it. If the lock has
             // already been released, this is a no-op
@@ -545,6 +572,40 @@ public class ReplicationWorker implements Runnable {
                 }
             }
         }
+    }
+
+    private boolean skipHistoricalSingleReplicaLedger(long ledgerId)
+            throws UnavailableException, InterruptedException {
+        UnderreplicatedLedger underreplicatedLedger;
+        Versioned<LedgerMetadata> metadata;
+        try {
+            underreplicatedLedger = underreplicationManager.getLedgerUnreplicationInfo(ledgerId);
+            if (underreplicatedLedger == null || underreplicatedLedger.getReplicaList().isEmpty()) {
+                return false;
+            }
+            metadata = FutureUtils.result(ledgerManager.readLedgerMetadata(ledgerId));
+            if (metadata == null || metadata.getValue() == null) {
+                log.warn().attr("ledgerId", ledgerId)
+                        .log("Ledger metadata was empty during single-replica cleanup; "
+                                + "continuing with normal replication");
+                return false;
+            }
+        } catch (BKNoSuchLedgerExistsOnMetadataServerException e) {
+            return false;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        } catch (Exception e) {
+            log.warn().attr("ledgerId", ledgerId).exception(e)
+                    .log("Unable to inspect underreplicated ledger for single-replica cleanup; "
+                            + "continuing with normal replication");
+            return false;
+        }
+
+        if (metadata.getValue().getWriteQuorumSize() == 1) {
+            return true;
+        }
+        return false;
     }
 
 

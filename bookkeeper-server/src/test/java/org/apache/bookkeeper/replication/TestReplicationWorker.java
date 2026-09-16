@@ -29,13 +29,18 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.spy;
 
 import io.netty.util.HashedWheelTimer;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
@@ -61,6 +66,7 @@ import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.client.RackawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.ZoneawareEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
+import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
@@ -85,6 +91,7 @@ import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
+import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
 import org.apache.bookkeeper.util.BookKeeperConstants;
 import org.apache.bookkeeper.util.StaticDNSResolver;
@@ -230,13 +237,12 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
     }
 
     /**
-     * Tests that replication worker should retry for replication until enough
-     * bookies available for replication.
+     * Tests that replication worker retries until enough bookies are available for replication.
      */
     @Test
     public void testRWShouldRetryUntilThereAreEnoughBksAvailableForReplication()
             throws Exception {
-        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
+        LedgerHandle lh = bkc.createLedger(2, 2, BookKeeper.DigestType.CRC32,
                 TESTPASSWD);
 
         for (int i = 0; i < 10; i++) {
@@ -248,7 +254,7 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
         ServerConfiguration killedBookieConfig = killBookie(replicaToKill);
 
         BookieId newBkAddr = startNewBookieAndReturnBookieId();
-        LOG.info("New Bookie addr :" + newBkAddr);
+        LOG.info("New Bookie addr : {}", newBkAddr);
 
         killAllBookies(lh, newBkAddr);
         ReplicationWorker rw = new ReplicationWorker(baseConf);
@@ -260,21 +266,123 @@ public class TestReplicationWorker extends BookKeeperClusterTestCase {
             int counter = 30;
             while (counter-- > 0) {
                 assertTrue("Expecting that replication should not complete",
-                        ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
-                                .getId(), basePath));
+                        ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath));
                 Thread.sleep(100);
             }
-            // restart killed bookie
             startAndAddBookie(killedBookieConfig);
-            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh
-                    .getId(), basePath)) {
+            while (ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath)) {
                 Thread.sleep(100);
             }
-            // Should be able to read the entries from 0-9
             verifyRecoveredLedgers(lh, 0, 9);
         } finally {
             rw.shutdown();
         }
+    }
+
+    /** Tests that a historical single-replica failed-bookie task is cleared without a replication attempt. */
+    @Test
+    public void testRWShouldClearHistoricalSingleReplicaTask()
+            throws Exception {
+        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32,
+                TESTPASSWD);
+
+        for (int i = 0; i < 10; i++) {
+            lh.addEntry(data);
+        }
+        lh.close();
+        BookieId replicaToKill = lh.getLedgerMetadata().getAllEnsembles().get(0L).get(0);
+        LOG.info("Killing Bookie : {}", replicaToKill);
+        killBookie(replicaToKill);
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("single-replica-worker");
+        ReplicationWorker rw = new ReplicationWorker(baseConf, bkc, false, statsLogger);
+
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(),
+                    replicaToKill.toString());
+            assertTrue(invokeRereplicate(rw));
+
+            assertFalse("Historical single-replica task should be cleared",
+                    ReplicationTestUtil.isLedgerInUnderReplication(zkc, lh.getId(), basePath));
+            String lockPath = ZkLedgerUnderreplicationManager.getUrLedgerLockZnode(
+                    ZkLedgerUnderreplicationManager.getUrLockPath(zkLedgersRootPath), lh.getId());
+            assertNull("Historical single-replica task lock should be released",
+                    zkc.exists(lockPath, false));
+            assertEquals(1L, statsLogger.getCounter(
+                    ReplicationStats.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED).get().longValue());
+            TestOpStatsLogger rereplicateStats = (TestOpStatsLogger) statsLogger
+                    .getOpStatsLogger(ReplicationStats.REREPLICATE_OP);
+            assertEquals(0L, rereplicateStats.getSuccessCount());
+            assertEquals(0L, rereplicateStats.getFailureCount());
+        } finally {
+            rw.shutdown();
+        }
+    }
+
+    @Test
+    public void testRWSingleReplicaPlacementPolicyTaskUsesNormalReplicationPath() throws Exception {
+        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        lh.addEntry(data);
+        lh.close();
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("placement-policy-worker");
+        ReplicationWorker rw = new ReplicationWorker(baseConf, bkc, false, statsLogger);
+
+        try {
+            FutureUtils.result(underReplicationManager.markLedgerUnderreplicatedAsync(
+                    lh.getId(), Collections.emptyList()));
+            assertTrue(invokeRereplicate(rw));
+
+            assertEquals(0L, statsLogger.getCounter(
+                    ReplicationStats.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED).get().longValue());
+            TestOpStatsLogger rereplicateStats = (TestOpStatsLogger) statsLogger
+                    .getOpStatsLogger(ReplicationStats.REREPLICATE_OP);
+            assertEquals(1L, rereplicateStats.getSuccessCount());
+            assertEquals(0L, rereplicateStats.getFailureCount());
+        } finally {
+            rw.shutdown();
+        }
+    }
+
+    @Test
+    public void testRWSingleReplicaCleanupFailureIsNotCountedAsSkipped() throws Exception {
+        LedgerHandle lh = bkc.createLedger(1, 1, BookKeeper.DigestType.CRC32, TESTPASSWD);
+        lh.addEntry(data);
+        lh.close();
+
+        TestStatsProvider statsProvider = new TestStatsProvider();
+        TestStatsLogger statsLogger = statsProvider.getStatsLogger("single-replica-cleanup-failure-worker");
+        ReplicationWorker rw = new ReplicationWorker(baseConf, bkc, false, statsLogger);
+        try {
+            underReplicationManager.markLedgerUnderreplicated(lh.getId(), "failed-bookie");
+
+            LedgerUnderreplicationManager workerManager = (LedgerUnderreplicationManager)
+                    FieldUtils.readField(rw, "underreplicationManager", true);
+            LedgerUnderreplicationManager failingManager = spy(workerManager);
+            doThrow(new ReplicationException.UnavailableException("cleanup failed"))
+                    .when(failingManager).markLedgerReplicated(anyLong());
+            FieldUtils.writeField(rw, "underreplicationManager", failingManager, true);
+
+            try {
+                invokeRereplicate(rw);
+                fail("Expected historical cleanup failure");
+            } catch (InvocationTargetException e) {
+                assertTrue(e.getCause() instanceof ReplicationException.UnavailableException);
+            }
+
+            assertEquals(0L, statsLogger.getCounter(
+                    ReplicationStats.NUM_SINGLE_REPLICA_UNDERREPLICATED_LEDGERS_SKIPPED).get().longValue());
+        } finally {
+            rw.shutdown();
+        }
+    }
+
+    private boolean invokeRereplicate(ReplicationWorker worker) throws Exception {
+        Method rereplicate = ReplicationWorker.class.getDeclaredMethod("rereplicate");
+        rereplicate.setAccessible(true);
+        return (boolean) rereplicate.invoke(worker);
     }
 
     /**

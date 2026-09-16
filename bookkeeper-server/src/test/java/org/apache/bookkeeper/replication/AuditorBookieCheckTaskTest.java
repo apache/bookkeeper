@@ -18,12 +18,14 @@
 package org.apache.bookkeeper.replication;
 
 import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -141,6 +143,105 @@ public class AuditorBookieCheckTaskTest {
         verify(numUnderReplicatedLedgerStats, times(1))
                 .registerSuccessfulValue(eq(bookie2LedgersCount));
 
+    }
+
+    @Test
+    public void testSingleReplicaLedgerIsNotMarkedUnderreplicated()
+            throws ReplicationException.UnavailableException, ReplicationException.BKAuditException, BKException {
+        long ledgerId = 1L;
+        prepareFailedLedger(ledgerId);
+
+        LedgerMetadata metadata = mock(LedgerMetadata.class);
+        when(metadata.getEnsembleSize()).thenReturn(3);
+        when(metadata.getWriteQuorumSize()).thenReturn(1);
+        when(ledgerManager.readLedgerMetadata(ledgerId))
+                .thenReturn(CompletableFuture.completedFuture(new Versioned<>(metadata, mock(LongVersion.class))));
+
+        bookieCheckTask.startAudit(true);
+
+        verify(underreplicationManager, never()).markLedgerUnderreplicatedAsync(anyLong(), anyCollection());
+        assertEquals(1L, auditorStats.getNumSingleReplicaLedgersSkipped().get().longValue());
+    }
+
+    @Test
+    public void testDeletedLedgerIsNotMarkedUnderreplicated()
+            throws ReplicationException.UnavailableException, ReplicationException.BKAuditException, BKException {
+        long ledgerId = 2L;
+        prepareFailedLedger(ledgerId);
+
+        CompletableFuture<Versioned<LedgerMetadata>> metadataFuture = new CompletableFuture<>();
+        metadataFuture.completeExceptionally(new BKException.BKNoSuchLedgerExistsOnMetadataServerException());
+        when(ledgerManager.readLedgerMetadata(ledgerId)).thenReturn(metadataFuture);
+
+        bookieCheckTask.startAudit(true);
+
+        verify(underreplicationManager, never()).markLedgerUnderreplicatedAsync(anyLong(), anyCollection());
+    }
+
+    @Test
+    public void testMetadataReadFailureUsesFailOpenBehavior()
+            throws ReplicationException.UnavailableException, ReplicationException.BKAuditException, BKException {
+        long ledgerId = 3L;
+        prepareFailedLedger(ledgerId);
+
+        CompletableFuture<Versioned<LedgerMetadata>> metadataFuture = new CompletableFuture<>();
+        metadataFuture.completeExceptionally(new BKException.BKMetadataSerializationException());
+        when(ledgerManager.readLedgerMetadata(ledgerId)).thenReturn(metadataFuture);
+
+        bookieCheckTask.startAudit(true);
+
+        verify(underreplicationManager).markLedgerUnderreplicatedAsync(eq(ledgerId), anyCollection());
+    }
+
+    @Test
+    public void testPublishedLedgerStatsExcludeSingleReplicaLedgers()
+            throws ReplicationException.UnavailableException, ReplicationException.BKAuditException, BKException {
+        long singleReplicaLedgerId = 4L;
+        long replicatedLedgerId = 5L;
+        String failedBookie = "127.0.0.1:1000";
+        Map<String, Set<Long>> bookiesAndLedgers = Maps.newHashMap();
+        Set<Long> ledgerIds = Sets.newHashSet();
+        ledgerIds.add(singleReplicaLedgerId);
+        ledgerIds.add(replicatedLedgerId);
+        bookiesAndLedgers.put(failedBookie, ledgerIds);
+        when(ledgerIndexer.getBookieToLedgerIndex()).thenReturn(bookiesAndLedgers);
+        when(underreplicationManager.isLedgerReplicationEnabled()).thenReturn(true);
+        when(underreplicationManager.markLedgerUnderreplicatedAsync(anyLong(), anyCollection()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(admin.getAvailableBookies()).thenReturn(Lists.newArrayList());
+        when(admin.getReadOnlyBookies()).thenReturn(Lists.newArrayList());
+
+        LedgerMetadata singleReplicaMetadata = mock(LedgerMetadata.class);
+        when(singleReplicaMetadata.getWriteQuorumSize()).thenReturn(1);
+        LedgerMetadata replicatedMetadata = mock(LedgerMetadata.class);
+        when(replicatedMetadata.getWriteQuorumSize()).thenReturn(2);
+        when(ledgerManager.readLedgerMetadata(singleReplicaLedgerId)).thenReturn(
+                CompletableFuture.completedFuture(new Versioned<>(singleReplicaMetadata, mock(LongVersion.class))));
+        when(ledgerManager.readLedgerMetadata(replicatedLedgerId)).thenReturn(
+                CompletableFuture.completedFuture(new Versioned<>(replicatedMetadata, mock(LongVersion.class))));
+
+        OpStatsLogger numUnderReplicatedLedgerStats = mock(OpStatsLogger.class);
+        when(auditorStats.getNumUnderReplicatedLedger()).thenReturn(numUnderReplicatedLedgerStats);
+
+        bookieCheckTask.startAudit(true);
+
+        verify(numUnderReplicatedLedgerStats).registerSuccessfulValue(1L);
+        verify(underreplicationManager, times(1)).markLedgerUnderreplicatedAsync(anyLong(), anyCollection());
+    }
+
+    private void prepareFailedLedger(long ledgerId)
+            throws ReplicationException.UnavailableException, ReplicationException.BKAuditException, BKException {
+        String failedBookie = "127.0.0.1:1000";
+        Map<String, Set<Long>> bookiesAndLedgers = Maps.newHashMap();
+        Set<Long> ledgerIds = Sets.newHashSet();
+        ledgerIds.add(ledgerId);
+        bookiesAndLedgers.put(failedBookie, ledgerIds);
+        when(ledgerIndexer.getBookieToLedgerIndex()).thenReturn(bookiesAndLedgers);
+        when(underreplicationManager.isLedgerReplicationEnabled()).thenReturn(true);
+        when(underreplicationManager.markLedgerUnderreplicatedAsync(anyLong(), anyCollection()))
+                .thenReturn(CompletableFuture.completedFuture(null));
+        when(admin.getAvailableBookies()).thenReturn(Lists.newArrayList());
+        when(admin.getReadOnlyBookies()).thenReturn(Lists.newArrayList());
     }
 
     private Set<Long> getLedgers(long count) {

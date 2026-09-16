@@ -88,24 +88,47 @@ abstract class AuditorTask implements Runnable {
                 .attr("ledgers", ledgers)
                 .attr("missingBookies", missingBookies)
                 .log("Following ledgers are identified as underreplicated");
-        auditorStats.getNumUnderReplicatedLedger().registerSuccessfulValue(ledgers.size());
+        LongAdder publishedLedgers = new LongAdder();
         LongAdder underReplicatedSize = new LongAdder();
-        FutureUtils.processList(
+        CompletableFuture<List<Void>> publishFuture = FutureUtils.processList(
                 Lists.newArrayList(ledgers),
-                ledgerId ->
-                        ledgerManager.readLedgerMetadata(ledgerId).whenComplete((metadata, exception) -> {
-                            if (exception == null) {
-                                underReplicatedSize.add(metadata.getValue().getLength());
-                            }
-                        }), null).whenComplete((res, e) -> {
+                ledgerId -> ledgerManager.readLedgerMetadata(ledgerId).handle((metadata, exception) -> {
+                    if (exception != null) {
+                        if (BKException.getExceptionCode(exception)
+                                == BKException.Code.NoSuchLedgerExistsOnMetadataServerException) {
+                            log.info()
+                                    .attr("ledgerId", ledgerId)
+                                    .log("Ledger was deleted before publishing underreplicated mark");
+                            return FutureUtils.Void();
+                        }
+                        log.warn()
+                                .attr("ledgerId", ledgerId)
+                                .exception(exception)
+                                .log("Unable to read ledger metadata; publishing underreplicated mark fail-open");
+                    } else if (metadata == null || metadata.getValue() == null) {
+                        log.warn()
+                                .attr("ledgerId", ledgerId)
+                                .log("Ledger metadata was empty; publishing underreplicated mark fail-open");
+                    } else if (metadata.getValue().getWriteQuorumSize() == 1) {
+                        auditorStats.getNumSingleReplicaLedgersSkipped().inc();
+                        log.info()
+                                .attr("ledgerId", ledgerId)
+                                .attr("writeQuorumSize", metadata.getValue().getWriteQuorumSize())
+                                .attr("reason", "single-replica-ledger")
+                                .attr("action", "skip-publish")
+                                .log("Skipping underreplicated mark");
+                        return FutureUtils.Void();
+                    } else {
+                        underReplicatedSize.add(metadata.getValue().getLength());
+                    }
+
+                    publishedLedgers.increment();
+                    return ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies);
+                }).thenCompose(markFuture -> markFuture), null).whenComplete((res, e) -> {
+            auditorStats.getNumUnderReplicatedLedger().registerSuccessfulValue(publishedLedgers.longValue());
             auditorStats.getUnderReplicatedLedgerTotalSize().registerSuccessfulValue(underReplicatedSize.longValue());
         });
-
-        return FutureUtils.processList(
-                Lists.newArrayList(ledgers),
-                ledgerId -> ledgerUnderreplicationManager.markLedgerUnderreplicatedAsync(ledgerId, missingBookies),
-                null
-        );
+        return publishFuture;
     }
 
     protected List<String> getAvailableBookies() throws BKException {
