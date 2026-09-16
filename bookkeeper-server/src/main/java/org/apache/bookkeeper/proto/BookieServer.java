@@ -27,10 +27,16 @@ import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBufAllocator;
 import java.io.IOException;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.UnknownHostException;
 import java.util.Arrays;
-import java.util.Iterator;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.TreeMap;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
@@ -39,6 +45,7 @@ import org.apache.bookkeeper.bookie.BookieException;
 import org.apache.bookkeeper.bookie.BookieImpl;
 import org.apache.bookkeeper.bookie.ExitCode;
 import org.apache.bookkeeper.bookie.UncleanShutdownDetection;
+import org.apache.bookkeeper.conf.AbstractConfiguration;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
@@ -220,26 +227,91 @@ public class BookieServer {
     }
 
     /**
-     * Returns the configuration entries that differ from the {@link ServerConfiguration}
-     * defaults — i.e. values explicitly set by the user (via config file or programmatically)
-     * whose value is not the same as the built-in default.
+     * Returns the entries of {@code conf} whose value differs from the built-in default, keyed by
+     * configuration property name.
+     *
+     * <p>The defaults are not stored in the configuration but encoded in the {@link ServerConfiguration}
+     * getters, so every getter is invoked on both {@code conf} and an empty configuration, recording the
+     * keys it reads. When the two results differ, the recorded keys that are explicitly set in {@code conf}
+     * are reported. Keys that no getter reads (settings of other components, or unrelated entries loaded
+     * from a shared properties file) are not reported.
      */
-    private static Map<String, Object> overriddenConfig(ServerConfiguration conf) {
-        ServerConfiguration defaults = new ServerConfiguration();
+    @VisibleForTesting
+    static Map<String, Object> overriddenConfig(ServerConfiguration conf) {
+        KeyRecordingConfiguration actual = new KeyRecordingConfiguration(conf);
+        KeyRecordingConfiguration defaults = new KeyRecordingConfiguration(new ServerConfiguration());
         Map<String, Object> overrides = new TreeMap<>();
-        Iterator<String> keys = conf.getInMemoryConfiguration().getKeys();
-        while (keys.hasNext()) {
-            String key = keys.next();
-            Object value = conf.getProperty(key);
-            if (value == null) {
+        for (Method getter : ServerConfiguration.class.getMethods()) {
+            if (!isGetter(getter)) {
                 continue;
             }
-            Object defaultValue = defaults.getProperty(key);
-            if (defaultValue == null || !value.toString().equals(defaultValue.toString())) {
-                overrides.put(key, value);
+            actual.keys.clear();
+            defaults.keys.clear();
+            if (Objects.deepEquals(invoke(getter, actual), invoke(getter, defaults))) {
+                continue;
+            }
+            Set<String> keys = new HashSet<>(actual.keys);
+            keys.addAll(defaults.keys);
+            for (String key : keys) {
+                if (conf.containsKey(key)) {
+                    overrides.put(key, conf.getProperty(key));
+                }
             }
         }
         return overrides;
+    }
+
+    private static boolean isGetter(Method method) {
+        return method.getParameterCount() == 0
+                && !Modifier.isStatic(method.getModifiers())
+                && AbstractConfiguration.class.isAssignableFrom(method.getDeclaringClass())
+                && (method.getName().startsWith("get") || method.getName().startsWith("is"));
+    }
+
+    private static Object invoke(Method getter, ServerConfiguration conf) {
+        try {
+            return getter.invoke(conf);
+        } catch (InvocationTargetException e) {
+            // a getter rejecting the configured value still means the value differs from the default
+            return e.getCause().getClass();
+        } catch (IllegalAccessException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    /**
+     * A {@link ServerConfiguration} that reads its properties from another configuration and records the
+     * keys that have been looked up.
+     *
+     * <p>Besides the two internal hooks, {@code getList} must be overridden because
+     * {@code CompositeConfiguration} implements it (and {@code getStringArray}) by reading its child
+     * configurations directly.
+     */
+    private static class KeyRecordingConfiguration extends ServerConfiguration {
+        private final ServerConfiguration source;
+        private final Set<String> keys = new HashSet<>();
+
+        KeyRecordingConfiguration(ServerConfiguration source) {
+            this.source = source;
+        }
+
+        @Override
+        protected Object getPropertyInternal(String key) {
+            keys.add(key);
+            return source.getProperty(key);
+        }
+
+        @Override
+        protected boolean containsKeyInternal(String key) {
+            keys.add(key);
+            return source.containsKey(key);
+        }
+
+        @Override
+        public List<Object> getList(String key, List<?> defaultValue) {
+            keys.add(key);
+            return source.getList(key, defaultValue);
+        }
     }
 
 
