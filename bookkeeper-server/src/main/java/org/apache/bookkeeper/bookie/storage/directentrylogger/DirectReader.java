@@ -157,7 +157,7 @@ class DirectReader implements LogReader {
                                       .kv("offset", offset)
                                       .kv("size", size).toString());
             }
-            return nativeBuffer.readByteBuf(buf, offsetInBuffer, size);
+            return nativeBuffer.readByteBuf(buf, offsetInBuffer, sizeInBuffer);
         }
     }
 
@@ -207,6 +207,9 @@ class DirectReader implements LogReader {
         long bytesToRead = Math.min(blockSize, bytesAvailable);
         long bytesOutstanding = bytesToRead;
         long bytesRead = -1;
+        // A failed read may still overwrite nativeBuffer, so invalidate the
+        // cached block before loading a new one.
+        clearCache();
         try {
             while (true) {
                 long readSize = blockSize - bufferOffset;
@@ -226,8 +229,21 @@ class DirectReader implements LogReader {
                 if ((bytesOutstanding - bytesRead) <= 0) {
                     break;
                 }
-                bytesOutstanding -= bytesRead & Buffer.ALIGNMENT;
-                bufferOffset += bytesRead & Buffer.ALIGNMENT;
+                long alignedBytesRead = bytesRead & ~(Buffer.ALIGNMENT - 1L);
+                if (alignedBytesRead <= 0) {
+                    readBlockStats.registerFailedEvent(System.nanoTime() - startNs, TimeUnit.NANOSECONDS);
+                    throw new IOException(exMsg("Short read did not make aligned progress")
+                                          .kv("requestedBytes", readSize)
+                                          .kv("offset", blockStart + bufferOffset)
+                                          .kv("expectedBytes", Math.min(blockSize, bytesAvailable))
+                                          .kv("bytesOutstanding", bytesOutstanding)
+                                          .kv("bufferOffset", bufferOffset)
+                                          .kv("bytesRead", bytesRead)
+                                          .kv("file", filename)
+                                          .kv("fd", fd).toString());
+                }
+                bytesOutstanding -= alignedBytesRead;
+                bufferOffset += alignedBytesRead;
             }
         } catch (NativeIOException ne) {
             readBlockStats.registerFailedEvent(System.nanoTime() - startNs, TimeUnit.NANOSECONDS);

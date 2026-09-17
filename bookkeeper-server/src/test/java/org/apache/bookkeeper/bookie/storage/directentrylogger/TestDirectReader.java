@@ -392,8 +392,7 @@ public class TestDirectReader {
         NativeIOImpl nativeIO = new NativeIOImpl() {
                 @Override
                 public long pread(int fd, long buf, long size, long offset) throws NativeIOException {
-                    long read = super.pread(fd, buf, size, offset);
-                    return Math.min(read, Buffer.ALIGNMENT); // force only less than a buffer read
+                    return super.pread(fd, buf, Math.min(size, Buffer.ALIGNMENT), offset);
                 }
 
                 @Override
@@ -443,6 +442,85 @@ public class TestDirectReader {
                 }
             }
         }
+    }
+
+    @Test
+    public void testPartialReadProgressesByAlignedBytes() throws Exception {
+        File ledgerDir = tmpDirs.createNew("partialReadAligned", "logs");
+
+        writeFileWithPattern(ledgerDir, 1234, 0xbeefcafe, 1, 1 << 20);
+
+        class ShortReadNativeIO extends NativeIOImpl {
+            int calls;
+
+            @Override
+            public long pread(int fd, long buf, long size, long offset) throws NativeIOException {
+                if (calls == 0) {
+                    assertThat(offset, equalTo(0L));
+                } else if (calls == 1) {
+                    assertThat(offset, equalTo((long) Buffer.ALIGNMENT * 2));
+                }
+                calls++;
+
+                return super.pread(fd, buf, Math.min(size, Buffer.ALIGNMENT * 2L), offset);
+            }
+        }
+
+        ShortReadNativeIO nativeIO = new ShortReadNativeIO();
+        try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
+                                                 ByteBufAllocator.DEFAULT,
+                                                 nativeIO, Buffer.ALIGNMENT * 4,
+                                                 1 << 20, opLogger)) {
+            ByteBuf bb = reader.readBufferAt(0, Buffer.ALIGNMENT * 4);
+            try {
+                for (int block = 0; block < 4; block++) {
+                    for (int i = 0; i < Buffer.ALIGNMENT / Integer.BYTES; i++) {
+                        assertThat(bb.readInt(), equalTo(0xbeefcafe + block));
+                    }
+                }
+                assertThat(bb.readableBytes(), equalTo(0));
+            } finally {
+                bb.release();
+            }
+        }
+        assertThat(nativeIO.calls, equalTo(2));
+    }
+
+    @Test
+    public void testFailedPartialReadInvalidatesCachedBlock() throws Exception {
+        File ledgerDir = tmpDirs.createNew("partialReadCache", "logs");
+
+        writeFileWithPattern(ledgerDir, 1234, 0xbeefcafe, 1, 1 << 20);
+
+        class FailingShortReadNativeIO extends NativeIOImpl {
+            int calls;
+
+            @Override
+            public long pread(int fd, long buf, long size, long offset) throws NativeIOException {
+                calls++;
+                if (calls == 2) {
+                    return super.pread(fd, buf, Buffer.ALIGNMENT * 2L, offset);
+                } else if (calls == 3) {
+                    return 0;
+                }
+                return super.pread(fd, buf, size, offset);
+            }
+        }
+
+        FailingShortReadNativeIO nativeIO = new FailingShortReadNativeIO();
+        try (LogReader reader = new DirectReader(1234, logFilename(ledgerDir, 1234),
+                                                 ByteBufAllocator.DEFAULT,
+                                                 nativeIO, Buffer.ALIGNMENT * 4,
+                                                 1 << 20, opLogger)) {
+            assertThat(reader.readIntAt(0), equalTo(0xbeefcafe));
+
+            IOException exception = Assertions.assertThrows(
+                    IOException.class, () -> reader.readIntAt(Buffer.ALIGNMENT * 4L));
+            Assertions.assertFalse(exception instanceof EOFException);
+
+            assertThat(reader.readIntAt(0), equalTo(0xbeefcafe));
+        }
+        assertThat(nativeIO.calls, equalTo(4));
     }
 
     @Test
