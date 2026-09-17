@@ -57,7 +57,9 @@ import org.apache.bookkeeper.bookie.CheckpointSource;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.bookie.Checkpointer;
 import org.apache.bookkeeper.bookie.CompactableLedgerStorage;
+import org.apache.bookkeeper.bookie.DefaultEntryLogger;
 import org.apache.bookkeeper.bookie.EntryLocation;
+import org.apache.bookkeeper.bookie.EntryLogWriteException;
 import org.apache.bookkeeper.bookie.GarbageCollectionStatus;
 import org.apache.bookkeeper.bookie.GarbageCollectorThread;
 import org.apache.bookkeeper.bookie.LastAddConfirmedUpdateNotification;
@@ -77,6 +79,7 @@ import org.apache.bookkeeper.stats.Counter;
 import org.apache.bookkeeper.stats.OpStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.stats.ThreadRegistry;
+import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.mutable.MutableLong;
@@ -132,6 +135,9 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     private CheckpointSource checkpointSource = CheckpointSource.DEFAULT;
     private Checkpoint lastCheckpoint = Checkpoint.MIN;
+    private volatile LedgerDirsListener fatalErrorListener = new LedgerDirsListener() { };
+    private volatile EntryLogWriteException fatalEntryLogWriteFailure;
+    private final Object fatalEntryLogWriteFailureLock = new Object();
 
     private final long writeCacheMaxSize;
     private final long readCacheMaxSize;
@@ -252,6 +258,21 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void setCheckpointer(Checkpointer checkpointer) { }
 
+    void setFatalErrorListener(LedgerDirsListener fatalErrorListener) {
+        if (fatalErrorListener != null) {
+            this.fatalErrorListener = fatalErrorListener;
+            if (entryLogger instanceof DefaultEntryLogger) {
+                ((DefaultEntryLogger) entryLogger).setFatalErrorListener(new LedgerDirsListener() {
+                    @Override
+                    public void fatalError() {
+                        notifyFatalEntryLogWriteFailure(new EntryLogWriteException(
+                                "Fatal entry log write failure", new IOException("entry logger reported failure")));
+                    }
+                });
+            }
+        }
+    }
+
     /**
      * Evict all the ledger info object that were not used recently.
      */
@@ -342,25 +363,59 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
     @Override
     public void shutdown() throws InterruptedException {
+        InterruptedException interrupted = null;
+
         try {
             flush();
-
-            gcThread.shutdown();
-            entryLogger.close();
-
-            cleanupExecutor.shutdown();
-            cleanupExecutor.awaitTermination(1, TimeUnit.SECONDS);
-
-            ledgerIndex.close();
-            entryLocationIndex.close();
-
-            writeCache.close();
-            writeCacheBeingFlushed.close();
-            readCache.close();
-            executor.shutdown();
-
         } catch (IOException e) {
-            log.error().exception(e).log("Error closing db storage");
+            log.error().exception(e).log("Error flushing db storage during shutdown");
+        }
+
+        // Compaction may still be using the entry logger and indexes while GC shuts down.
+        // If waiting for GC is interrupted, propagate the interruption immediately instead
+        // of closing resources from a finally block and racing the active compaction.
+        try {
+            gcThread.shutdown();
+        } catch (InterruptedException e) {
+            // Do not continue cleanup here: compaction may still be using these resources.
+            // The caller must handle the interrupted shutdown, preserving the pre-change
+            // safety boundary instead of racing the active compaction.
+            Thread.currentThread().interrupt();
+            throw e;
+        }
+
+        try {
+            entryLogger.close();
+        } catch (IOException e) {
+            log.error().exception(e).log("Error closing entry logger during shutdown");
+        }
+
+        cleanupExecutor.shutdown();
+        boolean cleanupInterrupted = false;
+        while (!cleanupExecutor.isTerminated()) {
+            try {
+                cleanupExecutor.awaitTermination(1, TimeUnit.SECONDS);
+            } catch (InterruptedException e) {
+                cleanupInterrupted = true;
+                interrupted = e;
+            }
+        }
+        if (cleanupInterrupted) {
+            // Cleanup tasks must drain before the indexes they use are closed. Preserve the
+            // caller's interruption without abandoning the drain once it has started.
+            Thread.currentThread().interrupt();
+        }
+
+        IOUtils.close(log, ledgerIndex);
+        IOUtils.close(log, entryLocationIndex);
+
+        writeCache.close();
+        writeCacheBeingFlushed.close();
+        readCache.close();
+        executor.shutdown();
+
+        if (interrupted != null) {
+            throw interrupted;
         }
     }
 
@@ -530,6 +585,8 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         long startTime = System.nanoTime();
                         try {
                             flush();
+                        } catch (EntryLogWriteException e) {
+                            notifyFatalEntryLogWriteFailure(e);
                         } catch (IOException e) {
                             log.error().exception(e).log("Error during flush");
                         } finally {
@@ -562,6 +619,20 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         dbLedgerStorageStats.getRejectedWriteRequests().inc();
         recordFailedEvent(dbLedgerStorageStats.getThrottledWriteStats(), throttledStartTime);
         throw new OperationRejectedException();
+    }
+
+    private void notifyFatalEntryLogWriteFailure(EntryLogWriteException e) {
+        log.error().exception(e).log("Fatal entry log write failure during background flush");
+        // Do not take flushMutex here: this callback can run while holding a
+        // per-ledger lock, whereas checkpoint() may hold flushMutex while waiting
+        // for that same lock. A separate lock also lets checkpoint completion
+        // atomically exclude a concurrent failure publication.
+        synchronized (fatalEntryLogWriteFailureLock) {
+            if (fatalEntryLogWriteFailure == null) {
+                fatalEntryLogWriteFailure = e;
+            }
+        }
+        fatalErrorListener.fatalError();
     }
 
     @Override
@@ -790,10 +861,6 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
     @Override
     public void checkpoint(Checkpoint checkpoint) throws IOException {
         Checkpoint thisCheckpoint = checkpointSource.newCheckpoint();
-        if (lastCheckpoint.compareTo(checkpoint) > 0) {
-            return;
-        }
-
         // Only a single flush operation can happen at a time
         flushMutex.lock();
         long startTime = -1;
@@ -806,6 +873,15 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         }
 
         try {
+            // Re-check after acquiring the mutex: a concurrent flush may have
+            // recorded a terminal entry-log failure while this call waited.
+            EntryLogWriteException failure = fatalEntryLogWriteFailure;
+            if (failure != null) {
+                throw failure;
+            }
+            if (lastCheckpoint.compareTo(checkpoint) > 0) {
+                return;
+            }
             if (writeCache.isEmpty()) {
                 return;
             }
@@ -859,6 +935,14 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
             recordSuccessfulEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             dbLedgerStorageStats.getFlushSizeStats().registerSuccessfulValue(sizeToFlush);
+        } catch (EntryLogWriteException e) {
+            synchronized (fatalEntryLogWriteFailureLock) {
+                if (fatalEntryLogWriteFailure == null) {
+                    fatalEntryLogWriteFailure = e;
+                }
+            }
+            recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
+            throw e;
         } catch (IOException e) {
             recordFailedEvent(dbLedgerStorageStats.getFlushStats(), startTime);
             // Leave IOException as it is
@@ -911,7 +995,18 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
         Checkpoint cp = checkpointSource.newCheckpoint();
         checkpoint(cp);
         if (singleLedgerDirs) {
-            checkpointSource.checkpointComplete(cp, true);
+            flushMutex.lock();
+            try {
+                synchronized (fatalEntryLogWriteFailureLock) {
+                    EntryLogWriteException failure = fatalEntryLogWriteFailure;
+                    if (failure != null) {
+                        throw failure;
+                    }
+                    checkpointSource.checkpointComplete(cp, true);
+                }
+            } finally {
+                flushMutex.unlock();
+            }
         }
     }
 

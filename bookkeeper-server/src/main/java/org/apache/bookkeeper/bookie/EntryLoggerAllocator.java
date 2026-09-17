@@ -42,6 +42,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import lombok.CustomLog;
@@ -187,22 +188,37 @@ class EntryLoggerAllocator {
 
         BufferedLogChannel logChannel = new BufferedLogChannel(byteBufAllocator, channel, conf.getWriteBufferBytes(),
                 conf.getReadBufferBytes(), preallocatedLogId, newLogFile, conf.getFlushIntervalInBytes());
-        logfileHeader.readerIndex(0);
-        logChannel.write(logfileHeader);
+        boolean success = false;
+        try {
+            logfileHeader.readerIndex(0);
+            logChannel.write(logfileHeader);
 
-        for (File f : ledgersDirs) {
-            setLastLogId(f, preallocatedLogId);
+            for (File f : ledgersDirs) {
+                setLastLogId(f, preallocatedLogId);
+            }
+
+            if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
+                recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
+            }
+
+            log.info()
+                    .attr("file", newLogFile)
+                    .attr("logId", preallocatedLogId)
+                    .log("Created new entry log file");
+            success = true;
+            return logChannel;
+        } finally {
+            if (!success) {
+                try {
+                    logChannel.close();
+                } catch (IOException closeError) {
+                    log.warn()
+                            .exception(closeError)
+                            .attr("file", newLogFile)
+                            .log("Failed to close entry log file after allocation failure");
+                }
+            }
         }
-
-        if (suffix.equals(DefaultEntryLogger.LOG_FILE_SUFFIX)) {
-            recentlyCreatedEntryLogsStatus.createdEntryLog(preallocatedLogId);
-        }
-
-        log.info()
-                .attr("file", newLogFile)
-                .attr("logId", preallocatedLogId)
-                .log("Created new entry log file");
-        return logChannel;
     }
 
 
@@ -250,7 +266,13 @@ class EntryLoggerAllocator {
      */
     void stop() {
         // wait until the preallocation finished.
-        allocatorExecutor.execute(this::closePreAllocateLog);
+        if (!allocatorExecutor.isShutdown()) {
+            try {
+                allocatorExecutor.execute(this::closePreAllocateLog);
+            } catch (RejectedExecutionException e) {
+                log.debug().exception(e).log("Skipping preallocated entry log cleanup because allocator is stopping");
+            }
+        }
         allocatorExecutor.shutdown();
         try {
             if (!allocatorExecutor.awaitTermination(5, TimeUnit.SECONDS)) {

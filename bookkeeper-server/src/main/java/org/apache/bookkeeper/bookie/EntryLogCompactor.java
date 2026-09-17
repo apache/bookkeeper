@@ -65,6 +65,17 @@ public class EntryLogCompactor extends AbstractLogCompactor {
         } catch (LedgerDirsManager.NoWritableLedgerDirException nwlde) {
             log.warn().exception(nwlde).log("No writable ledger directory available, aborting compaction");
             return false;
+        } catch (EntryLogWriteException elwe) {
+            // A poisoned live writer is a bookie-fatal condition, not a
+            // recoverable compaction failure.
+            if (entryLogger instanceof DefaultEntryLogger) {
+                EntryLogManager manager = ((DefaultEntryLogger) entryLogger).getEntryLogManager();
+                if (manager instanceof EntryLogManagerBase) {
+                    ((EntryLogManagerBase) manager).notifyFatalEntryLogWriteFailure(
+                            "Fatal entry log write failure while compacting entry log", elwe);
+                }
+            }
+            return false;
         } catch (IOException ioe) {
             // if compact entry log throws IOException, we don't want to remove that
             // entry log. however, if some entries from that log have been re-added

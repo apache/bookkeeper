@@ -28,6 +28,7 @@ import com.google.common.util.concurrent.SettableFuture;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Delayed;
 import java.util.concurrent.ExecutionException;
@@ -120,6 +121,7 @@ public class MockExecutorController {
 
     public MockExecutorController controlSubmit(ScheduledExecutorService service) {
         doAnswer(answerNow()).when(service).submit(any(Runnable.class));
+        doAnswer(answerNowCallable()).when(service).submit(org.mockito.ArgumentMatchers.<Callable<Object>>any());
         return this;
     }
 
@@ -183,7 +185,23 @@ public class MockExecutorController {
            SettableFuture<Void> future = SettableFuture.create();
            future.set(null);
            return future;
-       };
+        };
+    }
+
+    private static Answer<Future<?>> answerNowCallable() {
+        return invocationOnMock -> {
+           // Keep Callable submission semantics: task failures complete the Future exceptionally.
+           ThreadRegistry.forceClearRegistrationForTests(Thread.currentThread().getId());
+
+           Callable<?> task = invocationOnMock.getArgument(0);
+           SettableFuture<Object> future = SettableFuture.create();
+           try {
+               future.set(task.call());
+           } catch (Throwable t) {
+               future.setException(t);
+           }
+           return future;
+        };
     }
 
     private DeferredTask addDelayedTask(

@@ -21,6 +21,7 @@
 package org.apache.bookkeeper.bookie;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -31,7 +32,11 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.bookkeeper.bookie.storage.ldb.DbLedgerStorage;
+import org.apache.bookkeeper.bookie.storage.ldb.FailOnFlushDbLedgerStorage;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
@@ -128,6 +133,84 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         mockAddEntryReleased(RECOVERY_ADD);
     }
 
+    @Test
+    public void testBackgroundEntryLogFlushFailureShutsDownBookie() throws Exception {
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setLedgerStorageClass(FailOnFlushDbLedgerStorage.class.getName());
+        conf.setJournalWriteData(false);
+        conf.setProperty(DbLedgerStorage.WRITE_CACHE_MAX_SIZE_MB, 1);
+        conf.setProperty("dbStorage_maxThrottleTimeMs", 1000);
+        FailOnFlushDbLedgerStorage.resetFailure();
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf).build();
+        BookieImpl bookie = new TestBookieImpl(resources) {
+            @Override
+            int shutdown(int exitCode) {
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    FailOnFlushDbLedgerStorage.resetFailure();
+                }
+                int result = super.shutdown(exitCode);
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    shutdownLatch.countDown();
+                }
+                return result;
+            }
+        };
+
+        try {
+            bookie.start();
+            FailOnFlushDbLedgerStorage.injectFailureOnNextFlush();
+            writeUntilCacheFlushIsTriggered(bookie, 10L, "masterKey".getBytes(StandardCharsets.UTF_8));
+
+            assertTrue("Entry log flush failure should shut down the bookie",
+                    shutdownLatch.await(10, TimeUnit.SECONDS));
+        } finally {
+            FailOnFlushDbLedgerStorage.resetFailure();
+            if (bookie.isRunning()) {
+                bookie.shutdown();
+            }
+        }
+    }
+
+    @Test
+    public void testStartupEntryLogFlushFailureStopsBookieBeforeRunning() throws Exception {
+        ServerConfiguration conf = newServerConfiguration();
+        conf.setLedgerStorageClass(FailOnFlushDbLedgerStorage.class.getName());
+        conf.setJournalWriteData(false);
+        FailOnFlushDbLedgerStorage.resetFailure();
+
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        TestBookieImpl.Resources resources = new TestBookieImpl.ResourceBuilder(conf).build();
+        BookieImpl bookie = new TestBookieImpl(resources) {
+            @Override
+            int shutdown(int exitCode) {
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    FailOnFlushDbLedgerStorage.resetFailure();
+                }
+                int result = super.shutdown(exitCode);
+                if (exitCode == ExitCode.BOOKIE_EXCEPTION) {
+                    shutdownLatch.countDown();
+                }
+                return result;
+            }
+        };
+
+        try {
+            FailOnFlushDbLedgerStorage.injectFailureOnNextFlush();
+            bookie.start();
+
+            assertTrue("Startup entry log flush failure should shut down the bookie",
+                    shutdownLatch.await(10, TimeUnit.SECONDS));
+            assertFalse("Bookie should not keep running after startup entry log flush failure", bookie.isRunning());
+        } finally {
+            FailOnFlushDbLedgerStorage.resetFailure();
+            if (bookie.isRunning()) {
+                bookie.shutdown();
+            }
+        }
+    }
+
     public void mockAddEntryReleased(int flag) throws Exception {
         final String metadataServiceUri = zkUtil.getMetadataServiceUri();
         ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
@@ -192,4 +275,26 @@ public class BookieImplTest extends BookKeeperClusterTestCase {
         bb.writeBytes(data);
         return bb;
     }
+
+    private void writeUntilCacheFlushIsTriggered(BookieImpl bookie, long ledgerId, byte[] masterKey)
+            throws Exception {
+        for (int i = 0; i < 20; i++) {
+            try {
+                bookie.addEntry(generateLargeEntry(ledgerId, i), false,
+                        (rc, lid, eid, addr, ctx) -> { }, null, masterKey);
+            } catch (BookieException.OperationRejectedException e) {
+                return;
+            }
+        }
+    }
+
+    private ByteBuf generateLargeEntry(long ledger, long entry) {
+        ByteBuf bb = Unpooled.buffer(100 * 1024 + 3 * Long.BYTES);
+        bb.writeLong(ledger);
+        bb.writeLong(entry);
+        bb.writeLong(entry - 1);
+        bb.writeZero(100 * 1024);
+        return bb;
+    }
+
 }
