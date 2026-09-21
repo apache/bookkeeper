@@ -1270,4 +1270,44 @@ public class TestHttpService extends BookKeeperClusterTestCase {
         HttpServiceResponse response7 = triggerEntryLocationCompactService.handle(request7);
         assertEquals(HttpServer.StatusCode.METHOD_NOT_ALLOWED.getValue(), response7.getStatusCode());
     }
+
+    @SuppressWarnings("checkstyle:RegexpSingleline")
+    @Test
+    public void testBookieCookieService() throws Exception {
+        runFunctionWithRegistrationManager(baseConf, registrationManager -> {
+            try {
+                String bookieId = getBookie(0).toString();
+                Versioned<Cookie> cookieFromZk = Cookie.readFromRegistrationManager(registrationManager,
+                        BookieId.parse(bookieId));
+                HttpEndpointService bookieCookieService = bkHttpServiceProvider.provideHttpEndpointService(
+                        HttpServer.ApiType.BOOKIE_COOKIE);
+                Map<String, String> params = new HashMap<>();
+                // empty params
+                HttpServiceRequest request = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+                HttpServiceResponse response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.BAD_REQUEST.getValue());
+                assertEquals(response.getBody(), "Not found bookie id. Should provide bookie_id=<ip:port>");
+                // invalid params
+                params.put("bookie_id", "bookie_id");
+                response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.BAD_REQUEST.getValue());
+                assertEquals(response.getBody(), "Illegal bookie id. Should provide bookie_id=<ip:port>");
+
+                // cookie not found
+                params.put("bookie_id", "127.2.1.0:3181");
+                response = bookieCookieService.handle(request);
+                assertEquals(response.getStatusCode(), HttpServer.StatusCode.NOT_FOUND.getValue());
+
+                params.put("bookie_id", bookieId);
+                // GET cookie
+                HttpServiceRequest request1 = new HttpServiceRequest(null, HttpServer.Method.GET, params);
+                HttpServiceResponse response1 = bookieCookieService.handle(request1);
+                assertEquals(response1.getStatusCode(), HttpServer.StatusCode.OK.getValue());
+                assertEquals(cookieFromZk.getValue().toString(), response1.getBody());
+                return true;
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
 }
