@@ -35,6 +35,7 @@ import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
+import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 
 /**
  * Maintains an index of the entry locations in the EntryLogger.
@@ -45,14 +46,29 @@ import org.apache.bookkeeper.util.collections.ConcurrentLongHashSet;
 @CustomLog
 public class EntryLocationIndex implements Closeable {
 
+    static final String LAST_ENTRY_CACHE_MAX_SIZE = "dbStorage_lastEntryCacheMaxSize";
+    private static final long DEFAULT_LAST_ENTRY_CACHE_MAX_SIZE = 100_000;
+    private static final float LAST_ENTRY_CACHE_FILL_FACTOR = 0.66f;
+
     private final KeyValueStorage locationsDb;
     private final ConcurrentLongHashSet deletedLedgers = ConcurrentLongHashSet.newBuilder().build();
+    private final ConcurrentLongLongHashMap lastEntryCache;
+    private final long lastEntryCacheMaxSize;
     private final EntryLocationIndexStats stats;
     private boolean isCompacting;
 
     public EntryLocationIndex(ServerConfiguration conf, KeyValueStorageFactory storageFactory, String basePath,
             StatsLogger stats) throws IOException {
         locationsDb = storageFactory.newKeyValueStorage(basePath, "locations", DbConfigType.EntryLocation, conf);
+
+        this.lastEntryCacheMaxSize = conf.getLong(LAST_ENTRY_CACHE_MAX_SIZE, DEFAULT_LAST_ENTRY_CACHE_MAX_SIZE);
+        // Pre-size to avoid a resize right before we hit the cap and clear().
+        // ConcurrentLongLongHashMap resizes at size = expectedItems, so set expectedItems
+        // = max / fillFactor to keep the table stable for the lifetime of one fill cycle.
+        long expectedItems = (long) (lastEntryCacheMaxSize / LAST_ENTRY_CACHE_FILL_FACTOR);
+        this.lastEntryCache = ConcurrentLongLongHashMap.newBuilder()
+                .expectedItems((int) Math.min(expectedItems, Integer.MAX_VALUE))
+                .build();
 
         this.stats = new EntryLocationIndexStats(
             stats,
@@ -114,6 +130,19 @@ public class EntryLocationIndex implements Closeable {
     }
 
     private long getLastEntryInLedgerInternal(long ledgerId) throws IOException {
+        // Check in-memory cache first to avoid expensive getFloor() calls.
+        // ConcurrentLongLongHashMap.get() returns -1 if not found.
+        long cachedLastEntry = lastEntryCache.get(ledgerId);
+        if (cachedLastEntry >= 0) {
+            log.debug()
+                .attr("ledgerId", ledgerId)
+                .attr("cacheLastEntry", cachedLastEntry)
+                .log("Found last entry");
+            stats.getLastEntryCacheHits().inc();
+            return cachedLastEntry;
+        }
+
+        stats.getLastEntryCacheMisses().inc();
         LongPairWrapper maxEntryId = LongPairWrapper.get(ledgerId, Long.MAX_VALUE);
 
         long startTimeNanos = MathUtils.nowInNano();
@@ -139,9 +168,45 @@ public class EntryLocationIndex implements Closeable {
                         .attr("ledgerId", ledgerId)
                         .attr("lastEntryId", lastEntryId)
                         .log("Found last page in storage db for ledger");
+                // Populate cache only if no newer entry was inserted concurrently by an
+                // addLocation call between our cache miss above and this point. The
+                // CAS loop mirrors the pattern in WriteCache.put() (lines 168-178).
+                cacheLastEntryIfNewer(ledgerId, lastEntryId);
                 return lastEntryId;
             } else {
                 throw new Bookie.NoEntryException(ledgerId, -1);
+            }
+        }
+    }
+
+    /**
+     * Atomically set the cached last entry for ledgerId to newEntryId, but only if newEntryId
+     * is greater than whatever is currently cached. Bounded by lastEntryCacheMaxSize: when the
+     * cache is full and ledgerId is not yet present, the whole cache is cleared (working-set
+     * eviction) before insertion.
+     */
+    private void cacheLastEntryIfNewer(long ledgerId, long newEntryId) {
+        while (true) {
+            long currentLastEntry = lastEntryCache.get(ledgerId);
+            if (currentLastEntry >= newEntryId) {
+                // A newer or equal entry is already cached.
+                return;
+            }
+            if (currentLastEntry < 0) {
+                // Not in cache; enforce the size cap before inserting.
+                if (lastEntryCache.size() >= lastEntryCacheMaxSize) {
+                    lastEntryCache.clear();
+                }
+                // putIfAbsent so we don't race with a concurrent insert that beat us here.
+                long prior = lastEntryCache.putIfAbsent(ledgerId, newEntryId);
+                if (prior < 0 || prior >= newEntryId) {
+                    return;
+                }
+                // Lost the race and the winning value is still older — retry to overwrite.
+                continue;
+            }
+            if (lastEntryCache.compareAndSet(ledgerId, currentLastEntry, newEntryId)) {
+                return;
             }
         }
     }
@@ -173,6 +238,11 @@ public class EntryLocationIndex implements Closeable {
             key.recycle();
             value.recycle();
         }
+
+        // Bump the cached last-entry id if this write extends it. CAS-protected so a
+        // concurrent read populating the cache from RocksDB can't regress us, and two
+        // concurrent writers can't let the lower entryId win.
+        cacheLastEntryIfNewer(ledgerId, entryId);
     }
 
     public void updateLocations(Iterable<EntryLocation> newLocations) throws IOException {
@@ -194,8 +264,13 @@ public class EntryLocationIndex implements Closeable {
 
     public void delete(long ledgerId) throws IOException {
         // We need to find all the LedgerIndexPage records belonging to one specific
-        // ledgers
+        // ledgers.
+        // Ordering: deletedLedgers.add() must precede the cache.remove(). Any reader that
+        // observes a removed cache entry will subsequently consult deletedLedgers via
+        // getLastEntryInLedger() and throw NoEntryException rather than re-caching from
+        // RocksDB (the actual row deletion happens later in removeOffsetFromDeletedLedgers).
         deletedLedgers.add(ledgerId);
+        lastEntryCache.remove(ledgerId);
     }
 
     public String getEntryLocationDBPath() {
