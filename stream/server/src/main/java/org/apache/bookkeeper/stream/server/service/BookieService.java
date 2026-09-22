@@ -100,7 +100,7 @@ public class BookieService extends AbstractLifecycleComponent<BookieConfiguratio
         LedgerDirsManager indexDirsManager = BookieResources.createIndexDirsManager(
                 serverConf, diskChecker, bookieStats.scope(LD_INDEX_SCOPE), ledgerDirsManager);
         LedgerStorage storage = BookieResources.createLedgerStorage(
-                serverConf, ledgerManager, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
+                serverConf, ledgerManager, lmFactory, ledgerDirsManager, indexDirsManager, bookieStats, allocator);
         UncleanShutdownDetection uncleanShutdownDetection = new UncleanShutdownDetectionImpl(ledgerDirsManager);
 
         LegacyCookieValidation cookieValidation = new LegacyCookieValidation(serverConf, rm);

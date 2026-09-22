@@ -23,7 +23,6 @@ package org.apache.bookkeeper.bookie;
 
 import com.google.common.collect.Lists;
 import java.io.IOException;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -39,15 +38,11 @@ import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerManagerTestCase;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.MetadataBookieDriver;
-import org.apache.bookkeeper.meta.MetadataDrivers;
 import org.apache.bookkeeper.meta.ZkLedgerUnderreplicationManager;
-import org.apache.bookkeeper.meta.exceptions.MetadataException;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.util.SnapshotMap;
-import org.apache.commons.configuration2.ex.ConfigurationException;
 import org.apache.zookeeper.ZooDefs;
 import org.junit.Assert;
 import org.junit.Before;
@@ -90,11 +85,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
         ServerConfiguration bkConf = getBkConf(bookieNotInEnsemble);
 
         @Cleanup
-        final MetadataBookieDriver metadataDriver = instantiateMetadataDriver(bkConf);
-        @Cleanup
-        final LedgerManagerFactory lmf = metadataDriver.getLedgerManagerFactory();
-        @Cleanup
-        final LedgerUnderreplicationManager lum = lmf.newLedgerUnderreplicationManager();
+        final LedgerUnderreplicationManager lum = ledgerManagerFactory.newLedgerUnderreplicationManager();
 
         Assert.assertFalse(lum.isLedgerBeingReplicated(lh.getId()));
 
@@ -104,7 +95,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf, NullStatsLogger.INSTANCE);
+                ledgerManagerFactory, bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
@@ -121,20 +112,6 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         Assert.assertFalse(lum.isLedgerBeingReplicated(lh.getId()));
         Assert.assertFalse(activeLedgers.containsKey(lh.getId()));
-    }
-
-    private static MetadataBookieDriver instantiateMetadataDriver(ServerConfiguration conf)
-            throws BookieException {
-        try {
-            final String metadataServiceUriStr = conf.getMetadataServiceUri();
-            final MetadataBookieDriver driver = MetadataDrivers.getBookieDriver(URI.create(metadataServiceUriStr));
-            driver.initialize(conf, NullStatsLogger.INSTANCE);
-            return driver;
-        } catch (MetadataException me) {
-            throw new BookieException.MetadataStoreException("Failed to initialize metadata bookie driver", me);
-        } catch (ConfigurationException e) {
-            throw new BookieException.BookieIllegalOpException(e);
-        }
     }
 
     @Test
@@ -155,7 +132,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf, NullStatsLogger.INSTANCE);
+                ledgerManagerFactory, bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
@@ -193,7 +170,7 @@ public class GcOverreplicatedLedgerTest extends LedgerManagerTestCase {
 
         final CompactableLedgerStorage mockLedgerStorage = new MockLedgerStorage();
         final GarbageCollector garbageCollector = new ScanAndCompareGarbageCollector(ledgerManager, mockLedgerStorage,
-                bkConf, NullStatsLogger.INSTANCE);
+                ledgerManagerFactory, bkConf, NullStatsLogger.INSTANCE);
         Thread.sleep(bkConf.getGcOverreplicatedLedgerWaitTimeMillis() + 1);
         garbageCollector.gc(new GarbageCleaner() {
 
