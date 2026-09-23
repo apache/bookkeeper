@@ -46,6 +46,12 @@ import org.apache.bookkeeper.util.IteratorUtility;
  */
 @CustomLog
 public class EntryMemTable implements AutoCloseable{
+    // Note that LOWEST_POSSIBLE_METAENTRY_ID is negative here.
+    // If we do not accommodate negative entry IDs, the comparator
+    // overflows for low (< -LOWEST_POSSIBLE_METAENTRY_ID) values, and
+    // our ability to find the highest entry for a ledger is broken.
+    public static final long HIGHEST_POSSIBLE_ENTRY_ID = Long.MAX_VALUE + BookieImpl.LOWEST_POSSIBLE_METAENTRY_ID;
+
     /**
      * Entry skip list.
      */
@@ -297,6 +303,9 @@ public class EntryMemTable implements AutoCloseable{
         long size = 0;
         long startTimeNanos = MathUtils.nowInNano();
         boolean success = false;
+        if (entryId > HIGHEST_POSSIBLE_ENTRY_ID) {
+            throw new IOException("entryId above highest allowed value");
+        }
         try {
             if (isSizeLimitReached() || (!previousFlushSucceeded.get())) {
                 Checkpoint cp = snapshot();
@@ -414,7 +423,7 @@ public class EntryMemTable implements AutoCloseable{
      */
     public EntryKeyValue getLastEntry(long ledgerId) throws IOException {
         EntryKey result = null;
-        EntryKey key = new EntryKey(ledgerId, Long.MAX_VALUE);
+        EntryKey key = new EntryKey(ledgerId, HIGHEST_POSSIBLE_ENTRY_ID);
         long startTimeNanos = MathUtils.nowInNano();
         boolean success = false;
         this.lock.readLock().lock();
@@ -468,7 +477,7 @@ public class EntryMemTable implements AutoCloseable{
      */
     PrimitiveIterator.OfLong getListOfEntriesOfLedger(long ledgerId) {
         EntryKey thisLedgerFloorEntry = new EntryKey(ledgerId, 0);
-        EntryKey thisLedgerCeilingEntry = new EntryKey(ledgerId, Long.MAX_VALUE);
+        EntryKey thisLedgerCeilingEntry = new EntryKey(ledgerId, HIGHEST_POSSIBLE_ENTRY_ID);
         Iterator<EntryKey> thisLedgerEntriesInKVMap;
         Iterator<EntryKey> thisLedgerEntriesInSnapshot;
         this.lock.readLock().lock();

@@ -104,6 +104,10 @@ public class BookieImpl implements Bookie {
     public static final long METAENTRY_ID_FORCE_LEDGER  = -0x4000;
     static final long METAENTRY_ID_LEDGER_EXPLICITLAC  = -0x8000;
 
+    // EntryMemTable.java needs this value to avoid integer
+    // overflow when attempting to get the last entry.
+    public static final long LOWEST_POSSIBLE_METAENTRY_ID = METAENTRY_ID_LEDGER_EXPLICITLAC;
+
     private final LedgerDirsManager ledgerDirsManager;
     protected final Supplier<BookieServiceInfo> bookieServiceInfoProvider;
     private final LedgerDirsManager indexDirsManager;
