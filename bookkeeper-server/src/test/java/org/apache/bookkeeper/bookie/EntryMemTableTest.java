@@ -468,5 +468,34 @@ public class EntryMemTableTest implements CacheCallback, SkipListFlusher, Checkp
         assertEquals(memTable.kvmap.size(), 0);
         assertEquals(memTable.skipListSemaphore.availablePermits(), initialPermits);
     }
+
+    @Test
+    public void testGetLastAddConfirmed() throws IOException {
+        final long ledgerId = 1;
+        final byte[] bytes = new byte[3 * Long.BYTES];
+        final ByteBuffer bb = ByteBuffer.wrap(bytes);
+
+        bb.putLong(0, 0);
+        bb.putLong(Long.BYTES, 0);
+        bb.putLong(2 * Long.BYTES, -1);
+
+        memTable.addEntry(ledgerId, 0, bb.duplicate(), this);
+
+        bb.putLong(2 * Long.BYTES, 0);
+
+        memTable.addEntry(ledgerId, 1, bb.duplicate(), this);
+
+        bb.putLong(2 * Long.BYTES, 1);
+
+        memTable.addEntry(ledgerId, 2, bb.duplicate(), this);
+
+        bb.putLong(2 * Long.BYTES, 2);
+
+        memTable.addEntry(ledgerId, 3, bb.duplicate(), this);
+
+        long lac = memTable.getLastAddConfirmed(ledgerId);
+
+        assertEquals(2, lac);
+    }
 }
 
