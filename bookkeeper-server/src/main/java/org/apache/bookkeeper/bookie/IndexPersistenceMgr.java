@@ -722,4 +722,10 @@ public class IndexPersistenceMgr {
             }
         }
     }
+
+    @VisibleForTesting
+    void invalidateLedger(long ledgerId) {
+        this.writeFileInfoCache.invalidate(ledgerId);
+        this.readFileInfoCache.invalidate(ledgerId);
+    }
 }

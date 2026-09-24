@@ -31,6 +31,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_GET_OFF
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGES_SCANNED;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_PAGE_RETRIES;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -360,17 +361,21 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         Long lac = ledgerCache.getLastAddConfirmed(ledgerId);
         if (lac == null) {
-            ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
-            if (null == bb) {
-                return BookieProtocol.INVALID_ENTRY_ID;
-            } else {
-                try {
-                    bb.skipBytes(2 * Long.BYTES); // skip ledger & entry id
-                    lac = bb.readLong();
-                    lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
-                } finally {
-                    ReferenceCountUtil.release(bb);
-                }
+            lac = getLastAddConfirmedFromLedgerEntry(ledgerId);
+        }
+        return lac;
+    }
+
+    public long getLastAddConfirmedFromLedgerEntry(long ledgerId) throws IOException {
+        long lac = BookieProtocol.INVALID_ENTRY_ID;
+        ByteBuf bb = getEntry(ledgerId, BookieProtocol.LAST_ADD_CONFIRMED);
+        if (null != bb) {
+            try {
+                bb.skipBytes(2 * Long.BYTES);
+                lac = bb.readLong();
+                lac = ledgerCache.updateLastAddConfirmed(ledgerId, lac);
+            } finally {
+                ReferenceCountUtil.release(bb);
             }
         }
         return lac;
@@ -725,5 +730,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     public void clearStorageStateFlag(StorageState flags) throws IOException {
         throw new UnsupportedOperationException(
                 "Storage state flags only supported for DbLedgerStorage");
+    }
+
+    @VisibleForTesting
+    void removeLedgerCacheEntry(long ledgerId) {
+        ((LedgerCacheImpl) ledgerCache).invalidateLedger(ledgerId);
     }
 }
