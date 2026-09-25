@@ -240,7 +240,21 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+        LedgerCache lc = interleavedLedgerStorage.getLedgerCache();
+        Long lac = lc.getLastAddConfirmed(ledgerId);
+        if (null == lac) {
+            // If the last add confirmed has fallen out of the ledger cache,
+            // it may be in the memTable, and more importantly, it may be
+            // in the memTable but _not_ in ledger storage.
+            lac = memTable.getLastAddConfirmed(ledgerId);
+            if (null != lac) {
+                lc.updateLastAddConfirmed(ledgerId, lac);
+            }
+        }
+        if (null == lac) {
+            lac = interleavedLedgerStorage.getLastAddConfirmedFromLedgerEntry(ledgerId);
+        }
+        return lac;
     }
 
     @Override
@@ -460,5 +474,10 @@ public class SortedLedgerStorage
     public void clearStorageStateFlag(StorageState flags) throws IOException {
         throw new UnsupportedOperationException(
                 "Storage state flags only supported for DbLedgerStorage");
+    }
+
+    @VisibleForTesting
+    void removeLedgerCacheEntry(long ledgerId) {
+        interleavedLedgerStorage.removeLedgerCacheEntry(ledgerId);
     }
 }
