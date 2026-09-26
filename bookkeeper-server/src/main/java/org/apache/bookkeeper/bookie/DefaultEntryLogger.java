@@ -1470,7 +1470,8 @@ public class DefaultEntryLogger implements EntryLogger {
                         }
                         continue;
                     }
-                    File finalLogFile = new File(compactedFile.getParentFile(), compactionLogId + ".log");
+                    File finalLogFile = new File(compactedFile.getParentFile(),
+                            logId2HexString(compactionLogId) + ".log");
 
                     compactionLogs.add(
                             new EntryLoggerCompactionEntryLog(compactionLogId, compactedLogId,
