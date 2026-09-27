@@ -20,6 +20,10 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.google.common.collect.Lists;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
@@ -37,8 +41,7 @@ import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallbackFuture;
 import org.apache.bookkeeper.proto.MockBookies;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,7 +85,7 @@ public class LedgerRecovery2Test {
 
 
     @Test
-    public void testCantRecoverAllDown() throws Exception {
+    void cantRecoverAllDown() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1L, Lists.newArrayList(b1, b2, b3));
@@ -95,14 +98,14 @@ public class LedgerRecovery2Test {
             GenericCallbackFuture<Void> promise = new GenericCallbackFuture<>();
             lh.recover(promise, null, false);
             promise.get();
-            Assert.fail("Recovery shouldn't have been able to complete");
+            fail("Recovery shouldn't have been able to complete");
         } catch (ExecutionException ee) {
-            Assert.assertEquals(BKException.BKReadException.class, ee.getCause().getClass());
+            assertEquals(BKException.BKReadException.class, ee.getCause().getClass());
         }
     }
 
     @Test
-    public void testCanReadLacButCantWrite() throws Exception {
+    void canReadLacButCantWrite() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
@@ -117,14 +120,14 @@ public class LedgerRecovery2Test {
             GenericCallbackFuture<Void> promise = new GenericCallbackFuture<>();
             lh.recover(promise, null, false);
             promise.get();
-            Assert.fail("Recovery shouldn't have been able to complete");
+            fail("Recovery shouldn't have been able to complete");
         } catch (ExecutionException ee) {
-            Assert.assertEquals(BKException.BKNotEnoughBookiesException.class, ee.getCause().getClass());
+            assertEquals(BKException.BKNotEnoughBookiesException.class, ee.getCause().getClass());
         }
     }
 
     @Test
-    public void testMetadataClosedDuringRecovery() throws Exception {
+    void metadataClosedDuringRecovery() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
         Versioned<LedgerMetadata> md = setupLedger(clientCtx, 1, Lists.newArrayList(b1, b2, b3));
@@ -156,12 +159,12 @@ public class LedgerRecovery2Test {
 
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLastAddConfirmed(), -1);
-        Assert.assertEquals(lh.getLength(), 0);
+        assertEquals(-1, lh.getLastAddConfirmed());
+        assertEquals(0, lh.getLength());
     }
 
     @Test
-    public void testNewEnsembleAddedDuringRecovery() throws Exception {
+    void newEnsembleAddedDuringRecovery() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
@@ -200,14 +203,14 @@ public class LedgerRecovery2Test {
 
         try {
             recoveryPromise.get();
-            Assert.fail("Should fail on the update");
+            fail("Should fail on the update");
         } catch (ExecutionException ee) {
-            Assert.assertEquals(BKException.BKUnexpectedConditionException.class, ee.getCause().getClass());
+            assertEquals(BKException.BKUnexpectedConditionException.class, ee.getCause().getClass());
         }
     }
 
     @Test
-    public void testRecoveryBookieFailedAtStart() throws Exception {
+    void recoveryBookieFailedAtStart() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
@@ -226,13 +229,13 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
                             Lists.newArrayList(b1, b4, b3));
     }
 
     @Test
-    public void testRecoveryOneBookieFailsDuring() throws Exception {
+    void recoveryOneBookieFailsDuring() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
@@ -255,16 +258,16 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
+        assertEquals(2, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L),
                             Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L),
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L),
                             Lists.newArrayList(b1, b4, b3));
-        Assert.assertEquals(lh.getLastAddConfirmed(), 1L);
+        assertEquals(1L, lh.getLastAddConfirmed());
     }
 
     @Test
-    public void testRecoveryTwoBookiesFailOnSameEntry() throws Exception {
+    void recoveryTwoBookiesFailOnSameEntry() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4, b5).get();
 
@@ -286,11 +289,11 @@ public class LedgerRecovery2Test {
         lh.recover(recoveryPromise, null, false);
         recoveryPromise.get();
 
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b3));
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b4));
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b5));
-        Assert.assertEquals(lh.getLastAddConfirmed(), 0L);
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b3));
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b4));
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b5));
+        assertEquals(0L, lh.getLastAddConfirmed());
     }
 
     /**
@@ -302,7 +305,7 @@ public class LedgerRecovery2Test {
      * been to fence on recovery reads also.
      */
     @Test
-    public void testFirstWriterCannotCommitWriteAfter2ndWriterCloses() throws Exception {
+    void firstWriterCannotCommitWriteAfter2ndWriterCloses() throws Exception {
         /*
             This test uses CompletableFutures to control the sequence of actions performed by
             two writers. There are different sets of futures:
@@ -484,20 +487,20 @@ public class LedgerRecovery2Test {
         // Step 10. w1 write fails to reach AckQuorum
         try {
             w1WriteFuture.get(200, TimeUnit.MILLISECONDS);
-            Assert.fail("The write to b2 should have failed as it was fenced by the recovery read of step 7");
+            fail("The write to b2 should have failed as it was fenced by the recovery read of step 7");
         } catch (ExecutionException e) {
-            Assert.assertTrue(e.getCause() instanceof BKException.BKLedgerFencedException);
+            assertTrue(e.getCause() instanceof BKException.BKLedgerFencedException);
         }
 
         // w1 received negative acknowledgement of e2 being written
-        Assert.assertEquals(1, w1.getLedgerMetadata().getAllEnsembles().size());
-        Assert.assertEquals(2, writeResult.get());
-        Assert.assertEquals(1L, w1.getLastAddConfirmed());
+        assertEquals(1, w1.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(2, writeResult.get());
+        assertEquals(1L, w1.getLastAddConfirmed());
 
         // w2 closed the ledger with only the original entries, not the third one
         // i.e there is no divergence between w1m, w2 and metadata
-        Assert.assertEquals(1, w2.getLedgerMetadata().getAllEnsembles().size());
-        Assert.assertEquals(1L, w2.getLastAddConfirmed());
+        assertEquals(1, w2.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(1L, w2.getLastAddConfirmed());
     }
 
     private void stepBlock(CompletableFuture<Void> reachedStepFuture) {
@@ -516,7 +519,7 @@ public class LedgerRecovery2Test {
      * of the recovery phase rather than accept a value of -1 that might be returned by the LAC reads.
      */
     @Test
-    public void testRecoveryWhenSecondEnsembleReturnsLacMinusOne() throws Exception {
+    void recoveryWhenSecondEnsembleReturnsLacMinusOne() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         clientCtx.getMockRegistrationClient().addBookies(b4).get();
 
@@ -568,14 +571,14 @@ public class LedgerRecovery2Test {
         recoveryPromise.get();
 
         // The recovery process is successfully able to complete recovery, with the expected ensembles.
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b1));
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b2));
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b1));
-        Assert.assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b4));
+        assertEquals(2, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b1));
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(0L).contains(b2));
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b1));
+        assertTrue(lh.getLedgerMetadata().getAllEnsembles().get(1L).contains(b4));
 
         // the ledger is closed with entry id 1
-        Assert.assertEquals(lh.getLastAddConfirmed(), 1L);
-        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
+        assertEquals(1L, lh.getLastAddConfirmed());
+        assertEquals(1L, lh.getLedgerMetadata().getLastEntryId());
     }
 }

@@ -20,6 +20,8 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -33,8 +35,7 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.meta.HierarchicalLedgerManagerFactory;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +52,7 @@ public class ConcurrentV2RecoveryTest extends BookKeeperClusterTestCase  {
     }
 
     @Test
-    public void testConcurrentOpen() throws Exception {
+    void concurrentOpen() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri())
             .setNumChannelsPerBookie(16)
@@ -101,7 +102,7 @@ public class ConcurrentV2RecoveryTest extends BookKeeperClusterTestCase  {
                     // also fine, recovery can currently fail because of metadata conflicts.
                     // We should fix this at some point by making the metadata immutable,
                     // and restarting the entire operation
-                    Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerRecoveryException.class);
+                    assertEquals(BKException.BKLedgerRecoveryException.class, ee.getCause().getClass());
                 }
             }
         }
