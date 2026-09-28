@@ -70,19 +70,16 @@ public class DNS {
             //Not proper address. May be IPv6
             throw new NamingException("IPV6");
         }
+
+        // Loopback addresses are local-only; avoid querying external DNS for PTR records.
+        if (hostIp.isLoopbackAddress()) {
+            return cachedHostname;
+        }
+
         String reverseIP = parts[3] + "." + parts[2] + "." + parts[1] + "."
                 + parts[0] + ".in-addr.arpa";
 
-        DirContext ictx = new InitialDirContext();
-        Attributes attribute;
-        try {
-            attribute = ictx.getAttributes("dns://"               // Use "dns:///" if the default
-                    + ((ns == null) ? "" : ns)
-                    // nameserver is to be used
-                    + "/" + reverseIP, new String[]{"PTR"});
-        } finally {
-            ictx.close();
-        }
+        Attributes attribute = getPtrAttributes(reverseIP, ns);
 
         if (null == attribute) {
             throw new NamingException("No attribute is found");
@@ -98,6 +95,18 @@ public class DNS {
         }
 
         return ptrAttr.get().toString();
+    }
+
+    static Attributes getPtrAttributes(String reverseIP, String ns) throws NamingException {
+        DirContext ictx = new InitialDirContext();
+        try {
+            return ictx.getAttributes("dns://"               // Use "dns:///" if the default
+                    + ((ns == null) ? "" : ns)
+                    // nameserver is to be used
+                    + "/" + reverseIP, new String[]{"PTR"});
+        } finally {
+            ictx.close();
+        }
     }
 
     /**
