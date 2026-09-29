@@ -54,7 +54,6 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
                                 BookieRequestProcessor requestProcessor,
                                 ExecutorService fenceThreadPool) {
         super(request, requestHandler, requestProcessor);
-        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
 
         this.readRequest = request.getReadRequest();
         this.ledgerId = readRequest.getLedgerId();
@@ -267,6 +266,7 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
 
     @Override
     public void run() {
+        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
         requestProcessor.getRequestStats().getReadEntrySchedulingDelayStats().registerSuccessfulEvent(
             MathUtils.elapsedNanos(enqueueNanos), TimeUnit.NANOSECONDS);
         if (!requestHandler.ctx().channel().isOpen()) {
@@ -374,4 +374,3 @@ class ReadEntryProcessorV3 extends PacketProcessorBaseV3 {
         return RequestUtils.toSafeString(request);
     }
 }
-

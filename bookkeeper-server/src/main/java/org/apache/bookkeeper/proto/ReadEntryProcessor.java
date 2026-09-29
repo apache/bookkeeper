@@ -51,8 +51,13 @@ class ReadEntryProcessor extends PacketProcessorBase<ReadRequest> {
         rep.init(request, requestHandler, requestProcessor);
         rep.fenceThreadPool = fenceThreadPool;
         rep.throttleReadResponses = throttleReadResponses;
-        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
         return rep;
+    }
+
+    @Override
+    public void run() {
+        requestProcessor.onReadRequestStart(requestHandler.ctx().channel());
+        super.run();
     }
 
     @Override
