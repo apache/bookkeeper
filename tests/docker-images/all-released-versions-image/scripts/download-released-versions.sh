@@ -104,8 +104,8 @@ download_tarball \
     "https://archive.apache.org/dist/bookkeeper/bookkeeper-4.16.7" \
     "bookkeeper-server-4.16.7-bin.tar.gz" sha512 asc
 download_tarball \
-    "https://archive.apache.org/dist/bookkeeper/bookkeeper-4.17.2" \
-    "bookkeeper-server-4.17.2-bin.tar.gz" sha512 asc
+    "https://archive.apache.org/dist/bookkeeper/bookkeeper-4.17.4" \
+    "bookkeeper-server-4.17.4-bin.tar.gz" sha512 asc
 
 # GPG key files
 download_if_missing \
