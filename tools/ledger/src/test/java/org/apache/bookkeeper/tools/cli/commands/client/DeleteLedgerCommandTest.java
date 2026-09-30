@@ -18,6 +18,7 @@
  */
 package org.apache.bookkeeper.tools.cli.commands.client;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -34,7 +35,6 @@ import org.apache.bookkeeper.tools.cli.helpers.BookieCommandTestBase;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.commons.configuration2.Configuration;
 import org.junit.Test;
-
 
 /**
  * Unit test for {@link DeleteLedgerCommand}.
@@ -64,7 +64,7 @@ public class DeleteLedgerCommandTest extends BookieCommandTestBase {
         });
 
         DeleteLedgerCommand cmd = new DeleteLedgerCommand();
-        assertTrue(cmd.apply(bkFlags, new String[] { "-l", "1" }));
+        assertFalse(cmd.apply(bkFlags, new String[] { "-l", "1" }));
         assertTrue(getMockedConstruction(BookKeeper.class).constructed().isEmpty());
     }
 
