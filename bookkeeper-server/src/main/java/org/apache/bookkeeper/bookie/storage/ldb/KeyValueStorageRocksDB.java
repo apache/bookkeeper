@@ -49,6 +49,7 @@ import org.rocksdb.Cache;
 import org.rocksdb.ChecksumType;
 import org.rocksdb.ColumnFamilyDescriptor;
 import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.CompactRangeOptions;
 import org.rocksdb.CompressionType;
 import org.rocksdb.ConfigOptions;
 import org.rocksdb.DBOptions;
@@ -64,6 +65,7 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.RocksIterator;
 import org.rocksdb.RocksObject;
 import org.rocksdb.Slice;
+import org.rocksdb.Status;
 import org.rocksdb.WriteBatch;
 import org.rocksdb.WriteOptions;
 
@@ -90,6 +92,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private final ReadOptions optionDontCache;
     private final WriteBatch emptyBatch;
     private final int writeBatchMaxSize;
+    private final Object compactionLock = new Object();
+    private CompactRangeOptions currentCompactRangeOptions;
 
     private String dbPath;
 
@@ -408,6 +412,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
     @Override
     public void compact() throws IOException {
+        // setCanceled(false) initializes the native atomic flag before CompactRange receives its options copy.
+        CompactRangeOptions compactRangeOptions = new CompactRangeOptions().setCanceled(false);
         try {
             final long start = System.currentTimeMillis();
             final int oriRocksDBFileCount = db.getLiveFilesMetaData().size();
@@ -417,7 +423,10 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                     .attr("fileCount", oriRocksDBFileCount)
                     .attr("sizeBytes", oriRocksDBSize).log("Starting RocksDB compact");
 
-            db.compactRange();
+            synchronized (compactionLock) {
+                currentCompactRangeOptions = compactRangeOptions;
+            }
+            db.compactRange(db.getDefaultColumnFamily(), null, null, compactRangeOptions);
 
             final long end = System.currentTimeMillis();
             final int rocksDBFileCount = db.getLiveFilesMetaData().size();
@@ -429,8 +438,46 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
                     .attr("fileCount", rocksDBFileCount).attr("sizeBytes", rocksDBSize)
                     .log("RocksDB compact finished");
         } catch (RocksDBException e) {
+            if (isCurrentCompactionCancellation(compactRangeOptions, e)) {
+                throw new EntryLocationIndexCompactionCancelledException(e);
+            }
             throw new IOException("Error in RocksDB compact", e);
+        } finally {
+            synchronized (compactionLock) {
+                if (currentCompactRangeOptions == compactRangeOptions) {
+                    currentCompactRangeOptions = null;
+                }
+                compactRangeOptions.close();
+            }
         }
+    }
+
+    @Override
+    public boolean cancelCompaction() {
+        synchronized (compactionLock) {
+            if (currentCompactRangeOptions == null) {
+                return false;
+            }
+            currentCompactRangeOptions.setCanceled(true);
+            return true;
+        }
+    }
+
+    private boolean isCurrentCompactionCancellation(CompactRangeOptions compactRangeOptions,
+                                                    RocksDBException exception) {
+        synchronized (compactionLock) {
+            return currentCompactRangeOptions == compactRangeOptions
+                    && compactRangeOptions.canceled()
+                    && isCompactionCancellationStatus(exception);
+        }
+    }
+
+    static boolean isCompactionCancellationStatus(RocksDBException exception) {
+        if (exception.getStatus() == null) {
+            return false;
+        }
+        Status.Code statusCode = exception.getStatus().getCode();
+        return statusCode == Status.Code.Incomplete || statusCode == Status.Code.Aborted;
     }
 
     private long getRocksDBSize() {

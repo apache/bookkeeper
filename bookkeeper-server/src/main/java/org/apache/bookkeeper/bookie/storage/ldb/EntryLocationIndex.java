@@ -206,9 +206,16 @@ public class EntryLocationIndex implements Closeable {
         try {
             isCompacting = true;
             locationsDb.compact();
+        } catch (EntryLocationIndexCompactionCancelledException e) {
+            log.info().attr("directory", getEntryLocationDBPath())
+                    .log("Entry location index RocksDB compaction cancelled");
         } finally {
             isCompacting = false;
         }
+    }
+
+    public boolean cancelCompaction() {
+        return locationsDb.cancelCompaction();
     }
 
     public boolean isCompacting() {
