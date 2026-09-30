@@ -171,6 +171,12 @@ public class AuditorReplicasCheckTask extends AuditorTask {
                 new ConcurrentHashMap<Long, MissingEntriesInfoOfLedger>();
         LedgerManager.LedgerRangeIterator ledgerRangeIterator = ledgerManager.getLedgerRanges(zkOpTimeoutMs);
         final Semaphore maxConcurrentSemaphore = new Semaphore(MAX_CONCURRENT_REPLICAS_CHECK_LEDGER_REQUESTS);
+        // These counters back the gauges published once for the whole run, so they must accumulate
+        // across all ledger ranges. Reset them here, not per-range, otherwise a later range wipes
+        // the findings of earlier ranges.
+        numLedgersFoundHavingNoReplicaOfAnEntry.set(0);
+        numLedgersFoundHavingLessThanAQReplicasOfAnEntry.set(0);
+        numLedgersFoundHavingLessThanWQReplicasOfAnEntry.set(0);
         while (true) {
             LedgerManager.LedgerRange ledgerRange = null;
             try {
@@ -186,9 +192,6 @@ public class AuditorReplicasCheckTask extends AuditorTask {
             }
             ledgersWithMissingEntries.clear();
             ledgersWithUnavailableBookies.clear();
-            numLedgersFoundHavingNoReplicaOfAnEntry.set(0);
-            numLedgersFoundHavingLessThanAQReplicasOfAnEntry.set(0);
-            numLedgersFoundHavingLessThanWQReplicasOfAnEntry.set(0);
             Set<Long> ledgersInRange = ledgerRange.getLedgers();
             int numOfLedgersInRange = ledgersInRange.size();
             // Final result after processing all the ledgers
