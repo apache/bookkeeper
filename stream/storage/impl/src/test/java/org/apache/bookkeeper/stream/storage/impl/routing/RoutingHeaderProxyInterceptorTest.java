@@ -23,7 +23,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RID_METADATA_KEY;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.RK_METADATA_KEY;
 import static org.apache.bookkeeper.stream.protocol.ProtocolConstants.SID_METADATA_KEY;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 
 import io.grpc.CallOptions;
 import io.grpc.Channel;
@@ -34,11 +36,14 @@ import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.inprocess.InProcessChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.CustomLog;
 import org.apache.bookkeeper.clients.grpc.GrpcClientTestBase;
 import org.apache.bookkeeper.clients.impl.channel.StorageServerChannel;
+import org.apache.bookkeeper.common.grpc.netty.IdentityInputStreamMarshaller;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.DeleteRangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.IncrementRequest;
@@ -49,6 +54,7 @@ import org.apache.bookkeeper.stream.proto.kv.rpc.RangeRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RangeResponse;
 import org.apache.bookkeeper.stream.proto.kv.rpc.ResponseHeader;
 import org.apache.bookkeeper.stream.proto.kv.rpc.RoutingHeader;
+import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TableServiceGrpc.TableServiceImplBase;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnRequest;
 import org.apache.bookkeeper.stream.proto.kv.rpc.TxnResponse;
@@ -269,6 +275,87 @@ public class RoutingHeaderProxyInterceptorTest extends GrpcClientTestBase {
 
         assertEquals(expectedRequest, receivedRequest.get());
         assertEquals(expectedRequest.getHeader(), response.getHeader().getRoutingHeader());
+    }
+
+    @Test
+    public void testForwardOriginalInputStreamWhenInterceptionFails() throws Exception {
+        byte[] requestBytes = new byte[] { 4, 1, 2, 3 };
+        CapturingClientCall delegateCall = new CapturingClientCall();
+        RoutingHeaderProxyInterceptor interceptor = new RoutingHeaderProxyInterceptor();
+
+        ClientCall<InputStream, InputStream> interceptedCall = interceptor.interceptCall(
+            proxyTxnMethod(),
+            CallOptions.DEFAULT,
+            new CapturingChannel(delegateCall));
+
+        Metadata headers = new Metadata();
+        headers.put(SID_METADATA_KEY, 1026L);
+        headers.put(RID_METADATA_KEY, 1030L);
+        headers.put(RK_METADATA_KEY, "txn-key".getBytes(UTF_8));
+
+        ByteArrayInputStream originalMessage = new ByteArrayInputStream(requestBytes);
+        interceptedCall.start(new ClientCall.Listener<InputStream>() { }, headers);
+        interceptedCall.sendMessage(originalMessage);
+
+        assertNotSame(originalMessage, delegateCall.message);
+        assertArrayEquals(requestBytes, delegateCall.message.readAllBytes());
+    }
+
+    private static MethodDescriptor<InputStream, InputStream> proxyTxnMethod() {
+        return MethodDescriptor.newBuilder(
+                IdentityInputStreamMarshaller.of(),
+                IdentityInputStreamMarshaller.of())
+            .setFullMethodName(TableServiceGrpc.getTxnMethod().getFullMethodName())
+            .setType(TableServiceGrpc.getTxnMethod().getType())
+            .build();
+    }
+
+    private static class CapturingChannel extends Channel {
+
+        private final CapturingClientCall call;
+
+        CapturingChannel(CapturingClientCall call) {
+            this.call = call;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <ReqT, RespT> ClientCall<ReqT, RespT> newCall(
+                MethodDescriptor<ReqT, RespT> methodDescriptor,
+                CallOptions callOptions) {
+            return (ClientCall<ReqT, RespT>) call;
+        }
+
+        @Override
+        public String authority() {
+            return "test-authority";
+        }
+    }
+
+    private static class CapturingClientCall extends ClientCall<InputStream, InputStream> {
+
+        private InputStream message;
+
+        @Override
+        public void start(Listener<InputStream> responseListener, Metadata headers) {
+        }
+
+        @Override
+        public void request(int numMessages) {
+        }
+
+        @Override
+        public void cancel(String message, Throwable cause) {
+        }
+
+        @Override
+        public void halfClose() {
+        }
+
+        @Override
+        public void sendMessage(InputStream message) {
+            this.message = message;
+        }
     }
 
 }
