@@ -23,7 +23,7 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.apache.bookkeeper</groupId>
-  <version>4.18.0-SNAPSHOT</version>
+  <version>4.19.0-SNAPSHOT</version>
   <artifactId>bookkeeper</artifactId>
   <packaging>pom</packaging>
   <name>Apache BookKeeper :: Parent</name>
@@ -1234,8 +1234,8 @@
               <include>src/main/groovy/**/*.groovy</include>
               <include>src/test/groovy/**/*.groovy</include>
             </includes>
-            <importOrder/>
-            <removeSemicolons/>
+            <importOrder />
+            <removeSemicolons />
           </groovy>
         </configuration>
       </plugin>
