@@ -38,6 +38,7 @@ import java.util.stream.IntStream;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Before;
@@ -190,5 +191,50 @@ public class SortedLedgerStorageTest {
                 return arrayList.get(i) == (i * entriesPerWrite);
             }));
         }
+    }
+
+    @Test
+    public void testLastAddConfirmedNotFlushedMissingInLedgerCache() throws Exception {
+        // Use a new ledgerId, so that prior tests don't interfere with this one
+        final long ledgerId = numOfLedgers + 1;
+        final byte[] writeKey = {0x00, 0x00, 0x00, 0x00};
+        final byte[] payload = new byte[3 * Long.BYTES];
+        ByteBuf bb = Unpooled.wrappedBuffer(payload);
+        HandleFactory hf = new HandleFactoryImpl(sortedLedgerStorage);
+        hf.getHandle(ledgerId, writeKey, false);
+
+        bb.setLong(0, ledgerId);
+
+        // Write first entry with invalid LAC
+        bb.setLong(Long.BYTES, 0);
+        bb.setLong(2 * Long.BYTES, BookieProtocol.INVALID_ENTRY_ID);
+        sortedLedgerStorage.addEntry(bb);
+
+        // LAC entry should be both in the memTable and ledger cache
+        final long lac1 = sortedLedgerStorage.getLastAddConfirmed(ledgerId);
+        assertEquals(BookieProtocol.INVALID_ENTRY_ID, lac1);
+
+        // But if the ledger cache is purged...
+        sortedLedgerStorage.removeLedgerCacheEntry(ledgerId);
+
+        // Then the memTable should still be consulted
+        final long lac2 = sortedLedgerStorage.getLastAddConfirmed(ledgerId);
+        assertEquals(BookieProtocol.INVALID_ENTRY_ID, lac2);
+
+        // With a new entry in sortedLedgerStorage...
+        bb.setLong(Long.BYTES, 1);
+        bb.setLong(2 * Long.BYTES, 0);
+        sortedLedgerStorage.addEntry(bb);
+
+        // We should get an updated LAC from the ledger cache
+        final long lac3 = sortedLedgerStorage.getLastAddConfirmed(ledgerId);
+        assertEquals(0, lac3);
+
+        // And once the ledger cache is purged again...
+        sortedLedgerStorage.removeLedgerCacheEntry(ledgerId);
+
+        // We should read from the memTable
+        final long lac4 = sortedLedgerStorage.getLastAddConfirmed(ledgerId);
+        assertEquals(0, lac4);
     }
 }

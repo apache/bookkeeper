@@ -19,6 +19,8 @@
 
 package org.apache.bookkeeper.bookie;
 
+import io.netty.buffer.ByteBuf;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -439,6 +441,26 @@ public class EntryMemTable implements AutoCloseable{
             return null;
         }
         return (EntryKeyValue) result;
+    }
+
+    /**
+     Gets the lastAddConfirmed for a ledger from its highest available entry.
+
+     Returns null if there are no entries for the given ledger
+     */
+    public Long getLastAddConfirmed(long ledgerId) throws IOException {
+        Long lac = null;
+        EntryKeyValue ekv = getLastEntry(ledgerId);
+        if (ekv != null) {
+            ByteBuf bb = ekv.getValueAsByteBuffer();
+            try {
+                bb.skipBytes(2 * Long.BYTES); // Skip ledger and entry id
+                lac = bb.readLong();
+            } finally {
+                ReferenceCountUtil.release(bb);
+            }
+        }
+        return lac;
     }
 
     /**
