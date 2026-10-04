@@ -191,4 +191,58 @@ public class SortedLedgerStorageTest {
             }));
         }
     }
+
+    /**
+     * An unflushed ledger's LAC lives in a FileInfo cache entry. Once that entry is
+     * evicted, the index file still does not exist, so the LAC has to come from the memtable.
+     */
+    @Test
+    public void testGetLastAddConfirmedAfterFileInfoEviction() throws Exception {
+        File tmpDir = File.createTempFile("bkLac", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(tmpDir));
+
+        ServerConfiguration limited = TestBKConfiguration.newServerConfiguration();
+        limited.setEntryLogPerLedgerEnabled(conf.isEntryLogPerLedgerEnabled());
+        limited.setLedgerDirNames(new String[] { tmpDir.toString() });
+        limited.setOpenFileLimit(2);
+        limited.setNumAddWorkerThreads(1);
+        limited.setNumReadWorkerThreads(1);
+        limited.setSkipListSizeLimit(64 * 1024 * 1024);
+
+        LedgerDirsManager dirs = new LedgerDirsManager(limited, limited.getLedgerDirs(),
+                new DiskChecker(limited.getDiskUsageThreshold(), limited.getDiskUsageWarnThreshold()));
+        SortedLedgerStorage storage = new SortedLedgerStorage();
+        storage.initialize(limited, null, dirs, dirs,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            long lac = 3L;
+            int ledgers = 12;
+            for (long ledgerId = 0; ledgerId < ledgers; ledgerId++) {
+                storage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+                ByteBuf entry = Unpooled.buffer(128);
+                entry.writeLong(ledgerId);
+                entry.writeLong(0L);
+                entry.writeLong(lac);
+                entry.writeByte(1);
+                storage.addEntry(entry);
+            }
+            assertEquals("LAC of an unflushed ledger after file-info eviction",
+                    lac, storage.getLastAddConfirmed(0L));
+            storage.flush();
+            assertEquals("LAC still readable after the memtable is flushed",
+                    lac, storage.getLastAddConfirmed(0L));
+            try {
+                storage.getLastAddConfirmed(9_999L);
+                assertTrue("missing ledger should not report a LAC", false);
+            } catch (Bookie.NoLedgerException | Bookie.NoEntryException expected) {
+                // index has no file and the memtable has no entry
+            }
+        } finally {
+            storage.shutdown();
+        }
+    }
 }

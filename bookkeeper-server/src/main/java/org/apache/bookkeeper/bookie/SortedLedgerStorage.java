@@ -240,7 +240,35 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+        try {
+            return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+        } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
+            // Unflushed entries live in the memtable. Evicting the FileInfo drops the
+            // cached LAC, and the index file does not exist until the memtable is flushed.
+            Long lac = lastAddConfirmedFromMemTable(ledgerId);
+            if (lac == null) {
+                // Flushed between the miss and this lookup; ask the index again.
+                return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+            }
+            return lac;
+        }
+    }
+
+    private Long lastAddConfirmedFromMemTable(long ledgerId) throws IOException {
+        EntryKeyValue kv = memTable.getLastEntry(ledgerId);
+        if (kv == null) {
+            return null;
+        }
+        ByteBuf entry = kv.getValueAsByteBuffer();
+        try {
+            if (entry.readableBytes() < 3 * Long.BYTES) {
+                return null;
+            }
+            entry.skipBytes(2 * Long.BYTES);
+            return entry.readLong();
+        } finally {
+            entry.release();
+        }
     }
 
     @Override
