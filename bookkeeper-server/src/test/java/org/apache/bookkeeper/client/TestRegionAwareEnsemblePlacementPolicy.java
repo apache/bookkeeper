@@ -1387,16 +1387,31 @@ public class TestRegionAwareEnsemblePlacementPolicy {
 
     @Test
     public void testBasicReorderReadSequenceWithLocalRegion() throws Exception {
+        prepareNetworkTopologyForReorderTests("region2");
         basicReorderReadSequenceWithLocalRegionTest("region2", false);
     }
 
     @Test
     public void testBasicReorderReadLACSequenceWithLocalRegion() throws Exception {
+        prepareNetworkTopologyForReorderTests("region2");
+        basicReorderReadSequenceWithLocalRegionTest("region2", true);
+    }
+
+    @Test
+    public void testBasicReorderReadSequenceWithLocalRegionConfig() throws Exception {
+        conf.setProperty("reppLocalRegion", "region2");
+        prepareNetworkTopologyForReorderTests("dummyRegion");
+        basicReorderReadSequenceWithLocalRegionTest("region2", false);
+    }
+
+    @Test
+    public void testBasicReorderReadLACSequenceWithLocalRegionConfig() throws Exception {
+        conf.setProperty("reppLocalRegion", "region2");
+        prepareNetworkTopologyForReorderTests("dummyRegion");
         basicReorderReadSequenceWithLocalRegionTest("region2", true);
     }
 
     private void basicReorderReadSequenceWithLocalRegionTest(String myRegion, boolean isReadLAC) throws Exception {
-        prepareNetworkTopologyForReorderTests(myRegion);
         List<BookieId> ensemble = repp.newEnsemble(9, 9, 5, null,
                                                               new HashSet<BookieId>()).getResult();
         assertEquals(9, getNumCoveredRegionsInWriteQuorum(ensemble, 9));
