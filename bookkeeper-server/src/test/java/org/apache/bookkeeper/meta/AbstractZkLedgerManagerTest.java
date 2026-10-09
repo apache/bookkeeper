@@ -845,4 +845,177 @@ public class AbstractZkLedgerManagerTest extends MockZooKeeperTestCase {
             .getData(anyString(), any(Watcher.class), any(DataCallback.class), any());
     }
 
+    @Test
+    public void testLedgerMetadataBucketCacheRefreshesOnChildrenChanged() throws Exception {
+        long ledgerId = 123L;
+        String ledgerPath = "/ledgers/00/0000/L0123";
+        String bucketPath = "/ledgers/00/0000";
+
+        doAnswer(invocationOnMock -> ledgerPath).when(ledgerManager).getLedgerPath(ledgerId);
+        doAnswer(invocationOnMock -> {
+            String ledgerStr = invocationOnMock.getArgument(0);
+            return ledgerStr.endsWith("L0123") ? ledgerId : 124L;
+        }).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0123"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0124"), new Stat());
+        assertTrue(notifyWatchedEvent(EventType.NodeChildrenChanged, KeeperState.SyncConnected, bucketPath));
+        zkCallbackController.advance(Duration.ZERO);
+
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.MISSING,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+    }
+
+    @Test
+    public void testLocalLedgerAddedRefreshesStaleWatchedBucket() throws Exception {
+        long ledgerId = 123L;
+        String ledgerPath = "/ledgers/00/0000/L0123";
+        String bucketPath = "/ledgers/00/0000";
+
+        doAnswer(invocationOnMock -> ledgerPath).when(ledgerManager).getLedgerPath(ledgerId);
+        doAnswer(invocationOnMock -> {
+            String ledgerStr = invocationOnMock.getArgument(0);
+            return ledgerStr.endsWith("L0123") ? ledgerId : 122L;
+        }).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0122"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.MISSING,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0122", "L0123"), new Stat());
+
+        ledgerManager.onLedgerAddedToLocalStorage(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+    }
+
+    @Test
+    public void testLocalLedgerAddedMarksBucketUnknownWhenRefreshFails() throws Exception {
+        long ledgerId = 123L;
+        String ledgerPath = "/ledgers/00/0000/L0123";
+        String bucketPath = "/ledgers/00/0000";
+
+        doAnswer(invocationOnMock -> ledgerPath).when(ledgerManager).getLedgerPath(ledgerId);
+        doAnswer(invocationOnMock -> {
+            String ledgerStr = invocationOnMock.getArgument(0);
+            return ledgerStr.endsWith("L0123") ? ledgerId : 122L;
+        }).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0122"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.MISSING,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.CONNECTIONLOSS.intValue(),
+                Lists.newArrayList(), new Stat());
+
+        ledgerManager.onLedgerAddedToLocalStorage(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.UNKNOWN,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+    }
+
+    @Test
+    public void testLedgerMetadataBucketCacheReturnsUnknownAfterSessionExpired() throws Exception {
+        long ledgerId = 123L;
+        String ledgerPath = "/ledgers/00/0000/L0123";
+        String bucketPath = "/ledgers/00/0000";
+
+        doAnswer(invocationOnMock -> ledgerPath).when(ledgerManager).getLedgerPath(ledgerId);
+        doAnswer(invocationOnMock -> 122L).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0122"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.MISSING,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+
+        notifyWatchedEvent(EventType.None, KeeperState.Expired, bucketPath);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.UNKNOWN,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+    }
+
+    @Test
+    public void testLedgerMetadataBucketCachePrunesInactiveBuckets() throws Exception {
+        long ledgerId = 123L;
+        long inactiveLedgerId = 987L;
+        String bucketPath = "/ledgers/00/0000";
+        String inactiveBucketPath = "/ledgers/00/0001";
+
+        doAnswer(invocationOnMock -> {
+            long id = invocationOnMock.getArgument(0);
+            return id == ledgerId ? bucketPath + "/L0123" : inactiveBucketPath + "/L0987";
+        }).when(ledgerManager).getLedgerPath(anyLong());
+        doAnswer(invocationOnMock -> {
+            String ledgerStr = invocationOnMock.getArgument(0);
+            return ledgerStr.endsWith("L0123") ? ledgerId : inactiveLedgerId;
+        }).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0123"), new Stat());
+        mockGetChildren(inactiveBucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0987"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        ledgerManager.ensureLedgerMetadataBucketWatched(inactiveLedgerId);
+        zkCallbackController.advance(Duration.ZERO);
+
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(inactiveLedgerId));
+
+        ledgerManager.retainLedgerMetadataBucketsForLedgers(Lists.newArrayList(ledgerId));
+
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.UNKNOWN,
+                ledgerManager.lookupLedgerMetadataInCache(inactiveLedgerId));
+    }
+
+    @Test
+    public void testLedgerMetadataBucketCacheMarksDeletedBucketAbsent() throws Exception {
+        long ledgerId = 123L;
+        String ledgerPath = "/ledgers/00/0000/L0123";
+        String bucketPath = "/ledgers/00/0000";
+
+        doAnswer(invocationOnMock -> ledgerPath).when(ledgerManager).getLedgerPath(ledgerId);
+        doAnswer(invocationOnMock -> ledgerId).when(ledgerManager).getLedgerId(anyString());
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.OK.intValue(),
+                Lists.newArrayList("L0123"), new Stat());
+
+        ledgerManager.ensureLedgerMetadataBucketWatched(ledgerId);
+        zkCallbackController.advance(Duration.ZERO);
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.PRESENT,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+
+        mockGetChildren(bucketPath, true, KeeperException.Code.NONODE.intValue(),
+                Lists.newArrayList(), new Stat());
+        assertTrue(notifyWatchedEvent(EventType.NodeDeleted, KeeperState.SyncConnected, bucketPath));
+        zkCallbackController.advance(Duration.ZERO);
+
+        assertEquals(LedgerManager.LedgerMetadataCacheResult.MISSING,
+                ledgerManager.lookupLedgerMetadataInCache(ledgerId));
+    }
+
 }

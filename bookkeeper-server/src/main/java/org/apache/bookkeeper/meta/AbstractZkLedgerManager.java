@@ -33,6 +33,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.LedgerMetadataBuilder;
@@ -83,6 +84,37 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
             new ConcurrentHashMap<Long, Set<LedgerMetadataListener>>();
     // we use this to prevent long stack chains from building up in callbacks
     protected ScheduledExecutorService scheduler;
+    private final ConcurrentMap<String, LedgerMetadataBucketSnapshot> ledgerMetadataBucketSnapshots =
+            new ConcurrentHashMap<>();
+    private final Watcher ledgerMetadataBucketWatcher = event -> {
+        if (Event.EventType.None == event.getType()) {
+            if (Event.KeeperState.Expired == event.getState()) {
+                markLedgerMetadataBucketSnapshotsStale();
+            }
+            return;
+        }
+        if (event.getPath() != null) {
+            refreshLedgerMetadataBucket(event.getPath());
+        }
+    };
+
+    private enum LedgerMetadataBucketState {
+        REFRESHING,
+        WATCHED,
+        ABSENT,
+        STALE
+    }
+
+    private static class LedgerMetadataBucketSnapshot {
+        final String bucketPath;
+        final AtomicBoolean refreshing = new AtomicBoolean(false);
+        volatile LedgerMetadataBucketState state = LedgerMetadataBucketState.STALE;
+        volatile NavigableSet<Long> ledgerIds = new TreeSet<>();
+
+        LedgerMetadataBucketSnapshot(String bucketPath) {
+            this.bucketPath = bucketPath;
+        }
+    }
 
     /**
      * ReadLedgerMetadataTask class.
@@ -209,11 +241,149 @@ public abstract class AbstractZkLedgerManager implements LedgerManager, Watcher 
     protected abstract long getLedgerId(String ledgerPath) throws IOException;
 
     @Override
+    public boolean supportsLedgerMetadataCache() {
+        return true;
+    }
+
+    @Override
+    public void ensureLedgerMetadataBucketWatched(long ledgerId) {
+        String bucketPath = getLedgerMetadataBucketPath(ledgerId);
+        LedgerMetadataBucketSnapshot snapshot = ledgerMetadataBucketSnapshots.computeIfAbsent(
+                bucketPath, LedgerMetadataBucketSnapshot::new);
+        if (snapshot.state == LedgerMetadataBucketState.STALE) {
+            refreshLedgerMetadataBucket(bucketPath);
+        }
+    }
+
+    @Override
+    public void onLedgerAddedToLocalStorage(long ledgerId) {
+        refreshLedgerMetadataBucket(getLedgerMetadataBucketPath(ledgerId));
+    }
+
+    @Override
+    public void retainLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+        Set<String> activeBuckets = new HashSet<>();
+        for (Long ledgerId : ledgerIds) {
+            activeBuckets.add(getLedgerMetadataBucketPath(ledgerId));
+        }
+        ledgerMetadataBucketSnapshots.keySet().retainAll(activeBuckets);
+    }
+
+    @Override
+    public void refreshLedgerMetadataBucketsForLedgers(Iterable<Long> ledgerIds) {
+        Set<String> activeBuckets = new HashSet<>();
+        for (Long ledgerId : ledgerIds) {
+            activeBuckets.add(getLedgerMetadataBucketPath(ledgerId));
+        }
+        for (String bucketPath : activeBuckets) {
+            refreshLedgerMetadataBucketSync(bucketPath);
+        }
+    }
+
+    @Override
+    public LedgerMetadataCacheResult lookupLedgerMetadataInCache(long ledgerId) {
+        String bucketPath = getLedgerMetadataBucketPath(ledgerId);
+        LedgerMetadataBucketSnapshot snapshot = ledgerMetadataBucketSnapshots.get(bucketPath);
+        if (snapshot == null) {
+            return LedgerMetadataCacheResult.UNKNOWN;
+        }
+        if (snapshot.state == LedgerMetadataBucketState.WATCHED) {
+            return snapshot.ledgerIds.contains(ledgerId)
+                    ? LedgerMetadataCacheResult.PRESENT : LedgerMetadataCacheResult.MISSING;
+        }
+        if (snapshot.state == LedgerMetadataBucketState.ABSENT) {
+            return LedgerMetadataCacheResult.MISSING;
+        }
+        return LedgerMetadataCacheResult.UNKNOWN;
+    }
+
+    private String getLedgerMetadataBucketPath(long ledgerId) {
+        String ledgerPath = getLedgerPath(ledgerId);
+        int lastSlash = ledgerPath.lastIndexOf('/');
+        if (lastSlash <= 0) {
+            return ledgerRootPath;
+        }
+        return ledgerPath.substring(0, lastSlash);
+    }
+
+    private void markLedgerMetadataBucketSnapshotsStale() {
+        ledgerMetadataBucketSnapshots.values().forEach(snapshot -> {
+            snapshot.state = LedgerMetadataBucketState.STALE;
+        });
+    }
+
+    private void refreshLedgerMetadataBucket(String bucketPath) {
+        LedgerMetadataBucketSnapshot snapshot = ledgerMetadataBucketSnapshots.computeIfAbsent(
+                bucketPath, LedgerMetadataBucketSnapshot::new);
+        if (!snapshot.refreshing.compareAndSet(false, true)) {
+            return;
+        }
+        snapshot.state = LedgerMetadataBucketState.REFRESHING;
+        zk.getChildren(bucketPath, ledgerMetadataBucketWatcher, (rc, path, ctx, children, stat) -> {
+            try {
+                if (rc == Code.OK.intValue()) {
+                    snapshot.ledgerIds = ledgerListToSet(children, bucketPath);
+                    snapshot.state = LedgerMetadataBucketState.WATCHED;
+                } else if (rc == Code.NONODE.intValue()) {
+                    snapshot.ledgerIds = new TreeSet<>();
+                    snapshot.state = LedgerMetadataBucketState.ABSENT;
+                } else {
+                    log.warn()
+                            .attr("bucketPath", bucketPath)
+                            .attr("rc", Code.get(rc))
+                            .log("Failed to refresh ledger metadata bucket");
+                    snapshot.state = LedgerMetadataBucketState.STALE;
+                }
+            } catch (Throwable t) {
+                log.warn()
+                        .attr("bucketPath", bucketPath)
+                        .exception(t)
+                        .log("Exception while refreshing ledger metadata bucket");
+                snapshot.state = LedgerMetadataBucketState.STALE;
+            } finally {
+                snapshot.refreshing.set(false);
+            }
+        }, null);
+    }
+
+    private void refreshLedgerMetadataBucketSync(String bucketPath) {
+        LedgerMetadataBucketSnapshot snapshot = ledgerMetadataBucketSnapshots.computeIfAbsent(
+                bucketPath, LedgerMetadataBucketSnapshot::new);
+        snapshot.refreshing.set(true);
+        snapshot.state = LedgerMetadataBucketState.REFRESHING;
+        try {
+            snapshot.ledgerIds = ledgerListToSet(zk.getChildren(bucketPath, ledgerMetadataBucketWatcher), bucketPath);
+            snapshot.state = LedgerMetadataBucketState.WATCHED;
+        } catch (KeeperException.NoNodeException e) {
+            snapshot.ledgerIds = new TreeSet<>();
+            snapshot.state = LedgerMetadataBucketState.ABSENT;
+        } catch (KeeperException e) {
+            log.warn()
+                    .attr("bucketPath", bucketPath)
+                    .attr("rc", e.code())
+                    .log("Failed to refresh ledger metadata bucket");
+            snapshot.state = LedgerMetadataBucketState.STALE;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            snapshot.state = LedgerMetadataBucketState.STALE;
+        } catch (Throwable t) {
+            log.warn()
+                    .attr("bucketPath", bucketPath)
+                    .exception(t)
+                    .log("Exception while refreshing ledger metadata bucket");
+            snapshot.state = LedgerMetadataBucketState.STALE;
+        } finally {
+            snapshot.refreshing.set(false);
+        }
+    }
+
+    @Override
     public void process(WatchedEvent event) {
         log.debug().attr("event", event).log("Received watched event from zookeeper based ledger manager");
         if (Event.EventType.None == event.getType()) {
             if (Event.KeeperState.Expired == event.getState()) {
-                log.info("ZooKeeper client expired on ledger manager.");
+                log.info("ZooKeeper client expired on ledger manager");
+                markLedgerMetadataBucketSnapshotsStale();
                 Set<Long> keySet = new HashSet<Long>(listeners.keySet());
                 for (Long lid : keySet) {
                     scheduler.submit(new ReadLedgerMetadataTask(lid));
