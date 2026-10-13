@@ -240,21 +240,28 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        // The index can still expose the committed LAC while a newer entry is in the memtable.
         Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
         try {
             long persistedLac = interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
-            if (memTableLac == null) {
+            if (memTableLac == null || memTableLac <= persistedLac) {
                 return persistedLac;
             }
-            return Math.max(persistedLac, memTableLac);
+            try {
+                return interleavedLedgerStorage.ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
+            } catch (Bookie.NoLedgerException e) {
+                return memTableLac;
+            }
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
             // Recheck after the miss because the memtable can flush while the index is read.
             Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
             if (latestMemTableLac == null) {
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
             }
-            return latestMemTableLac;
+            try {
+                return interleavedLedgerStorage.ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
+            } catch (Bookie.NoLedgerException e2) {
+                return latestMemTableLac;
+            }
         }
     }
 
