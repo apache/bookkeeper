@@ -23,6 +23,7 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -34,7 +35,6 @@ import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PrimitiveIterator.OfLong;
@@ -198,8 +198,7 @@ public class SortedLedgerStorageTest {
     }
 
     /**
-     * An unflushed ledger's LAC lives in a FileInfo cache entry. Once that entry is
-     * evicted, the index file still does not exist, so the LAC has to come from the memtable.
+     * A newer memtable LAC must remain visible after an evicted FileInfo is flushed.
      */
     @Test
     public void testGetLastAddConfirmedAfterFileInfoEviction() throws Exception {
@@ -218,58 +217,47 @@ public class SortedLedgerStorageTest {
 
         LedgerDirsManager dirs = new LedgerDirsManager(limited, limited.getLedgerDirs(),
                 new DiskChecker(limited.getDiskUsageThreshold(), limited.getDiskUsageWarnThreshold()));
-        SortedLedgerStorage storage = new SortedLedgerStorage();
+        InterleavedLedgerStorage underlying = new InterleavedLedgerStorage();
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
         storage.initialize(limited, null, dirs, dirs,
                 statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
-        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointSource(CheckpointSource.DEFAULT);
         storage.setCheckpointer(checkpointer);
         try {
-            long lac = 3L;
-            int ledgers = 12;
-            for (long ledgerId = 0; ledgerId < ledgers; ledgerId++) {
-                storage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+            long ledgerId = 0L;
+            storage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+            for (long entryId = 0; entryId < 5; entryId++) {
                 ByteBuf entry = Unpooled.buffer(128);
                 entry.writeLong(ledgerId);
-                entry.writeLong(0L);
-                entry.writeLong(lac);
+                entry.writeLong(entryId);
+                entry.writeLong(entryId - 1);
                 entry.writeByte(1);
                 storage.addEntry(entry);
             }
-            assertEquals("LAC of an unflushed ledger after file-info eviction",
-                    lac, storage.getLastAddConfirmed(0L));
             storage.flush();
-            assertEquals("LAC still readable after the memtable is flushed",
-                    lac, storage.getLastAddConfirmed(0L));
-            try {
-                storage.getLastAddConfirmed(9_999L);
-                assertTrue("missing ledger should not report a LAC", false);
-            } catch (Bookie.NoLedgerException | Bookie.NoEntryException expected) {
-                // index has no file and the memtable has no entry
+
+            for (long entryId = 5; entryId < 10; entryId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                entry.writeLong(ledgerId);
+                entry.writeLong(entryId);
+                entry.writeLong(entryId - 1);
+                entry.writeByte(1);
+                storage.addEntry(entry);
             }
-        } finally {
-            storage.shutdown();
-        }
-    }
+            LedgerCacheImpl ledgerCache = (LedgerCacheImpl) underlying.ledgerCache;
+            IndexPersistenceMgr indexPersistenceManager = ledgerCache.getIndexPersistenceManager();
+            indexPersistenceManager.readFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.writeFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.readFileInfoCache.cleanUp();
+            indexPersistenceManager.writeFileInfoCache.cleanUp();
 
-    /**
-     * A committed LAC can be stale while a newer entry is still in the memtable.
-     */
-    @Test
-    public void testGetLastAddConfirmedPrefersMemTableForExistingLedger() throws Exception {
-        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
-        when(underlying.getLastAddConfirmed(0L)).thenReturn(0L);
-        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
-        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
-        storage.setCheckpointSource(checkpointSource);
-        storage.setCheckpointer(checkpointer);
-        try {
-            ByteBuffer entry = ByteBuffer.allocate(3 * Long.BYTES);
-            entry.putLong(0L).putLong(1L).putLong(1L).flip();
-            storage.memTable.addEntry(0L, 1L, entry, storage);
-
-            assertEquals("unflushed LAC must not be replaced by the committed value",
-                    1L, storage.getLastAddConfirmed(0L));
+            assertEquals("LAC of an evicted ledger must include newer memtable entries",
+                    8L, storage.getLastAddConfirmed(ledgerId));
+            storage.flush();
+            assertTrue("memtable must be empty after a real flush", storage.memTable.isEmpty());
+            assertEquals("LAC must not move backwards after the memtable is flushed",
+                    8L, storage.getLastAddConfirmed(ledgerId));
+            assertThrows(Bookie.NoLedgerException.class, () -> storage.getLastAddConfirmed(9_999L));
         } finally {
             storage.shutdown();
         }
