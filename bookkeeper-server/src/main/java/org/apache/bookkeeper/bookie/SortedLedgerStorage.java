@@ -263,7 +263,7 @@ public class SortedLedgerStorage
         try {
             return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
-            // Recheck after the miss because the memtable can flush while the index is read.
+            // An entry may have been added after the memtable check above.
             Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
             if (latestMemTableLac == null) {
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
