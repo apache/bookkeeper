@@ -24,12 +24,17 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PrimitiveIterator.OfLong;
@@ -241,6 +246,49 @@ public class SortedLedgerStorageTest {
             } catch (Bookie.NoLedgerException | Bookie.NoEntryException expected) {
                 // index has no file and the memtable has no entry
             }
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    /**
+     * A committed LAC can be stale while a newer entry is still in the memtable.
+     */
+    @Test
+    public void testGetLastAddConfirmedPrefersMemTableForExistingLedger() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        when(underlying.getLastAddConfirmed(0L)).thenReturn(0L);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            ByteBuffer entry = ByteBuffer.allocate(3 * Long.BYTES);
+            entry.putLong(0L).putLong(1L).putLong(1L).flip();
+            storage.memTable.addEntry(0L, 1L, entry, storage);
+
+            assertEquals("unflushed LAC must not be replaced by the committed value",
+                    1L, storage.getLastAddConfirmed(0L));
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedRetriesAfterIndexMiss() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        when(underlying.getLastAddConfirmed(0L))
+                .thenThrow(new Bookie.NoEntryException(0L, -1L))
+                .thenReturn(1L);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            assertEquals(1L, storage.getLastAddConfirmed(0L));
+            verify(underlying, times(2)).getLastAddConfirmed(0L);
         } finally {
             storage.shutdown();
         }
