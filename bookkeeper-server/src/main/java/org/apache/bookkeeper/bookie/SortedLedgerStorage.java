@@ -240,17 +240,28 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
+        LedgerCache ledgerCache = interleavedLedgerStorage.getLedgerCache();
+        Long cachedLac;
         try {
-            long persistedLac = interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
-            if (memTableLac == null || memTableLac <= persistedLac) {
-                return persistedLac;
-            }
+            cachedLac = ledgerCache.getLastAddConfirmed(ledgerId);
+        } catch (Bookie.NoLedgerException e) {
+            cachedLac = null;
+        }
+        if (cachedLac != null) {
+            return cachedLac;
+        }
+
+        Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
+        if (memTableLac != null) {
             try {
-                return interleavedLedgerStorage.ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
+                return ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
             } catch (Bookie.NoLedgerException e) {
                 return memTableLac;
             }
+        }
+
+        try {
+            return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
             // Recheck after the miss because the memtable can flush while the index is read.
             Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
@@ -258,7 +269,7 @@ public class SortedLedgerStorage
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
             }
             try {
-                return interleavedLedgerStorage.ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
+                return ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
             } catch (Bookie.NoLedgerException e2) {
                 return latestMemTableLac;
             }
