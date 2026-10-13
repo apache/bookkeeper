@@ -26,6 +26,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -297,7 +298,7 @@ public class SortedLedgerStorageTest {
                 statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
         storage.setCheckpointSource(checkpointSource);
         storage.setCheckpointer(checkpointer);
-        EntryMemTable memTable = mock(EntryMemTable.class);
+        EntryMemTable memTable = spy(storage.memTable);
         storage.memTable = memTable;
         try {
             assertEquals(8L, storage.getLastAddConfirmed(0L));
