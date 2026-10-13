@@ -240,17 +240,21 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
+        // The index can still expose the committed LAC while a newer entry is in the memtable.
+        Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
         try {
-            return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+            long persistedLac = interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+            if (memTableLac == null) {
+                return persistedLac;
+            }
+            return Math.max(persistedLac, memTableLac);
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
-            // Unflushed entries live in the memtable. Evicting the FileInfo drops the
-            // cached LAC, and the index file does not exist until the memtable is flushed.
-            Long lac = lastAddConfirmedFromMemTable(ledgerId);
-            if (lac == null) {
-                // Flushed between the miss and this lookup; ask the index again.
+            // Recheck after the miss because the memtable can flush while the index is read.
+            Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
+            if (latestMemTableLac == null) {
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
             }
-            return lac;
+            return latestMemTableLac;
         }
     }
 
