@@ -23,6 +23,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -467,6 +468,37 @@ public class EntryMemTableTest implements CacheCallback, SkipListFlusher, Checkp
         memTable.flush(this);
         assertEquals(memTable.kvmap.size(), 0);
         assertEquals(memTable.skipListSemaphore.availablePermits(), initialPermits);
+    }
+
+    @Test
+    public void testFindingLastEntryWithMetadata() throws IOException {
+        // EntryMemTable used to suffer from integer overflow when
+        // attempting to find the last entry in a ledger with metadata
+        // present. This test triggered the bug, and ensures that the
+        // bug does not re-surface.
+        final long testLedgerCount = 8 * 1024;
+        final byte[] payload = new byte[0]; // Payload does not matter for this test.
+
+        for (long i = 0; i < testLedgerCount; i++) {
+            // Our pathological case involves opening and immediately fencing a single-entry ledger.
+            // We do have metadata on these ledgers, though. This is a critical, bug-triggering detail.
+            memTable.addEntry(i, BookieImpl.METAENTRY_ID_LEDGER_KEY, ByteBuffer.wrap(payload), this);
+            memTable.addEntry(i, 0, ByteBuffer.wrap(payload), this);
+        }
+
+        for (long i = 0; i < testLedgerCount; i++) {
+            final EntryKeyValue ekv = memTable.getLastEntry(i);
+            assertNotNull(String.format("Null entry for ledger %d", i), ekv);
+            assertEquals(String.format("Wrong ledger ID at ledger %d", i), i, ekv.getLedgerId());
+            assertEquals(String.format("Wrong last entry ID at ledger %d", i), 0, ekv.getEntryId());
+        }
+    }
+
+    @Test
+    public void testAddEntryOverHighestPossibleEntry() {
+        assertThrows("entryId above highest allowed value", IOException.class, () -> {
+            memTable.addEntry(1, EntryMemTable.HIGHEST_POSSIBLE_ENTRY_ID + 1, ByteBuffer.wrap(new byte[0]), this);
+        });
     }
 }
 
