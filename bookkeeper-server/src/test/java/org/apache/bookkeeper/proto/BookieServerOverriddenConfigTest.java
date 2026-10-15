@@ -22,6 +22,7 @@
 package org.apache.bookkeeper.proto;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
@@ -84,6 +85,17 @@ public class BookieServerOverriddenConfigTest {
         conf.setProperty("brokerServicePort", "6650");
 
         assertTrue(BookieServer.overriddenConfig(conf).isEmpty());
+    }
+
+    @Test
+    public void testSensitiveValuesAreMasked() {
+        ServerConfiguration conf = new ServerConfiguration();
+        conf.setHttpServerKeyStorePassword("hunter2");
+
+        Map<String, Object> overrides = BookieServer.overriddenConfig(conf);
+
+        assertEquals("******", overrides.get("httpServerKeyStorePassword"));
+        assertFalse(overrides.toString().contains("hunter2"));
     }
 
     @Test

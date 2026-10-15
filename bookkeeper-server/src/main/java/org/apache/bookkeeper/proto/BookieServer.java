@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 import lombok.CustomLog;
 import org.apache.bookkeeper.bookie.Bookie;
 import org.apache.bookkeeper.bookie.BookieCriticalThread;
@@ -82,6 +83,9 @@ public class BookieServer {
 
     // Exception handler
     private volatile UncaughtExceptionHandler uncaughtExceptionHandler = null;
+
+    // configuration keys whose values must not be logged
+    private static final Pattern SENSITIVE_KEY = Pattern.compile("password|secret|token", Pattern.CASE_INSENSITIVE);
 
     public BookieServer(ServerConfiguration conf,
                         Bookie bookie,
@@ -233,8 +237,9 @@ public class BookieServer {
      * <p>The defaults are not stored in the configuration but encoded in the {@link ServerConfiguration}
      * getters, so every getter is invoked on both {@code conf} and an empty configuration, recording the
      * keys it reads. When the two results differ, the recorded keys that are explicitly set in {@code conf}
-     * are reported. Keys that no getter reads (settings of other components, or unrelated entries loaded
-     * from a shared properties file) are not reported.
+     * are reported, with the value masked when the key looks like a secret. Keys that no getter reads
+     * (settings of other components, or unrelated entries loaded from a shared properties file) are not
+     * reported.
      *
      * <p>Since every public {@code get*}/{@code is*} getter of {@link ServerConfiguration} is invoked
      * reflectively here on each bookie start, those getters must remain side-effect free and cheap.
@@ -257,7 +262,7 @@ public class BookieServer {
             keys.addAll(defaults.keys);
             for (String key : keys) {
                 if (conf.containsKey(key)) {
-                    overrides.put(key, conf.getProperty(key));
+                    overrides.put(key, SENSITIVE_KEY.matcher(key).find() ? "******" : conf.getProperty(key));
                 }
             }
         }
