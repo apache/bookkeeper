@@ -235,6 +235,9 @@ public class BookieServer {
      * keys it reads. When the two results differ, the recorded keys that are explicitly set in {@code conf}
      * are reported. Keys that no getter reads (settings of other components, or unrelated entries loaded
      * from a shared properties file) are not reported.
+     *
+     * <p>Since every public {@code get*}/{@code is*} getter of {@link ServerConfiguration} is invoked
+     * reflectively here on each bookie start, those getters must remain side-effect free and cheap.
      */
     @VisibleForTesting
     static Map<String, Object> overriddenConfig(ServerConfiguration conf) {
