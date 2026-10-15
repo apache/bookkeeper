@@ -245,10 +245,19 @@ public class SortedLedgerStorage
         try {
             cachedLac = ledgerCache.getLastAddConfirmed(ledgerId);
         } catch (Bookie.NoLedgerException e) {
+            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+                throw e;
+            }
             cachedLac = null;
         }
         if (cachedLac != null) {
+            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+                throw new Bookie.NoLedgerException(ledgerId);
+            }
             return cachedLac;
+        }
+        if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+            throw new Bookie.NoLedgerException(ledgerId);
         }
 
         Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
@@ -256,6 +265,9 @@ public class SortedLedgerStorage
             try {
                 return ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
             } catch (Bookie.NoLedgerException e) {
+                if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+                    throw e;
+                }
                 return memTableLac;
             }
         }
@@ -264,6 +276,9 @@ public class SortedLedgerStorage
             return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
             // An entry may have been added after the memtable check above.
+            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+                throw e;
+            }
             Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
             if (latestMemTableLac == null) {
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
@@ -271,6 +286,9 @@ public class SortedLedgerStorage
             try {
                 return ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
             } catch (Bookie.NoLedgerException e2) {
+                if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
+                    throw e2;
+                }
                 return latestMemTableLac;
             }
         }
