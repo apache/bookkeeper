@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +48,7 @@ import org.rocksdb.ColumnFamilyOptions;
 import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Options;
+import org.rocksdb.SstFileReader;
 
 public class KeyValueStorageRocksDBTest {
 
@@ -93,6 +95,47 @@ public class KeyValueStorageRocksDBTest {
                         assertEquals("SST must be readable by RocksDB 7.9.2: " + sst, 5, format);
                     }
                 }
+            }
+        }
+    }
+
+    @Test
+    public void testEntryLocationPartitionedIndexAndFilters() throws Exception {
+        File directory = temporaryFolder.newFolder();
+        ServerConfiguration configuration = new ServerConfiguration();
+        configuration.setEntryLocationRocksdbConf(new File(directory, "entry.conf").toString());
+        assertEntryLocationSstLayout(configuration, true);
+
+        configuration.setProperty("dbStorage_rocksDB_partitionedIndexAndFiltersEnabled", false);
+        assertEntryLocationSstLayout(configuration, false);
+
+        configuration = new ServerConfiguration();
+        configuration.setEntryLocationRocksdbConf(
+                getClass().getClassLoader().getResource("conf/entry_location_rocksdb.conf").getPath());
+        assertEntryLocationSstLayout(configuration, true);
+    }
+
+    private void assertEntryLocationSstLayout(ServerConfiguration configuration, boolean partitioned)
+            throws Exception {
+        File directory = temporaryFolder.newFolder();
+        try (KeyValueStorageRocksDB storage = new KeyValueStorageRocksDB(
+                directory.toString(), "db", KeyValueStorageFactory.DbConfigType.EntryLocation, configuration)) {
+            storage.put(new byte[]{1}, new byte[]{2});
+            storage.compact();
+            List<Path> ssts;
+            try (Stream<Path> files = Files.list(directory.toPath().resolve("db"))) {
+                ssts = files.filter(path -> path.toString().endsWith(".sst")).collect(Collectors.toList());
+            }
+            assertTrue("Compaction must produce an SST", !ssts.isEmpty());
+            for (Path sst : ssts) {
+                try (Options options = new Options(); SstFileReader reader = new SstFileReader(options)) {
+                    reader.open(sst.toString());
+                    assertEquals(partitioned, reader.getTableProperties().getIndexPartitions() > 0);
+                }
+                // The metaindex block is not compressed and names the filter block by its kind.
+                String content = new String(Files.readAllBytes(sst), StandardCharsets.ISO_8859_1);
+                assertEquals(partitioned, content.contains("partitionedfilter."));
+                assertEquals(!partitioned, content.contains("fullfilter."));
             }
         }
     }
