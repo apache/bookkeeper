@@ -234,6 +234,7 @@ The table below lists parameters that you can set to configure bookies. All conf
 | dbStorage_rocksDB_sstSizeInMB | Size of RocksDB sst file size in MB. RocksDB is used for storing ledger indexes.<br /> | 64 | 
 | dbStorage_rocksDB_blockSize |  | 65536 | 
 | dbStorage_rocksDB_bloomFilterBitsPerKey |  | 10 | 
+| dbStorage_rocksDB_partitionedIndexAndFiltersEnabled | Partition the index and Bloom filter blocks of each SST file and pin only their small top-level blocks. Without partitioning, the filter block of a large SST file can exceed a block cache shard and be read again on every lookup. | true | 
 | dbStorage_rocksDB_numLevels |  | -1 | 
 | dbStorage_rocksDB_numFilesInLevel0 |  | 10 | 
 | dbStorage_rocksDB_maxSizeInLevel1MB |  | 256 | 

@@ -51,6 +51,7 @@ import org.rocksdb.ColumnFamilyHandle;
 import org.rocksdb.CompressionType;
 import org.rocksdb.DBOptions;
 import org.rocksdb.Env;
+import org.rocksdb.IndexType;
 import org.rocksdb.InfoLogLevel;
 import org.rocksdb.LRUCache;
 import org.rocksdb.LiveFileMetaData;
@@ -99,6 +100,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
     private static final String ROCKSDB_SST_SIZE_MB = "dbStorage_rocksDB_sstSizeInMB";
     private static final String ROCKSDB_BLOCK_SIZE = "dbStorage_rocksDB_blockSize";
     private static final String ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY = "dbStorage_rocksDB_bloomFilterBitsPerKey";
+    private static final String ROCKSDB_PARTITIONED_INDEX_AND_FILTERS_ENABLED =
+            "dbStorage_rocksDB_partitionedIndexAndFiltersEnabled";
     private static final String ROCKSDB_BLOCK_CACHE_SIZE = "dbStorage_rocksDB_blockCacheSize";
     private static final String ROCKSDB_NUM_LEVELS = "dbStorage_rocksDB_numLevels";
     private static final String ROCKSDB_NUM_FILES_IN_LEVEL0 = "dbStorage_rocksDB_numFilesInLevel0";
@@ -204,6 +207,8 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
             int blockSize = conf.getInt(ROCKSDB_BLOCK_SIZE, 64 * 1024);
             int bloomFilterBitsPerKey = conf.getInt(ROCKSDB_BLOOM_FILTERS_BITS_PER_KEY, 10);
             boolean lz4CompressionEnabled = conf.getBoolean(ROCKSDB_LZ4_COMPRESSION_ENABLED, true);
+            boolean partitionedIndexAndFiltersEnabled =
+                    conf.getBoolean(ROCKSDB_PARTITIONED_INDEX_AND_FILTERS_ENABLED, true);
 
             if (lz4CompressionEnabled) {
                 options.setCompressionType(CompressionType.LZ4_COMPRESSION);
@@ -234,6 +239,14 @@ public class KeyValueStorageRocksDB implements KeyValueStorage {
 
             // Options best suited for HDDs
             tableOptions.setCacheIndexAndFilterBlocks(true);
+            if (partitionedIndexAndFiltersEnabled) {
+                // The full filter of a 64 MiB SST is several MiB, larger than one block cache shard: the LRU
+                // cache drops it as soon as it is released and every lookup reads it again. Partitioned
+                // index and filter blocks are ~4 KiB each; only the small top-level blocks are pinned.
+                tableOptions.setIndexType(IndexType.kTwoLevelIndexSearch);
+                tableOptions.setPartitionFilters(true);
+                tableOptions.setPinTopLevelIndexAndFilter(true);
+            }
             options.setLevelCompactionDynamicLevelBytes(true);
 
             options.setTableFormatConfig(tableOptions);
