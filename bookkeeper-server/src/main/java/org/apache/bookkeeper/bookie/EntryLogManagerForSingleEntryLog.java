@@ -102,7 +102,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
         boolean createNewLog = shouldCreateNewEntryLog.get();
         if (createNewLog || reachEntryLogLimit) {
             if (activeLogChannel != null) {
-                activeLogChannel.flushAndForceWriteIfRegularFlush(false);
+                flushAndForceWriteIfRegularFlush(activeLogChannel, false);
             }
             createNewLog(UNASSIGNED_LEDGERID,
                 ": createNewLog = " + createNewLog + ", reachEntryLogLimit = " + reachEntryLogLimit);
@@ -188,7 +188,7 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
         while (chIter.hasNext()) {
             BufferedLogChannel channel = chIter.next();
             try {
-                channel.flushAndForceWrite(true);
+                flushAndForceWrite(channel, true);
             } catch (IOException ioe) {
                 // rescue from flush exception, add unflushed channels back
                 synchronized (this) {
@@ -221,6 +221,16 @@ class EntryLogManagerForSingleEntryLog extends EntryLogManagerBase {
     @Override
     public void forceClose() {
         IOUtils.close(log, activeLogChannel);
+        List<BufferedLogChannel> rotatedChannels;
+        synchronized (this) {
+            rotatedChannels = rotatedLogChannels;
+            rotatedLogChannels = new LinkedList<BufferedLogChannel>();
+        }
+        if (rotatedChannels != null) {
+            for (BufferedLogChannel channel : rotatedChannels) {
+                IOUtils.close(log, channel);
+            }
+        }
     }
 
     @Override

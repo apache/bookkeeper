@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
+import org.apache.bookkeeper.bookie.LedgerDirsManager.LedgerDirsListener;
 
 interface EntryLogManager {
 
@@ -65,6 +66,11 @@ interface EntryLogManager {
      * force close current logs.
      */
     void forceClose();
+
+    /*
+     * notify the owning bookie when entry-log-level writes become fatal.
+     */
+    void setFatalErrorListener(LedgerDirsListener fatalErrorListener);
 
     /*
      * prepare entrylogger/entrylogmanager before doing SortedLedgerStorage
