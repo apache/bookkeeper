@@ -23,13 +23,20 @@ package org.apache.bookkeeper.bookie;
 import static org.apache.bookkeeper.bookie.BookKeeperServerStats.BOOKIE_SCOPE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.buffer.UnpooledByteBufAllocator;
 import java.io.File;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.PrimitiveIterator.OfLong;
@@ -189,6 +196,191 @@ public class SortedLedgerStorageTest {
             assertTrue("Entries of Ledger", IntStream.range(0, arrayList.size()).allMatch(i -> {
                 return arrayList.get(i) == (i * entriesPerWrite);
             }));
+        }
+    }
+
+    /**
+     * A newer memtable LAC must remain visible after an evicted FileInfo is flushed.
+     */
+    @Test
+    public void testGetLastAddConfirmedAfterFileInfoEviction() throws Exception {
+        File tmpDir = File.createTempFile("bkLac", ".dir");
+        tmpDir.delete();
+        tmpDir.mkdir();
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(tmpDir));
+
+        ServerConfiguration limited = TestBKConfiguration.newServerConfiguration();
+        limited.setEntryLogPerLedgerEnabled(conf.isEntryLogPerLedgerEnabled());
+        limited.setLedgerDirNames(new String[] { tmpDir.toString() });
+        limited.setOpenFileLimit(2);
+        limited.setNumAddWorkerThreads(1);
+        limited.setNumReadWorkerThreads(1);
+        limited.setSkipListSizeLimit(64 * 1024 * 1024);
+
+        LedgerDirsManager dirs = new LedgerDirsManager(limited, limited.getLedgerDirs(),
+                new DiskChecker(limited.getDiskUsageThreshold(), limited.getDiskUsageWarnThreshold()));
+        InterleavedLedgerStorage underlying = new InterleavedLedgerStorage();
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(limited, null, dirs, dirs,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(CheckpointSource.DEFAULT);
+        storage.setCheckpointer(checkpointer);
+        try {
+            long ledgerId = 0L;
+            storage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+            for (long entryId = 0; entryId < 5; entryId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                try {
+                    entry.writeLong(ledgerId);
+                    entry.writeLong(entryId);
+                    entry.writeLong(entryId - 1);
+                    entry.writeByte(1);
+                    storage.addEntry(entry);
+                } finally {
+                    entry.release();
+                }
+            }
+            storage.flush();
+
+            for (long entryId = 5; entryId < 10; entryId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                try {
+                    entry.writeLong(ledgerId);
+                    entry.writeLong(entryId);
+                    entry.writeLong(entryId - 1);
+                    entry.writeByte(1);
+                    storage.addEntry(entry);
+                } finally {
+                    entry.release();
+                }
+            }
+            LedgerCacheImpl ledgerCache = (LedgerCacheImpl) underlying.ledgerCache;
+            IndexPersistenceMgr indexPersistenceManager = ledgerCache.getIndexPersistenceManager();
+            indexPersistenceManager.readFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.writeFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.readFileInfoCache.cleanUp();
+            indexPersistenceManager.writeFileInfoCache.cleanUp();
+
+            assertEquals("LAC of an evicted ledger must include newer memtable entries",
+                    8L, storage.getLastAddConfirmed(ledgerId));
+            storage.flush();
+            assertTrue("memtable must be empty after a real flush", storage.memTable.isEmpty());
+            assertEquals("LAC must not move backwards after the memtable is flushed",
+                    8L, storage.getLastAddConfirmed(ledgerId));
+            assertThrows(Bookie.NoLedgerException.class, () -> storage.getLastAddConfirmed(9_999L));
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedRetriesAfterIndexMiss() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        LedgerCache ledgerCache = mock(LedgerCache.class);
+        when(underlying.getLedgerCache()).thenReturn(ledgerCache);
+        when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(null);
+        when(underlying.ledgerExists(0L)).thenReturn(true);
+        when(underlying.getLastAddConfirmed(0L))
+                .thenThrow(new Bookie.NoEntryException(0L, -1L))
+                .thenReturn(1L);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            assertEquals(1L, storage.getLastAddConfirmed(0L));
+            verify(underlying, times(2)).getLastAddConfirmed(0L);
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedUsesCachedValueBeforeMemTable() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        LedgerCache ledgerCache = mock(LedgerCache.class);
+        when(underlying.getLedgerCache()).thenReturn(ledgerCache);
+        when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(8L);
+        when(underlying.ledgerExists(0L)).thenReturn(true);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        EntryMemTable memTable = spy(storage.memTable);
+        storage.memTable = memTable;
+        try {
+            assertEquals(8L, storage.getLastAddConfirmed(0L));
+            verify(memTable, times(0)).getLastEntry(0L);
+            verify(underlying, times(0)).getLastAddConfirmed(0L);
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedRejectsCachedValueForDeletedLedger() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        LedgerCache ledgerCache = mock(LedgerCache.class);
+        when(underlying.getLedgerCache()).thenReturn(ledgerCache);
+        when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(8L);
+        when(underlying.ledgerExists(0L)).thenReturn(false);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            assertThrows(Bookie.NoLedgerException.class, () -> storage.getLastAddConfirmed(0L));
+            verify(underlying, times(1)).ledgerExists(0L);
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedFallsBackToMemTableWhenCacheMisses() throws Exception {
+        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
+        LedgerCache ledgerCache = mock(LedgerCache.class);
+        when(underlying.getLedgerCache()).thenReturn(ledgerCache);
+        when(ledgerCache.getLastAddConfirmed(0L)).thenThrow(new Bookie.NoLedgerException(0L));
+        when(underlying.ledgerExists(0L)).thenReturn(true);
+        when(ledgerCache.updateLastAddConfirmed(0L, 8L)).thenReturn(8L);
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
+                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+        storage.setCheckpointSource(checkpointSource);
+        storage.setCheckpointer(checkpointer);
+        try {
+            ByteBuffer entry = ByteBuffer.allocate(3 * Long.BYTES);
+            entry.putLong(0L).putLong(9L).putLong(8L).flip();
+            storage.memTable.addEntry(0L, 9L, entry, storage);
+
+            assertEquals(8L, storage.getLastAddConfirmed(0L));
+            verify(ledgerCache).updateLastAddConfirmed(0L, 8L);
+            verify(underlying, times(0)).getLastAddConfirmed(0L);
+        } finally {
+            storage.shutdown();
+        }
+    }
+
+    @Test
+    public void testGetLastAddConfirmedDoesNotReadDeletedLedgerFromMemTable() throws Exception {
+        long ledgerId = 0L;
+        sortedLedgerStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+        ByteBuf entry = Unpooled.buffer(128);
+        entry.writeLong(ledgerId);
+        entry.writeLong(0L);
+        entry.writeLong(-1L);
+        entry.writeByte(1);
+        try {
+            sortedLedgerStorage.addEntry(entry);
+            sortedLedgerStorage.deleteLedger(ledgerId);
+            assertThrows(Bookie.NoLedgerException.class,
+                    () -> sortedLedgerStorage.getLastAddConfirmed(ledgerId));
+        } finally {
+            entry.release();
         }
     }
 }
