@@ -25,6 +25,7 @@ import static org.apache.bookkeeper.bookie.BookKeeperServerStats.STORAGE_SCRUB_P
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -46,6 +47,7 @@ import java.util.stream.IntStream;
 import org.apache.bookkeeper.bookie.CheckpointSource.Checkpoint;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
+import org.apache.bookkeeper.proto.BookieProtocol;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider;
@@ -143,6 +145,11 @@ public class InterleavedLedgerStorageTest {
     final long entriesPerWrite = 2;
     final long numOfLedgers = 5;
 
+    private void prepareLedger(final long ledgerId) throws IOException {
+        interleavedStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+        interleavedStorage.setFenced(ledgerId);
+    }
+
     @Before
     public void setUp() throws Exception {
         File tmpDir = File.createTempFile("bkTest", ".dir");
@@ -167,8 +174,7 @@ public class InterleavedLedgerStorageTest {
         for (long entryId = 0; entryId < numWrites; entryId++) {
             for (long ledgerId = 0; ledgerId < numOfLedgers; ledgerId++) {
                 if (entryId == 0) {
-                    interleavedStorage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
-                    interleavedStorage.setFenced(ledgerId);
+                    this.prepareLedger(ledgerId);
                 }
                 ByteBuf entry = Unpooled.buffer(128);
                 entry.writeLong(ledgerId);
@@ -448,5 +454,59 @@ public class InterleavedLedgerStorageTest {
         // Should fail consistency checker
         res = shell.run(new String[] { "localconsistencycheck" });
         Assert.assertEquals(1, res);
+    }
+
+    @Test
+    public void testGetLastAddConfirmed() throws Exception {
+        final byte[] entry = new byte[Long.BYTES * 3];
+        final ByteBuf bb = Unpooled.wrappedBuffer(entry);
+
+        // Work off of a ledgerId that we haven't already inserted
+        final long ledgerId = this.numOfLedgers + 1;
+        final long entryId = 2;
+        final long lac = 1;
+
+        this.prepareLedger(ledgerId);
+        bb.setLong(0, ledgerId);
+        bb.setLong(Long.BYTES, entryId);
+        bb.setLong(2 * Long.BYTES, lac);
+
+        interleavedStorage.addEntry(bb);
+
+        final long lac1 = interleavedStorage.getLastAddConfirmed(ledgerId);
+        final long lac2 = interleavedStorage.getLastAddConfirmed(ledgerId);
+
+        interleavedStorage.removeLedgerCacheEntry(ledgerId);
+
+        final long lac3 = interleavedStorage.getLastAddConfirmed(ledgerId);
+
+        assertEquals(lac, lac1);
+        assertEquals(lac, lac2);
+        assertEquals(lac, lac3);
+    }
+
+    @Test
+    public void testGetLastAddConfirmedFromLedgerEntry() throws Exception {
+        final byte[] entry = new byte[Long.BYTES * 3];
+        final ByteBuf bb = Unpooled.wrappedBuffer(entry);
+
+        // Work off of a ledgerId that we haven't already inserted
+        final long ledgerId = this.numOfLedgers + 2;
+        final long entryId = 2;
+        final long lac = 1;
+
+        this.prepareLedger(ledgerId);
+        bb.setLong(0, ledgerId);
+        bb.setLong(Long.BYTES, entryId);
+        bb.setLong(2 * Long.BYTES, lac);
+
+        assertThrows("Entry 0 not found", Bookie.NoEntryException.class, () -> {
+            interleavedStorage.getLastAddConfirmedFromLedgerEntry(ledgerId);
+        });
+
+        interleavedStorage.addEntry(bb);
+
+        final long lac2 = interleavedStorage.getLastAddConfirmedFromLedgerEntry(ledgerId);
+        assertEquals(lac, lac2);
     }
 }
