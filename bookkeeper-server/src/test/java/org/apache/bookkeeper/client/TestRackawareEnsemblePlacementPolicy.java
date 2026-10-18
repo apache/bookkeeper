@@ -2481,7 +2481,7 @@ public class TestRackawareEnsemblePlacementPolicy extends TestCase {
         // addr4 left
         addrs.remove(addr4.toBookieId());
         Set<BookieId> deadBookies = repp.onClusterChanged(addrs, new HashSet<BookieId>());
-        assertTrue(deadBookies.isEmpty());
+        assertTrue(deadBookies.contains(addr4.toBookieId()));
 
         // we will never use addr4 even it is in the stabilized network topology
         for (int i = 0; i < 5; i++) {

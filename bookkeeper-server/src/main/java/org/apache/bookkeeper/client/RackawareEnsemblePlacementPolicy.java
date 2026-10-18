@@ -17,6 +17,7 @@
  */
 package org.apache.bookkeeper.client;
 
+import com.google.common.collect.Sets;
 import io.netty.util.HashedWheelTimer;
 import java.util.List;
 import java.util.Map;
@@ -110,7 +111,8 @@ public class RackawareEnsemblePlacementPolicy extends RackawareEnsemblePlacement
             Set<BookieId> readOnlyBookies) {
         Set<BookieId> deadBookies = super.onClusterChanged(writableBookies, readOnlyBookies);
         if (null != slave) {
-            deadBookies = slave.onClusterChanged(writableBookies, readOnlyBookies);
+            deadBookies = Sets.union(deadBookies,
+                    slave.onClusterChanged(writableBookies, readOnlyBookies));
         }
         return deadBookies;
     }
