@@ -279,7 +279,6 @@ public class SortedLedgerStorageTest {
         LedgerCache ledgerCache = mock(LedgerCache.class);
         when(underlying.getLedgerCache()).thenReturn(ledgerCache);
         when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(null);
-        when(underlying.ledgerExists(0L)).thenReturn(true);
         when(underlying.getLastAddConfirmed(0L))
                 .thenThrow(new Bookie.NoEntryException(0L, -1L))
                 .thenReturn(1L);
@@ -291,6 +290,7 @@ public class SortedLedgerStorageTest {
         try {
             assertEquals(1L, storage.getLastAddConfirmed(0L));
             verify(underlying, times(2)).getLastAddConfirmed(0L);
+            verify(underlying, times(0)).ledgerExists(0L);
         } finally {
             storage.shutdown();
         }
@@ -302,7 +302,6 @@ public class SortedLedgerStorageTest {
         LedgerCache ledgerCache = mock(LedgerCache.class);
         when(underlying.getLedgerCache()).thenReturn(ledgerCache);
         when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(8L);
-        when(underlying.ledgerExists(0L)).thenReturn(true);
         SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
         storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
                 statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
@@ -314,26 +313,7 @@ public class SortedLedgerStorageTest {
             assertEquals(8L, storage.getLastAddConfirmed(0L));
             verify(memTable, times(0)).getLastEntry(0L);
             verify(underlying, times(0)).getLastAddConfirmed(0L);
-        } finally {
-            storage.shutdown();
-        }
-    }
-
-    @Test
-    public void testGetLastAddConfirmedRejectsCachedValueForDeletedLedger() throws Exception {
-        InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
-        LedgerCache ledgerCache = mock(LedgerCache.class);
-        when(underlying.getLedgerCache()).thenReturn(ledgerCache);
-        when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(8L);
-        when(underlying.ledgerExists(0L)).thenReturn(false);
-        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
-        storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
-                statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
-        storage.setCheckpointSource(checkpointSource);
-        storage.setCheckpointer(checkpointer);
-        try {
-            assertThrows(Bookie.NoLedgerException.class, () -> storage.getLastAddConfirmed(0L));
-            verify(underlying, times(1)).ledgerExists(0L);
+            verify(underlying, times(0)).ledgerExists(0L);
         } finally {
             storage.shutdown();
         }
@@ -344,8 +324,7 @@ public class SortedLedgerStorageTest {
         InterleavedLedgerStorage underlying = mock(InterleavedLedgerStorage.class);
         LedgerCache ledgerCache = mock(LedgerCache.class);
         when(underlying.getLedgerCache()).thenReturn(ledgerCache);
-        when(ledgerCache.getLastAddConfirmed(0L)).thenThrow(new Bookie.NoLedgerException(0L));
-        when(underlying.ledgerExists(0L)).thenReturn(true);
+        when(ledgerCache.getLastAddConfirmed(0L)).thenReturn(null);
         when(ledgerCache.updateLastAddConfirmed(0L, 8L)).thenReturn(8L);
         SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
         storage.initialize(conf, null, ledgerDirsManager, ledgerDirsManager,
@@ -360,6 +339,7 @@ public class SortedLedgerStorageTest {
             assertEquals(8L, storage.getLastAddConfirmed(0L));
             verify(ledgerCache).updateLastAddConfirmed(0L, 8L);
             verify(underlying, times(0)).getLastAddConfirmed(0L);
+            verify(underlying, times(0)).ledgerExists(0L);
         } finally {
             storage.shutdown();
         }

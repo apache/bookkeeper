@@ -241,56 +241,27 @@ public class SortedLedgerStorage
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
         LedgerCache ledgerCache = interleavedLedgerStorage.getLedgerCache();
-        Long cachedLac;
-        try {
-            cachedLac = ledgerCache.getLastAddConfirmed(ledgerId);
-        } catch (Bookie.NoLedgerException e) {
-            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-                throw e;
-            }
-            cachedLac = null;
-        }
+        // Throws NoLedgerException for unknown or deleted ledgers. An evicted FileInfo
+        // reloads from its index file without a LAC, so this returns null instead.
+        Long cachedLac = ledgerCache.getLastAddConfirmed(ledgerId);
         if (cachedLac != null) {
-            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-                throw new Bookie.NoLedgerException(ledgerId);
-            }
             return cachedLac;
-        }
-        if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-            throw new Bookie.NoLedgerException(ledgerId);
         }
 
         Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
         if (memTableLac != null) {
-            try {
-                return ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
-            } catch (Bookie.NoLedgerException e) {
-                if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-                    throw e;
-                }
-                return memTableLac;
-            }
+            return ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
         }
 
         try {
             return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
         } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
             // An entry may have been added after the memtable check above.
-            if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-                throw e;
-            }
             Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
             if (latestMemTableLac == null) {
                 return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
             }
-            try {
-                return ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
-            } catch (Bookie.NoLedgerException e2) {
-                if (!interleavedLedgerStorage.ledgerExists(ledgerId)) {
-                    throw e2;
-                }
-                return latestMemTableLac;
-            }
+            return ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
         }
     }
 
