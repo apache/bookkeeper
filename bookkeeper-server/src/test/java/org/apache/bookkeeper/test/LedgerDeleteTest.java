@@ -25,6 +25,7 @@ import static org.junit.Assert.assertFalse;
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.bookie.InterleavedLedgerStorage;
 import org.apache.bookkeeper.client.AsyncCallback.AddCallback;
@@ -32,6 +33,7 @@ import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.util.TestUtils;
+import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -107,6 +109,15 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
         return lhs;
     }
 
+    private void waitUntilEntryLogsDeleted(List<File> ledgerDirectories, Integer... logIds) {
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).untilAsserted(() -> {
+            for (File ledgerDirectory : ledgerDirectories) {
+                assertFalse("Found the entry log file that should have been deleted in ledgerDirectory: "
+                    + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, logIds));
+            }
+        });
+    }
+
     /**
      * This test writes enough ledger entries to roll over the entry log file.
      * It will then delete all of the ledgers from the client and let the
@@ -128,13 +139,9 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
             bkc.deleteLedger(lh.getId());
         }
         LOG.info("Finished deleting all ledgers so waiting for the GC thread to clean up the entryLogs");
-        Thread.sleep(5000);
 
         // Verify that the first entry log (0.log) has been deleted from all of the Bookie Servers.
-        for (File ledgerDirectory : ledgerDirectories) {
-            assertFalse("Found the entry log file (0.log) that should have been deleted in ledgerDirectory: "
-                + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0));
-        }
+        waitUntilEntryLogsDeleted(ledgerDirectories, 0);
     }
 
     /**
@@ -162,7 +169,6 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
             bkc.deleteLedger(lh.getId());
         }
         LOG.info("Finished deleting all ledgers so waiting for the GC thread to clean up the entryLogs");
-        Thread.sleep(5000);
 
         /*
          * Verify that the first two entry logs ([0,1].log) have been deleted
@@ -170,10 +176,7 @@ public class LedgerDeleteTest extends BookKeeperClusterTestCase {
          * test, a new entry log is created. We know then that the first two
          * entry logs should be deleted.
          */
-        for (File ledgerDirectory : bookieLedgerDirs()) {
-            assertFalse("Found the entry log file ([0,1].log) that should have been deleted in ledgerDirectory: "
-                + ledgerDirectory, TestUtils.hasLogFiles(ledgerDirectory, true, 0, 1));
-        }
+        waitUntilEntryLogsDeleted(bookieLedgerDirs(), 0, 1);
     }
 
 }

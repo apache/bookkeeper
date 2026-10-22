@@ -461,7 +461,7 @@ public class GarbageCollectorThread implements Runnable {
         try {
             // gc inactive/deleted ledgers
             // this is used in extractMetaFromEntryLogs to calculate the usage of entry log
-            doGcLedgers();
+            doGcLedgers(force);
 
             long extractMetaStart = MathUtils.nowInNano();
             try {
@@ -577,10 +577,10 @@ public class GarbageCollectorThread implements Runnable {
     /**
      * Do garbage collection ledger index files.
      */
-    private void doGcLedgers() {
+    private void doGcLedgers(boolean force) {
         long gcLedgersStart = MathUtils.nowInNano();
         try {
-            garbageCollector.gc(garbageCleaner);
+            garbageCollector.gc(garbageCleaner, force);
             gcStats.getGcLedgerRuntime()
                     .registerSuccessfulEvent(MathUtils.elapsedNanos(gcLedgersStart), TimeUnit.NANOSECONDS);
         } catch (Throwable t) {
