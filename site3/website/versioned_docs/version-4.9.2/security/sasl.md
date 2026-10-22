@@ -75,7 +75,7 @@ Follow the steps in [GSSAPI (Kerberos)](#kerberos) to configure SASL for the sel
 
 If your organization is already using a Kerberos server (for example, by using `Active Directory`), there is no need to
 install a new server just for BookKeeper. Otherwise you will need to install one, your Linux vendor likely has packages
-for `Kerberos` and a short guide on how to install and configure it ([Ubuntu](https://help.ubuntu.com/community/Kerberos),
+for `Kerberos` and a short guide on how to install and configure it ([Ubuntu](https://ubuntu.com/server/docs/how-to/kerberos/install-a-kerberos-server/),
 [Redhat](https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Managing_Smart_Cards/installing-kerberos.html)).
 Note that if you are using Oracle Java, you will need to download JCE policy files for your Java version and copy them to `$JAVA_HOME/jre/lib/security`.
 
