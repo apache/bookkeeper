@@ -46,6 +46,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * The buffer used to write operations.
      */
     protected final ByteBuf writeBuffer;
+    // The file channel may fail to close after the buffer has already been released.
+    // Track the two resources independently so a later force-close can retry the file
+    // channel without releasing the buffer twice.
+    private volatile boolean writeBufferReleased;
     /**
      * The absolute position of the next write operation.
      */
@@ -71,6 +75,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     protected final AtomicLong unpersistedBytes;
 
     private boolean closed = false;
+    private volatile IOException writeFailure;
 
     // make constructor to be public for unit test
     public BufferedChannel(ByteBufAllocator allocator, FileChannel fc, int capacity) throws IOException {
@@ -101,7 +106,10 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
         if (closed) {
             return;
         }
-        ReferenceCountUtil.release(writeBuffer);
+        if (!writeBufferReleased) {
+            ReferenceCountUtil.release(writeBuffer);
+            writeBufferReleased = true;
+        }
         fileChannel.close();
         closed = true;
     }
@@ -117,8 +125,14 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     public void write(ByteBuf src) throws IOException {
         boolean shouldForceWrite = false;
         synchronized (this) {
-            int copied = copyIntoWriteBuffer(src);
-            shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
+            checkWritable();
+            try {
+                int copied = copyIntoWriteBuffer(src);
+                shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
+            } catch (IOException e) {
+                markWriteFailure(e);
+                throw e;
+            }
         }
         if (shouldForceWrite) {
             forceWrite(false);
@@ -137,9 +151,15 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
     public void write(ByteBuf src1, ByteBuf src2) throws IOException {
         boolean shouldForceWrite = false;
         synchronized (this) {
-            int copied = copyIntoWriteBuffer(src1);
-            copied += copyIntoWriteBuffer(src2);
-            shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
+            checkWritable();
+            try {
+                int copied = copyIntoWriteBuffer(src1);
+                copied += copyIntoWriteBuffer(src2);
+                shouldForceWrite = updatePositionAndFlushIfNeeded(copied);
+            } catch (IOException e) {
+                markWriteFailure(e);
+                throw e;
+            }
         }
         if (shouldForceWrite) {
             forceWrite(false);
@@ -203,6 +223,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public void flushAndForceWrite(boolean forceMetadata) throws IOException {
+        checkWritable();
         flush();
         forceWrite(forceMetadata);
     }
@@ -217,6 +238,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public void flushAndForceWriteIfRegularFlush(boolean forceMetadata) throws IOException {
+        checkWritable();
         if (doRegularFlushes) {
             flushAndForceWrite(forceMetadata);
         }
@@ -229,10 +251,19 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException if the write fails.
      */
     public synchronized void flush() throws IOException {
+        checkWritable();
         ByteBuffer toWrite = writeBuffer.internalNioBuffer(0, writeBuffer.writerIndex());
-        do {
-            fileChannel.write(toWrite);
-        } while (toWrite.hasRemaining());
+        try {
+            while (toWrite.hasRemaining()) {
+                int written = fileChannel.write(toWrite);
+                if (written <= 0) {
+                    throw new IOException("Unable to make progress while flushing buffered channel");
+                }
+            }
+        } catch (IOException e) {
+            markWriteFailure(e);
+            throw e;
+        }
         writeBuffer.clear();
         writeBufferStartPosition.set(fileChannel.position());
     }
@@ -244,6 +275,7 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
      * @throws IOException
      */
     public long forceWrite(boolean forceMetadata) throws IOException {
+        checkWritable();
         // This is the point up to which we had flushed to the file system page cache
         // before issuing this force write hence is guaranteed to be made durable by
         // the force write, any flush that happens after this may or may
@@ -270,7 +302,12 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
             }
         }
 
-        fileChannel.force(forceMetadata);
+        try {
+            fileChannel.force(forceMetadata);
+        } catch (IOException e) {
+            markWriteFailure(e);
+            throw e;
+        }
         return positionForceWrite;
     }
 
@@ -332,5 +369,24 @@ public class BufferedChannel extends BufferedReadChannel implements Closeable {
 
     long getUnpersistedBytes() {
         return unpersistedBytes.get();
+    }
+
+    final void checkWritable() throws IOException {
+        IOException failure = writeFailure;
+        if (failure != null) {
+            throw new IOException("BufferedChannel is in failed state", failure);
+        }
+        // close() releases the write buffer before attempting the file-channel close.
+        // If that close fails, forceClose() must be able to retry the file channel, but
+        // no caller may continue writing through the already released buffer.
+        if (writeBufferReleased) {
+            throw new IOException("BufferedChannel is closed");
+        }
+    }
+
+    final void markWriteFailure(IOException e) {
+        if (writeFailure == null) {
+            writeFailure = e;
+        }
     }
 }

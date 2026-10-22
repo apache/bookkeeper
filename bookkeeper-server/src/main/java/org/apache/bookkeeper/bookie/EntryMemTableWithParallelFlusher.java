@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.Phaser;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import lombok.CustomLog;
@@ -64,7 +65,7 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                 EntrySkipList keyValues = this.snapshot;
 
                 Phaser pendingNumOfLedgerFlushes = new Phaser(1);
-                AtomicReference<Exception> exceptionWhileFlushingParallelly = new AtomicReference<Exception>();
+                AtomicReference<Throwable> exceptionWhileFlushingParallelly = new AtomicReference<Throwable>();
 
                 if (keyValues.compareTo(checkpoint) < 0) {
 
@@ -83,7 +84,8 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                         ConcurrentNavigableMap<EntryKey, EntryKeyValue> thisLedgerEntries = keyValues
                                 .subMap(thisLedgerFirstEntry, thisLedgerCeilingKeyMarker);
                         pendingNumOfLedgerFlushes.register();
-                        flushExecutor.executeOrdered(thisLedgerId, () -> {
+                        try {
+                            flushExecutor.executeOrdered(thisLedgerId, () -> {
                             try {
                                 long ledger;
                                 boolean ledgerDeleted = false;
@@ -99,41 +101,31 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
                                         }
                                     }
                                 }
-                                pendingNumOfLedgerFlushes.arriveAndDeregister();
-                            } catch (Exception exc) {
+                            } catch (Throwable exc) {
                                 log.error().exception(exc).log("Got Exception while trying to flush process entries");
-                                exceptionWhileFlushingParallelly.set(exc);
-                                /*
-                                 * if we get any unexpected exception while
-                                 * trying to flush process entries of a
-                                 * ledger, then terminate the
-                                 * pendingNumOfLedgerFlushes phaser.
-                                 */
-                                pendingNumOfLedgerFlushes.forceTermination();
+                                recordFlushException(exceptionWhileFlushingParallelly, exc);
+                            } finally {
+                                pendingNumOfLedgerFlushes.arriveAndDeregister();
                             }
-                        });
+                            });
+                        } catch (RejectedExecutionException ree) {
+                            pendingNumOfLedgerFlushes.arriveAndDeregister();
+                            recordFlushException(exceptionWhileFlushingParallelly, ree);
+                        }
                         thisLedgerFirstMapEntry = keyValues.ceilingEntry(thisLedgerCeilingKeyMarker);
                     }
 
-                    boolean phaserTerminatedAbruptly = false;
                     try {
-                        /*
-                         * while flush processing entries of a ledger if it
-                         * failed because of any unexpected exception then
-                         * pendingNumOfLedgerFlushes phaser would be force
-                         * terminated and because of that arriveAndAwaitAdvance
-                         * would be a negative value.
-                         */
-                        phaserTerminatedAbruptly = (pendingNumOfLedgerFlushes.arriveAndAwaitAdvance() < 0);
+                        pendingNumOfLedgerFlushes.arriveAndAwaitAdvance();
                     } catch (IllegalStateException ise) {
                         log.error().exception(ise).log("Got IllegalStateException while awaiting on Phaser");
                         throw new IOException("Got IllegalStateException while awaiting on Phaser", ise);
                     }
-                    if (phaserTerminatedAbruptly) {
-                        log.error().exception(exceptionWhileFlushingParallelly.get())
-                        .log("Phaser is terminated while awaiting flushExecutor to complete the entry flushes");
-                        throw new IOException("Failed to complete the flushSnapshotByParallelizing",
-                                exceptionWhileFlushingParallelly.get());
+                    Throwable flushFailure = exceptionWhileFlushingParallelly.get();
+                    if (flushFailure != null) {
+                        log.error().exception(flushFailure)
+                        .log("Exception while awaiting flushExecutor to complete the entry flushes");
+                        throw preserveEntryLogWriteFailure(flushFailure);
                     }
                     memTableStats.getFlushBytesCounter().addCount(flushedSize.get());
                     clearSnapshot(keyValues);
@@ -147,5 +139,33 @@ class EntryMemTableWithParallelFlusher extends EntryMemTable {
     @Override
     public void close() throws Exception {
         flushExecutor.shutdown();
+    }
+
+    private static IOException preserveEntryLogWriteFailure(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof EntryLogWriteException) {
+                return (EntryLogWriteException) cause;
+            }
+        }
+        return new IOException("Failed to complete the flushSnapshotByParallelizing", failure);
+    }
+
+    private static void recordFlushException(AtomicReference<Throwable> failure, Throwable candidate) {
+        failure.updateAndGet(previous -> {
+            if (previous == null || (!containsEntryLogWriteException(previous)
+                    && containsEntryLogWriteException(candidate))) {
+                return candidate;
+            }
+            return previous;
+        });
+    }
+
+    private static boolean containsEntryLogWriteException(Throwable failure) {
+        for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
+            if (cause instanceof EntryLogWriteException) {
+                return true;
+            }
+        }
+        return false;
     }
 }

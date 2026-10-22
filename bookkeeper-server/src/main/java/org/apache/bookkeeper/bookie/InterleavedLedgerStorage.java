@@ -103,6 +103,7 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     // this indicates that a write has happened since the last flush
     private final AtomicBoolean somethingWritten = new AtomicBoolean(false);
+    private volatile EntryLogWriteException fatalEntryLogWriteFailure;
 
     // Expose Stats
     @StatsDoc(
@@ -448,6 +449,11 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
     private void flushOrCheckpoint(boolean isCheckpointFlush)
             throws IOException {
 
+        EntryLogWriteException previousFailure = fatalEntryLogWriteFailure;
+        if (previousFailure != null) {
+            throw previousFailure;
+        }
+
         boolean flushFailed = false;
         try {
             ledgerCache.flushLedger(true);
@@ -466,6 +472,9 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
             } else {
                 entryLogger.flush();
             }
+        } catch (EntryLogWriteException e) {
+            fatalEntryLogWriteFailure = e;
+            throw e;
         } catch (LedgerDirsManager.NoWritableLedgerDirException e) {
             throw e;
         } catch (IOException ioe) {
@@ -488,6 +497,10 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
 
     @Override
     public synchronized void flush() throws IOException {
+        EntryLogWriteException previousFailure = fatalEntryLogWriteFailure;
+        if (previousFailure != null) {
+            throw previousFailure;
+        }
         if (!somethingWritten.compareAndSet(true, false)) {
             return;
         }
@@ -556,7 +569,13 @@ public class InterleavedLedgerStorage implements CompactableLedgerStorage, Entry
         /*
          * Log the entry
          */
-        long pos = entryLogger.addEntry(ledgerId, entry, rollLog);
+        long pos;
+        try {
+            pos = entryLogger.addEntry(ledgerId, entry, rollLog);
+        } catch (EntryLogWriteException e) {
+            fatalEntryLogWriteFailure = e;
+            throw e;
+        }
 
         /*
          * Set offset of entry id to be the current ledger position
