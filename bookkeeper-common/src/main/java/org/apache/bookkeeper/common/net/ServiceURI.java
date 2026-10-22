@@ -26,6 +26,7 @@ import com.google.common.base.Splitter;
 import com.google.common.base.Strings;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.AccessLevel;
@@ -145,6 +146,39 @@ public class ServiceURI {
     public static ServiceURI create(String uriStr) {
         checkNotNull(uriStr, "service uri string is null");
 
+        if (uriStr.contains("[") && uriStr.contains("]")) {
+            // deal with ipv6 address
+            Splitter splitter = Splitter.on(CharMatcher.anyOf(",;"));
+            List<String> hosts = splitter.splitToList(uriStr);
+
+            if (hosts.size() > 1) {
+                // deal with multi ipv6 hosts
+                String firstHost = hosts.get(0);
+                String lastHost = hosts.get(hosts.size() - 1);
+                boolean hasPath = lastHost.contains("/");
+                String path = hasPath ? lastHost.substring(lastHost.indexOf("/")) : "";
+                firstHost += path;
+
+                URI uri = URI.create(firstHost);
+                ServiceURI serviceURI = create(uri);
+
+                List<String> multiHosts = new ArrayList<>();
+                multiHosts.add(serviceURI.getServiceHosts()[0]);
+                multiHosts.addAll(hosts.subList(1, hosts.size()));
+                multiHosts = multiHosts
+                    .stream()
+                    .map(host -> validateHostName(serviceURI.getServiceName(), host))
+                    .collect(Collectors.toList());
+                return new ServiceURI(
+                    serviceURI.getServiceName(),
+                    serviceURI.getServiceInfos(),
+                    serviceURI.getServiceUser(),
+                    multiHosts.toArray(new String[multiHosts.size()]),
+                    serviceURI.getServicePath(),
+                    serviceURI.getUri());
+            }
+        }
+
         // a service uri first should be a valid java.net.URI
         URI uri = URI.create(uriStr);
 
@@ -215,21 +249,23 @@ public class ServiceURI {
     }
 
     private static String validateHostName(String serviceName, String hostname) {
-        String[] parts = hostname.split(":");
-        if (parts.length >= 3) {
+        URI uri = null;
+        try {
+            uri = URI.create("dummyscheme://" + hostname);
+        } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid hostname : " + hostname);
-        } else if (parts.length == 2) {
-            try {
-                Integer.parseUnsignedInt(parts[1]);
-            } catch (NumberFormatException nfe) {
-                throw new IllegalArgumentException("Invalid hostname : " + hostname);
-            }
-            return hostname;
-        } else if (parts.length == 1 && serviceName.toLowerCase().equals(SERVICE_BK)) {
-            return hostname + ":" + SERVICE_BK_PORT;
-        } else {
-            return hostname;
         }
+        String host = uri.getHost();
+        if (host == null) {
+            throw new IllegalArgumentException("Invalid hostname : " + hostname);
+        }
+        int port = uri.getPort();
+        if (port == -1 && !serviceName.toLowerCase().equals(SERVICE_BK)) {
+            return host;
+        } else if (port == -1) {
+            port = SERVICE_BK_PORT;
+        }
+        return host + ":" + port;
     }
 
     private final String serviceName;
