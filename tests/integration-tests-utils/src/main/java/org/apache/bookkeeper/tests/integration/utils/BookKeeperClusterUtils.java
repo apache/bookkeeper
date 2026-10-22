@@ -52,7 +52,7 @@ public class BookKeeperClusterUtils {
     public static final String VERSION_4_14_x = "4.14.8";
     public static final String VERSION_4_15_x = "4.15.5";
     public static final String VERSION_4_16_x = "4.16.7";
-    public static final String VERSION_4_17_x = "4.17.2";
+    public static final String VERSION_4_17_x = "4.17.4";
 
     public static final List<String> OLD_CLIENT_VERSIONS =
             Arrays.asList(VERSION_4_8_x, VERSION_4_9_x, VERSION_4_10_x, VERSION_4_11_x, VERSION_4_12_x,
