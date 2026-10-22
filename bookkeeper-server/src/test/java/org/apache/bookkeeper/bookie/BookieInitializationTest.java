@@ -26,6 +26,7 @@ import static org.apache.bookkeeper.meta.MetadataDrivers.runFunctionWithRegistra
 import static org.apache.bookkeeper.util.BookKeeperConstants.AVAILABLE_NODE;
 import static org.apache.bookkeeper.util.BookKeeperConstants.BOOKIE_STATUS_FILENAME;
 import static org.apache.bookkeeper.util.TestUtils.countNumOfFiles;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
@@ -309,8 +310,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
                                                  NullStatsLogger.INSTANCE, UnpooledByteBufAllocator.DEFAULT,
                                                  new MockUncleanShutdownDetection());
 
-        bkServer.start();
-        bkServer.join();
+        assertThatThrownBy(bkServer::start)
+            .isInstanceOf(IllegalStateException.class);
         assertEquals("Failed to return ExitCode.ZK_REG_FAIL",
                      ExitCode.ZK_REG_FAIL, bkServer.getExitCode());
     }
@@ -1159,7 +1160,8 @@ public class BookieInitializationTest extends BookKeeperClusterTestCase {
         // for the ledger (whose entries are not flushed). but since we set
         // minUsableSizeForIndexFileCreation to very high value, it wouldn't. be
         // able to find any index dir when all discs are full
-        server.start();
+        assertThatThrownBy(server::start)
+            .isInstanceOf(IllegalStateException.class);
         assertFalse("Bookie should be Shutdown", server.getBookie().isRunning());
         server.shutdown();
 

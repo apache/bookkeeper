@@ -145,7 +145,7 @@ public class BookieServer {
         if (!this.bookie.isRunning()) {
             exitCode = bookie.getExitCode();
             this.requestProcessor.close();
-            return;
+            throw new IllegalStateException("Bookie failed to start, exit code: " + exitCode);
         }
 
         this.uncleanShutdownDetection.registerStartUp();
