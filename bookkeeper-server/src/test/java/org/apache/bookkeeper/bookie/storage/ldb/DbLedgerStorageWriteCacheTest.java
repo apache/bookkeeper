@@ -37,6 +37,7 @@ import org.apache.bookkeeper.bookie.storage.EntryLogger;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.StatsLogger;
 import org.junit.After;
 import org.junit.Before;
@@ -54,23 +55,23 @@ public class DbLedgerStorageWriteCacheTest {
 
         @Override
         protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
-            LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            EntryLogger entryLogger, StatsLogger statsLogger,
-            long writeCacheSize, long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
+            LedgerManager ledgerManager, LedgerManagerFactory ledgerManagerFactory, LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager, EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize,
+            long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
                 throws IOException {
-            return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager,
-                entryLogger, statsLogger, allocator, writeCacheSize,
+            return new MockedSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerManagerFactory,
+                ledgerDirsManager, indexDirsManager, entryLogger, statsLogger, allocator, writeCacheSize,
                 readCacheSize, readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
         }
 
         private static class MockedSingleDirectoryDbLedgerStorage extends SingleDirectoryDbLedgerStorage {
             public MockedSingleDirectoryDbLedgerStorage(ServerConfiguration conf, LedgerManager ledgerManager,
-                    LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager, EntryLogger entryLogger,
-                    StatsLogger statsLogger,
+                    LedgerManagerFactory ledgerManagerFactory, LedgerDirsManager ledgerDirsManager,
+                    LedgerDirsManager indexDirsManager, EntryLogger entryLogger, StatsLogger statsLogger,
                     ByteBufAllocator allocator, long writeCacheSize,
                     long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
                     throws IOException {
-                super(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
+                super(conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager, indexDirsManager, entryLogger,
                       statsLogger, allocator, writeCacheSize, readCacheSize, readAheadCacheBatchSize,
                       readAheadCacheBatchBytesSize);
             }

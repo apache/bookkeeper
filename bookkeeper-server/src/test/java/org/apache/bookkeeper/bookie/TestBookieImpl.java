@@ -196,7 +196,7 @@ public class TestBookieImpl extends BookieImpl {
                     conf, diskChecker, statsLogger, ledgerDirsManager);
 
             LedgerStorage storage = BookieResources.createLedgerStorage(
-                    conf, ledgerManager, ledgerDirsManager, indexDirsManager,
+                    conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager, indexDirsManager,
                     statsLogger, UnpooledByteBufAllocator.DEFAULT);
 
             return new Resources(conf,

@@ -65,6 +65,7 @@ import org.apache.bookkeeper.common.util.Watcher;
 import org.apache.bookkeeper.common.util.nativeio.NativeIOImpl;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.stats.Gauge;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -123,6 +124,7 @@ public class DbLedgerStorage implements LedgerStorage {
     private static final long STORAGE_FLAGS_KEY = 0L;
     private int numberOfDirs;
     private List<SingleDirectoryDbLedgerStorage> ledgerStorageList;
+    private LedgerManagerFactory ledgerManagerFactory;
 
     private ExecutorService entryLoggerWriteExecutor = null;
     private ExecutorService entryLoggerFlushExecutor = null;
@@ -238,7 +240,7 @@ public class DbLedgerStorage implements LedgerStorage {
             } else {
                 entrylogger = new DefaultEntryLogger(conf, ldm, null, statsLogger, allocator);
             }
-            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ldm,
+            ledgerStorageList.add(newSingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerManagerFactory, ldm,
                 idm, entrylogger,
                 statsLogger, perDirectoryWriteCacheSize,
                 perDirectoryReadCacheSize,
@@ -279,13 +281,19 @@ public class DbLedgerStorage implements LedgerStorage {
 
     @VisibleForTesting
     protected SingleDirectoryDbLedgerStorage newSingleDirectoryDbLedgerStorage(ServerConfiguration conf,
-            LedgerManager ledgerManager, LedgerDirsManager ledgerDirsManager, LedgerDirsManager indexDirsManager,
-            EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize, long readCacheSize,
-            int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
+            LedgerManager ledgerManager, LedgerManagerFactory ledgerManagerFactory, LedgerDirsManager ledgerDirsManager,
+            LedgerDirsManager indexDirsManager, EntryLogger entryLogger, StatsLogger statsLogger, long writeCacheSize,
+            long readCacheSize, int readAheadCacheBatchSize, long readAheadCacheBatchBytesSize)
             throws IOException {
-        return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerDirsManager, indexDirsManager, entryLogger,
-                                                  statsLogger, allocator, writeCacheSize, readCacheSize,
+        return new SingleDirectoryDbLedgerStorage(conf, ledgerManager, ledgerManagerFactory, ledgerDirsManager,
+                                                  indexDirsManager, entryLogger, statsLogger, allocator, writeCacheSize,
+                                                  readCacheSize,
                                                   readAheadCacheBatchSize, readAheadCacheBatchBytesSize);
+    }
+
+    @Override
+    public void setLedgerManagerFactory(LedgerManagerFactory ledgerManagerFactory) {
+        this.ledgerManagerFactory = ledgerManagerFactory;
     }
 
     @Override
