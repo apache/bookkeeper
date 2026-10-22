@@ -48,6 +48,7 @@ import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -65,11 +66,14 @@ import java.util.concurrent.atomic.AtomicLongArray;
 import java.util.concurrent.locks.Lock;
 import org.apache.bookkeeper.bookie.DefaultEntryLogger.BufferedLogChannel;
 import org.apache.bookkeeper.bookie.LedgerDirsManager.NoWritableLedgerDirException;
+import org.apache.bookkeeper.bookie.storage.CompactionEntryLog;
+import org.apache.bookkeeper.bookie.storage.EntryLogScanner;
 import org.apache.bookkeeper.common.testing.annotations.FlakyTest;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
+import org.apache.bookkeeper.util.HardLink;
 import org.apache.bookkeeper.util.IOUtils;
 import org.apache.bookkeeper.util.collections.ConcurrentLongLongHashMap;
 import org.apache.commons.io.FileUtils;
@@ -87,6 +91,13 @@ import org.slf4j.LoggerFactory;
 @TestMethodOrder(MethodOrderer.MethodName.class)
 public class DefaultEntryLogTest {
     private static final Logger LOG = LoggerFactory.getLogger(DefaultEntryLogTest.class);
+    private static final long COMPACTION_SOURCE_LOG_ID = 1L;
+    private static final long COMPACTION_PREVIOUS_LOG_ID = 499L;
+    private static final long COMPACTION_LOG_ID = COMPACTION_PREVIOUS_LOG_ID + 1;
+    private static final long COMPACTION_LEDGER_ID = 1234L;
+    private static final long COMPACTION_ENTRY_ID = 5L;
+    private static final String HEX_FINAL_LOG_FILE_NAME = "1f4.log";
+    private static final String DECIMAL_FINAL_LOG_FILE_NAME = "500.log";
 
     final List<File> tempDirs = new ArrayList<File>();
     final Random rand = new Random();
@@ -981,6 +992,138 @@ public class DefaultEntryLogTest {
             assertEquals(i, readEntryId, "EntryId");
             ReferenceCountUtil.release(data);
         }
+    }
+
+    @Test
+    public void testRecoverCompactedLogUsesHexFinalLogFileName() throws Exception {
+        ByteBuf entry = generateEntry(COMPACTION_LEDGER_ID, COMPACTION_ENTRY_ID);
+        try {
+            prepareCompactedLog(entry);
+
+            CompactionEntryLog recoveredLog = recoverSingleCompactionLog();
+
+            // Recovery creates the final entry log in makeAvailable(). It must create
+            // the normal hex entry log name, not the decimal name from the parsed id.
+            recoveredLog.makeAvailable();
+            assertTrue(hexFinalLogFile().exists(), "Recovery should create the hex-named final log");
+            assertFalse(decimalFinalLogFile().exists(), "Recovery should not create a decimal-named final log");
+            assertCompactionLogContainsEntry(recoveredLog);
+        } finally {
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    @Test
+    public void testRecoverCompactedLogWithStaleDecimalLogFileFromOldRecovery() throws Exception {
+        ByteBuf entry = generateEntry(COMPACTION_LEDGER_ID, COMPACTION_ENTRY_ID);
+        try {
+            prepareCompactedLog(entry);
+
+            // Simulate an upgrade after the old buggy recovery already created
+            // "500.log", while the ".compacted" marker is still present.
+            HardLink.createHardLink(compactedFile(), decimalFinalLogFile());
+            assertTrue(decimalFinalLogFile().exists(), "Stale decimal log should exist before fixed recovery");
+
+            CompactionEntryLog recoveredLog = recoverSingleCompactionLog();
+            recoveredLog.makeAvailable();
+
+            assertTrue(hexFinalLogFile().exists(), "Fixed recovery should create the hex-named final log");
+            assertTrue(decimalFinalLogFile().exists(), "Fixed recovery should leave the stale file untouched");
+            assertCompactionLogContainsEntry(recoveredLog);
+
+            recoveredLog.finalizeAndCleanup();
+            assertFalse(compactedFile().exists(), "Successful recovery cleanup should remove the marker");
+            assertTrue(decimalFinalLogFile().exists(), "Cleanup should not remove unrelated stale decimal logs");
+        } finally {
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    @Test
+    public void testNewCompactionLogKeepsHexFinalLogFileName() throws Exception {
+        ByteBuf entry = generateEntry(COMPACTION_LEDGER_ID, COMPACTION_ENTRY_ID);
+        try {
+            CompactionEntryLog compactionLog = prepareCompactedLog(entry);
+
+            // Normal compaction derives finalLogFile from the compacting file name,
+            // so makeAvailable() should create "1f4.log", not "500.log".
+            compactionLog.makeAvailable();
+            assertTrue(hexFinalLogFile().exists(), "Normal compaction should create the hex-named final log");
+            assertFalse(decimalFinalLogFile().exists(), "Normal compaction should not create a decimal-named log");
+            assertCompactionLogContainsEntry(compactionLog);
+        } finally {
+            ReferenceCountUtil.release(entry);
+        }
+    }
+
+    private CompactionEntryLog prepareCompactedLog(ByteBuf entry) throws Exception {
+        // Force the next compaction log id to 500, whose entry log file name is "1f4.log".
+        resetEntryLoggerWithLastLogId(COMPACTION_PREVIOUS_LOG_ID);
+
+        CompactionEntryLog compactionLog = entryLogger.newCompactionLog(COMPACTION_SOURCE_LOG_ID);
+        assertEquals(COMPACTION_LOG_ID, compactionLog.getDstLogId());
+        compactionLog.addEntry(COMPACTION_LEDGER_ID, entry);
+        compactionLog.flush();
+
+        // Leave "<dst-hex>.log.<src-hex>.compacted", as if the bookie restarted
+        // after markCompacted() but before makeAvailable()/index recovery completed.
+        compactionLog.markCompacted();
+
+        assertTrue(compactedFile().exists(), "Compacted recovery marker should exist");
+        assertFalse(hexFinalLogFile().exists(), "Final log file should not exist before makeAvailable");
+
+        return compactionLog;
+    }
+
+    private CompactionEntryLog recoverSingleCompactionLog() {
+        Collection<CompactionEntryLog> incompleteLogs = entryLogger.incompleteCompactionLogs();
+        assertEquals(1, incompleteLogs.size());
+
+        CompactionEntryLog recoveredLog = incompleteLogs.iterator().next();
+        assertEquals(COMPACTION_LOG_ID, recoveredLog.getDstLogId());
+        assertEquals(COMPACTION_SOURCE_LOG_ID, recoveredLog.getSrcLogId());
+        return recoveredLog;
+    }
+
+    private File compactedFile() {
+        return new File(curDir, HEX_FINAL_LOG_FILE_NAME + "."
+                + DefaultEntryLogger.logId2HexString(COMPACTION_SOURCE_LOG_ID)
+                + TransactionalEntryLogCompactor.COMPACTED_SUFFIX);
+    }
+
+    private File hexFinalLogFile() {
+        return new File(curDir, HEX_FINAL_LOG_FILE_NAME);
+    }
+
+    private File decimalFinalLogFile() {
+        return new File(curDir, DECIMAL_FINAL_LOG_FILE_NAME);
+    }
+
+    private void assertCompactionLogContainsEntry(CompactionEntryLog compactionLog) throws Exception {
+        AtomicBoolean foundEntry = new AtomicBoolean(false);
+        // Scanning uses the compaction log id to resolve the final log file. This
+        // catches cases where makeAvailable() created a file under the wrong name.
+        compactionLog.scan(new EntryLogScanner() {
+            @Override
+            public boolean accept(long ledgerId) {
+                return true;
+            }
+
+            @Override
+            public void process(long ledgerIdFromScanner, long offset, ByteBuf recoveredEntry) {
+                assertEquals(COMPACTION_LEDGER_ID, ledgerIdFromScanner);
+                assertEquals(COMPACTION_LEDGER_ID, recoveredEntry.getLong(recoveredEntry.readerIndex()));
+                assertEquals(COMPACTION_ENTRY_ID, recoveredEntry.getLong(recoveredEntry.readerIndex() + Long.BYTES));
+                foundEntry.set(true);
+            }
+        });
+        assertTrue(foundEntry.get(), "Compacted log should be readable through the compaction log id");
+    }
+
+    private void resetEntryLoggerWithLastLogId(long lastLogId) throws Exception {
+        entryLogger.getEntryLoggerAllocator().setLastLogId(curDir, lastLogId);
+        entryLogger.close();
+        entryLogger = new DefaultEntryLogger(conf, dirsMgr);
     }
 
 
