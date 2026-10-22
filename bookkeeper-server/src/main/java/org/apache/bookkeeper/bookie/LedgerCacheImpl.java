@@ -21,6 +21,7 @@
 
 package org.apache.bookkeeper.bookie;
 
+import com.google.common.annotations.VisibleForTesting;
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
 import java.util.Collections;
@@ -232,5 +233,10 @@ public class LedgerCacheImpl implements LedgerCache {
                 return entriesInCurrentLEPIterator.nextLong();
             }
         };
+    }
+
+    @VisibleForTesting
+    void invalidateLedger(long ledgerId) {
+        indexPersistenceManager.invalidateLedger(ledgerId);
     }
 }
