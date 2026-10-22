@@ -4,6 +4,33 @@ format: md
 <!-- markdown-link-check-disable -->
 # Release notes
 
+## 4.18.2
+
+Release 4.18.2 includes a bookie read-path improvement for the entry location index, a fix for the startup configuration log and dependency updates.
+
+Apache BookKeeper users are encouraged to upgrade to 4.18.2 if you are using 4.18.x.
+The technical details of this release are summarized below.
+
+### Improvements
+
+* Partition index and filter blocks of the entry location RocksDB [PR #4909](https://github.com/apache/bookkeeper/pull/4909)
+
+### Bugs
+
+* Log only the bookie settings that differ from the built-in defaults [PR #4892](https://github.com/apache/bookkeeper/pull/4892)
+
+### Dependency updates
+
+* Upgrade LightProto to 0.9.3 [PR #4904](https://github.com/apache/bookkeeper/pull/4904)
+* Bump org.apache.commons:commons-configuration2 from 2.12.0 to 2.15.1 [PR #4794](https://github.com/apache/bookkeeper/pull/4794)
+* Bump org.bouncycastle:bc-fips from 1.0.2.6 to 1.0.2.7 [PR #4894](https://github.com/apache/bookkeeper/pull/4894)
+* Bump org.bouncycastle:bc-fips from 1.0.2.5 to 1.0.2.6 [PR #4662](https://github.com/apache/bookkeeper/pull/4662)
+* Bump at.yawk.lz4:lz4-java from 1.11.1 to 1.11.4 [PR #4907](https://github.com/apache/bookkeeper/pull/4907)
+
+#### Details
+
+https://github.com/apache/bookkeeper/pulls?q=is%3Apr+label%3Arelease%2F4.18.2+is%3Amerged
+
 ## 4.18.1
 
 Release 4.18.1 includes a few new client APIs, several performance improvements, bug fixes and dependency updates.
