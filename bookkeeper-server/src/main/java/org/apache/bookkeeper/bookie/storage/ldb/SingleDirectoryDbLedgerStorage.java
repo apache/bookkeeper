@@ -807,6 +807,10 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
 
         try {
             if (writeCache.isEmpty()) {
+                // Ledger metadata updates can be journaled without any pending entry data.
+                // Persist them before allowing the journal checkpoint mark to advance.
+                flushLedgerIndex();
+                lastCheckpoint = thisCheckpoint;
                 return;
             }
             // Swap the write cache so that writes can continue to happen while the flush is
@@ -840,9 +844,7 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                         .log("DB batch flushed");
             }
 
-            long ledgerIndexStartTime = MathUtils.nowInNano();
-            ledgerIndex.flush();
-            recordSuccessfulEvent(dbLedgerStorageStats.getFlushLedgerIndexStats(), ledgerIndexStartTime);
+            flushLedgerIndex();
 
             lastCheckpoint = thisCheckpoint;
 
@@ -883,6 +885,12 @@ public class SingleDirectoryDbLedgerStorage implements CompactableLedgerStorage 
                 flushMutex.unlock();
             }
         }
+    }
+
+    private void flushLedgerIndex() throws IOException {
+        long ledgerIndexStartTime = MathUtils.nowInNano();
+        ledgerIndex.flush();
+        recordSuccessfulEvent(dbLedgerStorageStats.getFlushLedgerIndexStats(), ledgerIndexStartTime);
     }
 
     /**
