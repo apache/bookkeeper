@@ -18,8 +18,8 @@
 package org.apache.bookkeeper.client;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import io.netty.buffer.ByteBuf;
 import java.io.IOException;
@@ -43,7 +43,7 @@ import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.GenericCallback;
 import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestCallbacks.AddCallbackFuture;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +68,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testLedgerCloseWithConsistentLength() throws Exception {
+    void ledgerCloseWithConsistentLength() throws Exception {
         ClientConfiguration conf = new ClientConfiguration();
         conf.setMetadataServiceUri(zkUtil.getMetadataServiceUri());
         conf.setReadTimeout(1);
@@ -87,7 +87,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         };
         lh.asyncAddEntry("Test Entry".getBytes(), cb, null);
         latch.await();
-        assertEquals(i.get(), BKException.Code.NotEnoughBookiesException);
+        assertEquals(BKException.Code.NotEnoughBookiesException, i.get());
         assertEquals(0, lh.getLength());
         assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLastAddConfirmed());
         startBKCluster(zkUtil.getMetadataServiceUri());
@@ -97,14 +97,14 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testLedgerCloseDuringUnrecoverableErrors() throws Exception {
+    void ledgerCloseDuringUnrecoverableErrors() throws Exception {
         int numEntries = 3;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         verifyMetadataConsistency(numEntries, lh);
     }
 
     @Test
-    public void testLedgerCheckerShouldnotSelectInvalidLastFragments() throws Exception {
+    void ledgerCheckerShouldnotSelectInvalidLastFragments() throws Exception {
         int numEntries = 10;
         LedgerHandle lh = bkc.createLedger(3, 3, 3, digestType, "".getBytes());
         // Add some entries before bookie failures
@@ -119,7 +119,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         CheckerCallback cb = new CheckerCallback();
         checker.checkLedger(lh, cb);
         Set<LedgerFragment> result = cb.waitAndGetResult();
-        assertEquals("No fragments should be selected", 0, result.size());
+        assertEquals(0, result.size(), "No fragments should be selected");
     }
 
     class CheckerCallback implements GenericCallback<Set<LedgerFragment>> {
@@ -189,8 +189,8 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
         TimeUnit.SECONDS.sleep(5);
         // open the ledger again to make sure we ge the right last confirmed.
         LedgerHandle newLh = newBkc.openLedger(lh.getId(), digestType, "".getBytes());
-        assertEquals("Metadata should be consistent across different opened ledgers",
-                recoveredLh.getLastAddConfirmed(), newLh.getLastAddConfirmed());
+        assertEquals(recoveredLh.getLastAddConfirmed(), newLh.getLastAddConfirmed()
+            , "Metadata should be consistent across different opened ledgers");
     }
 
     private void startUnauthorizedBookie(ServerConfiguration conf, final CountDownLatch latch)
@@ -236,7 +236,7 @@ public class LedgerCloseTest extends BookKeeperClusterTestCase {
     }
 
     @Test
-    public void testAllWritesAreCompletedOnClosedLedger() throws Exception {
+    void allWritesAreCompletedOnClosedLedger() throws Exception {
         for (int i = 0; i < 100; i++) {
             LOG.info("Iteration {}", i);
 

@@ -17,6 +17,11 @@
  */
 package org.apache.bookkeeper.client;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 import com.google.common.collect.Lists;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -26,8 +31,7 @@ import org.apache.bookkeeper.common.concurrent.FutureUtils;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.net.BookieSocketAddress;
 import org.apache.bookkeeper.versioning.Versioned;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +48,7 @@ public class LedgerClose2Test {
     private static final BookieId b5 = new BookieSocketAddress("b5", 3181).toBookieId();
 
     @Test
-    public void testTryAddAfterCloseHasBeenCalled() throws Exception {
+    void tryAddAfterCloseHasBeenCalled() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
 
         for (int i = 0; i < 1000; i++) {
@@ -58,18 +62,18 @@ public class LedgerClose2Test {
 
                 // if it succeeds, it should be in final ledge
                 closeFuture.get();
-                Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-                Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), eid);
+                assertTrue(lh.getLedgerMetadata().isClosed());
+                assertEquals(lh.getLedgerMetadata().getLastEntryId(), eid);
             } catch (BKException.BKLedgerClosedException bke) {
                 closeFuture.get();
-                Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-                Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
+                assertTrue(lh.getLedgerMetadata().isClosed());
+                assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLedgerMetadata().getLastEntryId());
             }
         }
     }
 
     @Test
-    public void testMetadataChangedDuringClose() throws Exception {
+    void metadataChangedDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -105,15 +109,15 @@ public class LedgerClose2Test {
         blockClose.complete(null);
         closeFuture.get();
 
-        Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 2);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
-        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), 1L);
+        assertTrue(lh.getLedgerMetadata().isClosed());
+        assertEquals(2, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b4, b2, b5));
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(1L), Lists.newArrayList(b1, b2, b4));
+        assertEquals(1L, lh.getLedgerMetadata().getLastEntryId());
     }
 
     @Test
-    public void testMetadataCloseWithCorrectLengthDuringClose() throws Exception {
+    void metadataCloseWithCorrectLengthDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -147,15 +151,15 @@ public class LedgerClose2Test {
         blockClose.complete(null);
         closeFuture.get();
 
-        Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
-        Assert.assertEquals(lh.getLedgerMetadata().getLength(), length);
+        assertTrue(lh.getLedgerMetadata().isClosed());
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
+        assertEquals(lh.getLedgerMetadata().getLength(), length);
     }
 
     @Test
-    public void testMetadataCloseWithDifferentLengthDuringClose() throws Exception {
+    void metadataCloseWithDifferentLengthDuringClose() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -190,14 +194,14 @@ public class LedgerClose2Test {
         blockClose.complete(null);
         try {
             closeFuture.get();
-            Assert.fail("Close should fail. Ledger has been closed in a state we don't know how to untangle");
+            fail("Close should fail. Ledger has been closed in a state we don't know how to untangle");
         } catch (ExecutionException ee) {
-            Assert.assertEquals(ee.getCause().getClass(), BKException.BKMetadataVersionException.class);
+            assertEquals(BKException.BKMetadataVersionException.class, ee.getCause().getClass());
         }
     }
 
     @Test
-    public void testMetadataCloseMarkedInRecoveryWhileClosing() throws Exception {
+    void metadataCloseMarkedInRecoveryWhileClosing() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -229,15 +233,15 @@ public class LedgerClose2Test {
         blockClose.complete(null);
 
         closeFuture.get(); // should override in recovery, since this handle knows what it has written
-        Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
-        Assert.assertEquals(lh.getLedgerMetadata().getLength(), length);
+        assertTrue(lh.getLedgerMetadata().isClosed());
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        assertEquals(lh.getLedgerMetadata().getLastEntryId(), lac);
+        assertEquals(lh.getLedgerMetadata().getLength(), length);
     }
 
     @Test
-    public void testCloseWhileAddInProgress() throws Exception {
+    void closeWhileAddInProgress() throws Exception {
         MockClientContext clientCtx = MockClientContext.create();
         Versioned<LedgerMetadata> md = ClientUtil.setupLedger(clientCtx, 10L,
                                                    LedgerMetadataBuilder.create()
@@ -257,19 +261,19 @@ public class LedgerClose2Test {
         lh.close();
         try {
             future.get();
-            Assert.fail("That write shouldn't have succeeded");
+            fail("That write shouldn't have succeeded");
         } catch (ExecutionException ee) {
-            Assert.assertEquals(ee.getCause().getClass(), BKException.BKLedgerClosedException.class);
+            assertEquals(BKException.BKLedgerClosedException.class, ee.getCause().getClass());
         }
-        Assert.assertTrue(lh.getLedgerMetadata().isClosed());
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().size(), 1);
-        Assert.assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
-        Assert.assertEquals(lh.getLedgerMetadata().getLastEntryId(), LedgerHandle.INVALID_ENTRY_ID);
-        Assert.assertEquals(lh.getLedgerMetadata().getLength(), 0);
+        assertTrue(lh.getLedgerMetadata().isClosed());
+        assertEquals(1, lh.getLedgerMetadata().getAllEnsembles().size());
+        assertEquals(lh.getLedgerMetadata().getAllEnsembles().get(0L), Lists.newArrayList(b1, b2, b3));
+        assertEquals(LedgerHandle.INVALID_ENTRY_ID, lh.getLedgerMetadata().getLastEntryId());
+        assertEquals(0, lh.getLedgerMetadata().getLength());
     }
 
     @Test
-    public void testDoubleCloseOnHandle() throws Exception {
+    void doubleCloseOnHandle() throws Exception {
         long ledgerId = 123L;
         MockClientContext clientCtx = MockClientContext.create();
 
@@ -300,8 +304,8 @@ public class LedgerClose2Test {
         CompletableFuture<Void> secondClose = writer.closeAsync();
 
         Thread.sleep(500); // give it a chance to complete, the request jumps around threads
-        Assert.assertFalse(firstClose.isDone());
-        Assert.assertFalse(secondClose.isDone());
+        assertFalse(firstClose.isDone());
+        assertFalse(secondClose.isDone());
     }
 }
 
