@@ -240,7 +240,46 @@ public class SortedLedgerStorage
 
     @Override
     public long getLastAddConfirmed(long ledgerId) throws IOException {
-        return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+        LedgerCache ledgerCache = interleavedLedgerStorage.getLedgerCache();
+        // Throws NoLedgerException for unknown or deleted ledgers. An evicted FileInfo
+        // reloads from its index file without a LAC, so this returns null instead.
+        Long cachedLac = ledgerCache.getLastAddConfirmed(ledgerId);
+        if (cachedLac != null) {
+            return cachedLac;
+        }
+
+        Long memTableLac = lastAddConfirmedFromMemTable(ledgerId);
+        if (memTableLac != null) {
+            return ledgerCache.updateLastAddConfirmed(ledgerId, memTableLac);
+        }
+
+        try {
+            return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+        } catch (Bookie.NoLedgerException | Bookie.NoEntryException e) {
+            // An entry may have been added after the memtable check above.
+            Long latestMemTableLac = lastAddConfirmedFromMemTable(ledgerId);
+            if (latestMemTableLac == null) {
+                return interleavedLedgerStorage.getLastAddConfirmed(ledgerId);
+            }
+            return ledgerCache.updateLastAddConfirmed(ledgerId, latestMemTableLac);
+        }
+    }
+
+    private Long lastAddConfirmedFromMemTable(long ledgerId) throws IOException {
+        EntryKeyValue kv = memTable.getLastEntry(ledgerId);
+        if (kv == null) {
+            return null;
+        }
+        ByteBuf entry = kv.getValueAsByteBuffer();
+        try {
+            if (entry.readableBytes() < 3 * Long.BYTES) {
+                return null;
+            }
+            entry.skipBytes(2 * Long.BYTES);
+            return entry.readLong();
+        } finally {
+            entry.release();
+        }
     }
 
     @Override
