@@ -48,7 +48,9 @@ import org.apache.bookkeeper.conf.TestBKConfiguration;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.util.DiskChecker;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -62,6 +64,9 @@ public class SortedLedgerStorageTest {
     ServerConfiguration conf = TestBKConfiguration.newServerConfiguration();
     LedgerDirsManager ledgerDirsManager;
     SortedLedgerStorage sortedLedgerStorage = new SortedLedgerStorage();
+
+    @Rule
+    public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     final long numWrites = 2000;
     final long moreNumOfWrites = 3000;
@@ -270,6 +275,68 @@ public class SortedLedgerStorageTest {
             assertThrows(Bookie.NoLedgerException.class, () -> storage.getLastAddConfirmed(9_999L));
         } finally {
             storage.shutdown();
+        }
+    }
+
+    /**
+     * An unflushed LAC must be written back to the ledger cache after FileInfo eviction.
+     */
+    @Test
+    public void testGetLastAddConfirmedAfterUnflushedFileInfoEviction() throws Exception {
+        File tmpDir = temporaryFolder.newFolder("bkLacUnflushed");
+        BookieImpl.checkDirectoryStructure(BookieImpl.getCurrentDirectory(tmpDir));
+
+        ServerConfiguration limited = TestBKConfiguration.newServerConfiguration();
+        limited.setEntryLogPerLedgerEnabled(conf.isEntryLogPerLedgerEnabled());
+        limited.setLedgerDirNames(new String[] { tmpDir.toString() });
+        limited.setOpenFileLimit(2);
+        limited.setNumAddWorkerThreads(1);
+        limited.setNumReadWorkerThreads(1);
+        limited.setSkipListSizeLimit(64 * 1024 * 1024);
+
+        LedgerDirsManager dirs = new LedgerDirsManager(limited, limited.getLedgerDirs(),
+                new DiskChecker(limited.getDiskUsageThreshold(), limited.getDiskUsageWarnThreshold()));
+        InterleavedLedgerStorage underlying = new InterleavedLedgerStorage();
+        SortedLedgerStorage storage = new SortedLedgerStorage(underlying);
+        boolean initialized = false;
+        try {
+            storage.initialize(limited, null, dirs, dirs,
+                    statsProvider.getStatsLogger(BOOKIE_SCOPE), UnpooledByteBufAllocator.DEFAULT);
+            initialized = true;
+            storage.setCheckpointSource(CheckpointSource.DEFAULT);
+            storage.setCheckpointer(checkpointer);
+            long ledgerId = 0L;
+            storage.setMasterKey(ledgerId, ("ledger-" + ledgerId).getBytes());
+            for (long entryId = 0; entryId < 3; entryId++) {
+                ByteBuf entry = Unpooled.buffer(128);
+                try {
+                    entry.writeLong(ledgerId);
+                    entry.writeLong(entryId);
+                    entry.writeLong(entryId - 1);
+                    entry.writeByte(1);
+                    storage.addEntry(entry);
+                } finally {
+                    entry.release();
+                }
+            }
+            LedgerCacheImpl ledgerCache = (LedgerCacheImpl) underlying.ledgerCache;
+            IndexPersistenceMgr indexPersistenceManager = ledgerCache.getIndexPersistenceManager();
+            indexPersistenceManager.readFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.writeFileInfoCache.invalidate(ledgerId);
+            indexPersistenceManager.readFileInfoCache.cleanUp();
+            indexPersistenceManager.writeFileInfoCache.cleanUp();
+
+            assertEquals("LAC must include unflushed memtable entries", 1L, storage.getLastAddConfirmed(ledgerId));
+            assertFalse("LAC write-back must make the update immediately visible to long polls",
+                    storage.waitForLastAddConfirmedUpdate(ledgerId, 0L, notification -> { }));
+            storage.flush();
+            assertTrue("memtable must be empty after a real flush", storage.memTable.isEmpty());
+            assertEquals("LAC must remain visible after the memtable is flushed",
+                    1L, storage.getLastAddConfirmed(ledgerId));
+        } finally {
+            if (initialized) {
+                storage.shutdown();
+            }
         }
     }
 
