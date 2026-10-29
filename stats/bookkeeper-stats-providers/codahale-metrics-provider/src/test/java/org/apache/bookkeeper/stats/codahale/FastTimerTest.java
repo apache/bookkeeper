@@ -249,4 +249,22 @@ public class FastTimerTest {
         assertEquals("FastSnapshot.getValue(0.95)", (long) s1.getValue(0.95), (long) s2.getValue(0.95));
     }
 
+    @Test
+    public void testPercentileWithValueInHighestBucket() {
+        FastTimer t = getMockedFastTimer(1, FastTimer.Buckets.fine);
+        t.update(10, TimeUnit.MILLISECONDS);
+        t.update(20, TimeUnit.MILLISECONDS);
+
+        // add a value which falls into the highest bucket (which has upper bound of Long.MAX_VALUE)
+        long recordedMax = t.getBucketBound(t.getNumberOfBuckets() - 2) + 1;
+        t.update(recordedMax, TimeUnit.NANOSECONDS);
+        incSec(); // advance mocked time to next second
+
+        Snapshot s1 = t.getSnapshot();
+        long[] buckets = new long[t.getNumberOfBuckets()];
+        /* Make sure the 99th percentile is reported as the actually recorded max
+        (not as upper bucket bound Long.MAX_VALUE) */
+        assertEquals("s1.get99thPercentile()", recordedMax, (long) s1.get99thPercentile());
+    }
+
 }
