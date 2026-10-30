@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.feature.FeatureProvider;
 import org.apache.bookkeeper.stats.StatsLogger;
@@ -95,6 +96,35 @@ public class BKNamespaceDriver implements NamespaceDriver {
      */
     public static String getZKServersFromDLUri(URI uri) {
         return uri.getAuthority().replace(";", ",");
+    }
+
+    /**
+     * Select the zk servers to connect to between the ones stored in the namespace's DL config and the ones
+     * in the namespace uri.
+     *
+     * <p>The stored servers are used unless <i>ignorePattern</i> is set and matches them. This allows ignoring
+     * names, such as in-cluster service names, that the client cannot resolve and connecting to the servers
+     * of the namespace uri instead.
+     *
+     * @param storedZkServers zk servers stored in the namespace's DL config
+     * @param uriZkServers zk servers of the dl namespace uri
+     * @param ignorePattern regex of stored zk servers to ignore, empty to disable
+     * @return the zk servers to connect to
+     */
+    @VisibleForTesting
+    static String selectZkServers(String storedZkServers, String uriZkServers, String ignorePattern) {
+        if (null == storedZkServers || null == ignorePattern || ignorePattern.isEmpty()) {
+            return storedZkServers;
+        }
+        if (Pattern.compile(ignorePattern).matcher(storedZkServers).find()) {
+            LOG.warn()
+                    .attr("storedZkServers", storedZkServers)
+                    .attr("ignorePattern", ignorePattern)
+                    .attr("uriZkServers", uriZkServers)
+                    .log("Ignoring zk servers stored in the namespace config, using the ones of the namespace uri");
+            return uriZkServers;
+        }
+        return storedZkServers;
     }
 
     // resources (passed from initialization)
@@ -236,13 +266,18 @@ public class BKNamespaceDriver implements NamespaceDriver {
         this.bkdlConfig = BKDLConfig.resolveDLConfig(writerZKC, namespace);
 
         // Build zookeeper client for readers
-        if (bkdlConfig.getDlZkServersForWriter().equals(bkdlConfig.getDlZkServersForReader())) {
+        String uriZkServers = getZKServersFromDLUri(namespace);
+        String dlZkServersForWriter = selectZkServers(
+                bkdlConfig.getDlZkServersForWriter(), uriZkServers, conf.getZkServersIgnorePattern());
+        String dlZkServersForReader = selectZkServers(
+                bkdlConfig.getDlZkServersForReader(), uriZkServers, conf.getZkServersIgnorePattern());
+        if (dlZkServersForWriter.equals(dlZkServersForReader)) {
             this.sharedReaderZKCBuilder = this.sharedWriterZKCBuilder;
         } else {
             this.sharedReaderZKCBuilder = createZKClientBuilder(
                     String.format("dlzk:%s:factory_reader_shared", namespace),
                     conf,
-                    bkdlConfig.getDlZkServersForReader(),
+                    dlZkServersForReader,
                     statsLogger.scope("dlzk_factory_reader_shared"));
         }
         this.readerZKC = this.sharedReaderZKCBuilder.build();
@@ -272,11 +307,16 @@ public class BKNamespaceDriver implements NamespaceDriver {
                 new ThreadFactoryBuilder().setNameFormat("DLFactoryTimer-%d").build(),
                 conf.getTimeoutTimerTickDurationMs(), TimeUnit.MILLISECONDS,
                 conf.getTimeoutTimerNumTicks());
+        String uriZkServers = getZKServersFromDLUri(namespace);
+        String bkZkServersForWriter = selectZkServers(
+                bkdlConfig.getBkZkServersForWriter(), uriZkServers, conf.getZkServersIgnorePattern());
+        String bkZkServersForReader = selectZkServers(
+                bkdlConfig.getBkZkServersForReader(), uriZkServers, conf.getZkServersIgnorePattern());
         // Build bookkeeper client for writers
         this.sharedWriterBKCBuilder = createBKCBuilder(
                 String.format("bk:%s:factory_writer_shared", namespace),
                 conf,
-                bkdlConfig.getBkZkServersForWriter(),
+                bkZkServersForWriter,
                 bkdlConfig.getBkLedgersPath(),
                 eventLoopGroup,
                 requestTimer,
@@ -285,13 +325,13 @@ public class BKNamespaceDriver implements NamespaceDriver {
         this.writerBKC = this.sharedWriterBKCBuilder.build();
 
         // Build bookkeeper client for readers
-        if (bkdlConfig.getBkZkServersForWriter().equals(bkdlConfig.getBkZkServersForReader())) {
+        if (bkZkServersForWriter.equals(bkZkServersForReader)) {
             this.sharedReaderBKCBuilder = this.sharedWriterBKCBuilder;
         } else {
             this.sharedReaderBKCBuilder = createBKCBuilder(
                     String.format("bk:%s:factory_reader_shared", namespace),
                     conf,
-                    bkdlConfig.getBkZkServersForReader(),
+                    bkZkServersForReader,
                     bkdlConfig.getBkLedgersPath(),
                     eventLoopGroup,
                     requestTimer,
