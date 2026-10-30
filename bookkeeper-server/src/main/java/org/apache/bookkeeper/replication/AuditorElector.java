@@ -32,10 +32,8 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.CustomLog;
-import org.apache.bookkeeper.client.BKException;
 import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerAuditorManager;
@@ -68,9 +66,16 @@ public class AuditorElector {
     private final ExecutorService executor;
     private final LedgerAuditorManager ledgerAuditorManager;
 
-    Auditor auditor;
-    private AtomicBoolean running = new AtomicBoolean(false);
-
+    volatile Auditor auditor;
+    private final AtomicBoolean running = new AtomicBoolean(false);
+    private final Object lifecycleLock = new Object();
+    private final CompletableFuture<Void> shutdownComplete = new CompletableFuture<>();
+    // Guarded by lifecycleLock. Only the election wait may be interrupted; construction and
+    // startup must finish before cleanup releases the resources they use.
+    private boolean stopping;
+    private boolean electionWaiting;
+    private volatile Thread electionThread;
+    private volatile Thread shutdownThread;
 
     private final StatsLogger statsLogger;
 
@@ -141,34 +146,30 @@ public class AuditorElector {
     }
 
     public Future<?> start() {
-        running.set(true);
-        return submitElectionTask();
+        synchronized (lifecycleLock) {
+            if (stopping) {
+                return CompletableFuture.completedFuture(null);
+            }
+            running.set(true);
+            return submitElectionTask();
+        }
     }
 
     /**
-     * Run cleanup operations for the auditor elector.
+     * Request cleanup independently of the executor, which may be waiting for leadership.
      */
-    private Future<?> submitShutdownTask() {
-        return executor.submit(shutdownTask);
-    }
-
-    Runnable shutdownTask = new Runnable() {
-        @Override
-        public void run() {
-            if (!running.compareAndSet(true, false)) {
+    private void requestShutdown() {
+        synchronized (lifecycleLock) {
+            if (stopping) {
                 return;
             }
-
-            try {
-                ledgerAuditorManager.close();
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                log.warn().exception(ie).log("InterruptedException while closing ledger auditor manager");
-            } catch (Exception ke) {
-                log.error().exception(ke).log("Exception while closing ledger auditor manager");
-            }
+            stopping = true;
+            running.set(false);
+            executor.shutdown();
+            shutdownThread = new Thread(this::completeShutdown, "AuditorElectorShutdown-" + bookieId);
+            shutdownThread.start();
         }
-    };
+    }
 
     /**
      * Performing the auditor election using the ZooKeeper ephemeral sequential
@@ -178,40 +179,73 @@ public class AuditorElector {
     @VisibleForTesting
     Future<?> submitElectionTask() {
 
-        Runnable r = new Runnable() {
-                @Override
-                public void run() {
-                    if (!running.get()) {
-                        return;
-                    }
-                    try {
-                        ledgerAuditorManager.tryToBecomeAuditor(bookieId, e -> handleAuditorEvent(e));
-
-                        auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
-                        auditor.start();
-                    } catch (InterruptedException e) {
-                        log.error().exception(e).log("Interrupted while performing auditor election");
-                        Thread.currentThread().interrupt();
-                        submitShutdownTask();
-                    } catch (Exception e) {
-                        log.error().exception(e).log("Exception while performing auditor election");
-                        submitShutdownTask();
-                    }
-                }
-            };
-        try {
-            return executor.submit(r);
-        } catch (RejectedExecutionException e) {
-            log.debug("Executor was already closed");
-            return CompletableFuture.completedFuture(null);
+        synchronized (lifecycleLock) {
+            if (!running.get() || stopping) {
+                return CompletableFuture.completedFuture(null);
+            }
+            try {
+                return executor.submit(this::electAuditor);
+            } catch (RejectedExecutionException e) {
+                log.debug("Executor was already closed");
+                return CompletableFuture.completedFuture(null);
+            }
         }
+    }
+
+    private void electAuditor() {
+        synchronized (lifecycleLock) {
+            electionThread = Thread.currentThread();
+            if (stopping) {
+                return;
+            }
+            electionWaiting = true;
+        }
+        try {
+            ledgerAuditorManager.tryToBecomeAuditor(bookieId, this::handleAuditorEvent);
+            synchronized (lifecycleLock) {
+                electionWaiting = false;
+                if (stopping) {
+                    return;
+                }
+                // Construction is now admitted. Shutdown must let it finish without interruption.
+            }
+
+            Auditor newAuditor = createAuditor();
+            synchronized (lifecycleLock) {
+                // Publish even when stopping so cleanup can close a constructed, unstarted Auditor.
+                auditor = newAuditor;
+                if (stopping) {
+                    return;
+                }
+                // Startup is now admitted. Cleanup waits for this task to exit before closing it.
+            }
+            newAuditor.start();
+        } catch (InterruptedException e) {
+            if (running.get()) {
+                log.error().exception(e).log("Interrupted while performing auditor election");
+            }
+            Thread.currentThread().interrupt();
+            requestShutdown();
+        } catch (Exception e) {
+            log.error().exception(e).log("Exception while performing auditor election");
+            requestShutdown();
+        } finally {
+            synchronized (lifecycleLock) {
+                electionWaiting = false;
+            }
+        }
+    }
+
+    @VisibleForTesting
+    Auditor createAuditor() throws UnavailableException {
+        return new Auditor(bookieId, conf, bkc, false, statsLogger);
     }
 
     private void handleAuditorEvent(LedgerAuditorManager.AuditorEvent e) {
         switch (e) {
             case SessionLost:
                 log.error("Lost ZK connection, shutting down");
-                submitShutdownTask();
+                requestShutdown();
                 break;
 
             case VoteWasDeleted:
@@ -231,39 +265,100 @@ public class AuditorElector {
     }
 
     /**
-     * Shutting down AuditorElector.
+     * Shut down the elector and wait for election work and resource cleanup to finish.
+     * Concurrent and repeated callers wait for the same cleanup. Close failures are logged.
+     * An interrupted caller waits for cleanup before receiving {@link InterruptedException}.
+     * Calls from the election or cleanup thread only request shutdown to avoid waiting for themselves.
      */
     public void shutdown() throws InterruptedException {
-        synchronized (this) {
-            if (executor.isShutdown()) {
-                return;
-            }
-            // close auditor manager
+        requestShutdown();
+        if (Thread.currentThread() == electionThread || Thread.currentThread() == shutdownThread) {
+            return;
+        }
+        boolean interrupted = false;
+        while (true) {
             try {
-                submitShutdownTask().get(10, TimeUnit.SECONDS);
-                executor.shutdown();
+                shutdownComplete.get();
+                break;
+            } catch (InterruptedException e) {
+                interrupted = true;
             } catch (ExecutionException e) {
-                log.warn().exception(e).log("Failed to close auditor manager");
-                executor.shutdownNow();
-                shutdownTask.run();
-            } catch (TimeoutException e) {
-                log.warn().exception(e).log("Failed to close auditor manager in 10 seconds");
-                executor.shutdownNow();
-                shutdownTask.run();
+                // The shared failure has already been logged by the cleanup thread.
+                break;
+            }
+        }
+        if (interrupted) {
+            throw new InterruptedException("Interrupted while waiting for auditor elector shutdown");
+        }
+    }
+
+    private void completeShutdown() {
+        Throwable failure = null;
+        boolean interrupted = false;
+        try {
+            ledgerAuditorManager.close();
+        } catch (Throwable t) {
+            failure = t;
+        }
+        synchronized (lifecycleLock) {
+            // Close first: interrupting an in-flight metadata create could lose its result and
+            // leave a vote that the manager cannot delete. Managers that do not wake on close
+            // must instead support interruption of their remaining election wait.
+            if (electionWaiting) {
+                electionThread.interrupt();
+            }
+        }
+        // Some close implementations restore interruption. Do not pass it on to Auditor.shutdown(),
+        // which would otherwise abandon its resource cleanup when awaiting its executor.
+        interrupted |= Thread.interrupted();
+        while (true) {
+            try {
+                if (executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+                    break;
+                }
+            } catch (InterruptedException e) {
+                interrupted = true;
+                failure = recordShutdownFailure(failure, e);
             }
         }
 
-        if (auditor != null) {
-            auditor.shutdown();
-            auditor = null;
+        Auditor currentAuditor = auditor;
+        if (currentAuditor != null) {
+            try {
+                currentAuditor.shutdown();
+            } catch (Throwable t) {
+                failure = recordShutdownFailure(failure, t);
+            } finally {
+                auditor = null;
+            }
         }
+        interrupted |= Thread.interrupted();
         if (ownBkc) {
             try {
                 bkc.close();
-            } catch (BKException e) {
-                log.warn().exception(e).log("Failed to close bookkeeper client");
+            } catch (Throwable t) {
+                failure = recordShutdownFailure(failure, t);
             }
         }
+        if (failure == null) {
+            shutdownComplete.complete(null);
+        } else {
+            log.warn().exception(failure).log("Failed to close auditor elector");
+            shutdownComplete.completeExceptionally(failure);
+        }
+        if (interrupted) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static Throwable recordShutdownFailure(Throwable previous, Throwable failure) {
+        if (previous == null) {
+            return failure;
+        }
+        if (previous != failure) {
+            previous.addSuppressed(failure);
+        }
+        return previous;
     }
 
     /**
@@ -273,10 +368,11 @@ public class AuditorElector {
      * @return
      */
     public boolean isRunning() {
-        if (auditor != null) {
-            return auditor.isRunning();
+        if (!running.get()) {
+            return false;
         }
-        return running.get();
+        Auditor currentAuditor = auditor;
+        return currentAuditor == null || currentAuditor.isRunning();
     }
 
     @Override

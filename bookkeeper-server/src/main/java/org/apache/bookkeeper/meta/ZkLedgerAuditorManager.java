@@ -56,7 +56,10 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     private final String basePath;
     private final String electionPath;
 
+    // Serializes election admission and close, but is never held while waiting for a predecessor.
+    private final Object lifecycleLock = new Object();
     private String myVote;
+    private CountDownLatch electionWait;
 
     private static final String ELECTION_ZNODE = "auditorelection";
 
@@ -90,14 +93,23 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     @Override
     public void tryToBecomeAuditor(String bookieId, Consumer<AuditorEvent> listener)
             throws IOException, InterruptedException {
+        if (isClosed) {
+            return;
+        }
         this.listener = listener;
         createElectorPath();
 
         try {
             while (!isClosed) {
-                createMyVote(bookieId);
+                String vote = createMyVote(bookieId);
+                if (vote == null) {
+                    return;
+                }
 
                 List<String> children = zkc.getChildren(getVotePath(""), false);
+                if (isClosed) {
+                    return;
+                }
                 if (0 >= children.size()) {
                     throw new IllegalArgumentException(
                             "At least one bookie server should present to elect the Auditor!");
@@ -105,7 +117,7 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 
                 // sorting in ascending order of sequential number
                 Collections.sort(children, new ElectionComparator());
-                String voteNode = StringUtils.substringAfterLast(myVote, PATH_SEPARATOR);
+                String voteNode = StringUtils.substringAfterLast(vote, PATH_SEPARATOR);
 
                 if (children.get(AUDITOR_INDEX).equals(voteNode)) {
                     // We have been elected as the auditor
@@ -128,16 +140,30 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                     int prevNodeIndex = myIndex - 1;
 
                     CountDownLatch latch = new CountDownLatch(1);
-
-                    if (null == zkc.exists(getVotePath(PATH_SEPARATOR)
-                            + children.get(prevNodeIndex), event -> latch.countDown())) {
-                        // While adding, the previous znode doesn't exists.
-                        // Again going to election.
-                        continue;
+                    synchronized (lifecycleLock) {
+                        if (isClosed) {
+                            return;
+                        }
+                        electionWait = latch;
                     }
 
-                    // Wait for the previous auditor in line to be deleted
-                    latch.await();
+                    try {
+                        if (null == zkc.exists(getVotePath(PATH_SEPARATOR)
+                                + children.get(prevNodeIndex), event -> latch.countDown())) {
+                            // While adding, the previous znode doesn't exists.
+                            // Again going to election.
+                            continue;
+                        }
+
+                        // Both predecessor deletion and close release this wait.
+                        latch.await();
+                    } finally {
+                        synchronized (lifecycleLock) {
+                            if (electionWait == latch) {
+                                electionWait = null;
+                            }
+                        }
+                    }
                 }
 
                 electionAttempts.inc();
@@ -172,34 +198,45 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     @Override
     public void close() throws Exception {
         log.info("Shutting down AuditorElector");
-        isClosed = true;
-        if (myVote != null) {
-            try {
-                zkc.delete(myVote, -1);
-            } catch (KeeperException.NoNodeException nne) {
-                // Ok
-            } catch (InterruptedException ie) {
-                Thread.currentThread().interrupt();
-                log.warn().exception(ie).attr("myVote", myVote).log("InterruptedException while deleting myVote");
-            } catch (KeeperException ke) {
-                log.error().exception(ke).attr("myVote", myVote).log("Exception while deleting myVote");
+        synchronized (lifecycleLock) {
+            isClosed = true;
+            if (electionWait != null) {
+                electionWait.countDown();
+            }
+            if (myVote != null) {
+                try {
+                    zkc.delete(myVote, -1);
+                } catch (KeeperException.NoNodeException nne) {
+                    // Ok
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    log.warn().exception(ie).attr("myVote", myVote).log("InterruptedException while deleting myVote");
+                } catch (KeeperException ke) {
+                    log.error().exception(ke).attr("myVote", myVote).log("Exception while deleting myVote");
+                }
             }
         }
     }
 
-    private void createMyVote(String bookieId) throws IOException, InterruptedException {
+    private String createMyVote(String bookieId) throws IOException, InterruptedException {
         List<ACL> zkAcls = ZkUtils.getACLs(conf);
         AuditorVoteFormat fmt = new AuditorVoteFormat()
                 .setBookieId(bookieId);
 
-        try {
-            if (null == myVote || null == zkc.exists(myVote, false)) {
-                myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
-                        fmt.toTextFormat().getBytes(UTF_8), zkAcls,
-                        CreateMode.EPHEMERAL_SEQUENTIAL);
+        synchronized (lifecycleLock) {
+            if (isClosed) {
+                return null;
             }
-        } catch (KeeperException e) {
-            throw new IOException(e);
+            try {
+                if (null == myVote || null == zkc.exists(myVote, false)) {
+                    myVote = zkc.create(getVotePath(PATH_SEPARATOR + VOTE_PREFIX),
+                            fmt.toTextFormat().getBytes(UTF_8), zkAcls,
+                            CreateMode.EPHEMERAL_SEQUENTIAL);
+                }
+                return myVote;
+            } catch (KeeperException e) {
+                throw new IOException(e);
+            }
         }
     }
 
