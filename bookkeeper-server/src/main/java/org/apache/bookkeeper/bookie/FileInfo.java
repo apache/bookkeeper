@@ -521,17 +521,7 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         // copy contents from old.idx to new.idx.rloc
         FileChannel newFc = new RandomAccessFile(rlocFile, "rw").getChannel();
         try {
-            long written = 0;
-            while (written < size) {
-                long count = fc.transferTo(written, size, newFc);
-                if (count <= 0) {
-                    throw new IOException("Copying to new location " + rlocFile + " failed");
-                }
-                written += count;
-            }
-            if (written <= 0 && size > 0) {
-                throw new IOException("Copying to new location " + rlocFile + " failed");
-            }
+            transferFully(fc, newFc, size, rlocFile);
         } finally {
             newFc.force(true);
             newFc.close();
@@ -554,6 +544,28 @@ class FileInfo extends Watchable<LastAddConfirmedUpdateNotification> {
         fc = new RandomAccessFile(newFile, mode).getChannel();
         lf = newFile;
         deleted = false;
+    }
+
+    /**
+     * Copies exactly {@code size} bytes from the start of {@code src} to {@code dst}.
+     *
+     * <p>{@link FileChannel#transferTo} may transfer fewer bytes than requested, so the copy is
+     * repeated until {@code size} bytes have been written. The count passed to each call is the
+     * number of bytes still to copy ({@code size - written}); passing {@code size} would allow a
+     * later call to read past the requested range and copy more than {@code size} bytes when the
+     * source file is larger than {@code size}.
+     */
+    @VisibleForTesting
+    static void transferFully(FileChannel src, FileChannel dst, long size, File rlocFile)
+            throws IOException {
+        long written = 0;
+        while (written < size) {
+            long count = src.transferTo(written, size - written, dst);
+            if (count <= 0) {
+                throw new IOException("Copying to new location " + rlocFile + " failed");
+            }
+            written += count;
+        }
     }
 
     public synchronized byte[] getMasterKey() throws IOException {
