@@ -95,6 +95,8 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
 
     public static final String BKDL_ZK_ACL_ID = "zkAclId";
     public static final String BKDL_ZK_ACL_ID_DEFAULT = null;
+    public static final String BKDL_ZK_SERVERS_IGNORE_PATTERN = "zkServersIgnorePattern";
+    public static final String BKDL_ZK_SERVERS_IGNORE_PATTERN_DEFAULT = "";
     public static final String BKDL_ZK_SESSION_TIMEOUT_SECONDS = "zkSessionTimeoutSeconds";
     public static final int BKDL_ZK_SESSION_TIMEOUT_SECONDS_DEFAULT = 30;
     public static final String BKDL_ZK_REQUEST_RATE_LIMIT = "zkRequestRateLimit";
@@ -605,6 +607,32 @@ public class DistributedLogConfiguration extends CompositeConfiguration {
      */
     public DistributedLogConfiguration setZkAclId(String zkAclId) {
         setProperty(BKDL_ZK_ACL_ID, zkAclId);
+        return this;
+    }
+
+    /**
+     * Get the regex used to ignore ZooKeeper servers stored in the namespace's DL config.
+     *
+     * <p>The namespace config stored in ZooKeeper carries the ZooKeeper servers the DL and BK clients should
+     * connect to. When one of those values matches this pattern (for example <code>.*\.svc\.cluster\.local.*</code>,
+     * an in-cluster name that is not resolvable from outside), the client connects to the ZooKeeper servers of the
+     * namespace URI instead. An empty pattern (the default) disables this.
+     *
+     * @return regex of ZooKeeper servers to ignore, empty if disabled.
+     */
+    public String getZkServersIgnorePattern() {
+        return getString(BKDL_ZK_SERVERS_IGNORE_PATTERN, BKDL_ZK_SERVERS_IGNORE_PATTERN_DEFAULT);
+    }
+
+    /**
+     * Set the regex used to ignore ZooKeeper servers stored in the namespace's DL config.
+     *
+     * @param zkServersIgnorePattern regex of ZooKeeper servers to ignore.
+     * @return distributedlog configuration
+     * @see #getZkServersIgnorePattern()
+     */
+    public DistributedLogConfiguration setZkServersIgnorePattern(String zkServersIgnorePattern) {
+        setProperty(BKDL_ZK_SERVERS_IGNORE_PATTERN, zkServersIgnorePattern);
         return this;
     }
 

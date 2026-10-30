@@ -96,7 +96,8 @@ public class ZKMetadataAccessor implements org.apache.distributedlog.api.Metadat
             String zkServersForReader;
             try {
                 BKDLConfig bkdlConfig = BKDLConfig.resolveDLConfig(this.writerZKC, uri);
-                zkServersForReader = bkdlConfig.getDlZkServersForReader();
+                zkServersForReader = BKNamespaceDriver.selectZkServers(
+                        bkdlConfig.getDlZkServersForReader(), zkServersForWriter, conf.getZkServersIgnorePattern());
             } catch (IOException e) {
                 log.warn().attr("uri", uri).exception(e).log("Error on resolving dl metadata bindings");
                 zkServersForReader = zkServersForWriter;
