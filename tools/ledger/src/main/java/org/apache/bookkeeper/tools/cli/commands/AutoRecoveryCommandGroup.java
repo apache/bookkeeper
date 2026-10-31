@@ -22,6 +22,7 @@ import static org.apache.bookkeeper.tools.common.BKCommandCategories.CATEGORY_IN
 
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ListUnderReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.LostBookieRecoveryDelayCommand;
+import org.apache.bookkeeper.tools.cli.commands.autorecovery.MarkLedgerReplicatedCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.ToggleCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.TriggerAuditCommand;
 import org.apache.bookkeeper.tools.cli.commands.autorecovery.WhoIsAuditorCommand;
@@ -47,6 +48,7 @@ public class AutoRecoveryCommandGroup extends CliCommandGroup<BKFlags> {
         .addCommand(new TriggerAuditCommand())
         .addCommand(new ListUnderReplicatedCommand())
         .addCommand(new LostBookieRecoveryDelayCommand())
+        .addCommand(new MarkLedgerReplicatedCommand())
         .build();
 
     public AutoRecoveryCommandGroup() {
