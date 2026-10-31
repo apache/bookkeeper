@@ -141,4 +141,51 @@ public class BookieMultipleJournalsTest extends BookKeeperClusterTestCase {
         }
     }
 
+    /**
+     * Test that hash-based selection still allows correct read/write operations.
+     *
+     * This integration test verifies that when journalHashBasedSelection is enabled,
+     * entries can still be written and read back correctly.
+     */
+    @Test
+    public void testHashBasedSelectionReadWrite() throws Exception {
+        // Restart bookies with hash-based selection enabled
+        restartBookies(conf -> {
+            conf.setJournalHashBasedSelection(true);
+            return conf;
+        });
+
+        // Create ledgers and write entries
+        final int numLedgers = 8;
+        final int numEntries = 10;
+        List<LedgerHandle> writeHandles = new ArrayList<>();
+
+        for (int i = 0; i < numLedgers; i++) {
+            writeHandles.add(bkc.createLedger(1, 1, DigestType.CRC32, new byte[0]));
+        }
+
+        for (int i = 0; i < numEntries; i++) {
+            for (int j = 0; j < numLedgers; j++) {
+                writeHandles.get(j).addEntry(("entry-" + i).getBytes());
+            }
+        }
+
+        // Close write handles
+        for (LedgerHandle lh : writeHandles) {
+            lh.close();
+        }
+
+        // Read back and verify
+        for (int i = 0; i < numLedgers; i++) {
+            LedgerHandle readHandle = bkc.openLedger(writeHandles.get(i).getId(), DigestType.CRC32, new byte[0]);
+            Enumeration<LedgerEntry> entries = readHandle.readEntries(0, numEntries - 1);
+
+            for (int j = 0; j < numEntries; j++) {
+                LedgerEntry entry = entries.nextElement();
+                assertEquals("entry-" + j, new String(entry.getEntry()));
+            }
+            readHandle.close();
+        }
+    }
+
 }
