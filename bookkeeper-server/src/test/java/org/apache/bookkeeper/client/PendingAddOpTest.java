@@ -24,7 +24,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anySet;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -32,6 +35,13 @@ import static org.mockito.Mockito.when;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.bookkeeper.client.BKException.Code;
 import org.apache.bookkeeper.client.api.LedgerMetadata;
@@ -39,8 +49,11 @@ import org.apache.bookkeeper.client.api.WriteFlag;
 import org.apache.bookkeeper.common.util.MathUtils;
 import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
+import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
 import org.apache.bookkeeper.stats.NullStatsLogger;
+import org.apache.bookkeeper.versioning.Versioned;
+import org.awaitility.Awaitility;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -71,6 +84,173 @@ public class PendingAddOpTest {
         byte[] data = "test-pending-add-op".getBytes(UTF_8);
         payload = Unpooled.wrappedBuffer(data);
         payload.writerIndex(data.length);
+    }
+
+    @Test(timeout = 30000)
+    public void testReconcileStaleEnsembleOnNoOpChange() throws Exception {
+        checkStaleEnsembleReconciled(Collections.emptySet());
+    }
+
+    @Test(timeout = 30000)
+    public void testReconcileStaleEnsembleWhenOnlyOtherIndexChanges() throws Exception {
+        checkStaleEnsembleReconciled(Collections.singleton(1));
+    }
+
+    private void checkStaleEnsembleReconciled(Set<Integer> changedIndices) throws Exception {
+        BookieId removed = BookieId.parse("removed:3181");
+        BookieId replacement = BookieId.parse("replacement:3181");
+        BookieId other = BookieId.parse("other:3181");
+        BookieId newOther = BookieId.parse("new-other:3181");
+        List<BookieId> target = Arrays.asList(replacement,
+                changedIndices.isEmpty() ? other : newOther);
+        MockClientContext client = MockClientContext.create();
+        CompletableFuture<Void> oldWrite = new CompletableFuture<>();
+        try {
+            Versioned<LedgerMetadata> metadata = ClientUtil.setupLedger(client, 10L,
+                    LedgerMetadataBuilder.create().withEnsembleSize(2).withWriteQuorumSize(2).withAckQuorumSize(2)
+                            .newEnsembleEntry(0L, target));
+            LedgerHandle handle = new LedgerHandle(client, 10L, metadata, BookKeeper.DigestType.CRC32C,
+                    ClientUtil.PASSWD, WriteFlag.NONE);
+            client.getMockBookieClient().setPreWriteHook((bookie, ledgerId, entryId) ->
+                    bookie.equals(removed) ? oldWrite : CompletableFuture.completedFuture(null));
+            CompletableFuture<Integer> first = new CompletableFuture<>();
+            // Reproduce the interleaving deterministically: metadata is already updated,
+            // but the operation captured the old ensemble before it entered the queue.
+            PendingAddOp stale = PendingAddOp.create(handle, client, Arrays.asList(removed, other),
+                    Unpooled.wrappedBuffer(new byte[] {1}), WriteFlag.NONE,
+                    (rc, lh, entryId, latency, ctx) -> first.complete(rc), null);
+            handle.doAsyncAddEntry(stale);
+            CompletableFuture<Integer> second = new CompletableFuture<>();
+            handle.asyncAddEntry(new byte[] {2}, (rc, lh, entryId, ctx) -> second.complete(rc), null);
+            handle.executor.submit(() -> { }).get();
+            assertFalse(first.isDone());
+            assertFalse(second.isDone());
+            handle.executor.submit(() -> handle.unsetSuccessAndSendWriteRequest(target, changedIndices)).get();
+            assertEquals(Integer.valueOf(Code.OK), first.get(10, TimeUnit.SECONDS));
+            assertEquals(Integer.valueOf(Code.OK), second.get(10, TimeUnit.SECONDS));
+            assertEquals(1L, handle.getLastAddConfirmed());
+        } finally {
+            oldWrite.complete(null);
+            client.getMainWorkerPool().shutdown();
+            client.getScheduler().shutdown();
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void testMultiIndexAckCleanupAndLateResponsesAcrossChanges() throws Exception {
+        MockClientContext client = MockClientContext.create();
+        // Control every response explicitly, including replies from older generations.
+        client.setBookieClient(mock(BookieClient.class));
+        List<BookieId> original = Arrays.asList(BookieId.parse("a:3181"),
+                BookieId.parse("b:3181"), BookieId.parse("c:3181"));
+        List<BookieId> next = Arrays.asList(BookieId.parse("d:3181"),
+                BookieId.parse("e:3181"), BookieId.parse("f:3181"));
+        List<BookieId> last = Arrays.asList(BookieId.parse("g:3181"),
+                BookieId.parse("h:3181"), BookieId.parse("i:3181"));
+        try {
+            Versioned<LedgerMetadata> metadata = ClientUtil.setupLedger(client, 11L,
+                    LedgerMetadataBuilder.create().withEnsembleSize(3).withWriteQuorumSize(2).withAckQuorumSize(2)
+                            .newEnsembleEntry(0L, original));
+            LedgerHandle handle = new LedgerHandle(client, 11L, metadata, BookKeeper.DigestType.CRC32C,
+                    ClientUtil.PASSWD, WriteFlag.NONE);
+            AtomicInteger callbacks = new AtomicInteger();
+            handle.executor.submit(() -> {
+                PendingAddOp[] ops = new PendingAddOp[2];
+                handle.changingEnsemble = true;
+                handle.pendingAddsSequenceHead = 0;
+                for (int entry = 0; entry < ops.length; entry++) {
+                    PendingAddOp op = PendingAddOp.create(handle, client, original,
+                            Unpooled.wrappedBuffer(new byte[] {1}), WriteFlag.NONE,
+                            (rc, lh, eid, latency, ctx) -> {
+                                assertEquals(Code.OK, rc);
+                                callbacks.incrementAndGet();
+                            }, null);
+                    ops[entry] = op;
+                    op.entryId = entry + 1;
+                    op.toSend = op.payload;
+                    handle.pendingAddOps.add(op);
+                    for (int index = 0; index < 3; index++) {
+                        if (handle.distributionSchedule.hasEntry(op.entryId, index)) {
+                            op.pendingWriteRequests++;
+                            op.writeComplete(Code.OK, 11L, op.entryId, original.get(index), index);
+                        }
+                    }
+                    assertTrue(op.completed);
+                }
+                handle.changingEnsemble = false;
+                Set<Integer> changed = new LinkedHashSet<>(Arrays.asList(2, 0, 1));
+                handle.unsetSuccessAndSendWriteRequest(next, changed);
+                assertEquals(0, callbacks.get());
+                for (PendingAddOp op : ops) {
+                    assertFalse(op.completed);
+                    assertTrue(op.addEntrySuccessBookies.isEmpty());
+                }
+                // Some ACKs arrive for the intermediate ensemble before another change.
+                ops[0].writeComplete(Code.OK, 11L, 1L, next.get(1), 1);
+                handle.unsetSuccessAndSendWriteRequest(last, changed);
+                for (PendingAddOp op : ops) {
+                    for (int index = 0; index < 3; index++) {
+                        if (handle.distributionSchedule.hasEntry(op.entryId, index)) {
+                            op.writeComplete(Code.OK, 11L, op.entryId, original.get(index), index);
+                            op.writeComplete(Code.WriteException, 11L, op.entryId, next.get(index), index);
+                        }
+                    }
+                    assertFalse(op.completed);
+                }
+                assertEquals(0, callbacks.get());
+                assertFalse(handle.changingEnsemble);
+                assertEquals(-1L, handle.getLastAddConfirmed());
+                for (PendingAddOp op : ops) {
+                    for (int index = 0; index < 3; index++) {
+                        if (handle.distributionSchedule.hasEntry(op.entryId, index)) {
+                            op.writeComplete(Code.OK, 11L, op.entryId, last.get(index), index);
+                        }
+                    }
+                }
+                assertEquals(2, callbacks.get());
+                assertEquals(2L, handle.getLastAddConfirmed());
+                for (PendingAddOp op : ops) {
+                    op.payload.release();
+                }
+            }).get(10, TimeUnit.SECONDS);
+        } finally {
+            client.getMainWorkerPool().shutdown();
+            client.getScheduler().shutdown();
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void testFailuresQueuedDuringEnsembleChange() throws Exception {
+        MockClientContext client = MockClientContext.create();
+        List<BookieId> original = Arrays.asList(BookieId.parse("a:3181"), BookieId.parse("b:3181"));
+        List<BookieId> target = Arrays.asList(BookieId.parse("c:3181"), BookieId.parse("d:3181"));
+        client.setBookieWatcher(mock(BookieWatcher.class));
+        BookieWatcher watcher = client.getBookieWatcher();
+        when(watcher.replaceBookie(anyInt(),
+                anyInt(), anyInt(),
+                any(), anyList(),
+                anyInt(), anySet()))
+                .thenAnswer(call -> target.get((Integer) call.getArgument(5)));
+        try {
+            Versioned<LedgerMetadata> metadata = ClientUtil.setupLedger(client, 12L,
+                    LedgerMetadataBuilder.create().withEnsembleSize(2).withWriteQuorumSize(2).withAckQuorumSize(2)
+                            .newEnsembleEntry(0L, original));
+            LedgerHandle handle = new LedgerHandle(client, 12L, metadata, BookKeeper.DigestType.CRC32C,
+                    ClientUtil.PASSWD, WriteFlag.NONE);
+            handle.executor.submit(() -> {
+                handle.handleBookieFailure(Collections.singletonMap(0, original.get(0)));
+                handle.handleBookieFailure(Collections.singletonMap(1, original.get(1)));
+                assertTrue(handle.hasDelayedWriteFailedBookies());
+            }).get(10, TimeUnit.SECONDS);
+            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() ->
+                    handle.executor.submit(() -> !handle.changingEnsemble
+                            && handle.getCurrentEnsemble().equals(target)).get());
+            assertEquals(target, client.getLedgerManager().readLedgerMetadata(12L).get()
+                    .getValue().getAllEnsembles().lastEntry().getValue());
+        } finally {
+            client.getMainWorkerPool().shutdown();
+            client.getScheduler().shutdown();
+        }
     }
 
     @Test
