@@ -128,6 +128,10 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                     // looking the previous node deletion.
                     int myIndex = children.indexOf(voteNode);
                     if (myIndex < 0) {
+                        if (isClosed) {
+                            // close() deleted it
+                            break;
+                        }
                         throw new IllegalArgumentException("My vote has disappeared");
                     }
 
