@@ -201,8 +201,9 @@ public class SingleThreadExecutor extends AbstractExecutorService implements Thr
 
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        runner.join(unit.toMillis(timeout));
-        return runner.isAlive();
+        // Unlike join(unit.toMillis(timeout)), doesn't wait forever for a timeout under 1 ms
+        unit.timedJoin(runner, timeout);
+        return !runner.isAlive();
     }
 
     public long getQueuedTasksCount() {

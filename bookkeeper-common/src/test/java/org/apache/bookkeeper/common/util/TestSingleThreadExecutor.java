@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Uninterruptibles;
 import io.netty.util.concurrent.DefaultThreadFactory;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -345,6 +346,40 @@ public class TestSingleThreadExecutor {
         ste.awaitTermination(10, TimeUnit.SECONDS);
         assertTrue(ste.isShutdown());
         assertTrue(ste.isTerminated());
+    }
+
+    @Test
+    public void testAwaitTermination() throws Exception {
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        CountDownLatch taskCanFinish = new CountDownLatch(1);
+        try {
+            ste.execute(() -> Uninterruptibles.awaitUninterruptibly(taskCanFinish));
+            ste.shutdown();
+
+            assertFalse("Terminated while running a task", ste.awaitTermination(100, TimeUnit.MILLISECONDS));
+
+            taskCanFinish.countDown();
+            assertTrue("Not terminated", ste.awaitTermination(10, TimeUnit.SECONDS));
+            assertTrue(ste.isTerminated());
+        } finally {
+            taskCanFinish.countDown();
+        }
+    }
+
+    @Test(timeout = 10000)
+    public void testAwaitTerminationWithTimeoutUnderOneMillisecond() throws Exception {
+        SingleThreadExecutor ste = new SingleThreadExecutor(THREAD_FACTORY);
+        CountDownLatch taskCanFinish = new CountDownLatch(1);
+        try {
+            ste.execute(() -> Uninterruptibles.awaitUninterruptibly(taskCanFinish));
+            ste.shutdown();
+
+            // returns without waiting for the running task
+            assertFalse(ste.awaitTermination(0, TimeUnit.MILLISECONDS));
+            assertFalse(ste.awaitTermination(500, TimeUnit.MICROSECONDS));
+        } finally {
+            taskCanFinish.countDown();
+        }
     }
 
     @Test
