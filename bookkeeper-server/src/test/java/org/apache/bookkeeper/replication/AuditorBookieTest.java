@@ -26,16 +26,23 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.meta.LedgerAuditorManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.ZooKeeper;
+import org.awaitility.Awaitility;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -169,6 +176,59 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
     }
 
     /**
+     * Test that shutting down the elector of a bookie that is not the auditor
+     * doesn't wait for its election, which only ends when the bookie becomes
+     * the auditor.
+     */
+    @Test
+    public void testShutdownFollowerElector() throws Exception {
+        BookieServer auditor = verifyAuditor();
+        String addr = addressByIndex(indexOfServer(auditor) == 0 ? 1 : 0).toString();
+        AuditorElector follower = auditorElectors.get(addr);
+
+        CompletableFuture<Void> shutdown = CompletableFuture.runAsync(() -> {
+            try {
+                follower.shutdown();
+            } catch (InterruptedException e) {
+                throw new CompletionException(e);
+            }
+        });
+        // well below the 10 seconds shutdown() gives the election before interrupting it
+        shutdown.get(5, TimeUnit.SECONDS);
+
+        assertFalse("Vote of the stopped elector is still there", hasVote(addr));
+        assertSame("Auditor changed", auditor, verifyAuditor());
+    }
+
+    /**
+     * Test that closing the auditor manager of a candidate waiting for its turn
+     * ends the wait, and the candidate doesn't become the auditor.
+     */
+    @Test
+    public void testCloseReleasesWaitingCandidate() throws Exception {
+        verifyAuditor();
+        String candidate = "waiting-candidate";
+        LedgerAuditorManager lam = bkc.getLedgerManagerFactory().newLedgerAuditorManager();
+        CompletableFuture<Void> election = CompletableFuture.runAsync(() -> {
+            try {
+                lam.tryToBecomeAuditor(candidate, e -> {});
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
+        Awaitility.await().until(() -> hasVote(candidate));
+
+        lam.close();
+        try {
+            election.get(5, TimeUnit.SECONDS);
+            fail("A closed candidate became the auditor");
+        } catch (ExecutionException e) {
+            assertTrue("Unexpected failure: " + e.getCause(), e.getCause() instanceof IllegalStateException);
+        }
+        assertFalse("Vote of the closed candidate is still there", hasVote(candidate));
+    }
+
+    /**
      * Test restart of the previous Auditor bookie shouldn't initiate
      * re-election and should create new vote after restarting.
      */
@@ -245,6 +305,16 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
             }
         }
         return auditors;
+    }
+
+    private boolean hasVote(String bookieId) throws Exception {
+        for (String child : zkc.getChildren(electionPath, false)) {
+            byte[] data = zkc.getData(electionPath + '/' + child, false, null);
+            if (new String(data).contains(bookieId)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private ServerConfiguration shutdownBookie(BookieServer bkServer) throws Exception {

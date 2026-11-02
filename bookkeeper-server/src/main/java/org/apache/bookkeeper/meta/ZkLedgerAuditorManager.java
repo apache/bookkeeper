@@ -56,7 +56,7 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     private final String basePath;
     private final String electionPath;
 
-    private String myVote;
+    private volatile String myVote;
 
     private static final String ELECTION_ZNODE = "auditorelection";
 
@@ -69,6 +69,8 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
 
     private volatile Consumer<AuditorEvent> listener;
     private volatile boolean isClosed = false;
+    // What a candidate waits on until the previous one in line is gone; close() releases it too
+    private volatile CountDownLatch previousVoteDeleted;
 
     // Expose Stats
     @StatsDoc(
@@ -96,6 +98,10 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
         try {
             while (!isClosed) {
                 createMyVote(bookieId);
+                if (isClosed) {
+                    // close() might have missed the vote just created
+                    break;
+                }
 
                 List<String> children = zkc.getChildren(getVotePath(""), false);
                 if (0 >= children.size()) {
@@ -128,6 +134,7 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                     int prevNodeIndex = myIndex - 1;
 
                     CountDownLatch latch = new CountDownLatch(1);
+                    previousVoteDeleted = latch;
 
                     if (null == zkc.exists(getVotePath(PATH_SEPARATOR)
                             + children.get(prevNodeIndex), event -> latch.countDown())) {
@@ -136,8 +143,11 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                         continue;
                     }
 
-                    // Wait for the previous auditor in line to be deleted
-                    latch.await();
+                    // Wait for the previous auditor in line to be deleted, unless close() ran
+                    // before it could release this latch
+                    if (!isClosed) {
+                        latch.await();
+                    }
                 }
 
                 electionAttempts.inc();
@@ -145,6 +155,10 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
         } catch (KeeperException e) {
             throw new IOException(e);
         }
+
+        // Closed before this bookie became the auditor
+        deleteMyVote();
+        throw new IllegalStateException("Auditor manager closed, give up to become auditor");
     }
 
     @Override
@@ -173,16 +187,26 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     public void close() throws Exception {
         log.info("Shutting down AuditorElector");
         isClosed = true;
-        if (myVote != null) {
+        // Release a candidate waiting in tryToBecomeAuditor()
+        CountDownLatch latch = previousVoteDeleted;
+        if (latch != null) {
+            latch.countDown();
+        }
+        deleteMyVote();
+    }
+
+    private void deleteMyVote() {
+        String vote = myVote;
+        if (vote != null) {
             try {
-                zkc.delete(myVote, -1);
+                zkc.delete(vote, -1);
             } catch (KeeperException.NoNodeException nne) {
                 // Ok
             } catch (InterruptedException ie) {
                 Thread.currentThread().interrupt();
-                log.warn().exception(ie).attr("myVote", myVote).log("InterruptedException while deleting myVote");
+                log.warn().exception(ie).attr("myVote", vote).log("InterruptedException while deleting myVote");
             } catch (KeeperException ke) {
-                log.error().exception(ke).attr("myVote", myVote).log("Exception while deleting myVote");
+                log.error().exception(ke).attr("myVote", vote).log("Exception while deleting myVote");
             }
         }
     }
