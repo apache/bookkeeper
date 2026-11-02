@@ -51,6 +51,7 @@ class ListenerBasedPendingReadOp extends PendingReadOp {
                 return;
             }
             seq.removeFirst();
+            request.cancelSpeculativeTask(true);
             long latencyNanos = MathUtils.elapsedNanos(requestTimeNanos);
             LedgerEntry entry;
             if (BKException.Code.OK == request.getRc()) {

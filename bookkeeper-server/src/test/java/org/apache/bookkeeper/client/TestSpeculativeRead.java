@@ -38,6 +38,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.bookie.LocalBookieEnsemblePlacementPolicy;
 import org.apache.bookkeeper.client.AsyncCallback.ReadCallback;
 import org.apache.bookkeeper.client.BookKeeper.DigestType;
+import org.apache.bookkeeper.common.util.OrderedScheduler;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
@@ -317,6 +318,26 @@ public class TestSpeculativeRead extends BookKeeperClusterTestCase {
         } finally {
             assertNull("Speculative Read tasks must be null", op.getSpeculativeTask());
         }
+    }
+
+    /**
+     * Test that a read of several entries cancels the speculative read tasks
+     * of all of them when it completes.
+     */
+    @Test
+    public void testSpeculativeReadTasksCancelledOnCompletion() throws Exception {
+        long id = getLedgerToRead(3, 2);
+        // longer than the wait for the scheduler to terminate below
+        BookKeeperTestClient bkspec = createClient(60000);
+        LedgerHandle l = bkspec.openLedger(id, digestType, passwd);
+        l.read(0, 9).close();
+
+        // the scheduler still runs the delayed tasks that weren't cancelled before its shutdown
+        OrderedScheduler scheduler = bkspec.getClientCtx().getScheduler();
+        scheduler.shutdown();
+        assertTrue("Speculative read tasks of the completed read are still scheduled",
+                scheduler.awaitTermination(10, TimeUnit.SECONDS));
+        bkspec.close();
     }
 
     /**
