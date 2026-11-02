@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -896,6 +897,56 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         assertTrue("NUM_SKIPPING_CHECK_TASK_TIMES", numSkippingCheckTaskTimes.get() > 0);
 
         auditor.close();
+    }
+
+    /**
+     * Test that shutting down an auditor doesn't wait for the audit it delayed
+     * for a lost bookie.
+     */
+    @Test
+    public void testShutdownWithDelayedBookieAudit() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+        LedgerUnderreplicationManager urm = driver.getLedgerManagerFactory().newLedgerUnderreplicationManager();
+        urm.setLostBookieRecoveryDelay(Integer.MAX_VALUE);
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
+                NullStatsLogger.INSTANCE);
+        auditor.start();
+        killBookie(addressByIndex(1));
+        Awaitility.await().until(() -> auditor.getAuditTask() != null);
+
+        assertShutsDownPromptly(auditor);
+    }
+
+    /**
+     * Test that shutting down an auditor doesn't wait for an audit that waits
+     * for the ledger replication to be enabled.
+     */
+    @Test
+    public void testShutdownWithAuditWaitingForReplication() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+        LedgerUnderreplicationManager urm = driver.getLedgerManagerFactory().newLedgerUnderreplicationManager();
+        urm.disableLedgerReplication();
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        // start() submits a single bookie check, which waits for the replication to be enabled
+        servConf.setAuditorPeriodicBookieCheckInterval(0);
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
+                NullStatsLogger.INSTANCE);
+        auditor.start();
+
+        assertShutsDownPromptly(auditor);
+    }
+
+    private static void assertShutsDownPromptly(Auditor auditor) throws Exception {
+        CompletableFuture<Void> shutdown = CompletableFuture.runAsync(auditor::shutdown);
+        // well below the 30 seconds shutdown() gives the auditor tasks before interrupting them
+        shutdown.get(10, TimeUnit.SECONDS);
     }
 
     static class TestAuditor extends Auditor {
