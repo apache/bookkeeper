@@ -120,8 +120,15 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
                     AuditorVoteFormat fmt = new AuditorVoteFormat()
                             .setBookieId(bookieId);
 
-                    zkc.setData(getVotePath(""),
-                            fmt.toTextFormat().getBytes(UTF_8), -1);
+                    // Synchronized with close(), which deletes the vote, and so lets the next candidate
+                    // become the auditor, only after this: a closed candidate must not overwrite its id
+                    synchronized (this) {
+                        if (isClosed) {
+                            break;
+                        }
+                        zkc.setData(getVotePath(""),
+                                fmt.toTextFormat().getBytes(UTF_8), -1);
+                    }
                     return;
                  } else {
                     // If not an auditor, will be watching to my predecessor and
@@ -190,7 +197,10 @@ public class ZkLedgerAuditorManager implements LedgerAuditorManager {
     @Override
     public void close() throws Exception {
         log.info("Shutting down AuditorElector");
-        isClosed = true;
+        synchronized (this) {
+            // Not while tryToBecomeAuditor() publishes this bookie as the auditor
+            isClosed = true;
+        }
         // Release a candidate waiting in tryToBecomeAuditor()
         CountDownLatch latch = previousVoteDeleted;
         if (latch != null) {

@@ -27,19 +27,24 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerAuditorManager;
+import org.apache.bookkeeper.meta.ZkLedgerAuditorManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieServer;
+import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.zookeeper.ZooKeeper;
 import org.awaitility.Awaitility;
@@ -226,6 +231,74 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
             assertTrue("Unexpected failure: " + e.getCause(), e.getCause() instanceof IllegalStateException);
         }
         assertFalse("Vote of the closed candidate is still there", hasVote(candidate));
+    }
+
+    /**
+     * Test that a candidate whose auditor manager closes while it is elected
+     * neither publishes itself as the auditor nor reports that it became the auditor.
+     */
+    @Test
+    public void testCloseWhileCandidateIsElected() throws Exception {
+        stopAuditorElectors();
+        String candidate = "closing-candidate";
+        // the candidate waits for the close once it listed the votes, its own first
+        CountDownLatch listed = new CountDownLatch(1);
+        CountDownLatch closed = new CountDownLatch(1);
+        ZooKeeper zk = spy(zkc);
+        doAnswer(invocation -> {
+            Object votes = invocation.callRealMethod();
+            listed.countDown();
+            closed.await();
+            return votes;
+        }).when(zk).getChildren(electionPath, false);
+        LedgerAuditorManager lam = new ZkLedgerAuditorManager(zk, baseConf, NullStatsLogger.INSTANCE);
+        CompletableFuture<Void> election = CompletableFuture.runAsync(() -> {
+            try {
+                lam.tryToBecomeAuditor(candidate, e -> {});
+            } catch (Exception e) {
+                throw new CompletionException(e);
+            }
+        });
+        assertTrue(listed.await(10, TimeUnit.SECONDS));
+
+        lam.close();
+        closed.countDown();
+        try {
+            election.get(5, TimeUnit.SECONDS);
+            fail("A closed candidate became the auditor");
+        } catch (ExecutionException e) {
+            assertTrue("Unexpected failure: " + e.getCause(), e.getCause() instanceof IllegalStateException);
+        }
+        assertFalse("A closed candidate published itself as the auditor",
+                new String(zkc.getData(electionPath, false, null)).contains(candidate));
+    }
+
+    /**
+     * Test that an interrupted shutdown of the auditor's elector still stops the
+     * auditor and deletes the vote, then propagates the interruption.
+     */
+    @Test
+    public void testInterruptedShutdownStopsAuditor() throws Exception {
+        String addr = verifyAuditor().getBookieId().toString();
+        AuditorElector elector = auditorElectors.get(addr);
+        Awaitility.await().until(() -> elector.getAuditor() != null);
+        Auditor auditor = elector.getAuditor();
+
+        CompletableFuture<Throwable> shutdown = new CompletableFuture<>();
+        new Thread(() -> {
+            Thread.currentThread().interrupt();
+            try {
+                elector.shutdown();
+                shutdown.complete(null);
+            } catch (Throwable t) {
+                shutdown.complete(t);
+            }
+        }).start();
+        Throwable failure = shutdown.get(30, TimeUnit.SECONDS);
+        assertTrue("Unexpected result: " + failure, failure instanceof InterruptedException);
+
+        assertFalse("Auditor still running", auditor.isRunning());
+        Awaitility.await().until(() -> !hasVote(addr));
     }
 
     /**
