@@ -282,13 +282,19 @@ public class AuditorElector {
      * Close the auditor manager from another thread than the election one: on a bookie that is not
      * the auditor, the election task waits in tryToBecomeAuditor() until the bookie becomes the
      * auditor, and closing the manager is what ends that wait. Closing deletes the vote, which waits
-     * for ZooKeeper to be reachable, so it gets 10 seconds before being interrupted.
+     * for ZooKeeper to be reachable, so the close is interrupted after 10 seconds, or as soon as the
+     * shutdown itself is interrupted.
      */
     private void closeAuditorManager() throws InterruptedException {
         Thread closer = new Thread(shutdownTask, "AuditorElector-close-" + bookieId);
         closer.setDaemon(true);
         closer.start();
-        closer.join(TimeUnit.SECONDS.toMillis(10));
+        try {
+            closer.join(TimeUnit.SECONDS.toMillis(10));
+        } catch (InterruptedException e) {
+            closer.interrupt();
+            throw e;
+        }
         if (closer.isAlive()) {
             log.warn("Failed to close auditor manager in 10 seconds, interrupting");
             closer.interrupt();

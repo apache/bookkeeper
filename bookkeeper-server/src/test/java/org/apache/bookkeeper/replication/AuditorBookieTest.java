@@ -27,8 +27,11 @@ import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -38,8 +41,10 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import org.apache.bookkeeper.client.BookKeeper;
 import org.apache.bookkeeper.conf.ServerConfiguration;
 import org.apache.bookkeeper.meta.LedgerAuditorManager;
+import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.ZkLedgerAuditorManager;
 import org.apache.bookkeeper.meta.zk.ZKMetadataDriverBase;
 import org.apache.bookkeeper.net.BookieId;
@@ -299,6 +304,62 @@ public class AuditorBookieTest extends BookKeeperClusterTestCase {
 
         assertFalse("Auditor still running", auditor.isRunning());
         Awaitility.await().until(() -> !hasVote(addr));
+    }
+
+    /**
+     * Test that interrupting a shutdown that waits for the auditor manager to close
+     * interrupts the close too.
+     */
+    @Test
+    public void testInterruptedShutdownInterruptsManagerClose() throws Exception {
+        LedgerAuditorManager lam = mock(LedgerAuditorManager.class);
+        // a bookie that is not the auditor: its election waits until the shutdown interrupts it
+        doAnswer(invocation -> {
+            new CountDownLatch(1).await();
+            return null;
+        }).when(lam).tryToBecomeAuditor(any(), any());
+        // the close waits like for an unreachable ZooKeeper, until it is interrupted
+        CountDownLatch closing = new CountDownLatch(1);
+        CountDownLatch releaseClose = new CountDownLatch(1);
+        CompletableFuture<Void> closeInterrupted = new CompletableFuture<>();
+        doAnswer(invocation -> {
+            closing.countDown();
+            try {
+                releaseClose.await();
+            } catch (InterruptedException e) {
+                closeInterrupted.complete(null);
+                throw e;
+            }
+            return null;
+        }).when(lam).close();
+        LedgerManagerFactory lmf = mock(LedgerManagerFactory.class);
+        when(lmf.newLedgerAuditorManager()).thenReturn(lam);
+        BookKeeper client = mock(BookKeeper.class);
+        when(client.getLedgerManagerFactory()).thenReturn(lmf);
+        AuditorElector elector = new AuditorElector("blocked-close", baseConf, client, false);
+        elector.start();
+
+        CompletableFuture<Throwable> shutdown = new CompletableFuture<>();
+        Thread shutdownThread = new Thread(() -> {
+            try {
+                elector.shutdown();
+                shutdown.complete(null);
+            } catch (Throwable t) {
+                shutdown.complete(t);
+            }
+        });
+        try {
+            shutdownThread.start();
+            assertTrue(closing.await(10, TimeUnit.SECONDS));
+            shutdownThread.interrupt();
+
+            Throwable failure = shutdown.get(5, TimeUnit.SECONDS);
+            assertTrue("Unexpected result: " + failure, failure instanceof InterruptedException);
+            // well below the 10 seconds after which shutdown() interrupts the close anyway
+            closeInterrupted.get(5, TimeUnit.SECONDS);
+        } finally {
+            releaseClose.countDown();
+        }
     }
 
     /**
