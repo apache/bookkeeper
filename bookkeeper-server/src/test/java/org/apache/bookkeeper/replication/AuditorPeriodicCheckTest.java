@@ -27,7 +27,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 
 import io.netty.buffer.ByteBuf;
@@ -63,6 +65,8 @@ import org.apache.bookkeeper.client.BookKeeper.DigestType;
 import org.apache.bookkeeper.client.BookKeeperAdmin;
 import org.apache.bookkeeper.client.LedgerHandle;
 import org.apache.bookkeeper.conf.ServerConfiguration;
+import org.apache.bookkeeper.discover.ZKRegistrationClient;
+import org.apache.bookkeeper.meta.LedgerManager;
 import org.apache.bookkeeper.meta.LedgerManagerFactory;
 import org.apache.bookkeeper.meta.LedgerUnderreplicationManager;
 import org.apache.bookkeeper.meta.MetadataBookieDriver;
@@ -77,6 +81,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
+import org.apache.zookeeper.ZooKeeper;
 import org.awaitility.Awaitility;
 import org.junit.After;
 import org.junit.Before;
@@ -955,6 +960,45 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         assertTrue(waitingForReplication.await(10, TimeUnit.SECONDS));
 
         assertShutsDownPromptly(auditor);
+    }
+
+    /**
+     * Test that shutting down an auditor while it checks all the ledgers closes
+     * the BookKeeper client the check created.
+     */
+    @Test
+    public void testShutdownDuringCheckAllLedgersClosesItsClient() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        servConf.setAuditorPeriodicCheckInterval(CHECK_INTERVAL);
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
+                NullStatsLogger.INSTANCE);
+        AuditorTask checkTask = spy(auditor.auditorCheckAllLedgersTask);
+        CompletableFuture<BookKeeper> checkClient = new CompletableFuture<>();
+        doAnswer(invocation -> {
+            BookKeeper client = (BookKeeper) invocation.callRealMethod();
+            checkClient.complete(client);
+            return client;
+        }).when(checkTask).getBookKeeper(any());
+        // the check waits for the ledgers to be processed until shutdown() interrupts it
+        CountDownLatch checking = new CountDownLatch(1);
+        checkTask.ledgerManager = mock(LedgerManager.class);
+        doAnswer(invocation -> {
+            checking.countDown();
+            return null;
+        }).when(checkTask.ledgerManager).asyncProcessLedgers(any(), any(), any(), anyInt(), anyInt());
+        auditor.auditorCheckAllLedgersTask = checkTask;
+        auditor.start();
+        assertTrue(checking.await(10, TimeUnit.SECONDS));
+        BookKeeper client = checkClient.get();
+        ZooKeeper zk = ((ZKRegistrationClient) client.getMetadataClientDriver().getRegistrationClient()).getZk();
+
+        assertShutsDownPromptly(auditor);
+        assertTrue("The check's client still runs its worker threads", client.getMainWorkerPool().isTerminated());
+        assertEquals("The check's client still has its ZooKeeper session", ZooKeeper.States.CLOSED, zk.getState());
     }
 
     private static void assertShutsDownPromptly(Auditor auditor) throws Exception {

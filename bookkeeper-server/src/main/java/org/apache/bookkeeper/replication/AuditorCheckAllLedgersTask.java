@@ -245,8 +245,18 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 log.error().exception(ue).log("Got exception while trying to set checkAllLedgersCTime");
             }
         } finally {
-            localAdmin.close();
-            localClient.close();
+            // Auditor.shutdown() interrupts a running check: close the check's own client with the
+            // interrupt status cleared, or BookKeeper.close() gives up at its first wait and leaves
+            // the client's threads and ZooKeeper session behind
+            boolean interrupted = Thread.interrupted();
+            try {
+                localAdmin.close();
+                localClient.close();
+            } finally {
+                if (interrupted) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
     }
 
