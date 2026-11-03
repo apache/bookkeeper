@@ -26,6 +26,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 
 import io.netty.buffer.ByteBuf;
 import java.io.File;
@@ -938,7 +941,18 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         servConf.setAuditorPeriodicBookieCheckInterval(0);
         Auditor auditor = new Auditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
                 NullStatsLogger.INSTANCE);
+        // signals once the bookie check waits for the replication, so that shutdown() has to interrupt it
+        // rather than drop it from the queue
+        CountDownLatch waitingForReplication = new CountDownLatch(1);
+        LedgerUnderreplicationManager checkUrm = spy(auditor.auditorBookieCheckTask.ledgerUnderreplicationManager);
+        doAnswer(invocation -> {
+            invocation.callRealMethod();
+            waitingForReplication.countDown();
+            return null;
+        }).when(checkUrm).notifyLedgerReplicationEnabled(any());
+        auditor.auditorBookieCheckTask.ledgerUnderreplicationManager = checkUrm;
         auditor.start();
+        assertTrue(waitingForReplication.await(10, TimeUnit.SECONDS));
 
         assertShutsDownPromptly(auditor);
     }
