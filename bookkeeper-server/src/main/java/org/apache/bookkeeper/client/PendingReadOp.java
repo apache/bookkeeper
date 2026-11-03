@@ -25,6 +25,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.impl.LedgerEntriesImpl;
@@ -82,12 +83,24 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
             i++;
         } while (i <= endEntryId);
         // read the entries.
-        for (LedgerEntryRequest entry : seq) {
+        for (SingleLedgerEntryRequest entry : seq) {
             entry.read();
             if (!parallelRead && clientCtx.getConf().readSpeculativeRequestPolicy.isPresent()) {
-                speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
+                entry.speculativeTask = clientCtx.getConf().readSpeculativeRequestPolicy.get()
                     .initiateSpeculativeRequest(clientCtx.getScheduler(), entry);
+                if (entry.isComplete() || complete.get()) {
+                    // the entry or the whole read completed meanwhile, and its callback might
+                    // have missed this task
+                    entry.cancelSpeculativeTask(true);
+                }
             }
+        }
+    }
+
+    @Override
+    protected void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+        for (SingleLedgerEntryRequest entry : seq) {
+            entry.cancelSpeculativeTask(mayInterruptIfRunning);
         }
     }
 
@@ -191,6 +204,7 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
 
     abstract class SingleLedgerEntryRequest extends LedgerEntryRequest {
         final LedgerEntryImpl entryImpl;
+        volatile ScheduledFuture<?> speculativeTask;
 
         SingleLedgerEntryRequest(List<BookieId> ensemble, long lId, long eId) {
             super(ensemble, eId);
@@ -201,6 +215,14 @@ class PendingReadOp extends ReadOpBase implements ReadEntryCallback  {
         public void close() {
             super.close();
             entryImpl.close();
+        }
+
+        void cancelSpeculativeTask(boolean mayInterruptIfRunning) {
+            ScheduledFuture<?> task = speculativeTask;
+            if (task != null) {
+                task.cancel(mayInterruptIfRunning);
+                speculativeTask = null;
+            }
         }
 
         /**
