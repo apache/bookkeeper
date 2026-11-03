@@ -25,14 +25,12 @@ import static org.apache.bookkeeper.replication.ReplicationStats.AUDITOR_SCOPE;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import lombok.CustomLog;
 import org.apache.bookkeeper.client.BKException;
@@ -186,16 +184,26 @@ public class AuditorElector {
                     }
                     try {
                         ledgerAuditorManager.tryToBecomeAuditor(bookieId, e -> handleAuditorEvent(e));
+                        if (!running.get()) {
+                            // shutdown() closed the auditor manager meanwhile
+                            return;
+                        }
 
                         auditor = new Auditor(bookieId, conf, bkc, false, statsLogger);
                         auditor.start();
                     } catch (InterruptedException e) {
-                        log.error().exception(e).log("Interrupted while performing auditor election");
                         Thread.currentThread().interrupt();
-                        submitShutdownTask();
+                        if (running.get()) {
+                            log.error().exception(e).log("Interrupted while performing auditor election");
+                            submitShutdownTask();
+                        }
                     } catch (Exception e) {
-                        log.error().exception(e).log("Exception while performing auditor election");
-                        submitShutdownTask();
+                        if (running.get()) {
+                            log.error().exception(e).log("Exception while performing auditor election");
+                            submitShutdownTask();
+                        } else {
+                            log.debug("Auditor election ended by the elector shutdown");
+                        }
                     }
                 }
             };
@@ -234,22 +242,23 @@ public class AuditorElector {
      * Shutting down AuditorElector.
      */
     public void shutdown() throws InterruptedException {
+        InterruptedException interrupted = null;
         synchronized (this) {
             if (executor.isShutdown()) {
                 return;
             }
-            // close auditor manager
             try {
-                submitShutdownTask().get(10, TimeUnit.SECONDS);
+                closeAuditorManager();
                 executor.shutdown();
-            } catch (ExecutionException e) {
-                log.warn().exception(e).log("Failed to close auditor manager");
+                if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                    log.warn("Auditor election didn't stop in 10 seconds after closing the auditor manager, "
+                            + "interrupting");
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                // Stop the election and finish the shutdown before propagating the interruption
                 executor.shutdownNow();
-                shutdownTask.run();
-            } catch (TimeoutException e) {
-                log.warn().exception(e).log("Failed to close auditor manager in 10 seconds");
-                executor.shutdownNow();
-                shutdownTask.run();
+                interrupted = e;
             }
         }
 
@@ -263,6 +272,32 @@ public class AuditorElector {
             } catch (BKException e) {
                 log.warn().exception(e).log("Failed to close bookkeeper client");
             }
+        }
+        if (interrupted != null) {
+            throw interrupted;
+        }
+    }
+
+    /**
+     * Close the auditor manager from another thread than the election one: on a bookie that is not
+     * the auditor, the election task waits in tryToBecomeAuditor() until the bookie becomes the
+     * auditor, and closing the manager is what ends that wait. Closing deletes the vote, which waits
+     * for ZooKeeper to be reachable, so the close is interrupted after 10 seconds, or as soon as the
+     * shutdown itself is interrupted.
+     */
+    private void closeAuditorManager() throws InterruptedException {
+        Thread closer = new Thread(shutdownTask, "AuditorElector-close-" + bookieId);
+        closer.setDaemon(true);
+        closer.start();
+        try {
+            closer.join(TimeUnit.SECONDS.toMillis(10));
+        } catch (InterruptedException e) {
+            closer.interrupt();
+            throw e;
+        }
+        if (closer.isAlive()) {
+            log.warn("Failed to close auditor manager in 10 seconds, interrupting");
+            closer.interrupt();
         }
     }
 
