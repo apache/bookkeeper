@@ -619,7 +619,10 @@ public class Auditor implements AutoCloseable {
      */
     public void shutdown() {
         log.info("Shutting down auditor");
-        executor.shutdown();
+        // Interrupt the running audit rather than wait for it: an audit can wait for the ledger
+        // replication to be enabled for as long as it stays disabled, and shutdown() would still
+        // run the audit delayed for a lost bookie. The next auditor runs the audits again.
+        executor.shutdownNow();
         try {
             while (!executor.awaitTermination(30, TimeUnit.SECONDS)) {
                 log.warn("Executor not shutting down, interrupting");
