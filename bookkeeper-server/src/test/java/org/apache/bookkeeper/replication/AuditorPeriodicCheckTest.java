@@ -81,6 +81,7 @@ import org.apache.bookkeeper.test.BookKeeperClusterTestCase;
 import org.apache.bookkeeper.test.TestStatsProvider;
 import org.apache.bookkeeper.test.TestStatsProvider.TestOpStatsLogger;
 import org.apache.bookkeeper.test.TestStatsProvider.TestStatsLogger;
+import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.ZooKeeper;
 import org.awaitility.Awaitility;
 import org.junit.After;
@@ -999,6 +1000,64 @@ public class AuditorPeriodicCheckTest extends BookKeeperClusterTestCase {
         assertShutsDownPromptly(auditor);
         assertTrue("The check's client still runs its worker threads", client.getMainWorkerPool().isTerminated());
         assertEquals("The check's client still has its ZooKeeper session", ZooKeeper.States.CLOSED, zk.getState());
+    }
+
+    /**
+     * Test that shutting down an auditor while its check of all the ledgers closes
+     * its BookKeeper client still closes the whole client.
+     */
+    @Test
+    public void testShutdownWhileCheckAllLedgersClosesItsClient() throws Exception {
+        for (AuditorElector e : auditorElectors.values()) {
+            e.shutdown();
+        }
+
+        ServerConfiguration servConf = new ServerConfiguration(confByIndex(0));
+        servConf.setAuditorPeriodicCheckInterval(CHECK_INTERVAL);
+        Auditor auditor = new Auditor(BookieImpl.getBookieId(servConf).toString(), servConf, bkc, false,
+                NullStatsLogger.INSTANCE);
+        AuditorTask checkTask = spy(auditor.auditorCheckAllLedgersTask);
+        // a task still running on the client's scheduler, which closing the client waits for
+        CountDownLatch releaseTask = new CountDownLatch(1);
+        CompletableFuture<BookKeeper> checkClient = new CompletableFuture<>();
+        doAnswer(invocation -> {
+            BookKeeper client = (BookKeeper) invocation.callRealMethod();
+            client.getClientCtx().getScheduler().execute(() -> {
+                try {
+                    releaseTask.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            });
+            checkClient.complete(client);
+            return client;
+        }).when(checkTask).getBookKeeper(any());
+        // there are no ledgers to check
+        checkTask.ledgerManager = mock(LedgerManager.class);
+        doAnswer(invocation -> {
+            VoidCallback finalCb = invocation.getArgument(1);
+            finalCb.processResult(BKException.Code.OK, null, null);
+            return null;
+        }).when(checkTask.ledgerManager).asyncProcessLedgers(any(), any(), any(), anyInt(), anyInt());
+        auditor.auditorCheckAllLedgersTask = checkTask;
+        try {
+            auditor.start();
+            BookKeeper client = checkClient.get(10, TimeUnit.SECONDS);
+            ZooKeeper zk = ((ZKRegistrationClient) client.getMetadataClientDriver().getRegistrationClient()).getZk();
+            // the check closes its client, which waits for the task
+            Awaitility.await().until(() -> client.getClientCtx().getScheduler().isShutdown());
+
+            CompletableFuture<Void> shutdown = CompletableFuture.runAsync(auditor::shutdown);
+            // shutdown() interrupts the check as it stops the auditor: only then let the close go on
+            Awaitility.await().until(() -> !auditor.isRunning());
+            releaseTask.countDown();
+
+            shutdown.get(10, TimeUnit.SECONDS);
+            assertTrue("The check's client still runs its worker threads", client.getMainWorkerPool().isTerminated());
+            assertEquals("The check's client still has its ZooKeeper session", ZooKeeper.States.CLOSED, zk.getState());
+        } finally {
+            releaseTask.countDown();
+        }
     }
 
     private static void assertShutsDownPromptly(Auditor auditor) throws Exception {

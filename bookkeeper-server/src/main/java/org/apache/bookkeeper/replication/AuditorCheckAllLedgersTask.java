@@ -19,6 +19,7 @@ package org.apache.bookkeeper.replication;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -245,18 +246,19 @@ public class AuditorCheckAllLedgersTask extends AuditorTask {
                 log.error().exception(ue).log("Got exception while trying to set checkAllLedgersCTime");
             }
         } finally {
-            // Auditor.shutdown() interrupts a running check: close the check's own client with the
-            // interrupt status cleared, or BookKeeper.close() gives up at its first wait and leaves
-            // the client's threads and ZooKeeper session behind
-            boolean interrupted = Thread.interrupted();
-            try {
-                localAdmin.close();
-                localClient.close();
-            } finally {
-                if (interrupted) {
-                    Thread.currentThread().interrupt();
+            // Close the check's own client on another thread, and wait for it: Auditor.shutdown() interrupts
+            // a running check, also while it closes the client, and an interrupted BookKeeper.close() stops at
+            // the wait it is in, leaving the client's threads and ZooKeeper session behind for good
+            Thread closer = new Thread(() -> {
+                try {
+                    localAdmin.close();
+                    localClient.close();
+                } catch (BKException | InterruptedException e) {
+                    log.warn().exception(e).log("Failed to close the client of the check of all ledgers");
                 }
-            }
+            }, "AuditorCheckAllLedgers-close");
+            closer.start();
+            Uninterruptibles.joinUninterruptibly(closer);
         }
     }
 
