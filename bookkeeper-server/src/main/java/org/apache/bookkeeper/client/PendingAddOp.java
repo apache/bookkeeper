@@ -29,6 +29,7 @@ import io.netty.util.Recycler;
 import io.netty.util.Recycler.Handle;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.ReferenceCounted;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
@@ -146,10 +147,11 @@ class PendingAddOp implements WriteCallback {
     private void sendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
+        // The client can report a pool lookup failure inline.
+        ++pendingWriteRequests;
         clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
                                              lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
                                              flags, allowFailFast, lh.writeFlags, lh.executor);
-        ++pendingWriteRequests;
     }
 
     boolean maybeTimeout() {
@@ -188,56 +190,42 @@ class PendingAddOp implements WriteCallback {
         lh.handleUnrecoverableErrorDuringAdd(BKException.Code.AddEntryQuorumTimeoutException);
     }
 
-    synchronized void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
-        // update the ensemble
-        this.ensemble = ensemble;
-
-        if (toSend == null) {
-            // this addOp hasn't yet had its mac computed. When the mac is
-            // computed, its write requests will be sent, so no need to send it
-            // now
-            return;
+    synchronized Set<Integer> prepareEnsembleChange(List<BookieId> target, Set<Integer> changed) {
+        Set<Integer> resend = new HashSet<>(changed);
+        resend.addAll(EnsembleUtils.diffEnsemble(ensemble, target));
+        List<BookieId> previous = ensemble;
+        ensemble = target;
+        if (toSend == null || callbackTriggered) {
+            return Collections.emptySet();
         }
-        // Suppose that unset doesn't happen on the write set of an entry. In this
-        // case we don't need to resend the write request upon an ensemble change.
-        // We do need to invoke #sendAddSuccessCallbacks() for such entries because
-        // they may have already completed, but they are just waiting for the ensemble
-        // to change.
-        // E.g.
-        // ensemble (A, B, C, D), entry k is written to (A, B, D). An ensemble change
-        // happens to replace C with E. Entry k does not complete until C is
-        // replaced with E successfully. When the ensemble change completes, it tries
-        // to unset entry k. C however is not in k's write set, so no entry is written
-        // again, and no one triggers #sendAddSuccessCallbacks. Consequently, k never
-        // completes.
-        //
-        // We call sendAddSuccessCallback when unsetting t cover this case.
-        if (!lh.distributionSchedule.hasEntry(entryId, bookieIndex)) {
-            lh.sendAddSuccessCallbacks();
-            return;
+        resend.removeIf(index -> !lh.distributionSchedule.hasEntry(entryId, index));
+        for (int index : resend) {
+            addEntrySuccessBookies.remove(previous.get(index));
+            if (!ackSet.removeBookieAndCheck(index)) {
+                completed = false;
+            }
         }
-
-        if (callbackTriggered) {
-            return;
-        }
-
-
-        log.debug()
-                .ctx(lh.log)
-                .attr("entryId", entryId)
-                .attr("bookieIndex", bookieIndex)
-                .log("Unsetting success");
-
-
-        // if we had already heard a success from this array index, need to
-        // increment our number of responses that are pending, since we are
-        // going to unset this success
-        if (!ackSet.removeBookieAndCheck(bookieIndex)) {
-            // unset completed if this results in loss of ack quorum
+        if (completed && !resend.isEmpty() && !hasEnoughFaultDomains()) {
             completed = false;
         }
+        return resend;
+    }
 
-        sendWriteRequest(ensemble, bookieIndex);
+    synchronized void resendEnsembleChange(Set<Integer> indices) {
+        for (int index : indices) {
+            // An inline write response can complete and recycle this operation.
+            if (toSend == null || callbackTriggered) {
+                return;
+            }
+            sendWriteRequest(ensemble, index);
+        }
+    }
+
+    private boolean hasEnoughFaultDomains() {
+        return !clientCtx.getConf().enforceMinNumFaultDomainsForWrite
+                || clientCtx.getPlacementPolicy().areAckedBookiesAdheringToPlacementPolicy(
+                        addEntrySuccessBookies, lh.getLedgerMetadata().getWriteQuorumSize(),
+                        lh.getLedgerMetadata().getAckQuorumSize());
     }
 
     /**
@@ -308,7 +296,7 @@ class PendingAddOp implements WriteCallback {
                 }
             }
             // even the add operation is completed, but because we don't reset completed flag back to false when
-            // #unsetSuccessAndSendWriteRequest doesn't break ack quorum constraint. we still have current pending
+            // #prepareEnsembleChange doesn't break ack quorum constraint. we still have current pending
             // add op is completed but never callback. so do a check here to complete again.
             //
             // E.g. entry x is going to complete.
@@ -393,11 +381,7 @@ class PendingAddOp implements WriteCallback {
         }
 
         if (ackQuorum && !completed) {
-            if (clientCtx.getConf().enforceMinNumFaultDomainsForWrite
-                && !(clientCtx.getPlacementPolicy()
-                              .areAckedBookiesAdheringToPlacementPolicy(addEntrySuccessBookies,
-                                                                        lh.getLedgerMetadata().getWriteQuorumSize(),
-                                                                        lh.getLedgerMetadata().getAckQuorumSize()))) {
+            if (!hasEnoughFaultDomains()) {
                 log.warn()
                         .ctx(lh.log)
                         .attr("entryId", entryId)
