@@ -147,10 +147,11 @@ class PendingAddOp implements WriteCallback {
     private void sendWriteRequest(List<BookieId> ensemble, int bookieIndex) {
         int flags = isRecoveryAdd ? FLAG_RECOVERY_ADD | FLAG_HIGH_PRIORITY : FLAG_NONE;
 
+        // The client can report a pool lookup failure inline.
+        ++pendingWriteRequests;
         clientCtx.getBookieClient().addEntry(ensemble.get(bookieIndex),
                                              lh.ledgerId, lh.ledgerKey, entryId, toSend, this, bookieIndex,
                                              flags, allowFailFast, lh.writeFlags, lh.executor);
-        ++pendingWriteRequests;
     }
 
     boolean maybeTimeout() {
@@ -204,16 +205,27 @@ class PendingAddOp implements WriteCallback {
                 completed = false;
             }
         }
+        if (completed && !resend.isEmpty() && !hasEnoughFaultDomains()) {
+            completed = false;
+        }
         return resend;
     }
 
     synchronized void resendEnsembleChange(Set<Integer> indices) {
-        if (toSend == null || callbackTriggered) {
-            return;
-        }
         for (int index : indices) {
+            // An inline write response can complete and recycle this operation.
+            if (toSend == null || callbackTriggered) {
+                return;
+            }
             sendWriteRequest(ensemble, index);
         }
+    }
+
+    private boolean hasEnoughFaultDomains() {
+        return !clientCtx.getConf().enforceMinNumFaultDomainsForWrite
+                || clientCtx.getPlacementPolicy().areAckedBookiesAdheringToPlacementPolicy(
+                        addEntrySuccessBookies, lh.getLedgerMetadata().getWriteQuorumSize(),
+                        lh.getLedgerMetadata().getAckQuorumSize());
     }
 
     /**
@@ -369,11 +381,7 @@ class PendingAddOp implements WriteCallback {
         }
 
         if (ackQuorum && !completed) {
-            if (clientCtx.getConf().enforceMinNumFaultDomainsForWrite
-                && !(clientCtx.getPlacementPolicy()
-                              .areAckedBookiesAdheringToPlacementPolicy(addEntrySuccessBookies,
-                                                                        lh.getLedgerMetadata().getWriteQuorumSize(),
-                                                                        lh.getLedgerMetadata().getAckQuorumSize()))) {
+            if (!hasEnoughFaultDomains()) {
                 log.warn()
                         .ctx(lh.log)
                         .attr("entryId", entryId)

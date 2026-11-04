@@ -25,9 +25,12 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -51,6 +54,7 @@ import org.apache.bookkeeper.common.util.OrderedExecutor;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.net.BookieId;
 import org.apache.bookkeeper.proto.BookieClient;
+import org.apache.bookkeeper.proto.BookkeeperInternalCallbacks.WriteCallback;
 import org.apache.bookkeeper.stats.NullStatsLogger;
 import org.apache.bookkeeper.versioning.Versioned;
 import org.awaitility.Awaitility;
@@ -178,7 +182,7 @@ public class PendingAddOpTest {
                     assertTrue(op.completed);
                 }
                 handle.changingEnsemble = false;
-                Set<Integer> changed = new LinkedHashSet<>(Arrays.asList(2, 0, 1));
+                Set<Integer> changed = new LinkedHashSet<>(Arrays.asList(0, 2, 1));
                 handle.unsetSuccessAndSendWriteRequest(next, changed);
                 assertEquals(0, callbacks.get());
                 for (PendingAddOp op : ops) {
@@ -211,6 +215,113 @@ public class PendingAddOpTest {
                 assertEquals(2L, handle.getLastAddConfirmed());
                 for (PendingAddOp op : ops) {
                     op.payload.release();
+                }
+            }).get(10, TimeUnit.SECONDS);
+        } finally {
+            client.getMainWorkerPool().shutdown();
+            client.getScheduler().shutdown();
+        }
+    }
+
+    @Test(timeout = 30000)
+    public void testAckRemovalRechecksFaultDomains() throws Exception {
+        checkResendCompletion(true);
+    }
+
+    @Test(timeout = 30000)
+    public void testInlineResendCompletionStopsFurtherRetries() throws Exception {
+        checkResendCompletion(false);
+    }
+
+    private void checkResendCompletion(boolean enforceFaultDomains) throws Exception {
+        MockClientContext client = MockClientContext.create();
+        client.setBookieClient(mock(BookieClient.class));
+        ClientConfiguration conf = new ClientConfiguration();
+        conf.setEnforceMinNumFaultDomainsForWrite(enforceFaultDomains);
+        client.setConf(ClientInternalConf.fromConfig(conf));
+        List<BookieId> original = Arrays.asList(BookieId.parse("a:3181"), BookieId.parse("b:3181"),
+                BookieId.parse("c:3181"), BookieId.parse("d:3181"));
+        BookieId replacement = BookieId.parse("e:3181");
+        List<BookieId> target = enforceFaultDomains
+                ? Arrays.asList(original.get(0), original.get(1), replacement, original.get(3))
+                : Arrays.asList(replacement, BookieId.parse("f:3181"), original.get(2), original.get(3));
+        if (enforceFaultDomains) {
+            client.setPlacementPolicy(mock(EnsemblePlacementPolicy.class));
+            when(client.getPlacementPolicy().areAckedBookiesAdheringToPlacementPolicy(anySet(), anyInt(), anyInt()))
+                    .thenAnswer(call -> {
+                        Set<BookieId> acked = call.getArgument(0);
+                        return acked.contains(original.get(2)) || acked.contains(replacement);
+                    });
+        }
+        AtomicInteger sends = new AtomicInteger();
+        doAnswer(call -> {
+            sends.incrementAndGet();
+            if (!enforceFaultDomains && (long) call.getArgument(3) == 0L) {
+                WriteCallback cb = call.getArgument(5);
+                cb.writeComplete(Code.BookieHandleNotAvailableException, 13L, 0L,
+                        call.getArgument(0), call.getArgument(6));
+            }
+            return null;
+        }).when(client.getBookieClient()).addEntry(any(), anyLong(), any(), anyLong(), any(), any(), any(),
+                anyInt(), anyBoolean(), any(), any());
+
+        try {
+            Versioned<LedgerMetadata> metadata = ClientUtil.setupLedger(client, 13L,
+                    LedgerMetadataBuilder.create().withEnsembleSize(4).withWriteQuorumSize(4).withAckQuorumSize(2)
+                            .newEnsembleEntry(0L, original));
+            LedgerHandle handle = new LedgerHandle(client, 13L, metadata, BookKeeper.DigestType.CRC32C,
+                    ClientUtil.PASSWD, WriteFlag.NONE);
+            handle.executor.submit(() -> {
+                CompletableFuture<Integer> result = new CompletableFuture<>();
+                PendingAddOp op = PendingAddOp.create(handle, client, original,
+                        Unpooled.wrappedBuffer(new byte[] {1}), WriteFlag.NONE,
+                        (rc, lh, eid, latency, ctx) -> result.complete(rc), null);
+                op.entryId = 0;
+                op.hasRun = true;
+                op.toSend = op.payload.retain();
+                handle.pendingAddOps.add(op);
+                handle.changingEnsemble = true;
+                List<Integer> acked = enforceFaultDomains ? Arrays.asList(0, 1, 2) : Arrays.asList(2, 3);
+                for (int index : acked) {
+                    op.pendingWriteRequests++;
+                    op.writeComplete(Code.OK, 13L, 0L, original.get(index), index);
+                }
+                assertTrue(op.completed);
+                CompletableFuture<Integer> laterResult = new CompletableFuture<>();
+                PendingAddOp later = null;
+                if (!enforceFaultDomains) {
+                    later = PendingAddOp.create(handle, client, original, Unpooled.wrappedBuffer(new byte[] {2}),
+                            WriteFlag.NONE, (rc, lh, eid, latency, ctx) -> laterResult.complete(rc), null);
+                    later.entryId = 1;
+                    later.hasRun = true;
+                    later.toSend = later.payload.retain();
+                    handle.pendingAddOps.add(later);
+                    for (int index = 0; index < 2; index++) {
+                        later.pendingWriteRequests++;
+                        later.writeComplete(Code.OK, 13L, 1L, original.get(index), index);
+                    }
+                    assertTrue(later.completed);
+                }
+                handle.changingEnsemble = false;
+                Set<Integer> changed = enforceFaultDomains ? Collections.singleton(2)
+                        : new LinkedHashSet<>(Arrays.asList(0, 1));
+                handle.unsetSuccessAndSendWriteRequest(target, changed);
+                if (enforceFaultDomains) {
+                    assertFalse(result.isDone());
+                    assertEquals(-1L, handle.getLastAddConfirmed());
+                    op.writeComplete(Code.OK, 13L, 0L, replacement, 2);
+                }
+                assertEquals(Integer.valueOf(Code.OK), result.getNow(null));
+                assertEquals(0L, handle.getLastAddConfirmed());
+                assertEquals(enforceFaultDomains ? 1 : 3, sends.get());
+                assertNull(op.lh);
+                if (later != null) {
+                    assertFalse(laterResult.isDone());
+                    for (int index = 0; index < 2; index++) {
+                        later.writeComplete(Code.OK, 13L, 1L, target.get(index), index);
+                    }
+                    assertEquals(Integer.valueOf(Code.OK), laterResult.getNow(null));
+                    assertEquals(1L, handle.getLastAddConfirmed());
                 }
             }).get(10, TimeUnit.SECONDS);
         } finally {
