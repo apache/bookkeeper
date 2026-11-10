@@ -43,6 +43,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -2455,11 +2456,17 @@ public class LedgerHandle implements WriteHandle {
     }
 
     void unsetSuccessAndSendWriteRequest(List<BookieId> ensemble, final Set<Integer> bookies) {
-        for (PendingAddOp pendingAddOp : pendingAddOps) {
-            for (Integer bookieIndex: bookies) {
-                pendingAddOp.unsetSuccessAndSendWriteRequest(ensemble, bookieIndex);
-            }
+        // Prepare the whole queue before sending: a response or callback must not
+        // drain later entries while they still contain ACKs from removed bookies.
+        Map<PendingAddOp, Set<Integer>> resends = new LinkedHashMap<>();
+        for (PendingAddOp op : pendingAddOps) {
+            resends.put(op, op.prepareEnsembleChange(ensemble, bookies));
         }
+        for (Map.Entry<PendingAddOp, Set<Integer>> resend : resends.entrySet()) {
+            resend.getKey().resendEnsembleChange(resend.getValue());
+        }
+        // Entries whose write sets did not change may already have quorum.
+        sendAddSuccessCallbacks();
     }
 
     void registerOperationFailureOnBookie(BookieId bookie, long entryId) {
