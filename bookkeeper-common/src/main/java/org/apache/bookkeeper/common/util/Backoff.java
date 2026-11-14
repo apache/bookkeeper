@@ -253,7 +253,7 @@ public class Backoff {
         final long startNanos = TimeUnit.NANOSECONDS.convert(startMs, TimeUnit.MILLISECONDS);
         final long maxNanos = TimeUnit.NANOSECONDS.convert(maxMs, TimeUnit.MILLISECONDS);
         return Stream.iterate(startMs, lastMs -> {
-            long lastNanos = TimeUnit.MILLISECONDS.convert(lastMs, TimeUnit.NANOSECONDS);
+            long lastNanos = TimeUnit.NANOSECONDS.convert(lastMs, TimeUnit.MILLISECONDS);
             long randRange = Math.abs(lastNanos * 3 - startNanos);
             long randBackoff;
             if (0L == randRange) {

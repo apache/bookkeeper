@@ -188,4 +188,21 @@ public class TestBackoff {
         });
     }
 
+    @Test
+    public void testDecorrelatedJitteredGrowsBeyondStart() throws Exception {
+        // The decorrelated jitter range for each step is derived from the previously
+        // selected backoff (up to 3x it), so with a large max the sequence must be able
+        // to climb well past the initial value. A unit-conversion bug that drops the
+        // previous value to zero would pin every backoff below 2 * startMs forever.
+        long startMs = 10L;
+        long maxMs = 10_000L;
+        long maxObserved = Backoff.decorrelatedJittered(startMs, maxMs)
+                .limit(1000)
+                .mapToLong(Long::longValue)
+                .max()
+                .getAsLong();
+        assertTrue("decorrelated jitter never grew past 2 * startMs (max observed = " + maxObserved + ")",
+                maxObserved >= 2 * startMs);
+    }
+
 }
