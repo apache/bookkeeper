@@ -379,8 +379,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                         effectiveMinRegionsForDurability, minNumRacksPerWriteQuorum);
                 TopologyAwareEnsemblePlacementPolicy nextPolicy = perRegionPlacement.get(
                         availableRegions.iterator().next());
-                return nextPolicy.newEnsemble(ensembleSize, writeQuorumSize, writeQuorumSize,
-                        comprehensiveExclusionBookiesSet, ensemble, ensemble);
+                PlacementResult<List<BookieId>> placementResult = nextPolicy.newEnsemble(ensembleSize,
+                        writeQuorumSize, writeQuorumSize, comprehensiveExclusionBookiesSet, ensemble, ensemble);
+                return PlacementResult.of(placementResult.getResult(),
+                        isEnsembleAdheringToPlacementPolicy(
+                                placementResult.getResult(), writeQuorumSize, ackQuorumSize));
             }
 
             int remainingEnsemble = ensembleSize;
@@ -694,16 +697,132 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         return finalList;
     }
 
+    /**
+     * Region of a bookie, without populating the {@code address2Region} cache. The cache must only be populated for
+     * bookies that joined the cluster (see {@link #handleBookiesThatLeft(Set)}), otherwise an adherence check on a
+     * bookie that is currently not in the cluster could cache a stale region for it.
+     */
+    private String getRegionWithoutCaching(BookieId addr) {
+        String region = address2Region.get(addr);
+        return region != null ? region : parseBookieRegion(addr);
+    }
+
+    /**
+     * Checks whether the ensemble adheres to the placement policy, for every write quorum of the ensemble:
+     * <ul>
+     * <li>{@code FAIL}: the quorum has no known bookie, or contains a bookie on the default rack while
+     * {@code enforceMinNumRacksPerWriteQuorum} is set, or violates the durability constraints (when enabled), or
+     * the bookies sharing a region don't satisfy the rack aware policy within that region.</li>
+     * <li>{@code MEETS_SOFT}: the quorum covers fewer regions than {@code writeQuorumSize}, but the bookies of each
+     * region satisfy the rack aware policy within the region.</li>
+     * <li>{@code MEETS_STRICT}: every bookie of every quorum is in a different region.</li>
+     * </ul>
+     * Bookies that are not in the cluster (e.g. down or read-only) are ignored by the region/rack analysis.
+     */
     @Override
     public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
             int writeQuorumSize, int ackQuorumSize) {
-        /**
-         * TODO: have to implement actual logic for this method for
-         * RegionAwareEnsemblePlacementPolicy. For now return true value.
-         *
-         * - https://github.com/apache/bookkeeper/issues/1898
-         */
-        return PlacementPolicyAdherence.MEETS_STRICT;
+        if (ensembleList == null || ensembleList.isEmpty()) {
+            return PlacementPolicyAdherence.FAIL;
+        }
+        // knownBookies (and the per region policies' bookies) are guarded by rwLock; callers such as the Auditor do
+        // not hold the lock. It is reentrant, so callers that already hold it (newEnsemble, ...) are fine.
+        rwLock.readLock().lock();
+        try {
+            return checkPlacementPolicyAdherence(ensembleList, writeQuorumSize, ackQuorumSize);
+        } catch (RuntimeException e) {
+            // Callers (e.g. the Auditor) must always make progress, so never propagate.
+            log.warn()
+                    .attr("ensemble", ensembleList)
+                    .exception(e)
+                    .log("Received exception while analyzing placement policy adherence of ensemble");
+            return PlacementPolicyAdherence.FAIL;
+        } finally {
+            rwLock.readLock().unlock();
+        }
+    }
+
+    // this method should be called in readlock scope of 'rwLock'
+    private PlacementPolicyAdherence checkPlacementPolicyAdherence(List<BookieId> ensembleList,
+            int writeQuorumSize, int ackQuorumSize) {
+        final int ensembleSize = ensembleList.size();
+        final boolean checkDurability =
+                enforceDurability && minRegionsForDurability > 1 && !disableDurabilityFeature.isAvailable();
+        if (checkDurability && enableValidation) {
+            Set<String> regionsInEnsemble = new HashSet<>();
+            for (BookieId bookie : ensembleList) {
+                regionsInEnsemble.add(getRegionWithoutCaching(bookie));
+            }
+            if (regionsInEnsemble.size() < Math.min(ensembleSize, minRegionsForDurability)) {
+                return PlacementPolicyAdherence.FAIL;
+            }
+        }
+
+        PlacementPolicyAdherence adherence = PlacementPolicyAdherence.MEETS_STRICT;
+        for (int i = 0; i < ensembleSize; i++) {
+            // region -> known bookies of the write quorum in that region
+            Map<String, Set<BookieId>> bookiesPerRegion = new HashMap<>();
+            // region -> number of bookies (known or not) of the write quorum in that region
+            Map<String, Integer> countPerRegion = new HashMap<>();
+            for (int j = 0; j < writeQuorumSize; j++) {
+                BookieId bookie = ensembleList.get((i + j) % ensembleSize);
+                countPerRegion.merge(getRegionWithoutCaching(bookie), 1, Integer::sum);
+                BookieNode bookieNode = knownBookies.get(bookie);
+                if (bookieNode == null) {
+                    log.debug()
+                            .attr("bookie", bookie)
+                            .log("Bookie is not in the list of knownBookies");
+                    continue;
+                }
+                if (enforceMinNumRacksPerWriteQuorum && getDefaultRack().equals(bookieNode.getNetworkLocation())) {
+                    return PlacementPolicyAdherence.FAIL;
+                }
+                bookiesPerRegion.computeIfAbsent(getLocalRegion(bookieNode), r -> new HashSet<>()).add(bookie);
+            }
+
+            if (bookiesPerRegion.isEmpty()) {
+                return PlacementPolicyAdherence.FAIL;
+            }
+
+            if (checkDurability) {
+                // The failure of any (minRegionsForDurability - 1) regions must leave at least ackQuorumSize
+                // bookies, i.e. those regions together hold at most (ackQuorumSize - 1) bookies.
+                List<Integer> counts = new ArrayList<>(countPerRegion.values());
+                counts.sort(Collections.reverseOrder());
+                int worstCaseLoss = 0;
+                for (int k = 0; k < Math.min(minRegionsForDurability - 1, counts.size()); k++) {
+                    worstCaseLoss += counts.get(k);
+                }
+                if (worstCaseLoss > ackQuorumSize - 1) {
+                    return PlacementPolicyAdherence.FAIL;
+                }
+            }
+
+            if (bookiesPerRegion.size() < writeQuorumSize) {
+                // Not every bookie of the write quorum is in its own region: each region has to adhere to the
+                // rack aware policy on its own.
+                for (Map.Entry<String, Set<BookieId>> entry : bookiesPerRegion.entrySet()) {
+                    TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(entry.getKey());
+                    if (policyWithinRegion == null) {
+                        continue;
+                    }
+                    Set<BookieId> bookiesInRegion = entry.getValue();
+                    if (policyWithinRegion.isEnsembleAdheringToPlacementPolicy(
+                            new ArrayList<>(bookiesInRegion), bookiesInRegion.size(), 1)
+                            == PlacementPolicyAdherence.FAIL) {
+                        log.debug()
+                                .attr("ensemble", ensembleList)
+                                .attr("writeSetStart", i)
+                                .attr("bookies", bookiesInRegion)
+                                .attr("region", entry.getKey())
+                                .log("Bookies in region don't adhere to the rack aware policy");
+                        return PlacementPolicyAdherence.FAIL;
+                    }
+                }
+                adherence = PlacementPolicyAdherence.MEETS_SOFT;
+            }
+        }
+        return adherence;
     }
 
     @Override
