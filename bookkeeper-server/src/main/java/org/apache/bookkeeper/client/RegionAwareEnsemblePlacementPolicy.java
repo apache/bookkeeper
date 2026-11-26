@@ -28,6 +28,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ThreadLocalRandom;
 import lombok.CustomLog;
 import org.apache.bookkeeper.conf.ClientConfiguration;
 import org.apache.bookkeeper.feature.Feature;
@@ -69,6 +70,13 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
     protected final Map<String, TopologyAwareEnsemblePlacementPolicy> perRegionPlacement;
     protected final ConcurrentMap<BookieId, String> address2Region;
+    /**
+     * Region of the read-only bookies. A bookie that turns read-only leaves the writable set, so its entry is removed
+     * from {@link #address2Region} (see {@link #handleBookiesThatLeft(Set)}), but it still holds ledger data in its
+     * region and the adherence check must keep using that region. Only used by the adherence check, never for
+     * placement, and pruned to the current read-only set on every cluster change.
+     */
+    private final ConcurrentMap<BookieId, String> readOnlyBookie2Region = new ConcurrentHashMap<>();
     protected FeatureProvider featureProvider;
     protected String disallowBookiePlacementInRegionFeatureName;
     protected String myRegion = null;
@@ -112,6 +120,23 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 return parts[1];
             }
         }
+    }
+
+    @Override
+    public Set<BookieId> onClusterChanged(Set<BookieId> writableBookies, Set<BookieId> readOnlyBookies) {
+        // Record the region of the read-only bookies first: bookies that just left the writable set are evicted from
+        // address2Region by the super call below. Resolving here, once per bookie, keeps the per-ledger adherence
+        // check free of any topology resolution.
+        for (BookieId readOnlyBookie : readOnlyBookies) {
+            if (writableBookies.contains(readOnlyBookie) || readOnlyBookie2Region.containsKey(readOnlyBookie)) {
+                continue;
+            }
+            String region = address2Region.get(readOnlyBookie);
+            readOnlyBookie2Region.put(readOnlyBookie, region != null ? region : parseBookieRegion(readOnlyBookie));
+        }
+        Set<BookieId> deadBookies = super.onClusterChanged(writableBookies, readOnlyBookies);
+        readOnlyBookie2Region.keySet().retainAll(readOnlyBookies);
+        return deadBookies;
     }
 
     @Override
@@ -698,13 +723,22 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
     }
 
     /**
-     * Region of a bookie, without populating the {@code address2Region} cache. The cache must only be populated for
-     * bookies that joined the cluster (see {@link #handleBookiesThatLeft(Set)}), otherwise an adherence check on a
-     * bookie that is currently not in the cluster could cache a stale region for it.
+     * Region of a bookie that is not writable (down, read-only or decommissioned), read from in-memory state only:
+     * the {@code address2Region} cache, then the read-only bookies' regions. It never resolves the network location:
+     * that can block on DNS or a topology script, and the adherence check runs under the placement read lock,
+     * possibly on a metadata callback thread. A bookie that is in neither is reported as {@link #UNKNOWN_REGION}.
      */
-    private String getRegionWithoutCaching(BookieId addr) {
+    private String getCachedRegionOrUnknown(BookieId addr) {
         String region = address2Region.get(addr);
-        return region != null ? region : parseBookieRegion(addr);
+        if (region == null) {
+            region = readOnlyBookie2Region.get(addr);
+        }
+        return region != null ? region : UNKNOWN_REGION;
+    }
+
+    private boolean isPlacementAllowedInRegion(String region) {
+        return null == disallowBookiePlacementInRegionFeatureName
+                || !featureProvider.scope(region).getFeature(disallowBookiePlacementInRegionFeatureName).isAvailable();
     }
 
     /**
@@ -713,11 +747,14 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
      * <li>{@code FAIL}: the quorum has no known bookie, or contains a bookie on the default rack while
      * {@code enforceMinNumRacksPerWriteQuorum} is set, or violates the durability constraints (when enabled), or
      * the bookies sharing a region don't satisfy the rack aware policy within that region.</li>
-     * <li>{@code MEETS_SOFT}: the quorum covers fewer regions than {@code writeQuorumSize}, but the bookies of each
-     * region satisfy the rack aware policy within the region.</li>
-     * <li>{@code MEETS_STRICT}: every bookie of every quorum is in a different region.</li>
+     * <li>{@code MEETS_SOFT}: the quorum covers fewer regions than {@code writeQuorumSize}, or the region of one of
+     * its bookies is unresolved, but the bookies of each region satisfy the rack aware policy within the region.</li>
+     * <li>{@code MEETS_STRICT}: every bookie of every quorum is in a different, resolved region.</li>
      * </ul>
-     * Bookies that are not in the cluster (e.g. down or read-only) are ignored by the region/rack analysis.
+     * A bookie whose region is unresolved ({@link #UNKNOWN_REGION}) is never evidence of an independent region: it
+     * does not count towards the regions required for durability, and for the durability check it is assumed to be in
+     * the worst possible region. Bookies that are not writable (e.g. down or read-only) are ignored by the rack
+     * analysis; their region is only taken from in-memory state, never resolved.
      */
     @Override
     public PlacementPolicyAdherence isEnsembleAdheringToPlacementPolicy(List<BookieId> ensembleList,
@@ -748,12 +785,25 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         final int ensembleSize = ensembleList.size();
         final boolean checkDurability =
                 enforceDurability && minRegionsForDurability > 1 && !disableDurabilityFeature.isAvailable();
+
+        // Resolve every position of the ensemble once: write quorums overlap, so the same bookie would otherwise be
+        // looked up writeQuorumSize times.
+        final BookieNode[] nodes = new BookieNode[ensembleSize];
+        final String[] regions = new String[ensembleSize];
+        for (int i = 0; i < ensembleSize; i++) {
+            BookieId bookie = ensembleList.get(i);
+            nodes[i] = knownBookies.get(bookie);
+            regions[i] = nodes[i] != null ? getLocalRegion(nodes[i]) : getCachedRegionOrUnknown(bookie);
+        }
+
         if (checkDurability && enableValidation) {
-            Set<String> regionsInEnsemble = new HashSet<>();
-            for (BookieId bookie : ensembleList) {
-                regionsInEnsemble.add(getRegionWithoutCaching(bookie));
+            Set<String> resolvedRegionsInEnsemble = new HashSet<>();
+            for (String region : regions) {
+                if (!UNKNOWN_REGION.equals(region)) {
+                    resolvedRegionsInEnsemble.add(region);
+                }
             }
-            if (regionsInEnsemble.size() < Math.min(ensembleSize, minRegionsForDurability)) {
+            if (resolvedRegionsInEnsemble.size() < Math.min(ensembleSize, minRegionsForDurability)) {
                 return PlacementPolicyAdherence.FAIL;
             }
         }
@@ -762,12 +812,19 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
         for (int i = 0; i < ensembleSize; i++) {
             // region -> known bookies of the write quorum in that region
             Map<String, Set<BookieId>> bookiesPerRegion = new HashMap<>();
-            // region -> number of bookies (known or not) of the write quorum in that region
-            Map<String, Integer> countPerRegion = new HashMap<>();
+            // resolved region -> number of bookies (known or not) of the write quorum in that region
+            Map<String, Integer> countPerResolvedRegion = new HashMap<>();
+            // number of bookies (known or not) of the write quorum whose region is unresolved
+            int unresolvedCount = 0;
             for (int j = 0; j < writeQuorumSize; j++) {
-                BookieId bookie = ensembleList.get((i + j) % ensembleSize);
-                countPerRegion.merge(getRegionWithoutCaching(bookie), 1, Integer::sum);
-                BookieNode bookieNode = knownBookies.get(bookie);
+                int position = (i + j) % ensembleSize;
+                BookieId bookie = ensembleList.get(position);
+                if (UNKNOWN_REGION.equals(regions[position])) {
+                    unresolvedCount++;
+                } else {
+                    countPerResolvedRegion.merge(regions[position], 1, Integer::sum);
+                }
+                BookieNode bookieNode = nodes[position];
                 if (bookieNode == null) {
                     log.debug()
                             .attr("bookie", bookie)
@@ -777,7 +834,7 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 if (enforceMinNumRacksPerWriteQuorum && getDefaultRack().equals(bookieNode.getNetworkLocation())) {
                     return PlacementPolicyAdherence.FAIL;
                 }
-                bookiesPerRegion.computeIfAbsent(getLocalRegion(bookieNode), r -> new HashSet<>()).add(bookie);
+                bookiesPerRegion.computeIfAbsent(regions[position], r -> new HashSet<>()).add(bookie);
             }
 
             if (bookiesPerRegion.isEmpty()) {
@@ -786,10 +843,11 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
 
             if (checkDurability) {
                 // The failure of any (minRegionsForDurability - 1) regions must leave at least ackQuorumSize
-                // bookies, i.e. those regions together hold at most (ackQuorumSize - 1) bookies.
-                List<Integer> counts = new ArrayList<>(countPerRegion.values());
+                // bookies, i.e. those regions together hold at most (ackQuorumSize - 1) bookies. A bookie with an
+                // unresolved region may be in any region, so it is assumed to be in one of the failing ones.
+                List<Integer> counts = new ArrayList<>(countPerResolvedRegion.values());
                 counts.sort(Collections.reverseOrder());
-                int worstCaseLoss = 0;
+                int worstCaseLoss = unresolvedCount;
                 for (int k = 0; k < Math.min(minRegionsForDurability - 1, counts.size()); k++) {
                     worstCaseLoss += counts.get(k);
                 }
@@ -798,9 +856,10 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
                 }
             }
 
-            if (bookiesPerRegion.size() < writeQuorumSize) {
-                // Not every bookie of the write quorum is in its own region: each region has to adhere to the
-                // rack aware policy on its own.
+            // Unresolved regions are not independent regions, so they can never make a quorum strict.
+            if (bookiesPerRegion.containsKey(UNKNOWN_REGION) || bookiesPerRegion.size() < writeQuorumSize) {
+                // Not every bookie of the write quorum is verifiably in its own region: each region has to adhere
+                // to the rack aware policy on its own.
                 for (Map.Entry<String, Set<BookieId>> entry : bookiesPerRegion.entrySet()) {
                     TopologyAwareEnsemblePlacementPolicy policyWithinRegion = perRegionPlacement.get(entry.getKey());
                     if (policyWithinRegion == null) {
@@ -823,6 +882,72 @@ public class RegionAwareEnsemblePlacementPolicy extends RackawareEnsemblePlaceme
             }
         }
         return adherence;
+    }
+
+    /**
+     * Finds a single-bookie replacement that makes a non adhering ensemble adhere to the region aware policy.
+     *
+     * <p>The rack aware implementation this class inherits judges incumbents by rack only, so it keeps replicas that
+     * satisfy the rack rule even when the region or durability rule is what is violated, and never tries a bookie of
+     * another region. Here every candidate is judged by {@link #isEnsembleAdheringToPlacementPolicy}, so the result
+     * is valid by construction, and the target is picked at random among the best valid moves. Candidates in regions where placement is disallowed by the feature flag are skipped,
+     * like in {@link #newEnsemble}. Only one bookie is moved: if no single move adheres, an empty {@code FAIL} result
+     * is returned.
+     */
+    @Override
+    public PlacementResult<List<BookieId>> replaceToAdherePlacementPolicy(int ensembleSize, int writeQuorumSize,
+            int ackQuorumSize, Set<BookieId> excludeBookies, List<BookieId> currentEnsemble) {
+        rwLock.readLock().lock();
+        try {
+            PlacementPolicyAdherence currentAdherence =
+                    isEnsembleAdheringToPlacementPolicy(currentEnsemble, writeQuorumSize, ackQuorumSize);
+            if (currentAdherence != PlacementPolicyAdherence.FAIL) {
+                return PlacementResult.of(new ArrayList<>(currentEnsemble), currentAdherence);
+            }
+            Set<BookieId> excluded = new HashSet<>(excludeBookies);
+            excluded.addAll(currentEnsemble);
+
+            // Pick uniformly among the valid moves of the best grade (reservoir sampling), like the random selection
+            // of newEnsemble and replaceBookie: always taking the first valid candidate would send every repair of
+            // a cycle to the same bookie.
+            List<BookieId> chosenStrict = null;
+            List<BookieId> chosenSoft = null;
+            int strictSeen = 0;
+            int softSeen = 0;
+            for (int i = 0; i < currentEnsemble.size(); i++) {
+                for (BookieId candidate : knownBookies.keySet()) {
+                    if (excluded.contains(candidate)
+                            || !isPlacementAllowedInRegion(getLocalRegion(knownBookies.get(candidate)))) {
+                        continue;
+                    }
+                    List<BookieId> trial = new ArrayList<>(currentEnsemble);
+                    trial.set(i, candidate);
+                    PlacementPolicyAdherence trialAdherence =
+                            isEnsembleAdheringToPlacementPolicy(trial, writeQuorumSize, ackQuorumSize);
+                    if (trialAdherence == PlacementPolicyAdherence.MEETS_STRICT) {
+                        if (ThreadLocalRandom.current().nextInt(++strictSeen) == 0) {
+                            chosenStrict = trial;
+                        }
+                    } else if (trialAdherence == PlacementPolicyAdherence.MEETS_SOFT) {
+                        if (ThreadLocalRandom.current().nextInt(++softSeen) == 0) {
+                            chosenSoft = trial;
+                        }
+                    }
+                }
+            }
+            if (chosenStrict != null) {
+                return PlacementResult.of(chosenStrict, PlacementPolicyAdherence.MEETS_STRICT);
+            }
+            if (chosenSoft != null) {
+                return PlacementResult.of(chosenSoft, PlacementPolicyAdherence.MEETS_SOFT);
+            }
+            log.warn()
+                    .attr("ensemble", currentEnsemble)
+                    .log("No single bookie replacement makes the ensemble adhere to the placement policy");
+            return PlacementResult.of(Collections.emptyList(), PlacementPolicyAdherence.FAIL);
+        } finally {
+            rwLock.readLock().unlock();
+        }
     }
 
     @Override
